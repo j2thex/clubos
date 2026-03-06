@@ -40,12 +40,12 @@ export default async function ProfilePage({
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-gradient-to-br from-green-600 to-green-900 px-6 pt-10 pb-16 text-center">
+      <div className="club-hero px-6 pt-10 pb-16 text-center">
         {/* Back link */}
         <div className="absolute top-4 left-4">
           <Link
             href={`/${clubSlug}`}
-            className="inline-flex items-center text-green-200 hover:text-white text-sm font-medium transition-colors"
+            className="inline-flex items-center club-light-text hover:text-white text-sm font-medium transition-colors"
           >
             <svg
               className="w-5 h-5 mr-1"
@@ -65,18 +65,18 @@ export default async function ProfilePage({
         </div>
 
         <h1 className="text-2xl font-bold text-white mt-4">Your Profile</h1>
-        <p className="text-green-200 text-sm mt-1">{displayName}</p>
+        <p className="club-light-text text-sm mt-1">{displayName}</p>
       </div>
 
       {/* Profile card */}
       <div className="px-4 -mt-8 pb-10 max-w-md mx-auto space-y-4">
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           {/* Member Code */}
-          <div className="bg-green-50 border-b border-green-100 px-6 py-5 text-center">
-            <p className="text-xs font-medium text-green-700 uppercase tracking-wider mb-2">
+          <div className="club-tint-bg border-b club-tint-border px-6 py-5 text-center">
+            <p className="text-xs font-medium club-tint-text uppercase tracking-wider mb-2">
               Member Code
             </p>
-            <p className="text-3xl font-bold font-mono tracking-widest text-green-800 bg-green-100 inline-block px-5 py-2 rounded-lg">
+            <p className="text-3xl font-bold font-mono tracking-widest club-tint-text inline-block px-5 py-2 rounded-lg" style={{ backgroundColor: "color-mix(in srgb, var(--club-primary, #16a34a) 15%, white)" }}>
               {memberCode}
             </p>
           </div>
@@ -98,7 +98,7 @@ export default async function ProfilePage({
               <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Spin Balance
               </p>
-              <p className="mt-1 text-lg font-semibold text-green-600">
+              <p className="mt-1 text-lg font-semibold club-primary">
                 {spinBalance}{" "}
                 <span className="text-sm font-normal text-gray-400">
                   {spinBalance === 1 ? "spin" : "spins"} available

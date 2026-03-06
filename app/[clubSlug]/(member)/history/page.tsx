@@ -44,9 +44,9 @@ export default async function SpinHistoryPage({
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-gradient-to-br from-green-600 to-green-900 px-6 pt-10 pb-12 text-center">
+      <div className="club-hero px-6 pt-10 pb-12 text-center">
         <h1 className="text-2xl font-bold text-white">Spin History</h1>
-        <p className="mt-1 text-green-200 text-sm">Your past spin results</p>
+        <p className="mt-1 club-light-text text-sm">Your past spin results</p>
       </div>
 
       {/* Content */}
@@ -65,7 +65,7 @@ export default async function SpinHistoryPage({
                     <div
                       className={`w-10 h-10 rounded-full flex items-center justify-center ${
                         isWin
-                          ? "bg-green-100 text-green-600"
+                          ? "club-tint-bg club-primary"
                           : "bg-gray-100 text-gray-400"
                       }`}
                     >
@@ -111,7 +111,7 @@ export default async function SpinHistoryPage({
                   <span
                     className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
                       isWin
-                        ? "bg-green-100 text-green-700"
+                        ? "club-tint-bg club-tint-text"
                         : "bg-gray-100 text-gray-500"
                     }`}
                   >
@@ -124,9 +124,9 @@ export default async function SpinHistoryPage({
         ) : (
           /* Empty state */
           <div className="bg-white rounded-2xl shadow-lg p-10 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full club-tint-bg flex items-center justify-center">
               <svg
-                className="w-8 h-8 text-green-500"
+                className="w-8 h-8 club-primary"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -147,7 +147,7 @@ export default async function SpinHistoryPage({
             </p>
             <Link
               href={`/${clubSlug}/spin`}
-              className="mt-6 inline-block rounded-xl py-3 px-8 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 active:bg-green-800 transition-colors"
+              className="club-btn mt-6 inline-block rounded-xl py-3 px-8 text-sm font-semibold"
             >
               Spin the Wheel
             </Link>
@@ -158,7 +158,7 @@ export default async function SpinHistoryPage({
         <div className="mt-6 text-center">
           <Link
             href={`/${clubSlug}`}
-            className="text-sm font-medium text-green-600 hover:text-green-700 transition-colors"
+            className="text-sm font-medium club-primary hover:opacity-80 transition-opacity"
           >
             &larr; Back to Dashboard
           </Link>

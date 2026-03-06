@@ -26,7 +26,7 @@ export default async function MemberDashboard({
       .single(),
     supabase
       .from("clubs")
-      .select("name, club_branding(logo_url, primary_color)")
+      .select("name")
       .eq("id", session.club_id)
       .single(),
   ]);
@@ -35,20 +35,13 @@ export default async function MemberDashboard({
   const spinBalance = member?.spin_balance ?? 0;
   const memberCode = member?.member_code ?? "";
   const clubName = club?.name ?? "";
-  const branding = (club?.club_branding as Record<string, string>[] | null)?.[0] ?? null;
-  const primaryColor = branding?.primary_color ?? "#16a34a";
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero area with dark green gradient */}
-      <div
-        className="px-6 pt-10 pb-16 text-center"
-        style={{
-          background: `linear-gradient(135deg, ${primaryColor}, #052e16)`,
-        }}
-      >
+      {/* Hero area */}
+      <div className="club-hero px-6 pt-10 pb-16 text-center">
         {clubName && (
-          <p className="text-green-200 text-sm font-medium tracking-wide uppercase mb-2">
+          <p className="club-light-text text-sm font-medium tracking-wide uppercase mb-2">
             {clubName}
           </p>
         )}
@@ -56,7 +49,7 @@ export default async function MemberDashboard({
           Welcome back, {displayName}
         </h1>
         {memberCode && (
-          <p className="mt-2 text-green-200 text-sm">
+          <p className="mt-2 club-light-text text-sm">
             Member Code: <span className="font-mono font-semibold text-white">{memberCode}</span>
           </p>
         )}
@@ -69,10 +62,7 @@ export default async function MemberDashboard({
           <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">
             Your Spin Balance
           </p>
-          <p
-            className="mt-2 text-6xl font-extrabold"
-            style={{ color: primaryColor }}
-          >
+          <p className="mt-2 text-6xl font-extrabold club-primary">
             {spinBalance}
           </p>
           <p className="text-gray-400 text-sm mt-1">
@@ -80,7 +70,7 @@ export default async function MemberDashboard({
           </p>
           <Link
             href={`/${clubSlug}/spin`}
-            className="mt-6 inline-block w-full rounded-xl py-3.5 px-6 text-lg font-semibold text-white text-center transition-colors bg-green-600 hover:bg-green-700 active:bg-green-800"
+            className="club-btn mt-6 inline-block w-full rounded-xl py-3.5 px-6 text-lg font-semibold text-center"
           >
             Spin the Wheel
           </Link>
@@ -90,10 +80,10 @@ export default async function MemberDashboard({
         <div className="grid grid-cols-2 gap-4">
           <Link
             href={`/${clubSlug}/history`}
-            className="flex flex-col items-center justify-center bg-white rounded-2xl shadow p-5 border-2 border-green-100 hover:border-green-400 transition-colors group"
+            className="flex flex-col items-center justify-center bg-white rounded-2xl shadow p-5 border-2 club-tint-border hover:opacity-80 transition-opacity group"
           >
             <svg
-              className="w-7 h-7 text-green-600 mb-2 group-hover:text-green-700 transition-colors"
+              className="w-7 h-7 club-primary mb-2 transition-colors"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -105,17 +95,17 @@ export default async function MemberDashboard({
                 d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-            <span className="text-sm font-semibold text-gray-700 group-hover:text-green-700 transition-colors">
+            <span className="text-sm font-semibold text-gray-700 transition-colors">
               History
             </span>
           </Link>
 
           <Link
             href={`/${clubSlug}/profile`}
-            className="flex flex-col items-center justify-center bg-white rounded-2xl shadow p-5 border-2 border-green-100 hover:border-green-400 transition-colors group"
+            className="flex flex-col items-center justify-center bg-white rounded-2xl shadow p-5 border-2 club-tint-border hover:opacity-80 transition-opacity group"
           >
             <svg
-              className="w-7 h-7 text-green-600 mb-2 group-hover:text-green-700 transition-colors"
+              className="w-7 h-7 club-primary mb-2 transition-colors"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -127,7 +117,7 @@ export default async function MemberDashboard({
                 d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
               />
             </svg>
-            <span className="text-sm font-semibold text-gray-700 group-hover:text-green-700 transition-colors">
+            <span className="text-sm font-semibold text-gray-700 transition-colors">
               Profile
             </span>
           </Link>

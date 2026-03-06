@@ -24,13 +24,13 @@ export default function MemberLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-white to-green-100 px-4">
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--club-primary, #16a34a) 8%, white), white, color-mix(in srgb, var(--club-primary, #16a34a) 12%, white))" }}>
       <div className="w-full max-w-sm">
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-green-100 mb-4">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full club-tint-bg mb-4">
               <svg
-                className="w-7 h-7 text-green-600"
+                className="w-7 h-7 club-primary"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -72,7 +72,7 @@ export default function MemberLoginPage() {
                 autoCapitalize="characters"
                 autoComplete="off"
                 placeholder="ABC123"
-                className="block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-lg font-mono tracking-widest uppercase placeholder:text-gray-400 placeholder:tracking-widest focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                className="club-ring block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-lg font-mono tracking-widest uppercase placeholder:text-gray-400 placeholder:tracking-widest transition"
                 onChange={(e) => {
                   e.target.value = e.target.value.toUpperCase();
                 }}
@@ -96,14 +96,14 @@ export default function MemberLoginPage() {
                 pattern="[0-9]{4}"
                 autoComplete="off"
                 placeholder="----"
-                className="block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-lg tracking-[0.5em] placeholder:tracking-[0.5em] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                className="club-ring block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-lg tracking-[0.5em] placeholder:tracking-[0.5em] placeholder:text-gray-400 transition"
               />
             </div>
 
             <button
               type="submit"
               disabled={isPending}
-              className="w-full rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="club-btn w-full rounded-lg px-4 py-2.5 text-sm font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isPending ? "Signing in..." : "Sign In"}
             </button>

@@ -70,7 +70,7 @@ export function MemberNav({ clubSlug }: MemberNavProps) {
               key={item.label}
               href={href}
               className={`flex flex-col items-center gap-0.5 px-3 py-1 text-xs transition-colors ${
-                isActive ? "text-green-600" : "text-gray-400 hover:text-gray-600"
+                isActive ? "club-primary" : "text-gray-400 hover:text-gray-600"
               }`}
             >
               {item.icon}

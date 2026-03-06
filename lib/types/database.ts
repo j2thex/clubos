@@ -208,6 +208,8 @@ export type Database = {
           reward_value: number;
           probability: number;
           color: string | null;
+          label_color: string | null;
+          display_order: number;
           active: boolean;
         };
         Insert: {
@@ -218,6 +220,8 @@ export type Database = {
           reward_value?: number;
           probability: number;
           color?: string | null;
+          label_color?: string | null;
+          display_order?: number;
           active?: boolean;
         };
         Update: {
@@ -228,6 +232,8 @@ export type Database = {
           reward_value?: number;
           probability?: number;
           color?: string | null;
+          label_color?: string | null;
+          display_order?: number;
           active?: boolean;
         };
         Relationships: [

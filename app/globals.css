@@ -126,7 +126,39 @@
 }
 
 /* Club branding utility classes */
-.club-primary { color: var(--club-primary); }
-.club-primary-bg { background-color: var(--club-primary); }
-.club-secondary { color: var(--club-secondary); }
-.club-secondary-bg { background-color: var(--club-secondary); }
+.club-primary { color: var(--club-primary, #16a34a); }
+.club-primary-bg { background-color: var(--club-primary, #16a34a); }
+.club-secondary { color: var(--club-secondary, #052e16); }
+.club-secondary-bg { background-color: var(--club-secondary, #052e16); }
+.club-hero {
+  background: linear-gradient(135deg, var(--club-primary, #16a34a), var(--club-secondary, #052e16));
+}
+.club-btn {
+  background-color: var(--club-primary, #16a34a);
+  color: white;
+  transition: filter 0.15s;
+}
+.club-btn:hover { filter: brightness(0.9); }
+.club-btn:active { filter: brightness(0.8); }
+.club-btn:disabled { filter: grayscale(0.5) brightness(0.7); }
+.club-tint-bg {
+  background-color: color-mix(in srgb, var(--club-primary, #16a34a) 10%, white);
+}
+.club-tint-border {
+  border-color: color-mix(in srgb, var(--club-primary, #16a34a) 20%, white);
+}
+.club-tint-text {
+  color: color-mix(in srgb, var(--club-primary, #16a34a) 80%, black);
+}
+.club-light-text {
+  color: color-mix(in srgb, var(--club-primary, #16a34a) 30%, white);
+}
+.club-focus:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px white, 0 0 0 4px var(--club-primary, #16a34a);
+}
+.club-ring:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--club-primary, #16a34a) 30%, transparent);
+  border-color: var(--club-primary, #16a34a);
+}

@@ -20,7 +20,7 @@ export default async function SpinPage() {
   // Fetch wheel segments
   const { data: segments } = await supabase
     .from("wheel_configs")
-    .select("label, color, probability")
+    .select("label, color, label_color, probability")
     .eq("club_id", memberPayload.club_id)
     .eq("active", true)
     .order("display_order", { ascending: true });
@@ -35,11 +35,12 @@ export default async function SpinPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 py-8">
-      <h1 className="text-2xl font-bold text-white mb-8">Spin the Wheel</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-8">Spin the Wheel</h1>
       <SpinWheel
         segments={segments.map((s) => ({
           label: s.label,
-          color: s.color,
+          color: s.color ?? "#16a34a",
+          labelColor: s.label_color ?? "#ffffff",
           probability: Number(s.probability),
         }))}
         balance={member?.spin_balance ?? 0}

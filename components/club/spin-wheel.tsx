@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 
 interface Segment {
   label: string;
   color: string;
+  labelColor?: string;
   probability: number;
 }
 
@@ -29,39 +30,64 @@ export default function SpinWheel({ segments, balance, onSpin }: SpinWheelProps)
   const [spinning, setSpinning] = useState(false);
   const [currentBalance, setCurrentBalance] = useState(balance);
   const [result, setResult] = useState<SpinResult["outcome"] | null>(null);
-  const [rotation, setRotation] = useState(0);
-  const totalSpins = useRef(0);
+  const [error, setError] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const wheelRef = useRef<import("spin-wheel").Wheel | null>(null);
 
-  // Build conic-gradient from segments
-  const totalProb = segments.reduce((sum, s) => sum + s.probability, 0);
-  const conicStops: string[] = [];
-  let cumulative = 0;
-  const segmentAngles: { start: number; end: number }[] = [];
+  useEffect(() => {
+    let mounted = true;
 
-  for (const seg of segments) {
-    const startPct = (cumulative / totalProb) * 100;
-    const segPct = (seg.probability / totalProb) * 100;
-    const endPct = startPct + segPct;
-    conicStops.push(`${seg.color} ${startPct}% ${endPct}%`);
+    async function initWheel() {
+      if (!containerRef.current) return;
 
-    const startAngle = (cumulative / totalProb) * 360;
-    const endAngle = ((cumulative + seg.probability) / totalProb) * 360;
-    segmentAngles.push({ start: startAngle, end: endAngle });
+      const { Wheel } = await import("spin-wheel");
 
-    cumulative += seg.probability;
-  }
+      if (!mounted || !containerRef.current) return;
 
-  const conicGradient = `conic-gradient(${conicStops.join(", ")})`;
+      const items = segments.map((seg) => ({
+        label: seg.label,
+        backgroundColor: seg.color,
+        labelColor: seg.labelColor ?? "#ffffff",
+      }));
+
+      const wheel = new Wheel(containerRef.current, {
+        items,
+        isInteractive: false,
+        pointerAngle: 180,
+        itemLabelFontSizeMax: 24,
+        itemLabelRadius: 0.92,
+        itemLabelRadiusMax: 0.4,
+        itemLabelAlign: "right",
+        borderWidth: 3,
+        borderColor: "#065f46",
+        lineWidth: 1,
+        lineColor: "#065f46",
+        radius: 0.95,
+      });
+
+      wheelRef.current = wheel;
+    }
+
+    initWheel();
+
+    return () => {
+      mounted = false;
+      wheelRef.current?.remove();
+      wheelRef.current = null;
+    };
+  }, [segments]);
 
   const handleSpin = useCallback(async () => {
-    if (spinning || currentBalance <= 0) return;
+    if (spinning || currentBalance <= 0 || !wheelRef.current) return;
 
     setSpinning(true);
     setResult(null);
+    setError(null);
 
     const res = await onSpin();
 
     if ("error" in res) {
+      setError(res.error);
       setSpinning(false);
       return;
     }
@@ -69,111 +95,70 @@ export default function SpinWheel({ segments, balance, onSpin }: SpinWheelProps)
     const spinResult = res as SpinResult;
     const { segmentIndex } = spinResult;
 
-    // Calculate the angle to land on the winning segment
-    // The pointer is at the top (12 o'clock = 0 degrees).
-    // Conic gradient starts at 12 o'clock and goes clockwise.
-    // We need the wheel to rotate so the winning segment is at the top (under the pointer).
-    const segAngle = segmentAngles[segmentIndex];
-    const segMid = (segAngle.start + segAngle.end) / 2;
+    const duration = 4000;
+    wheelRef.current.spinToItem(segmentIndex, duration, true, 2, 1);
 
-    // The wheel rotates clockwise. To land on a segment at angle `segMid`,
-    // we rotate so that segMid ends up at 360 (top). We also add multiple
-    // full rotations for dramatic effect.
-    totalSpins.current += 1;
-    const extraRotations = 5 + totalSpins.current; // more spins each time
-    const targetRotation =
-      rotation + 360 * extraRotations + (360 - segMid);
-
-    setRotation(targetRotation);
-
-    // Wait for animation to complete, then show result
     setTimeout(() => {
       setResult(spinResult.outcome);
       setCurrentBalance(spinResult.newBalance);
       setSpinning(false);
-    }, 4500);
-  }, [spinning, currentBalance, onSpin, rotation, segmentAngles]);
-
-  // Render segment labels positioned at the midpoint of each segment
-  const labelElements = segments.map((seg, i) => {
-    const segAngle = segmentAngles[i];
-    const midAngle = (segAngle.start + segAngle.end) / 2;
-
-    return (
-      <div
-        key={i}
-        className="absolute left-1/2 top-1/2 pointer-events-none"
-        style={{
-          transform: `rotate(${midAngle}deg) translateY(-70px) translateX(-50%)`,
-          transformOrigin: "0 0",
-        }}
-      >
-        <span
-          className="text-white text-xs font-bold whitespace-nowrap drop-shadow-md"
-          style={{
-            display: "inline-block",
-            transform: `rotate(0deg)`,
-          }}
-        >
-          {seg.label}
-        </span>
-      </div>
-    );
-  });
+    }, duration);
+  }, [spinning, currentBalance, onSpin]);
 
   return (
     <div className="flex flex-col items-center gap-6">
       {/* Balance display */}
       <div className="text-center">
         <p className="text-sm text-gray-400 uppercase tracking-wide">Spins Available</p>
-        <p className="text-4xl font-bold text-green-400">{currentBalance}</p>
+        <p className="text-4xl font-bold club-primary">{currentBalance}</p>
       </div>
 
       {/* Wheel container */}
-      <div className="relative w-72 h-72 sm:w-80 sm:h-80">
-        {/* Pointer / arrow at top */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2 z-20">
-          <div
-            className="w-0 h-0"
-            style={{
-              borderLeft: "14px solid transparent",
-              borderRight: "14px solid transparent",
-              borderTop: "24px solid #065f46",
-            }}
-          />
-        </div>
+      <div className="relative" style={{ width: 280, height: 280 }}>
+        {/* Canvas wheel */}
+        <div ref={containerRef} className="w-full h-full" />
 
-        {/* Outer ring */}
-        <div className="absolute inset-0 rounded-full border-4 border-green-800 shadow-lg shadow-green-900/50 overflow-hidden">
-          {/* Spinning wheel */}
+        {/* Pointer triangle at bottom */}
+        <div
+          className="absolute left-1/2 z-10"
+          style={{
+            bottom: -8,
+            transform: "translateX(-50%)",
+            width: 0,
+            height: 0,
+            borderLeft: "12px solid transparent",
+            borderRight: "12px solid transparent",
+            borderBottom: "22px solid #facc15",
+            filter: "drop-shadow(0 0 12px rgba(250, 204, 21, 0.9))",
+          }}
+        />
+
+        {/* Result overlay */}
+        {result && !spinning && (
           <div
-            className="w-full h-full rounded-full relative"
+            className="absolute z-20 flex items-center justify-center pointer-events-none"
             style={{
-              background: conicGradient,
-              transform: `rotate(${rotation}deg)`,
-              transition: spinning
-                ? "transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)"
-                : "none",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              width: 120,
+              height: 120,
+              borderRadius: "50%",
+              backgroundColor: "rgba(0, 0, 0, 0.72)",
             }}
           >
-            {/* Segment labels */}
-            {labelElements}
+            <span className="text-center font-bold" style={{ color: "#facc15", fontSize: "0.95rem" }}>
+              {result.label}
+            </span>
           </div>
-        </div>
-
-        {/* Center hub */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-          <div className="w-16 h-16 rounded-full bg-emerald-900 border-4 border-green-700 shadow-inner flex items-center justify-center">
-            <span className="text-green-300 text-xs font-bold">SPIN</span>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Spin button */}
       <button
         onClick={handleSpin}
         disabled={spinning || currentBalance <= 0}
-        className="px-8 py-3 rounded-full text-lg font-bold text-white bg-green-600 hover:bg-green-500 disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed transition-colors shadow-lg shadow-green-900/40"
+        className="club-btn px-8 py-3 rounded-full text-lg font-bold shadow-lg disabled:cursor-not-allowed"
       >
         {spinning
           ? "Spinning..."
@@ -182,22 +167,10 @@ export default function SpinWheel({ segments, balance, onSpin }: SpinWheelProps)
             : "Spin the Wheel"}
       </button>
 
-      {/* Result display */}
-      {result && (
-        <div
-          className="text-center p-4 rounded-xl border animate-in fade-in zoom-in duration-300"
-          style={{
-            backgroundColor: result.color + "20",
-            borderColor: result.color,
-          }}
-        >
-          <p className="text-sm text-gray-400 mb-1">You won</p>
-          <p className="text-2xl font-bold text-white">{result.label}</p>
-          {result.value > 0 && (
-            <p className="text-sm text-green-400 mt-1">
-              Value: {result.value} {result.rewardType}
-            </p>
-          )}
+      {/* Error display */}
+      {error && (
+        <div className="text-center p-3 rounded-lg border border-red-500/30 bg-red-500/10">
+          <p className="text-sm text-red-400">{error}</p>
         </div>
       )}
     </div>

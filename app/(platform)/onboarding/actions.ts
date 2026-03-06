@@ -79,13 +79,16 @@ export async function updateBranding(formData: FormData) {
 export async function seedClubData(clubId: string) {
   const supabase = createAdminClient();
 
-  // Seed default wheel segments — all shades of green
+  // Seed default wheel segments
   const segments = [
-    { club_id: clubId, label: "Drink", reward_type: "prize", reward_value: 1, probability: 0.2, color: "#22c55e" },
-    { club_id: clubId, label: "Snack", reward_type: "prize", reward_value: 1, probability: 0.2, color: "#15803d" },
-    { club_id: clubId, label: "Paper", reward_type: "prize", reward_value: 1, probability: 0.2, color: "#4ade80" },
-    { club_id: clubId, label: "Pre-Roll", reward_type: "prize", reward_value: 1, probability: 0.15, color: "#059669" },
-    { club_id: clubId, label: "No Win", reward_type: "nothing", reward_value: 0, probability: 0.25, color: "#064e3b" },
+    { club_id: clubId, label: "No prize", reward_type: "nothing", reward_value: 0, probability: 0.20, color: "#4b5563", label_color: "#d1d5db", display_order: 0 },
+    { club_id: clubId, label: "Mascotte", reward_type: "prize", reward_value: 1, probability: 0.15, color: "#c4a265", label_color: "#1c1008", display_order: 1 },
+    { club_id: clubId, label: "Free Drink", reward_type: "prize", reward_value: 1, probability: 0.15, color: "#0284c7", label_color: "#e0f2fe", display_order: 2 },
+    { club_id: clubId, label: "Snack", reward_type: "prize", reward_value: 1, probability: 0.10, color: "#16a34a", label_color: "#f0fdf4", display_order: 3 },
+    { club_id: clubId, label: "Pure Pre-roll", reward_type: "prize", reward_value: 1, probability: 0.10, color: "#e11d48", label_color: "#fff1f2", display_order: 4 },
+    { club_id: clubId, label: "Blue Pre-roll", reward_type: "prize", reward_value: 1, probability: 0.10, color: "#4f46e5", label_color: "#eef2ff", display_order: 5 },
+    { club_id: clubId, label: "Yellow Pre-roll", reward_type: "prize", reward_value: 1, probability: 0.10, color: "#ca8a04", label_color: "#fefce8", display_order: 6 },
+    { club_id: clubId, label: "Orange Pre-roll", reward_type: "prize", reward_value: 1, probability: 0.10, color: "#ea580c", label_color: "#fff7ed", display_order: 7 },
   ];
 
   await supabase.from("wheel_configs").insert(segments);
