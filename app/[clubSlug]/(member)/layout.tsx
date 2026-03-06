@@ -1,10 +1,18 @@
+import { MemberNav } from "@/components/club/member-nav";
+
 export default async function MemberLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: Promise<{ clubSlug: string }>;
 }) {
-  // Middleware already handles auth redirects for protected routes.
-  // This layout renders for all (member) routes, including /login.
-  // Just render children — individual pages fetch their own data.
-  return <>{children}</>;
+  const { clubSlug } = await params;
+
+  return (
+    <div className="pb-20">
+      {children}
+      <MemberNav clubSlug={clubSlug} />
+    </div>
+  );
 }
