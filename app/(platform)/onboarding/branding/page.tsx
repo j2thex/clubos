@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useActionState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -12,7 +12,7 @@ function formAction(_prev: { error: string } | undefined, formData: FormData) {
   return updateBranding(formData);
 }
 
-export default function BrandingPage() {
+function BrandingForm() {
   const searchParams = useSearchParams();
   const clubId = searchParams.get("clubId") ?? "";
   const [state, dispatch, isPending] = useActionState(formAction, undefined);
@@ -140,5 +140,13 @@ export default function BrandingPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function BrandingPage() {
+  return (
+    <Suspense fallback={<div className="text-center text-gray-500 py-12">Loading...</div>}>
+      <BrandingForm />
+    </Suspense>
   );
 }
