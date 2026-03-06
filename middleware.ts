@@ -6,7 +6,7 @@ const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 const COOKIE_NAME = "clubos-member-token";
 
 // Routes that don't need auth
-const PUBLIC_PATHS = ["/login"];
+const PUBLIC_PATHS = ["/login", "/staff", "/admin"];
 // Routes that are not club-scoped
 const PLATFORM_PATHS = ["/onboarding"];
 

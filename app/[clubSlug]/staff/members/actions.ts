@@ -1,0 +1,58 @@
+"use server";
+
+import { createAdminClient } from "@/lib/supabase/admin";
+import { hashPin } from "@/lib/auth";
+import { revalidatePath } from "next/cache";
+
+export async function updateMemberRole(memberId: string, roleId: string | null, clubSlug: string) {
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("members")
+    .update({ role_id: roleId || null })
+    .eq("id", memberId);
+
+  if (error) {
+    return { error: "Failed to update role" };
+  }
+
+  revalidatePath(`/${clubSlug}/staff/members`);
+  return { ok: true };
+}
+
+export async function createMember(
+  clubId: string,
+  memberCode: string,
+  pin: string,
+  clubSlug: string,
+) {
+  const code = memberCode.trim().toUpperCase();
+  const trimmedPin = pin.trim();
+
+  if (!code || code.length < 3 || code.length > 6) {
+    return { error: "Member code must be 3-6 characters" };
+  }
+  if (!/^[A-Z0-9]+$/.test(code)) {
+    return { error: "Member code must be alphanumeric" };
+  }
+  if (!trimmedPin || trimmedPin.length !== 4 || !/^\d{4}$/.test(trimmedPin)) {
+    return { error: "PIN must be exactly 4 digits" };
+  }
+
+  const supabase = createAdminClient();
+
+  const { error } = await supabase.from("members").insert({
+    club_id: clubId,
+    member_code: code,
+    pin_hash: hashPin(trimmedPin),
+    spin_balance: 0,
+  });
+
+  if (error) {
+    if (error.code === "23505") return { error: "Member code already exists" };
+    return { error: "Failed to create member" };
+  }
+
+  revalidatePath(`/${clubSlug}/staff/members`);
+  return { ok: true };
+}

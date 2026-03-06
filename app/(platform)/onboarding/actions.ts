@@ -93,6 +93,13 @@ export async function seedClubData(clubId: string) {
 
   await supabase.from("wheel_configs").insert(segments);
 
+  // Seed default member roles
+  await supabase.from("member_roles").insert([
+    { club_id: clubId, name: "Member", display_order: 0 },
+    { club_id: clubId, name: "VIP", display_order: 1 },
+    { club_id: clubId, name: "Staff", display_order: 2 },
+  ]);
+
   // Create test member
   const memberCode = generateMemberCode();
   const pin = generatePin();

@@ -123,6 +123,7 @@ export type Database = {
           member_code: string;
           pin_hash: string;
           full_name: string | null;
+          role_id: string | null;
           spin_balance: number;
           status: string;
           created_at: string;
@@ -133,6 +134,7 @@ export type Database = {
           member_code: string;
           pin_hash: string;
           full_name?: string | null;
+          role_id?: string | null;
           spin_balance?: number;
           status?: string;
           created_at?: string;
@@ -143,6 +145,7 @@ export type Database = {
           member_code?: string;
           pin_hash?: string;
           full_name?: string | null;
+          role_id?: string | null;
           spin_balance?: number;
           status?: string;
           created_at?: string;
@@ -150,6 +153,45 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "members_club_id_fkey";
+            columns: ["club_id"];
+            isOneToOne: false;
+            referencedRelation: "clubs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "members_role_id_fkey";
+            columns: ["role_id"];
+            isOneToOne: false;
+            referencedRelation: "member_roles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      member_roles: {
+        Row: {
+          id: string;
+          club_id: string;
+          name: string;
+          display_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          club_id: string;
+          name: string;
+          display_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          club_id?: string;
+          name?: string;
+          display_order?: number;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "member_roles_club_id_fkey";
             columns: ["club_id"];
             isOneToOne: false;
             referencedRelation: "clubs";

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getMemberFromCookie } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logout } from "./actions";
+import { RoleSelector } from "./role-selector";
 
 function formatTimestamp(iso: string): string {
   const date = new Date(iso);
@@ -33,10 +34,10 @@ export default async function ProfilePage({
 
   const supabase = createAdminClient();
 
-  const [{ data: member }, { data: spins }] = await Promise.all([
+  const [{ data: member }, { data: spins }, { data: roles }] = await Promise.all([
     supabase
       .from("members")
-      .select("full_name, member_code, spin_balance, created_at")
+      .select("member_code, spin_balance, role_id, created_at")
       .eq("id", session.member_id)
       .single(),
     supabase
@@ -46,11 +47,16 @@ export default async function ProfilePage({
       .eq("club_id", session.club_id)
       .order("created_at", { ascending: false })
       .limit(20),
+    supabase
+      .from("member_roles")
+      .select("id, name")
+      .eq("club_id", session.club_id)
+      .order("display_order", { ascending: true }),
   ]);
 
-  const displayName = member?.full_name || "Member";
   const memberCode = member?.member_code ?? "";
   const spinBalance = member?.spin_balance ?? 0;
+  const currentRoleId = member?.role_id ?? null;
   const memberSince = member?.created_at
     ? new Date(member.created_at).toLocaleDateString("en-US", {
         year: "numeric",
@@ -67,7 +73,7 @@ export default async function ProfilePage({
       {/* Header */}
       <div className="club-hero px-6 pt-10 pb-16 text-center">
         <h1 className="text-2xl font-bold text-white">Your Profile</h1>
-        <p className="club-light-text text-sm mt-1">{displayName}</p>
+        <p className="club-light-text text-sm mt-1">{memberCode}</p>
       </div>
 
       {/* Profile card */}
@@ -85,15 +91,18 @@ export default async function ProfilePage({
 
           {/* Info fields */}
           <div className="divide-y divide-gray-100">
+            {/* Role */}
             <div className="px-6 py-4">
-              <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Full Name
+              <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
+                Role
               </p>
-              <p className="mt-1 text-lg font-semibold text-gray-900">
-                {displayName}
-              </p>
+              <RoleSelector
+                roles={roles ?? []}
+                currentRoleId={currentRoleId}
+              />
             </div>
 
+            {/* Spin Balance */}
             <div className="px-6 py-4">
               <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Spin Balance
@@ -106,6 +115,7 @@ export default async function ProfilePage({
               </p>
             </div>
 
+            {/* Member Since */}
             <div className="px-6 py-4">
               <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Member Since

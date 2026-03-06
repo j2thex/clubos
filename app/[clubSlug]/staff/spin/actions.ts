@@ -1,31 +1,63 @@
 "use server";
 
-import { getMemberFromCookie } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export async function performSpin() {
-  const memberPayload = await getMemberFromCookie();
-  if (!memberPayload) return { error: "Not authenticated" };
+export async function lookupMember(memberCode: string, clubId: string): Promise<{ error: string } | { memberCode: string; balance: number }> {
+  const code = memberCode.trim().toUpperCase();
+  if (!code || code.length < 3 || code.length > 6) {
+    return { error: "Invalid member code" };
+  }
 
   const supabase = createAdminClient();
 
-  // Check balance
+  const { data: member } = await supabase
+    .from("members")
+    .select("id, spin_balance, member_code")
+    .eq("club_id", clubId)
+    .eq("member_code", code)
+    .single();
+
+  if (!member) {
+    return { error: "Member not found" };
+  }
+
+  return {
+    memberCode: member.member_code,
+    balance: member.spin_balance,
+  };
+}
+
+export async function performSpinForMember(memberCode: string, clubId: string) {
+  const code = memberCode.trim().toUpperCase();
+  if (!code || code.length < 3 || code.length > 6) {
+    return { error: "Invalid member code" };
+  }
+
+  const supabase = createAdminClient();
+
+  // Look up member
   const { data: member } = await supabase
     .from("members")
     .select("id, spin_balance, club_id")
-    .eq("id", memberPayload.member_id)
+    .eq("club_id", clubId)
+    .eq("member_code", code)
     .single();
 
-  if (!member || member.spin_balance <= 0) {
-    return { error: "No spins available" };
+  if (!member) {
+    return { error: "Member not found" };
+  }
+
+  if (member.spin_balance <= 0) {
+    return { error: "No spins remaining for this member" };
   }
 
   // Get wheel config
   const { data: segments } = await supabase
     .from("wheel_configs")
     .select("*")
-    .eq("club_id", member.club_id)
-    .eq("active", true);
+    .eq("club_id", clubId)
+    .eq("active", true)
+    .order("display_order", { ascending: true });
 
   if (!segments || segments.length === 0) {
     return { error: "Wheel not configured" };
@@ -34,7 +66,7 @@ export async function performSpin() {
   // Weighted random selection
   const totalProb = segments.reduce(
     (sum, s) => sum + Number(s.probability),
-    0
+    0,
   );
   let random = Math.random() * totalProb;
   let selected = segments[0];
@@ -53,7 +85,7 @@ export async function performSpin() {
     .eq("id", member.id);
 
   await supabase.from("spins").insert({
-    club_id: member.club_id,
+    club_id: clubId,
     member_id: member.id,
     outcome_label: selected.label,
     outcome_value: selected.reward_value,

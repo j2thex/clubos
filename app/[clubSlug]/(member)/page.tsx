@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { getMemberFromCookie } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -91,14 +90,6 @@ export default async function MemberDashboard({
             <p className="text-xs text-gray-400 mt-0.5">/ 10</p>
           </div>
         </div>
-
-        {/* Spin CTA */}
-        <Link
-          href={`/${clubSlug}/spin`}
-          className="club-btn block w-full rounded-2xl py-4 px-6 text-lg font-semibold text-center shadow-lg"
-        >
-          Spin the Wheel
-        </Link>
 
         {/* Quests */}
         <div className="space-y-2">

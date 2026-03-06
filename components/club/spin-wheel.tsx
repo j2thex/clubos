@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 
 interface Segment {
   label: string;
@@ -31,6 +31,12 @@ export default function SpinWheel({ segments, balance, onSpin }: SpinWheelProps)
   const [currentBalance, setCurrentBalance] = useState(balance);
   const [result, setResult] = useState<SpinResult["outcome"] | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setCurrentBalance(balance);
+    setResult(null);
+    setError(null);
+  }, [balance]);
   const containerRef = useRef<HTMLDivElement>(null);
   const wheelRef = useRef<import("spin-wheel").Wheel | null>(null);
 
