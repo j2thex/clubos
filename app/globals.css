@@ -153,6 +153,9 @@
 .club-light-text {
   color: color-mix(in srgb, var(--club-primary, #16a34a) 30%, white);
 }
+.club-page-bg {
+  background-color: var(--club-secondary, #052e16);
+}
 .club-focus:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px white, 0 0 0 4px var(--club-primary, #16a34a);

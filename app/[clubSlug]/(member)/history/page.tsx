@@ -42,7 +42,7 @@ export default async function SpinHistoryPage({
   const hasSpins = spins && spins.length > 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen club-page-bg">
       {/* Header */}
       <div className="club-hero px-6 pt-10 pb-12 text-center">
         <h1 className="text-2xl font-bold text-white">Spin History</h1>

@@ -54,7 +54,7 @@ export default function SpinWheel({ segments, balance, onSpin }: SpinWheelProps)
         items,
         isInteractive: false,
         pointerAngle: 180,
-        itemLabelFontSizeMax: 24,
+        itemLabelFontSizeMax: 36,
         itemLabelRadius: 0.92,
         itemLabelRadiusMax: 0.4,
         itemLabelAlign: "right",
@@ -108,13 +108,12 @@ export default function SpinWheel({ segments, balance, onSpin }: SpinWheelProps)
   return (
     <div className="flex flex-col items-center gap-6">
       {/* Balance display */}
-      <div className="text-center">
-        <p className="text-sm text-gray-400 uppercase tracking-wide">Spins Available</p>
-        <p className="text-4xl font-bold club-primary">{currentBalance}</p>
+      <div className="flex items-baseline gap-2">
+        <span className="text-4xl font-bold club-primary">Spins remaining: {currentBalance}</span>
       </div>
 
       {/* Wheel container */}
-      <div className="relative" style={{ width: 280, height: 280 }}>
+      <div className="relative" style={{ width: 392, height: 392 }}>
         {/* Canvas wheel */}
         <div ref={containerRef} className="w-full h-full" />
 
@@ -141,8 +140,8 @@ export default function SpinWheel({ segments, balance, onSpin }: SpinWheelProps)
               top: "50%",
               left: "50%",
               transform: "translate(-50%, -50%)",
-              width: 120,
-              height: 120,
+              width: 168,
+              height: 168,
               borderRadius: "50%",
               backgroundColor: "rgba(0, 0, 0, 0.72)",
             }}

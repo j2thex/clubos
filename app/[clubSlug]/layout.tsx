@@ -21,7 +21,9 @@ export default async function ClubLayout({
 
   if (!club) notFound();
 
-  const branding = club.club_branding?.[0] ?? null;
+  const branding = Array.isArray(club.club_branding)
+    ? club.club_branding[0]
+    : club.club_branding;
 
   return (
     <div
