@@ -6,21 +6,20 @@ import { generateSlug, generateMemberCode, generatePin } from "@/lib/utils";
 import { redirect } from "next/navigation";
 
 export async function createOrgAndClub(formData: FormData) {
-  const orgName = formData.get("orgName") as string;
   const clubName = formData.get("clubName") as string;
   const timezone = (formData.get("timezone") as string) || "UTC";
-  const currency = (formData.get("currency") as string) || "USD";
+  const currency = (formData.get("currency") as string) || "EUR";
 
-  if (!orgName || !clubName) {
-    return { error: "Organization and club names are required" };
+  if (!clubName) {
+    return { error: "Club name is required" };
   }
 
   const supabase = createAdminClient();
 
-  // Create organization
+  // Create organization (auto-named after club)
   const { data: org, error: orgError } = await supabase
     .from("organizations")
-    .insert({ name: orgName, slug: generateSlug(orgName) })
+    .insert({ name: clubName, slug: generateSlug(clubName) })
     .select()
     .single();
 

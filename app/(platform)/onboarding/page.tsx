@@ -7,40 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { createOrgAndClub } from "./actions";
 
-const TIMEZONES = [
-  "UTC",
-  "America/New_York",
-  "America/Chicago",
-  "America/Denver",
-  "America/Los_Angeles",
-  "America/Anchorage",
-  "Pacific/Honolulu",
-  "Europe/London",
-  "Europe/Paris",
-  "Europe/Berlin",
-  "Asia/Tokyo",
-  "Asia/Shanghai",
-  "Asia/Kolkata",
-  "Australia/Sydney",
-];
-
-const CURRENCIES = [
-  { value: "USD", label: "USD - US Dollar" },
-  { value: "EUR", label: "EUR - Euro" },
-  { value: "GBP", label: "GBP - British Pound" },
-  { value: "CAD", label: "CAD - Canadian Dollar" },
-  { value: "AUD", label: "AUD - Australian Dollar" },
-  { value: "JPY", label: "JPY - Japanese Yen" },
-  { value: "CHF", label: "CHF - Swiss Franc" },
-  { value: "INR", label: "INR - Indian Rupee" },
-];
-
 function formAction(_prev: { error: string } | undefined, formData: FormData) {
   return createOrgAndClub(formData);
 }
 
 export default function OnboardingPage() {
   const [state, dispatch, isPending] = useActionState(formAction, undefined);
+  const detectedTimezone = typeof window !== "undefined"
+    ? Intl.DateTimeFormat().resolvedOptions().timeZone
+    : "UTC";
 
   return (
     <div className="space-y-6">
@@ -58,7 +33,7 @@ export default function OnboardingPage() {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl text-gray-900">Create Your Club</CardTitle>
           <CardDescription className="text-gray-600">
-            Set up your organization and club to get started.
+            What&apos;s your club called?
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -69,19 +44,8 @@ export default function OnboardingPage() {
           )}
 
           <form action={dispatch} className="space-y-5">
-            {/* Organization Name */}
-            <div className="space-y-2">
-              <Label htmlFor="orgName" className="text-gray-800">
-                Organization Name
-              </Label>
-              <Input
-                id="orgName"
-                name="orgName"
-                placeholder="e.g. Greenfield Hospitality Group"
-                required
-                className="focus-visible:border-green-500 focus-visible:ring-green-500/30"
-              />
-            </div>
+            <input type="hidden" name="timezone" value={detectedTimezone} />
+            <input type="hidden" name="currency" value="EUR" />
 
             {/* Club Name */}
             <div className="space-y-2">
@@ -95,44 +59,6 @@ export default function OnboardingPage() {
                 required
                 className="focus-visible:border-green-500 focus-visible:ring-green-500/30"
               />
-            </div>
-
-            {/* Timezone */}
-            <div className="space-y-2">
-              <Label htmlFor="timezone" className="text-gray-800">
-                Timezone
-              </Label>
-              <select
-                id="timezone"
-                name="timezone"
-                defaultValue="UTC"
-                className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-green-500 focus-visible:ring-[3px] focus-visible:ring-green-500/30"
-              >
-                {TIMEZONES.map((tz) => (
-                  <option key={tz} value={tz}>
-                    {tz.replace(/_/g, " ")}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Currency */}
-            <div className="space-y-2">
-              <Label htmlFor="currency" className="text-gray-800">
-                Currency
-              </Label>
-              <select
-                id="currency"
-                name="currency"
-                defaultValue="USD"
-                className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-green-500 focus-visible:ring-[3px] focus-visible:ring-green-500/30"
-              >
-                {CURRENCIES.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
             </div>
 
             {/* Submit */}
