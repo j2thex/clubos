@@ -124,3 +124,9 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Club branding utility classes */
+.club-primary { color: var(--club-primary); }
+.club-primary-bg { background-color: var(--club-primary); }
+.club-secondary { color: var(--club-secondary); }
+.club-secondary-bg { background-color: var(--club-secondary); }
