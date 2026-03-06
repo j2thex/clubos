@@ -49,3 +49,29 @@ export async function createOrgAndClub(formData: FormData) {
 
   redirect(`/onboarding/branding?clubId=${club.id}`);
 }
+
+export async function updateBranding(formData: FormData) {
+  const clubId = formData.get("clubId") as string;
+  const primaryColor = formData.get("primaryColor") as string;
+  const secondaryColor = formData.get("secondaryColor") as string;
+  const heroContent = formData.get("heroContent") as string;
+
+  if (!clubId) return { error: "Club ID is required" };
+
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("club_branding")
+    .update({
+      primary_color: primaryColor || "#16a34a",
+      secondary_color: secondaryColor || "#052e16",
+      hero_content: heroContent,
+    })
+    .eq("club_id", clubId);
+
+  if (error) {
+    return { error: `Failed to update branding: ${error.message}` };
+  }
+
+  redirect(`/onboarding/complete?clubId=${clubId}`);
+}
