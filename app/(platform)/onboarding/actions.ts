@@ -1,7 +1,8 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { generateSlug } from "@/lib/utils";
+import { hashPin } from "@/lib/auth";
+import { generateSlug, generateMemberCode, generatePin } from "@/lib/utils";
 import { redirect } from "next/navigation";
 
 export async function createOrgAndClub(formData: FormData) {
@@ -74,4 +75,37 @@ export async function updateBranding(formData: FormData) {
   }
 
   redirect(`/onboarding/complete?clubId=${clubId}`);
+}
+
+export async function seedClubData(clubId: string) {
+  const supabase = createAdminClient();
+
+  // Seed default wheel segments — all shades of green
+  const segments = [
+    { club_id: clubId, label: "Drink", reward_type: "prize", reward_value: 1, probability: 0.2, color: "#22c55e" },
+    { club_id: clubId, label: "Snack", reward_type: "prize", reward_value: 1, probability: 0.2, color: "#15803d" },
+    { club_id: clubId, label: "Paper", reward_type: "prize", reward_value: 1, probability: 0.2, color: "#4ade80" },
+    { club_id: clubId, label: "Pre-Roll", reward_type: "prize", reward_value: 1, probability: 0.15, color: "#059669" },
+    { club_id: clubId, label: "No Win", reward_type: "nothing", reward_value: 0, probability: 0.25, color: "#064e3b" },
+  ];
+
+  await supabase.from("wheel_configs").insert(segments);
+
+  // Create test member
+  const memberCode = generateMemberCode();
+  const pin = generatePin();
+
+  const { data: member } = await supabase
+    .from("members")
+    .insert({
+      club_id: clubId,
+      member_code: memberCode,
+      pin_hash: hashPin(pin),
+      full_name: "Test Member",
+      spin_balance: 10,
+    })
+    .select()
+    .single();
+
+  return { memberCode, pin, memberId: member?.id };
 }
