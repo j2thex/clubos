@@ -86,7 +86,7 @@ export async function seedClubDefaults(clubId: string) {
 
   if (count && count > 0) return;
 
-  // Seed default wheel segments
+  // Seed default wheel segments (ignoreDuplicates handles race conditions)
   await supabase.from("wheel_configs").insert([
     { club_id: clubId, label: "No prize", reward_type: "nothing", reward_value: 0, probability: 0.20, color: "#4b5563", label_color: "#d1d5db", display_order: 0 },
     { club_id: clubId, label: "Mascotte", reward_type: "prize", reward_value: 1, probability: 0.15, color: "#c4a265", label_color: "#1c1008", display_order: 1 },
@@ -98,10 +98,4 @@ export async function seedClubDefaults(clubId: string) {
     { club_id: clubId, label: "Orange Pre-roll", reward_type: "prize", reward_value: 1, probability: 0.10, color: "#ea580c", label_color: "#fff7ed", display_order: 7 },
   ]);
 
-  // Seed default member roles
-  await supabase.from("member_roles").insert([
-    { club_id: clubId, name: "Member", display_order: 0 },
-    { club_id: clubId, name: "VIP", display_order: 1 },
-    { club_id: clubId, name: "Staff", display_order: 2 },
-  ]);
 }

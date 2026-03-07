@@ -106,3 +106,87 @@ export async function deleteRole(roleId: string, clubSlug: string) {
   revalidatePath(`/${clubSlug}/admin`);
   return { ok: true };
 }
+
+// --- Wheel segment actions ---
+
+export async function addSegment(
+  clubId: string,
+  label: string,
+  color: string,
+  labelColor: string,
+  probability: number,
+  clubSlug: string,
+) {
+  if (!label.trim()) return { error: "Label is required" };
+  if (probability <= 0 || probability > 1) return { error: "Probability must be between 0 and 1" };
+
+  const supabase = createAdminClient();
+
+  // Get next display_order
+  const { data: existing } = await supabase
+    .from("wheel_configs")
+    .select("display_order")
+    .eq("club_id", clubId)
+    .order("display_order", { ascending: false })
+    .limit(1);
+
+  const nextOrder = existing && existing.length > 0 ? existing[0].display_order + 1 : 0;
+
+  const { error } = await supabase.from("wheel_configs").insert({
+    club_id: clubId,
+    label: label.trim(),
+    reward_type: "prize",
+    reward_value: 1,
+    probability,
+    color,
+    label_color: labelColor,
+    display_order: nextOrder,
+  });
+
+  if (error) return { error: "Failed to add segment" };
+
+  revalidatePath(`/${clubSlug}/admin`);
+  return { ok: true };
+}
+
+export async function updateSegment(
+  segmentId: string,
+  label: string,
+  color: string,
+  labelColor: string,
+  probability: number,
+  clubSlug: string,
+) {
+  if (!label.trim()) return { error: "Label is required" };
+
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("wheel_configs")
+    .update({
+      label: label.trim(),
+      color,
+      label_color: labelColor,
+      probability,
+    })
+    .eq("id", segmentId);
+
+  if (error) return { error: "Failed to update segment" };
+
+  revalidatePath(`/${clubSlug}/admin`);
+  return { ok: true };
+}
+
+export async function deleteSegment(segmentId: string, clubSlug: string) {
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("wheel_configs")
+    .delete()
+    .eq("id", segmentId);
+
+  if (error) return { error: "Failed to delete segment" };
+
+  revalidatePath(`/${clubSlug}/admin`);
+  return { ok: true };
+}

@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { RoleManager } from "./role-manager";
 import { PeopleManager } from "./people-manager";
+import { WheelManager } from "./wheel-manager";
 
 export async function generateMetadata({
   params,
@@ -40,7 +41,7 @@ export default async function AdminPage({
 
   if (!club) notFound();
 
-  const [{ data: roles }, { data: members }, { data: staff }] = await Promise.all([
+  const [{ data: roles }, { data: members }, { data: staff }, { data: segments }] = await Promise.all([
     supabase
       .from("member_roles")
       .select("id, name, display_order")
@@ -58,6 +59,12 @@ export default async function AdminPage({
       .eq("club_id", club.id)
       .eq("is_staff", true)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("wheel_configs")
+      .select("id, label, color, label_color, probability, display_order, active")
+      .eq("club_id", club.id)
+      .eq("active", true)
+      .order("display_order", { ascending: true }),
   ]);
 
   function extractRoleName(m: { member_roles: unknown }) {
@@ -100,6 +107,18 @@ export default async function AdminPage({
           clubSlug={clubSlug}
           members={memberList}
           staff={staffList}
+        />
+        <WheelManager
+          segments={(segments ?? []).map((s) => ({
+            id: s.id,
+            label: s.label,
+            color: s.color ?? "#16a34a",
+            label_color: s.label_color ?? "#ffffff",
+            probability: Number(s.probability),
+            display_order: s.display_order,
+          }))}
+          clubId={club.id}
+          clubSlug={clubSlug}
         />
         <RoleManager
           roles={roles ?? []}
