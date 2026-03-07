@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { getMemberFromCookie } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logout } from "./actions";
@@ -102,19 +101,6 @@ export default async function ProfilePage({
               />
             </div>
 
-            {/* Spin Balance */}
-            <div className="px-6 py-4">
-              <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Spin Balance
-              </p>
-              <p className="mt-1 text-lg font-semibold club-primary">
-                {spinBalance}{" "}
-                <span className="text-sm font-normal text-gray-400">
-                  {spinBalance === 1 ? "spin" : "spins"} available
-                </span>
-              </p>
-            </div>
-
             {/* Member Since */}
             <div className="px-6 py-4">
               <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
@@ -184,12 +170,6 @@ export default async function ProfilePage({
           ) : (
             <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
               <p className="text-gray-400 text-sm">No spins yet</p>
-              <Link
-                href={`/${clubSlug}/spin`}
-                className="club-btn mt-4 inline-block rounded-xl py-2.5 px-6 text-sm font-semibold"
-              >
-                Spin the Wheel
-              </Link>
             </div>
           )}
         </div>

@@ -23,6 +23,37 @@ export async function updateMemberRole(memberId: string, roleId: string | null, 
 export async function createMember(
   clubId: string,
   memberCode: string,
+  clubSlug: string,
+) {
+  const code = memberCode.trim().toUpperCase();
+
+  if (!code || code.length < 3 || code.length > 6) {
+    return { error: "Member code must be 3-6 characters" };
+  }
+  if (!/^[A-Z0-9]+$/.test(code)) {
+    return { error: "Member code must be alphanumeric" };
+  }
+
+  const supabase = createAdminClient();
+
+  const { error } = await supabase.from("members").insert({
+    club_id: clubId,
+    member_code: code,
+    spin_balance: 0,
+  });
+
+  if (error) {
+    if (error.code === "23505") return { error: "Member code already exists" };
+    return { error: "Failed to create member" };
+  }
+
+  revalidatePath(`/${clubSlug}/staff/members`);
+  return { ok: true };
+}
+
+export async function createStaffMember(
+  clubId: string,
+  memberCode: string,
   pin: string,
   clubSlug: string,
 ) {
@@ -30,10 +61,10 @@ export async function createMember(
   const trimmedPin = pin.trim();
 
   if (!code || code.length < 3 || code.length > 6) {
-    return { error: "Member code must be 3-6 characters" };
+    return { error: "Staff code must be 3-6 characters" };
   }
   if (!/^[A-Z0-9]+$/.test(code)) {
-    return { error: "Member code must be alphanumeric" };
+    return { error: "Staff code must be alphanumeric" };
   }
   if (!trimmedPin || trimmedPin.length !== 4 || !/^\d{4}$/.test(trimmedPin)) {
     return { error: "PIN must be exactly 4 digits" };
@@ -46,11 +77,12 @@ export async function createMember(
     member_code: code,
     pin_hash: hashPin(trimmedPin),
     spin_balance: 0,
+    is_staff: true,
   });
 
   if (error) {
-    if (error.code === "23505") return { error: "Member code already exists" };
-    return { error: "Failed to create member" };
+    if (error.code === "23505") return { error: "Code already exists" };
+    return { error: "Failed to create staff member" };
   }
 
   revalidatePath(`/${clubSlug}/staff/members`);

@@ -1,8 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { hashPin } from "@/lib/auth";
-import { generateSlug, generateMemberCode, generatePin } from "@/lib/utils";
+import { generateSlug } from "@/lib/utils";
 import { redirect } from "next/navigation";
 
 export async function createOrgAndClub(formData: FormData) {
@@ -76,11 +75,19 @@ export async function updateBranding(formData: FormData) {
   redirect(`/onboarding/complete?clubId=${clubId}`);
 }
 
-export async function seedClubData(clubId: string) {
+export async function seedClubDefaults(clubId: string) {
   const supabase = createAdminClient();
 
+  // Guard against re-seeding (e.g. page refresh)
+  const { count } = await supabase
+    .from("wheel_configs")
+    .select("*", { count: "exact", head: true })
+    .eq("club_id", clubId);
+
+  if (count && count > 0) return;
+
   // Seed default wheel segments
-  const segments = [
+  await supabase.from("wheel_configs").insert([
     { club_id: clubId, label: "No prize", reward_type: "nothing", reward_value: 0, probability: 0.20, color: "#4b5563", label_color: "#d1d5db", display_order: 0 },
     { club_id: clubId, label: "Mascotte", reward_type: "prize", reward_value: 1, probability: 0.15, color: "#c4a265", label_color: "#1c1008", display_order: 1 },
     { club_id: clubId, label: "Free Drink", reward_type: "prize", reward_value: 1, probability: 0.15, color: "#0284c7", label_color: "#e0f2fe", display_order: 2 },
@@ -89,9 +96,7 @@ export async function seedClubData(clubId: string) {
     { club_id: clubId, label: "Blue Pre-roll", reward_type: "prize", reward_value: 1, probability: 0.10, color: "#4f46e5", label_color: "#eef2ff", display_order: 5 },
     { club_id: clubId, label: "Yellow Pre-roll", reward_type: "prize", reward_value: 1, probability: 0.10, color: "#ca8a04", label_color: "#fefce8", display_order: 6 },
     { club_id: clubId, label: "Orange Pre-roll", reward_type: "prize", reward_value: 1, probability: 0.10, color: "#ea580c", label_color: "#fff7ed", display_order: 7 },
-  ];
-
-  await supabase.from("wheel_configs").insert(segments);
+  ]);
 
   // Seed default member roles
   await supabase.from("member_roles").insert([
@@ -99,22 +104,4 @@ export async function seedClubData(clubId: string) {
     { club_id: clubId, name: "VIP", display_order: 1 },
     { club_id: clubId, name: "Staff", display_order: 2 },
   ]);
-
-  // Create test member
-  const memberCode = generateMemberCode();
-  const pin = generatePin();
-
-  const { data: member } = await supabase
-    .from("members")
-    .insert({
-      club_id: clubId,
-      member_code: memberCode,
-      pin_hash: hashPin(pin),
-      full_name: "Test Member",
-      spin_balance: 10,
-    })
-    .select()
-    .single();
-
-  return { memberCode, pin, memberId: member?.id };
 }

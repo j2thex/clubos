@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { useState, useCallback, useRef, useEffect, useImperativeHandle, forwardRef } from "react";
 
 interface Segment {
   label: string;
@@ -23,161 +23,185 @@ interface SpinResult {
 interface SpinWheelProps {
   segments: Segment[];
   balance: number;
-  onSpin: () => Promise<SpinResult | { error: string }>;
+  onSpin?: () => Promise<SpinResult | { error: string }>;
+  hideButton?: boolean;
 }
 
-export default function SpinWheel({ segments, balance, onSpin }: SpinWheelProps) {
-  const [spinning, setSpinning] = useState(false);
-  const [currentBalance, setCurrentBalance] = useState(balance);
-  const [result, setResult] = useState<SpinResult["outcome"] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+export interface SpinWheelHandle {
+  spin: (result: SpinResult) => void;
+  isSpinning: () => boolean;
+}
 
-  useEffect(() => {
-    setCurrentBalance(balance);
-    setResult(null);
-    setError(null);
-  }, [balance]);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const wheelRef = useRef<import("spin-wheel").Wheel | null>(null);
+const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
+  function SpinWheel({ segments, balance, onSpin, hideButton }, ref) {
+    const [spinning, setSpinning] = useState(false);
+    const [currentBalance, setCurrentBalance] = useState(balance);
+    const [result, setResult] = useState<SpinResult["outcome"] | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let mounted = true;
+    useEffect(() => {
+      setCurrentBalance(balance);
+      setResult(null);
+      setError(null);
+    }, [balance]);
 
-    async function initWheel() {
-      if (!containerRef.current) return;
+    const containerRef = useRef<HTMLDivElement>(null);
+    const wheelRef = useRef<import("spin-wheel").Wheel | null>(null);
 
-      const { Wheel } = await import("spin-wheel");
+    useEffect(() => {
+      let mounted = true;
 
-      if (!mounted || !containerRef.current) return;
+      async function initWheel() {
+        if (!containerRef.current) return;
 
-      const items = segments.map((seg) => ({
-        label: seg.label,
-        backgroundColor: seg.color,
-        labelColor: seg.labelColor ?? "#ffffff",
-      }));
+        const { Wheel } = await import("spin-wheel");
 
-      const wheel = new Wheel(containerRef.current, {
-        items,
-        isInteractive: false,
-        pointerAngle: 180,
-        itemLabelFontSizeMax: 36,
-        itemLabelRadius: 0.92,
-        itemLabelRadiusMax: 0.4,
-        itemLabelAlign: "right",
-        borderWidth: 3,
-        borderColor: "#065f46",
-        lineWidth: 1,
-        lineColor: "#065f46",
-        radius: 0.95,
-      });
+        if (!mounted || !containerRef.current) return;
 
-      wheelRef.current = wheel;
-    }
+        const items = segments.map((seg) => ({
+          label: seg.label,
+          backgroundColor: seg.color,
+          labelColor: seg.labelColor ?? "#ffffff",
+        }));
 
-    initWheel();
+        const wheel = new Wheel(containerRef.current, {
+          items,
+          isInteractive: false,
+          pointerAngle: 180,
+          itemLabelFontSizeMax: 36,
+          itemLabelRadius: 0.92,
+          itemLabelRadiusMax: 0.4,
+          itemLabelAlign: "right",
+          borderWidth: 3,
+          borderColor: "#065f46",
+          lineWidth: 1,
+          lineColor: "#065f46",
+          radius: 0.95,
+        });
 
-    return () => {
-      mounted = false;
-      wheelRef.current?.remove();
-      wheelRef.current = null;
-    };
-  }, [segments]);
+        wheelRef.current = wheel;
+      }
 
-  const handleSpin = useCallback(async () => {
-    if (spinning || currentBalance <= 0 || !wheelRef.current) return;
+      initWheel();
 
-    setSpinning(true);
-    setResult(null);
-    setError(null);
+      return () => {
+        mounted = false;
+        wheelRef.current?.remove();
+        wheelRef.current = null;
+      };
+    }, [segments]);
 
-    const res = await onSpin();
+    const animateSpin = useCallback((spinResult: SpinResult) => {
+      if (!wheelRef.current) return;
 
-    if ("error" in res) {
-      setError(res.error);
-      setSpinning(false);
-      return;
-    }
+      setSpinning(true);
+      setResult(null);
+      setError(null);
 
-    const spinResult = res as SpinResult;
-    const { segmentIndex } = spinResult;
+      const duration = 4000;
+      wheelRef.current.spinToItem(spinResult.segmentIndex, duration, true, 2, 1);
 
-    const duration = 4000;
-    wheelRef.current.spinToItem(segmentIndex, duration, true, 2, 1);
+      setTimeout(() => {
+        setResult(spinResult.outcome);
+        setCurrentBalance(spinResult.newBalance);
+        setSpinning(false);
+      }, duration);
+    }, []);
 
-    setTimeout(() => {
-      setResult(spinResult.outcome);
-      setCurrentBalance(spinResult.newBalance);
-      setSpinning(false);
-    }, duration);
-  }, [spinning, currentBalance, onSpin]);
+    useImperativeHandle(ref, () => ({
+      spin: animateSpin,
+      isSpinning: () => spinning,
+    }), [animateSpin, spinning]);
 
-  return (
-    <div className="flex flex-col items-center gap-6">
-      {/* Balance display */}
-      <div className="flex items-baseline gap-2">
-        <span className="text-4xl font-bold club-primary">Spins remaining: {currentBalance}</span>
-      </div>
+    const handleSpin = useCallback(async () => {
+      if (spinning || currentBalance <= 0 || !wheelRef.current || !onSpin) return;
 
-      {/* Wheel container */}
-      <div className="relative" style={{ width: 392, height: 392 }}>
-        {/* Canvas wheel */}
-        <div ref={containerRef} className="w-full h-full" />
+      setSpinning(true);
+      setResult(null);
+      setError(null);
 
-        {/* Pointer triangle at bottom */}
-        <div
-          className="absolute left-1/2 z-10"
-          style={{
-            bottom: -8,
-            transform: "translateX(-50%)",
-            width: 0,
-            height: 0,
-            borderLeft: "12px solid transparent",
-            borderRight: "12px solid transparent",
-            borderBottom: "22px solid #facc15",
-            filter: "drop-shadow(0 0 12px rgba(250, 204, 21, 0.9))",
-          }}
-        />
+      const res = await onSpin();
 
-        {/* Result overlay */}
-        {result && !spinning && (
+      if ("error" in res) {
+        setError(res.error);
+        setSpinning(false);
+        return;
+      }
+
+      animateSpin(res as SpinResult);
+    }, [spinning, currentBalance, onSpin, animateSpin]);
+
+    return (
+      <div className="flex flex-col items-center gap-6">
+        {/* Balance display */}
+        <div className="flex items-baseline gap-2">
+          <span className="text-4xl font-bold club-primary">Spins remaining: {currentBalance}</span>
+        </div>
+
+        {/* Wheel container */}
+        <div className="relative" style={{ width: 392, height: 392 }}>
+          <div ref={containerRef} className="w-full h-full" />
+
+          {/* Pointer triangle at bottom */}
           <div
-            className="absolute z-20 flex items-center justify-center pointer-events-none"
+            className="absolute left-1/2 z-10"
             style={{
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              width: 168,
-              height: 168,
-              borderRadius: "50%",
-              backgroundColor: "rgba(0, 0, 0, 0.72)",
+              bottom: -8,
+              transform: "translateX(-50%)",
+              width: 0,
+              height: 0,
+              borderLeft: "12px solid transparent",
+              borderRight: "12px solid transparent",
+              borderBottom: "22px solid #facc15",
+              filter: "drop-shadow(0 0 12px rgba(250, 204, 21, 0.9))",
             }}
+          />
+
+          {/* Result overlay */}
+          {result && !spinning && (
+            <div
+              className="absolute z-20 flex items-center justify-center pointer-events-none"
+              style={{
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                width: 168,
+                height: 168,
+                borderRadius: "50%",
+                backgroundColor: "rgba(0, 0, 0, 0.72)",
+              }}
+            >
+              <span className="text-center font-bold" style={{ color: "#facc15", fontSize: "0.95rem" }}>
+                {result.label}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Spin button — hidden when parent controls spinning */}
+        {!hideButton && (
+          <button
+            onClick={handleSpin}
+            disabled={spinning || currentBalance <= 0}
+            className="club-btn px-8 py-3 rounded-full text-lg font-bold shadow-lg disabled:cursor-not-allowed"
           >
-            <span className="text-center font-bold" style={{ color: "#facc15", fontSize: "0.95rem" }}>
-              {result.label}
-            </span>
+            {spinning
+              ? "Spinning..."
+              : currentBalance <= 0
+                ? "No Spins Left"
+                : "Spin the Wheel"}
+          </button>
+        )}
+
+        {/* Error display */}
+        {error && (
+          <div className="text-center p-3 rounded-lg border border-red-500/30 bg-red-500/10">
+            <p className="text-sm text-red-400">{error}</p>
           </div>
         )}
       </div>
+    );
+  }
+);
 
-      {/* Spin button */}
-      <button
-        onClick={handleSpin}
-        disabled={spinning || currentBalance <= 0}
-        className="club-btn px-8 py-3 rounded-full text-lg font-bold shadow-lg disabled:cursor-not-allowed"
-      >
-        {spinning
-          ? "Spinning..."
-          : currentBalance <= 0
-            ? "No Spins Left"
-            : "Spin the Wheel"}
-      </button>
-
-      {/* Error display */}
-      {error && (
-        <div className="text-center p-3 rounded-lg border border-red-500/30 bg-red-500/10">
-          <p className="text-sm text-red-400">{error}</p>
-        </div>
-      )}
-    </div>
-  );
-}
+export default SpinWheel;

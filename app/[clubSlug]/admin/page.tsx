@@ -1,7 +1,27 @@
+import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { RoleManager } from "./role-manager";
-import { MemberCreator } from "./member-creator";
+import { PeopleManager } from "./people-manager";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ clubSlug: string }>;
+}): Promise<Metadata> {
+  const { clubSlug } = await params;
+  const supabase = createAdminClient();
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("name")
+    .eq("slug", clubSlug)
+    .single();
+
+  return {
+    title: club ? `Admin | ${club.name}` : "Club Admin",
+    icons: { icon: "/favicon-admin.svg" },
+  };
+}
 
 export default async function AdminPage({
   params,
@@ -20,11 +40,51 @@ export default async function AdminPage({
 
   if (!club) notFound();
 
-  const { data: roles } = await supabase
-    .from("member_roles")
-    .select("id, name, display_order")
-    .eq("club_id", club.id)
-    .order("display_order", { ascending: true });
+  const [{ data: roles }, { data: members }, { data: staff }] = await Promise.all([
+    supabase
+      .from("member_roles")
+      .select("id, name, display_order")
+      .eq("club_id", club.id)
+      .order("display_order", { ascending: true }),
+    supabase
+      .from("members")
+      .select("id, member_code, full_name, spin_balance, is_staff, status, member_roles(name)")
+      .eq("club_id", club.id)
+      .eq("is_staff", false)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("members")
+      .select("id, member_code, full_name, spin_balance, is_staff, status, member_roles(name)")
+      .eq("club_id", club.id)
+      .eq("is_staff", true)
+      .order("created_at", { ascending: false }),
+  ]);
+
+  function extractRoleName(m: { member_roles: unknown }) {
+    return Array.isArray(m.member_roles)
+      ? m.member_roles[0]?.name ?? null
+      : (m.member_roles as { name: string } | null)?.name ?? null;
+  }
+
+  const memberList = (members ?? []).map((m) => ({
+    id: m.id,
+    member_code: m.member_code,
+    full_name: m.full_name,
+    spin_balance: m.spin_balance,
+    is_staff: m.is_staff,
+    status: m.status,
+    roleName: extractRoleName(m),
+  }));
+
+  const staffList = (staff ?? []).map((s) => ({
+    id: s.id,
+    member_code: s.member_code,
+    full_name: s.full_name,
+    spin_balance: s.spin_balance,
+    is_staff: s.is_staff,
+    status: s.status,
+    roleName: extractRoleName(s),
+  }));
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -35,7 +95,12 @@ export default async function AdminPage({
       </div>
 
       <div className="px-4 -mt-6 pb-10 max-w-2xl mx-auto space-y-6">
-        <MemberCreator clubId={club.id} clubSlug={clubSlug} />
+        <PeopleManager
+          clubId={club.id}
+          clubSlug={clubSlug}
+          members={memberList}
+          staff={staffList}
+        />
         <RoleManager
           roles={roles ?? []}
           clubId={club.id}

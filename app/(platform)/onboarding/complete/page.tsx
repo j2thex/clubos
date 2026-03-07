@@ -1,7 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import Link from "next/link";
-import { seedClubData } from "../actions";
+import { seedClubDefaults } from "../actions";
 
 export default async function CompletePage({
   searchParams,
@@ -21,8 +21,8 @@ export default async function CompletePage({
     );
   }
 
-  // Seed wheel config and create test member
-  const { memberCode, pin } = await seedClubData(clubId);
+  // Seed wheel config and default roles (idempotent)
+  await seedClubDefaults(clubId);
 
   // Fetch club slug
   const supabase = createAdminClient();
@@ -32,7 +32,10 @@ export default async function CompletePage({
     .eq("id", clubId)
     .single();
 
-  const portalUrl = club?.slug ? `/${club.slug}/login` : "/";
+  const clubSlug = club?.slug ?? "";
+  const adminUrl = clubSlug ? `/${clubSlug}/admin` : "/";
+  const staffUrl = clubSlug ? `/${clubSlug}/staff/login` : "/";
+  const memberUrl = clubSlug ? `/${clubSlug}/login` : "/";
 
   return (
     <div className="space-y-6">
@@ -48,7 +51,6 @@ export default async function CompletePage({
 
       <Card className="border-green-200 shadow-lg shadow-green-100/50">
         <CardHeader className="text-center">
-          {/* Success checkmark */}
           <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
             <svg
               className="h-8 w-8 text-green-600"
@@ -62,36 +64,49 @@ export default async function CompletePage({
           </div>
           <CardTitle className="text-2xl text-gray-900">Your Club is Ready!</CardTitle>
           <CardDescription className="text-gray-600">
-            We&apos;ve set up your wheel configuration and created a test member account.
+            We&apos;ve set up your wheel and default roles. Head to the Admin Panel to create your first staff and member accounts.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Test credentials box */}
-          <div className="rounded-lg border border-green-300 bg-green-50 p-5">
-            <h3 className="text-sm font-semibold text-green-900 mb-3">Test Member Credentials</h3>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-green-800">Member Code</span>
-                <span className="font-mono text-lg font-bold text-green-950">{memberCode}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-green-800">PIN</span>
-                <span className="font-mono text-lg font-bold text-green-950">{pin}</span>
-              </div>
-            </div>
-            <p className="mt-3 text-xs text-green-700">
-              This test member has 10 spins pre-loaded. Use these credentials to log in to the
-              member portal and try the spin-the-wheel experience.
-            </p>
+        <CardContent className="space-y-5">
+          {/* Next steps */}
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-5 space-y-3">
+            <h3 className="text-sm font-semibold text-gray-900">Next steps</h3>
+            <ol className="space-y-2 text-sm text-gray-600">
+              <li className="flex gap-2">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-800 text-[10px] font-bold text-white">1</span>
+                Create staff accounts (code + PIN) so your team can access the Staff Console
+              </li>
+              <li className="flex gap-2">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-800 text-[10px] font-bold text-white">2</span>
+                Create member accounts (code only) for your club members
+              </li>
+              <li className="flex gap-2">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-800 text-[10px] font-bold text-white">3</span>
+                Customize roles to organize your members
+              </li>
+            </ol>
           </div>
 
-          {/* Portal link */}
-          <Link
-            href={portalUrl}
-            className="block w-full rounded-md bg-green-600 px-4 py-3 text-center text-sm font-semibold text-white shadow-sm hover:bg-green-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 transition-colors"
-          >
-            Go to Member Portal
-          </Link>
+          <div className="grid grid-cols-3 gap-3">
+            <Link
+              href={adminUrl}
+              className="block rounded-md bg-gray-800 px-3 py-3 text-center text-sm font-semibold text-white shadow-sm hover:bg-gray-700 transition-colors"
+            >
+              Admin Panel
+            </Link>
+            <Link
+              href={staffUrl}
+              className="block rounded-md bg-gray-600 px-3 py-3 text-center text-sm font-semibold text-white shadow-sm hover:bg-gray-500 transition-colors"
+            >
+              Staff Console
+            </Link>
+            <Link
+              href={memberUrl}
+              className="block rounded-md bg-green-600 px-3 py-3 text-center text-sm font-semibold text-white shadow-sm hover:bg-green-700 transition-colors"
+            >
+              Member Portal
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>

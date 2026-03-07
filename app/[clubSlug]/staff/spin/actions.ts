@@ -27,7 +27,7 @@ export async function lookupMember(memberCode: string, clubId: string): Promise<
   };
 }
 
-export async function performSpinForMember(memberCode: string, clubId: string) {
+export async function performSpinForMember(memberCode: string, clubId: string): Promise<{ error: string } | { outcome: { label: string; rewardType: string; value: number; color: string }; newBalance: number; segmentIndex: number }> {
   const code = memberCode.trim().toUpperCase();
   if (!code || code.length < 3 || code.length > 6) {
     return { error: "Invalid member code" };

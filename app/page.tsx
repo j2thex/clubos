@@ -10,8 +10,8 @@ export default function Home() {
 
       <main className="relative z-10 flex flex-col items-center gap-8 text-center">
         {/* Logo / Branding */}
-        <h1 className="text-6xl font-bold tracking-tight text-primary sm:text-7xl md:text-8xl">
-          ClubOS
+        <h1 className="text-5xl font-bold tracking-tight text-primary sm:text-6xl md:text-7xl">
+          osocio.club
         </h1>
 
         {/* Tagline */}

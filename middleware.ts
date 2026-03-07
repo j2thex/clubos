@@ -3,10 +3,9 @@ import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
-const COOKIE_NAME = "clubos-member-token";
+const MEMBER_COOKIE = "clubos-member-token";
+const STAFF_COOKIE = "clubos-staff-token";
 
-// Routes that don't need auth
-const PUBLIC_PATHS = ["/login", "/staff", "/admin"];
 // Routes that are not club-scoped
 const PLATFORM_PATHS = ["/onboarding"];
 
@@ -31,30 +30,56 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check if this is a public path within a club
   const clubPath = "/" + segments.slice(1).join("/");
-  const isPublicPath = PUBLIC_PATHS.some((p) => clubPath.startsWith(p));
 
-  if (!isPublicPath) {
-    // Verify member token
-    const token = request.cookies.get(COOKIE_NAME)?.value;
+  // Admin is public (no auth for now)
+  if (clubPath.startsWith("/admin")) {
+    return NextResponse.next();
+  }
+
+  // Member login is public
+  if (clubPath.startsWith("/login")) {
+    return NextResponse.next();
+  }
+
+  // Staff routes — require staff token (except staff login)
+  if (clubPath.startsWith("/staff")) {
+    if (clubPath === "/staff/login") {
+      return NextResponse.next();
+    }
+
+    const token = request.cookies.get(STAFF_COOKIE)?.value;
     if (!token) {
-      return NextResponse.redirect(new URL(`/${clubSlug}/login`, request.url));
+      return NextResponse.redirect(new URL(`/${clubSlug}/staff/login`, request.url));
     }
 
     try {
       const { payload } = await jwtVerify(token, secret);
-      // Inject member context into headers
+      if (!payload.is_staff) throw new Error("Not staff");
       const response = NextResponse.next();
       response.headers.set("x-member-id", payload.member_id as string);
       response.headers.set("x-club-id", payload.club_id as string);
       return response;
     } catch {
-      return NextResponse.redirect(new URL(`/${clubSlug}/login`, request.url));
+      return NextResponse.redirect(new URL(`/${clubSlug}/staff/login`, request.url));
     }
   }
 
-  return NextResponse.next();
+  // All other club routes — require member token
+  const token = request.cookies.get(MEMBER_COOKIE)?.value;
+  if (!token) {
+    return NextResponse.redirect(new URL(`/${clubSlug}/login`, request.url));
+  }
+
+  try {
+    const { payload } = await jwtVerify(token, secret);
+    const response = NextResponse.next();
+    response.headers.set("x-member-id", payload.member_id as string);
+    response.headers.set("x-club-id", payload.club_id as string);
+    return response;
+  } catch {
+    return NextResponse.redirect(new URL(`/${clubSlug}/login`, request.url));
+  }
 }
 
 export const config = {

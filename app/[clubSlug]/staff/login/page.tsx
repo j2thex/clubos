@@ -2,16 +2,16 @@
 
 import { useParams } from "next/navigation";
 import { useState, useTransition } from "react";
-import { loginMember } from "./actions";
+import { loginStaff } from "./actions";
 
-export default function MemberLoginPage() {
+export default function StaffLoginPage() {
   const params = useParams<{ clubSlug: string }>();
   const clubSlug = params.clubSlug;
 
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const boundLogin = loginMember.bind(null, clubSlug);
+  const boundLogin = loginStaff.bind(null, clubSlug);
 
   function handleSubmit(formData: FormData) {
     setError(null);
@@ -24,13 +24,13 @@ export default function MemberLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--club-primary, #16a34a) 8%, white), white, color-mix(in srgb, var(--club-primary, #16a34a) 12%, white))" }}>
+    <div className="min-h-screen flex items-center justify-center px-4 bg-gray-50">
       <div className="w-full max-w-sm">
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full club-tint-bg mb-4">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-gray-100 mb-4">
               <svg
-                className="w-7 h-7 club-primary"
+                className="w-7 h-7 text-gray-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -39,13 +39,13 @@ export default function MemberLoginPage() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
                 />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Member Login</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Staff Login</h1>
             <p className="text-sm text-gray-500 mt-1">
-              Enter your member code to sign in
+              Enter your staff code and PIN
             </p>
           </div>
 
@@ -58,40 +58,57 @@ export default function MemberLoginPage() {
           <form action={handleSubmit} className="space-y-5">
             <div>
               <label
-                htmlFor="memberCode"
+                htmlFor="staffCode"
                 className="block text-sm font-medium text-gray-700 mb-1.5"
               >
-                Member Code
+                Staff Code
               </label>
               <input
-                id="memberCode"
-                name="memberCode"
+                id="staffCode"
+                name="staffCode"
                 type="text"
                 required
                 maxLength={6}
                 autoCapitalize="characters"
                 autoComplete="off"
                 placeholder="ABC123"
-                className="club-ring block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-lg font-mono tracking-widest uppercase placeholder:text-gray-400 placeholder:tracking-widest transition"
+                className="block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-lg font-mono tracking-widest uppercase placeholder:text-gray-400 placeholder:tracking-widest transition focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400"
                 onChange={(e) => {
                   e.target.value = e.target.value.toUpperCase();
                 }}
               />
             </div>
 
+            <div>
+              <label
+                htmlFor="pin"
+                className="block text-sm font-medium text-gray-700 mb-1.5"
+              >
+                PIN
+              </label>
+              <input
+                id="pin"
+                name="pin"
+                type="password"
+                required
+                maxLength={4}
+                inputMode="numeric"
+                pattern="[0-9]{4}"
+                autoComplete="off"
+                placeholder="----"
+                className="block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-lg tracking-[0.5em] placeholder:tracking-[0.5em] placeholder:text-gray-400 transition focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400"
+              />
+            </div>
+
             <button
               type="submit"
               disabled={isPending}
-              className="club-btn w-full rounded-lg px-4 py-2.5 text-sm font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-lg bg-gray-800 text-white px-4 py-2.5 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isPending ? "Signing in..." : "Sign In"}
             </button>
           </form>
         </div>
-
-        <p className="text-center text-xs text-gray-400 mt-6">
-          Contact your club administrator if you need help signing in.
-        </p>
       </div>
     </div>
   );
