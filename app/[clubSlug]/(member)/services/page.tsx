@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getMemberFromCookie } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { ServiceListClient } from "./service-list-client";
 
 export default async function ServicesPage({
   params,
@@ -23,7 +24,22 @@ export default async function ServicesPage({
     .eq("active", true)
     .order("display_order", { ascending: true });
 
-  const list = services ?? [];
+  // Get member's service orders
+  const { data: orders } = await supabase
+    .from("service_orders")
+    .select("id, service_id, status")
+    .eq("member_id", session.member_id);
+
+  const list = (services ?? []).map((s) => ({
+    ...s,
+    price: s.price != null ? Number(s.price) : null,
+    order: (orders ?? []).find(
+      (o) => o.service_id === s.id && o.status === "pending",
+    ) ?? null,
+    fulfilled_count: (orders ?? []).filter(
+      (o) => o.service_id === s.id && o.status === "fulfilled",
+    ).length,
+  }));
 
   return (
     <div className="min-h-screen club-page-bg">
@@ -46,40 +62,11 @@ export default async function ServicesPage({
             </p>
           </div>
         ) : (
-          list.map((s) => (
-            <div key={s.id} className="bg-white rounded-2xl shadow overflow-hidden">
-              {s.image_url && (
-                <img src={s.image_url} alt="" className="w-full h-36 object-cover" />
-              )}
-              <div className="p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900">{s.title}</p>
-                    {s.description && (
-                      <p className="text-xs text-gray-500 mt-1">{s.description}</p>
-                    )}
-                  </div>
-                  <div className="text-right shrink-0">
-                    {s.price != null ? (
-                      <span className="text-sm font-bold text-gray-900">${Number(s.price).toFixed(2)}</span>
-                    ) : (
-                      <span className="text-sm font-bold text-green-600">Free</span>
-                    )}
-                  </div>
-                </div>
-                {s.link && (
-                  <a
-                    href={s.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-block mt-3 text-xs font-medium club-primary underline"
-                  >
-                    Learn more
-                  </a>
-                )}
-              </div>
-            </div>
-          ))
+          <ServiceListClient
+            services={list}
+            memberId={session.member_id}
+            clubSlug={clubSlug}
+          />
         )}
       </div>
     </div>

@@ -1,5 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getStaffFromCookie } from "@/lib/auth";
 import { notFound } from "next/navigation";
+import { StaffServiceClient } from "./staff-service-client";
 
 export default async function StaffServicesPage({
   params,
@@ -8,6 +10,7 @@ export default async function StaffServicesPage({
 }) {
   const { clubSlug } = await params;
   const supabase = createAdminClient();
+  const session = await getStaffFromCookie();
 
   const { data: club } = await supabase
     .from("clubs")
@@ -18,14 +21,27 @@ export default async function StaffServicesPage({
 
   if (!club) notFound();
 
+  // Fetch services with pending order counts
   const { data: services } = await supabase
     .from("services")
-    .select("id, title, description, image_url, link, price")
+    .select("id, title")
     .eq("club_id", club.id)
     .eq("active", true)
     .order("display_order", { ascending: true });
 
-  const list = services ?? [];
+  const serviceList = services ?? [];
+
+  // Get pending counts per service
+  const { data: pendingOrders } = await supabase
+    .from("service_orders")
+    .select("service_id")
+    .in("service_id", serviceList.length > 0 ? serviceList.map((s) => s.id) : ["__none__"])
+    .eq("status", "pending");
+
+  const pendingCounts = new Map<string, number>();
+  for (const o of pendingOrders ?? []) {
+    pendingCounts.set(o.service_id, (pendingCounts.get(o.service_id) ?? 0) + 1);
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -34,8 +50,19 @@ export default async function StaffServicesPage({
         <p className="mt-1 text-gray-400 text-sm">{club.name}</p>
       </div>
 
-      <div className="px-4 -mt-6 pb-10 max-w-md mx-auto space-y-3">
-        {list.length === 0 ? (
+      <div className="px-4 -mt-6 pb-10 max-w-md mx-auto">
+        {serviceList.length > 0 ? (
+          <StaffServiceClient
+            services={serviceList.map((s) => ({
+              id: s.id,
+              title: s.title,
+              pending_count: pendingCounts.get(s.id) ?? 0,
+            }))}
+            clubId={club.id}
+            clubSlug={clubSlug}
+            staffMemberId={session?.member_id ?? ""}
+          />
+        ) : (
           <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
             <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -45,41 +72,6 @@ export default async function StaffServicesPage({
             <p className="text-sm font-medium text-gray-900">No services yet</p>
             <p className="text-xs text-gray-400 mt-1">Services will appear here once created by admin.</p>
           </div>
-        ) : (
-          list.map((s) => (
-            <div key={s.id} className="bg-white rounded-2xl shadow overflow-hidden">
-              {s.image_url && (
-                <img src={s.image_url} alt="" className="w-full h-36 object-cover" />
-              )}
-              <div className="p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900">{s.title}</p>
-                    {s.description && (
-                      <p className="text-xs text-gray-500 mt-1">{s.description}</p>
-                    )}
-                  </div>
-                  <div className="text-right shrink-0">
-                    {s.price != null ? (
-                      <span className="text-sm font-bold text-gray-900">${Number(s.price).toFixed(2)}</span>
-                    ) : (
-                      <span className="text-sm font-bold text-green-600">Free</span>
-                    )}
-                  </div>
-                </div>
-                {s.link && (
-                  <a
-                    href={s.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-block mt-3 text-xs font-medium text-blue-600 underline"
-                  >
-                    Learn more
-                  </a>
-                )}
-              </div>
-            </div>
-          ))
         )}
       </div>
     </div>

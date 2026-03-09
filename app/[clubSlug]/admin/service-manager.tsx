@@ -10,6 +10,8 @@ interface Service {
   image_url: string | null;
   link: string | null;
   price: number | null;
+  pending_orders: number;
+  fulfilled_orders: number;
 }
 
 export function ServiceManager({
@@ -201,6 +203,13 @@ export function ServiceManager({
                         )}
                         {s.link && (
                           <span className="text-xs text-blue-500 truncate max-w-[150px]">{s.link}</span>
+                        )}
+                        {(s.pending_orders > 0 || s.fulfilled_orders > 0) && (
+                          <span className="text-xs text-gray-400">
+                            {s.pending_orders > 0 && <span className="text-amber-600">{s.pending_orders} pending</span>}
+                            {s.pending_orders > 0 && s.fulfilled_orders > 0 && ", "}
+                            {s.fulfilled_orders > 0 && <>{s.fulfilled_orders} fulfilled</>}
+                          </span>
                         )}
                       </div>
                     </div>

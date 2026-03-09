@@ -45,7 +45,7 @@ export default async function AdminPage({
 
   if (!club) notFound();
 
-  const [{ data: roles }, { data: members }, { data: staff }, { data: segments }, { data: quests }, { data: questCompletions }, { data: events }, { data: eventRsvps }, { data: eventCheckins }, { data: services }] = await Promise.all([
+  const [{ data: roles }, { data: members }, { data: staff }, { data: segments }, { data: quests }, { data: questCompletions }, { data: events }, { data: eventRsvps }, { data: eventCheckins }, { data: services }, { data: serviceOrders }] = await Promise.all([
     supabase
       .from("member_roles")
       .select("id, name, display_order")
@@ -99,6 +99,9 @@ export default async function AdminPage({
       .eq("club_id", club.id)
       .eq("active", true)
       .order("display_order", { ascending: true }),
+    supabase
+      .from("service_orders")
+      .select("service_id, status"),
   ]);
 
   function extractRoleName(m: { member_roles: unknown }) {
@@ -169,6 +172,17 @@ export default async function AdminPage({
     checkins: checkinCounts.get(e.id) ?? 0,
   }));
 
+  // Count service orders
+  const servicePendingCounts = new Map<string, number>();
+  const serviceFulfilledCounts = new Map<string, number>();
+  for (const o of serviceOrders ?? []) {
+    if (o.status === "pending") {
+      servicePendingCounts.set(o.service_id, (servicePendingCounts.get(o.service_id) ?? 0) + 1);
+    } else if (o.status === "fulfilled") {
+      serviceFulfilledCounts.set(o.service_id, (serviceFulfilledCounts.get(o.service_id) ?? 0) + 1);
+    }
+  }
+
   const serviceList = (services ?? []).map((s) => ({
     id: s.id,
     title: s.title,
@@ -176,6 +190,8 @@ export default async function AdminPage({
     image_url: s.image_url,
     link: s.link,
     price: s.price != null ? Number(s.price) : null,
+    pending_orders: servicePendingCounts.get(s.id) ?? 0,
+    fulfilled_orders: serviceFulfilledCounts.get(s.id) ?? 0,
   }));
 
   return (
