@@ -196,3 +196,85 @@ export async function deleteSegment(segmentId: string, clubSlug: string) {
   revalidatePath(`/${clubSlug}/admin`);
   return { ok: true };
 }
+
+// --- Quest actions ---
+
+export async function addQuest(
+  clubId: string,
+  title: string,
+  description: string,
+  link: string,
+  rewardSpins: number,
+  clubSlug: string,
+) {
+  if (!title.trim()) return { error: "Title is required" };
+  if (rewardSpins < 1) return { error: "Reward must be at least 1 spin" };
+
+  const supabase = createAdminClient();
+
+  const { data: existing } = await supabase
+    .from("quests")
+    .select("display_order")
+    .eq("club_id", clubId)
+    .order("display_order", { ascending: false })
+    .limit(1);
+
+  const nextOrder = existing && existing.length > 0 ? existing[0].display_order + 1 : 0;
+
+  const { error } = await supabase.from("quests").insert({
+    club_id: clubId,
+    title: title.trim(),
+    description: description.trim() || null,
+    link: link.trim() || null,
+    reward_spins: rewardSpins,
+    display_order: nextOrder,
+  });
+
+  if (error) return { error: "Failed to add quest" };
+
+  revalidatePath(`/${clubSlug}/admin`);
+  return { ok: true };
+}
+
+export async function updateQuest(
+  questId: string,
+  title: string,
+  description: string,
+  link: string,
+  rewardSpins: number,
+  clubSlug: string,
+) {
+  if (!title.trim()) return { error: "Title is required" };
+  if (rewardSpins < 1) return { error: "Reward must be at least 1 spin" };
+
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("quests")
+    .update({
+      title: title.trim(),
+      description: description.trim() || null,
+      link: link.trim() || null,
+      reward_spins: rewardSpins,
+    })
+    .eq("id", questId);
+
+  if (error) return { error: "Failed to update quest" };
+
+  revalidatePath(`/${clubSlug}/admin`);
+  return { ok: true };
+}
+
+export async function deleteQuest(questId: string, clubSlug: string) {
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("quests")
+    .delete()
+    .eq("id", questId);
+
+  if (error) return { error: "Failed to delete quest" };
+
+  revalidatePath(`/${clubSlug}/admin`);
+  return { ok: true };
+}

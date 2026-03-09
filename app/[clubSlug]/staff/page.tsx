@@ -1,6 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getStaffFromCookie } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { StaffSpinClient } from "./spin/staff-spin-client";
+import { StaffQuestClient } from "./quest/staff-quest-client";
 
 export default async function StaffDashboard({
   params,
@@ -9,6 +11,7 @@ export default async function StaffDashboard({
 }) {
   const { clubSlug } = await params;
   const supabase = createAdminClient();
+  const session = await getStaffFromCookie();
 
   const { data: club } = await supabase
     .from("clubs")
@@ -19,12 +22,20 @@ export default async function StaffDashboard({
 
   if (!club) notFound();
 
-  const { data: segments } = await supabase
-    .from("wheel_configs")
-    .select("label, color, label_color, probability")
-    .eq("club_id", club.id)
-    .eq("active", true)
-    .order("display_order", { ascending: true });
+  const [{ data: segments }, { data: quests }] = await Promise.all([
+    supabase
+      .from("wheel_configs")
+      .select("label, color, label_color, probability")
+      .eq("club_id", club.id)
+      .eq("active", true)
+      .order("display_order", { ascending: true }),
+    supabase
+      .from("quests")
+      .select("id, title, reward_spins")
+      .eq("club_id", club.id)
+      .eq("active", true)
+      .order("display_order", { ascending: true }),
+  ]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -49,6 +60,19 @@ export default async function StaffDashboard({
           <div className="bg-white rounded-2xl shadow-lg p-8 text-center text-gray-400 text-sm">
             Wheel not configured yet.
           </div>
+        )}
+
+        {/* Quest Completion */}
+        {quests && quests.length > 0 && (
+          <StaffQuestClient
+            clubId={club.id}
+            quests={quests.map((q) => ({
+              id: q.id,
+              title: q.title,
+              reward_spins: q.reward_spins,
+            }))}
+            staffMemberId={session?.member_id ?? ""}
+          />
         )}
       </div>
     </div>

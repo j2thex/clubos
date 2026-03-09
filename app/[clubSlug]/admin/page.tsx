@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { RoleManager } from "./role-manager";
 import { PeopleManager } from "./people-manager";
 import { WheelManager } from "./wheel-manager";
+import { QuestManager } from "./quest-manager";
 import { LogoutButton } from "./logout-button";
 
 export async function generateMetadata({
@@ -42,7 +43,7 @@ export default async function AdminPage({
 
   if (!club) notFound();
 
-  const [{ data: roles }, { data: members }, { data: staff }, { data: segments }] = await Promise.all([
+  const [{ data: roles }, { data: members }, { data: staff }, { data: segments }, { data: quests }, { data: questCompletions }] = await Promise.all([
     supabase
       .from("member_roles")
       .select("id, name, display_order")
@@ -66,6 +67,16 @@ export default async function AdminPage({
       .eq("club_id", club.id)
       .eq("active", true)
       .order("display_order", { ascending: true }),
+    supabase
+      .from("quests")
+      .select("id, title, description, link, reward_spins, display_order, active")
+      .eq("club_id", club.id)
+      .eq("active", true)
+      .order("display_order", { ascending: true }),
+    supabase
+      .from("member_quests")
+      .select("quest_id, quests!inner(club_id)")
+      .eq("quests.club_id", club.id),
   ]);
 
   function extractRoleName(m: { member_roles: unknown }) {
@@ -94,6 +105,22 @@ export default async function AdminPage({
     roleName: extractRoleName(s),
   }));
 
+  // Count completions per quest
+  const completionCounts = new Map<string, number>();
+  for (const c of questCompletions ?? []) {
+    completionCounts.set(c.quest_id, (completionCounts.get(c.quest_id) ?? 0) + 1);
+  }
+
+  const questList = (quests ?? []).map((q) => ({
+    id: q.id,
+    title: q.title,
+    description: q.description,
+    link: q.link,
+    reward_spins: q.reward_spins,
+    display_order: q.display_order,
+    completions: completionCounts.get(q.id) ?? 0,
+  }));
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -113,6 +140,11 @@ export default async function AdminPage({
           clubSlug={clubSlug}
           members={memberList}
           staff={staffList}
+        />
+        <QuestManager
+          quests={questList}
+          clubId={club.id}
+          clubSlug={clubSlug}
         />
         <WheelManager
           segments={(segments ?? []).map((s) => ({
