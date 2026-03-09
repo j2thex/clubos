@@ -278,3 +278,139 @@ export async function deleteQuest(questId: string, clubSlug: string) {
   revalidatePath(`/${clubSlug}/admin`);
   return { ok: true };
 }
+
+// --- Event actions ---
+
+export async function addEvent(
+  clubId: string,
+  formData: FormData,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const title = (formData.get("title") as string)?.trim();
+  const description = (formData.get("description") as string)?.trim() || null;
+  const date = formData.get("date") as string;
+  const time = (formData.get("time") as string) || null;
+  const priceStr = (formData.get("price") as string)?.trim();
+  const link = (formData.get("link") as string)?.trim() || null;
+  const rewardSpins = Number(formData.get("reward_spins")) || 1;
+  const imageFile = formData.get("image") as File | null;
+
+  if (!title) return { error: "Title is required" };
+  if (!date) return { error: "Date is required" };
+  if (rewardSpins < 1) return { error: "Reward must be at least 1 spin" };
+
+  const supabase = createAdminClient();
+
+  let imageUrl: string | null = null;
+  if (imageFile && imageFile.size > 0) {
+    const { uploadEventImage } = await import("@/lib/supabase/storage");
+    const result = await uploadEventImage(clubId, imageFile);
+    if ("error" in result) return { error: result.error };
+    imageUrl = result.url;
+  }
+
+  const { error } = await supabase.from("events").insert({
+    club_id: clubId,
+    title,
+    description,
+    date,
+    time: time || null,
+    price: priceStr ? Number(priceStr) : null,
+    image_url: imageUrl,
+    link,
+    reward_spins: rewardSpins,
+  });
+
+  if (error) return { error: "Failed to add event" };
+
+  revalidatePath(`/${clubSlug}/admin`);
+  return { ok: true };
+}
+
+export async function updateEvent(
+  eventId: string,
+  formData: FormData,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const title = (formData.get("title") as string)?.trim();
+  const description = (formData.get("description") as string)?.trim() || null;
+  const date = formData.get("date") as string;
+  const time = (formData.get("time") as string) || null;
+  const priceStr = (formData.get("price") as string)?.trim();
+  const link = (formData.get("link") as string)?.trim() || null;
+  const rewardSpins = Number(formData.get("reward_spins")) || 1;
+  const imageFile = formData.get("image") as File | null;
+
+  if (!title) return { error: "Title is required" };
+  if (!date) return { error: "Date is required" };
+
+  const supabase = createAdminClient();
+
+  const updates: Record<string, unknown> = {
+    title,
+    description,
+    date,
+    time: time || null,
+    price: priceStr ? Number(priceStr) : null,
+    link,
+    reward_spins: rewardSpins,
+  };
+
+  if (imageFile && imageFile.size > 0) {
+    // Delete old image if exists
+    const { data: existing } = await supabase
+      .from("events")
+      .select("image_url, club_id")
+      .eq("id", eventId)
+      .single();
+
+    if (existing?.image_url) {
+      const { deleteEventImage } = await import("@/lib/supabase/storage");
+      await deleteEventImage(existing.image_url);
+    }
+
+    const { uploadEventImage } = await import("@/lib/supabase/storage");
+    const result = await uploadEventImage(existing?.club_id ?? "", imageFile);
+    if ("error" in result) return { error: result.error };
+    updates.image_url = result.url;
+  }
+
+  const { error } = await supabase
+    .from("events")
+    .update(updates)
+    .eq("id", eventId);
+
+  if (error) return { error: "Failed to update event" };
+
+  revalidatePath(`/${clubSlug}/admin`);
+  return { ok: true };
+}
+
+export async function deleteEvent(
+  eventId: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  // Delete image from storage if exists
+  const { data: event } = await supabase
+    .from("events")
+    .select("image_url")
+    .eq("id", eventId)
+    .single();
+
+  if (event?.image_url) {
+    const { deleteEventImage } = await import("@/lib/supabase/storage");
+    await deleteEventImage(event.image_url);
+  }
+
+  const { error } = await supabase
+    .from("events")
+    .delete()
+    .eq("id", eventId);
+
+  if (error) return { error: "Failed to delete event" };
+
+  revalidatePath(`/${clubSlug}/admin`);
+  return { ok: true };
+}

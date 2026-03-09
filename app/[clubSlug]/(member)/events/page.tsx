@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { getMemberFromCookie } from "@/lib/auth";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { EventsClient } from "./events-client";
 
 export default async function EventsPage({
   params,
@@ -13,6 +15,36 @@ export default async function EventsPage({
     redirect(`/${clubSlug}/login`);
   }
 
+  const supabase = createAdminClient();
+
+  const [{ data: events }, { data: rsvps }] = await Promise.all([
+    supabase
+      .from("events")
+      .select("id, title, description, date, time, price, image_url, link, reward_spins")
+      .eq("club_id", session.club_id)
+      .eq("active", true)
+      .order("date", { ascending: true }),
+    supabase
+      .from("event_rsvps")
+      .select("event_id")
+      .eq("member_id", session.member_id),
+  ]);
+
+  const rsvpSet = new Set((rsvps ?? []).map((r) => r.event_id));
+
+  const eventList = (events ?? []).map((e) => ({
+    id: e.id,
+    title: e.title,
+    description: e.description,
+    date: e.date,
+    time: e.time,
+    price: e.price != null ? Number(e.price) : null,
+    image_url: e.image_url,
+    link: e.link,
+    reward_spins: e.reward_spins,
+    hasRsvp: rsvpSet.has(e.id),
+  }));
+
   return (
     <div className="min-h-screen club-page-bg">
       <div className="club-hero px-6 pt-10 pb-12 text-center">
@@ -21,17 +53,11 @@ export default async function EventsPage({
       </div>
 
       <div className="px-4 -mt-6 pb-10 max-w-md mx-auto">
-        <div className="bg-white rounded-2xl shadow-lg p-10 text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full club-tint-bg flex items-center justify-center">
-            <svg className="w-8 h-8 club-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </div>
-          <p className="text-gray-700 font-semibold text-lg">No events yet</p>
-          <p className="text-gray-400 text-sm mt-1">
-            Check back soon for upcoming club events.
-          </p>
-        </div>
+        <EventsClient
+          events={eventList}
+          memberId={session.member_id}
+          clubSlug={clubSlug}
+        />
       </div>
     </div>
   );

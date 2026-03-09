@@ -5,6 +5,7 @@ import { RoleManager } from "./role-manager";
 import { PeopleManager } from "./people-manager";
 import { WheelManager } from "./wheel-manager";
 import { QuestManager } from "./quest-manager";
+import { EventManager } from "./event-manager";
 import { LogoutButton } from "./logout-button";
 
 export async function generateMetadata({
@@ -43,7 +44,7 @@ export default async function AdminPage({
 
   if (!club) notFound();
 
-  const [{ data: roles }, { data: members }, { data: staff }, { data: segments }, { data: quests }, { data: questCompletions }] = await Promise.all([
+  const [{ data: roles }, { data: members }, { data: staff }, { data: segments }, { data: quests }, { data: questCompletions }, { data: events }, { data: eventRsvps }, { data: eventCheckins }] = await Promise.all([
     supabase
       .from("member_roles")
       .select("id, name, display_order")
@@ -77,6 +78,20 @@ export default async function AdminPage({
       .from("member_quests")
       .select("quest_id, quests!inner(club_id)")
       .eq("quests.club_id", club.id),
+    supabase
+      .from("events")
+      .select("id, title, description, date, time, price, image_url, link, reward_spins")
+      .eq("club_id", club.id)
+      .eq("active", true)
+      .order("date", { ascending: true }),
+    supabase
+      .from("event_rsvps")
+      .select("event_id, events!inner(club_id)")
+      .eq("events.club_id", club.id),
+    supabase
+      .from("event_checkins")
+      .select("event_id, events!inner(club_id)")
+      .eq("events.club_id", club.id),
   ]);
 
   function extractRoleName(m: { member_roles: unknown }) {
@@ -121,6 +136,30 @@ export default async function AdminPage({
     completions: completionCounts.get(q.id) ?? 0,
   }));
 
+  // Count RSVPs and checkins per event
+  const rsvpCounts = new Map<string, number>();
+  for (const r of eventRsvps ?? []) {
+    rsvpCounts.set(r.event_id, (rsvpCounts.get(r.event_id) ?? 0) + 1);
+  }
+  const checkinCounts = new Map<string, number>();
+  for (const c of eventCheckins ?? []) {
+    checkinCounts.set(c.event_id, (checkinCounts.get(c.event_id) ?? 0) + 1);
+  }
+
+  const eventList = (events ?? []).map((e) => ({
+    id: e.id,
+    title: e.title,
+    description: e.description,
+    date: e.date,
+    time: e.time,
+    price: e.price != null ? Number(e.price) : null,
+    image_url: e.image_url,
+    link: e.link,
+    reward_spins: e.reward_spins,
+    rsvps: rsvpCounts.get(e.id) ?? 0,
+    checkins: checkinCounts.get(e.id) ?? 0,
+  }));
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -140,6 +179,11 @@ export default async function AdminPage({
           clubSlug={clubSlug}
           members={memberList}
           staff={staffList}
+        />
+        <EventManager
+          events={eventList}
+          clubId={club.id}
+          clubSlug={clubSlug}
         />
         <QuestManager
           quests={questList}
