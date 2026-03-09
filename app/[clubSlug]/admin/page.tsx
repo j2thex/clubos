@@ -6,6 +6,7 @@ import { PeopleManager } from "./people-manager";
 import { WheelManager } from "./wheel-manager";
 import { QuestManager } from "./quest-manager";
 import { EventManager } from "./event-manager";
+import { ServiceManager } from "./service-manager";
 import { LogoutButton } from "./logout-button";
 
 export async function generateMetadata({
@@ -44,7 +45,7 @@ export default async function AdminPage({
 
   if (!club) notFound();
 
-  const [{ data: roles }, { data: members }, { data: staff }, { data: segments }, { data: quests }, { data: questCompletions }, { data: events }, { data: eventRsvps }, { data: eventCheckins }] = await Promise.all([
+  const [{ data: roles }, { data: members }, { data: staff }, { data: segments }, { data: quests }, { data: questCompletions }, { data: events }, { data: eventRsvps }, { data: eventCheckins }, { data: services }] = await Promise.all([
     supabase
       .from("member_roles")
       .select("id, name, display_order")
@@ -70,7 +71,7 @@ export default async function AdminPage({
       .order("display_order", { ascending: true }),
     supabase
       .from("quests")
-      .select("id, title, description, link, reward_spins, display_order, active, multi_use")
+      .select("id, title, description, link, image_url, reward_spins, display_order, active, multi_use")
       .eq("club_id", club.id)
       .eq("active", true)
       .order("display_order", { ascending: true }),
@@ -92,6 +93,12 @@ export default async function AdminPage({
       .from("event_checkins")
       .select("event_id, events!inner(club_id)")
       .eq("events.club_id", club.id),
+    supabase
+      .from("services")
+      .select("id, title, description, image_url, link, price, display_order")
+      .eq("club_id", club.id)
+      .eq("active", true)
+      .order("display_order", { ascending: true }),
   ]);
 
   function extractRoleName(m: { member_roles: unknown }) {
@@ -131,6 +138,7 @@ export default async function AdminPage({
     title: q.title,
     description: q.description,
     link: q.link,
+    image_url: q.image_url,
     reward_spins: q.reward_spins,
     display_order: q.display_order,
     completions: completionCounts.get(q.id) ?? 0,
@@ -161,6 +169,15 @@ export default async function AdminPage({
     checkins: checkinCounts.get(e.id) ?? 0,
   }));
 
+  const serviceList = (services ?? []).map((s) => ({
+    id: s.id,
+    title: s.title,
+    description: s.description,
+    image_url: s.image_url,
+    link: s.link,
+    price: s.price != null ? Number(s.price) : null,
+  }));
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -171,6 +188,20 @@ export default async function AdminPage({
             <p className="mt-1 text-gray-400 text-sm">{club.name}</p>
           </div>
           <LogoutButton clubSlug={clubSlug} />
+        </div>
+        <div className="flex gap-3 mt-4 max-w-2xl mx-auto">
+          <a
+            href={`/${clubSlug}/staff`}
+            className="text-xs text-gray-400 hover:text-white border border-gray-600 rounded-lg px-3 py-1.5 transition-colors"
+          >
+            View Staff Page
+          </a>
+          <a
+            href={`/${clubSlug}`}
+            className="text-xs text-gray-400 hover:text-white border border-gray-600 rounded-lg px-3 py-1.5 transition-colors"
+          >
+            View Member Page
+          </a>
         </div>
       </div>
 
@@ -188,6 +219,11 @@ export default async function AdminPage({
         />
         <QuestManager
           quests={questList}
+          clubId={club.id}
+          clubSlug={clubSlug}
+        />
+        <ServiceManager
+          services={serviceList}
           clubId={club.id}
           clubSlug={clubSlug}
         />

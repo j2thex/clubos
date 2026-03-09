@@ -1,33 +1,23 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { addQuest, updateQuest, deleteQuest } from "./actions";
+import { addService, updateService, deleteService } from "./actions";
 
-interface Quest {
+interface Service {
   id: string;
   title: string;
   description: string | null;
-  link: string | null;
   image_url: string | null;
-  reward_spins: number;
-  display_order: number;
-  completions: number;
-  multi_use: boolean;
+  link: string | null;
+  price: number | null;
 }
 
-const TEMPLATES = [
-  { title: "Follow us on Instagram", description: "Follow our Instagram page", link: "", rewardSpins: 1 },
-  { title: "Follow us on TikTok", description: "Follow our TikTok account", link: "", rewardSpins: 1 },
-  { title: "Leave a Google Review", description: "Leave us a review on Google Maps", link: "", rewardSpins: 2 },
-  { title: "Refer a Friend", description: "Bring a friend to the club", link: "", rewardSpins: 2 },
-];
-
-export function QuestManager({
-  quests,
+export function ServiceManager({
+  services,
   clubId,
   clubSlug,
 }: {
-  quests: Quest[];
+  services: Service[];
   clubId: string;
   clubSlug: string;
 }) {
@@ -35,34 +25,24 @@ export function QuestManager({
   const [editTitle, setEditTitle] = useState("");
   const [editDesc, setEditDesc] = useState("");
   const [editLink, setEditLink] = useState("");
-  const [editReward, setEditReward] = useState("1");
-  const [editMultiUse, setEditMultiUse] = useState(false);
+  const [editPrice, setEditPrice] = useState("");
   const [editImage, setEditImage] = useState<File | null>(null);
 
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [newLink, setNewLink] = useState("");
-  const [newReward, setNewReward] = useState("1");
-  const [newMultiUse, setNewMultiUse] = useState(false);
+  const [newPrice, setNewPrice] = useState("");
   const [newImage, setNewImage] = useState<File | null>(null);
 
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  function applyTemplate(t: typeof TEMPLATES[number]) {
-    setNewTitle(t.title);
-    setNewDesc(t.description);
-    setNewLink(t.link);
-    setNewReward(String(t.rewardSpins));
-  }
-
-  function startEdit(q: Quest) {
-    setEditingId(q.id);
-    setEditTitle(q.title);
-    setEditDesc(q.description ?? "");
-    setEditLink(q.link ?? "");
-    setEditReward(String(q.reward_spins));
-    setEditMultiUse(q.multi_use);
+  function startEdit(s: Service) {
+    setEditingId(s.id);
+    setEditTitle(s.title);
+    setEditDesc(s.description ?? "");
+    setEditLink(s.link ?? "");
+    setEditPrice(s.price != null ? String(s.price) : "");
     setEditImage(null);
     setError(null);
   }
@@ -72,18 +52,17 @@ export function QuestManager({
     setError(null);
   }
 
-  function handleSaveEdit(questId: string) {
+  function handleSaveEdit(serviceId: string) {
     setError(null);
     startTransition(async () => {
       const fd = new FormData();
       fd.set("title", editTitle);
       fd.set("description", editDesc);
       fd.set("link", editLink);
-      fd.set("reward_spins", editReward);
-      fd.set("multi_use", editMultiUse ? "1" : "0");
+      fd.set("price", editPrice);
       if (editImage) fd.set("image", editImage);
 
-      const result = await updateQuest(questId, fd, clubSlug);
+      const result = await updateService(serviceId, fd, clubSlug);
       if ("error" in result) {
         setError(result.error);
       } else {
@@ -92,10 +71,10 @@ export function QuestManager({
     });
   }
 
-  function handleDelete(questId: string) {
+  function handleDelete(serviceId: string) {
     setError(null);
     startTransition(async () => {
-      const result = await deleteQuest(questId, clubSlug);
+      const result = await deleteService(serviceId, clubSlug);
       if ("error" in result) setError(result.error);
     });
   }
@@ -108,19 +87,17 @@ export function QuestManager({
       fd.set("title", newTitle);
       fd.set("description", newDesc);
       fd.set("link", newLink);
-      fd.set("reward_spins", newReward);
-      fd.set("multi_use", newMultiUse ? "1" : "0");
+      fd.set("price", newPrice);
       if (newImage) fd.set("image", newImage);
 
-      const result = await addQuest(clubId, fd, clubSlug);
+      const result = await addService(clubId, fd, clubSlug);
       if ("error" in result) {
         setError(result.error);
       } else {
         setNewTitle("");
         setNewDesc("");
         setNewLink("");
-        setNewReward("1");
-        setNewMultiUse(false);
+        setNewPrice("");
         setNewImage(null);
       }
     });
@@ -130,34 +107,17 @@ export function QuestManager({
     <div className="space-y-2">
       <div className="flex items-center justify-between px-1">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
-          Quests ({quests.length})
+          Services ({services.length})
         </h2>
       </div>
 
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-        {/* Templates */}
-        <div className="px-5 py-4 border-b border-gray-100">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Quick Add</p>
-          <div className="flex flex-wrap gap-2">
-            {TEMPLATES.map((t) => (
-              <button
-                key={t.title}
-                type="button"
-                onClick={() => applyTemplate(t)}
-                className="text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors"
-              >
-                {t.title}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Quest list */}
-        {quests.length > 0 && (
+        {/* Service list */}
+        {services.length > 0 && (
           <div className="divide-y divide-gray-100">
-            {quests.map((q) => (
-              <div key={q.id}>
-                {editingId === q.id ? (
+            {services.map((s) => (
+              <div key={s.id}>
+                {editingId === s.id ? (
                   <div className="px-5 py-3 space-y-3 bg-gray-50">
                     <div>
                       <label className="block text-xs font-medium text-gray-500 mb-1">Title</label>
@@ -189,14 +149,15 @@ export function QuestManager({
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1">Spins</label>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Price</label>
                         <input
                           type="number"
-                          min="1"
-                          max="100"
-                          value={editReward}
-                          onChange={(e) => setEditReward(e.target.value)}
-                          className="w-16 rounded-lg border border-gray-300 px-2 py-1.5 text-sm text-gray-900 text-center focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                          step="0.01"
+                          min="0"
+                          value={editPrice}
+                          onChange={(e) => setEditPrice(e.target.value)}
+                          placeholder="Free"
+                          className="w-24 rounded-lg border border-gray-300 px-2 py-1.5 text-sm text-gray-900 text-center focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
                         />
                       </div>
                     </div>
@@ -209,18 +170,9 @@ export function QuestManager({
                         className="w-full text-sm text-gray-500 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
                       />
                     </div>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={editMultiUse}
-                        onChange={(e) => setEditMultiUse(e.target.checked)}
-                        className="rounded border-gray-300 text-gray-800 focus:ring-gray-400"
-                      />
-                      <span className="text-xs text-gray-600">Repeatable (can be completed multiple times)</span>
-                    </label>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => handleSaveEdit(q.id)}
+                        onClick={() => handleSaveEdit(s.id)}
                         disabled={isPending}
                         className="rounded-lg bg-gray-800 text-white px-4 py-1.5 text-xs font-semibold hover:bg-gray-700 disabled:opacity-50 transition-colors"
                       >
@@ -236,37 +188,31 @@ export function QuestManager({
                   </div>
                 ) : (
                   <div className="px-5 py-3 flex items-center gap-3">
-                    {q.image_url && (
-                      <img src={q.image_url} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                    {s.image_url && (
+                      <img src={s.image_url} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
                     )}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <p className="text-sm font-medium text-gray-900 truncate">{q.title}</p>
-                        {q.multi_use && (
-                          <span className="text-[10px] font-medium text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded-full shrink-0">Repeatable</span>
-                        )}
-                      </div>
+                      <p className="text-sm font-medium text-gray-900 truncate">{s.title}</p>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs text-gray-400">
-                          {q.reward_spins} {q.reward_spins === 1 ? "spin" : "spins"}
-                        </span>
-                        {q.link && (
-                          <span className="text-xs text-blue-500 truncate max-w-[150px]">{q.link}</span>
+                        {s.price != null ? (
+                          <span className="text-xs text-gray-400">${Number(s.price).toFixed(2)}</span>
+                        ) : (
+                          <span className="text-xs text-green-600">Free</span>
                         )}
-                        <span className="text-xs text-gray-300">
-                          {q.completions} done
-                        </span>
+                        {s.link && (
+                          <span className="text-xs text-blue-500 truncate max-w-[150px]">{s.link}</span>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-2 shrink-0">
                       <button
-                        onClick={() => startEdit(q)}
+                        onClick={() => startEdit(s)}
                         className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
                       >
                         Edit
                       </button>
                       <button
-                        onClick={() => handleDelete(q.id)}
+                        onClick={() => handleDelete(s.id)}
                         disabled={isPending}
                         className="text-xs text-red-500 hover:text-red-700 disabled:opacity-50 transition-colors"
                       >
@@ -280,16 +226,16 @@ export function QuestManager({
           </div>
         )}
 
-        {/* Add new quest */}
+        {/* Add new service */}
         <form onSubmit={handleAdd} className="px-5 py-4 border-t border-gray-100 space-y-3">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Add Quest</p>
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Add Service</p>
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Title</label>
             <input
               type="text"
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
-              placeholder="Follow us on Instagram"
+              placeholder="VIP Lounge Access"
               required
               className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
             />
@@ -300,7 +246,7 @@ export function QuestManager({
               type="text"
               value={newDesc}
               onChange={(e) => setNewDesc(e.target.value)}
-              placeholder="Follow our Instagram page"
+              placeholder="Exclusive access to VIP area"
               className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
             />
           </div>
@@ -311,20 +257,20 @@ export function QuestManager({
                 type="url"
                 value={newLink}
                 onChange={(e) => setNewLink(e.target.value)}
-                placeholder="https://instagram.com/yourclub"
+                placeholder="https://..."
                 className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Spins</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Price</label>
               <input
                 type="number"
-                min="1"
-                max="100"
-                value={newReward}
-                onChange={(e) => setNewReward(e.target.value)}
-                required
-                className="w-16 rounded-lg border border-gray-300 px-2 py-1.5 text-sm text-gray-900 text-center focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                step="0.01"
+                min="0"
+                value={newPrice}
+                onChange={(e) => setNewPrice(e.target.value)}
+                placeholder="Free"
+                className="w-24 rounded-lg border border-gray-300 px-2 py-1.5 text-sm text-gray-900 text-center placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
               />
             </div>
             <button
@@ -344,15 +290,6 @@ export function QuestManager({
               className="w-full text-sm text-gray-500 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
             />
           </div>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={newMultiUse}
-              onChange={(e) => setNewMultiUse(e.target.checked)}
-              className="rounded border-gray-300 text-gray-800 focus:ring-gray-400"
-            />
-            <span className="text-xs text-gray-600">Repeatable (can be completed multiple times)</span>
-          </label>
         </form>
 
         {error && (

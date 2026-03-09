@@ -201,14 +201,17 @@ export async function deleteSegment(segmentId: string, clubSlug: string) {
 
 export async function addQuest(
   clubId: string,
-  title: string,
-  description: string,
-  link: string,
-  rewardSpins: number,
-  multiUse: boolean,
+  formData: FormData,
   clubSlug: string,
-) {
-  if (!title.trim()) return { error: "Title is required" };
+): Promise<{ error: string } | { ok: true }> {
+  const title = (formData.get("title") as string)?.trim();
+  const description = (formData.get("description") as string)?.trim() || null;
+  const link = (formData.get("link") as string)?.trim() || null;
+  const rewardSpins = Number(formData.get("reward_spins")) || 1;
+  const multiUse = formData.get("multi_use") === "1";
+  const imageFile = formData.get("image") as File | null;
+
+  if (!title) return { error: "Title is required" };
   if (rewardSpins < 1) return { error: "Reward must be at least 1 spin" };
 
   const supabase = createAdminClient();
@@ -222,13 +225,22 @@ export async function addQuest(
 
   const nextOrder = existing && existing.length > 0 ? existing[0].display_order + 1 : 0;
 
+  let imageUrl: string | null = null;
+  if (imageFile && imageFile.size > 0) {
+    const { uploadClubImage } = await import("@/lib/supabase/storage");
+    const result = await uploadClubImage(clubId, imageFile);
+    if ("error" in result) return { error: result.error };
+    imageUrl = result.url;
+  }
+
   const { error } = await supabase.from("quests").insert({
     club_id: clubId,
-    title: title.trim(),
-    description: description.trim() || null,
-    link: link.trim() || null,
+    title,
+    description,
+    link,
     reward_spins: rewardSpins,
     multi_use: multiUse,
+    image_url: imageUrl,
     display_order: nextOrder,
   });
 
@@ -240,27 +252,50 @@ export async function addQuest(
 
 export async function updateQuest(
   questId: string,
-  title: string,
-  description: string,
-  link: string,
-  rewardSpins: number,
-  multiUse: boolean,
+  formData: FormData,
   clubSlug: string,
-) {
-  if (!title.trim()) return { error: "Title is required" };
+): Promise<{ error: string } | { ok: true }> {
+  const title = (formData.get("title") as string)?.trim();
+  const description = (formData.get("description") as string)?.trim() || null;
+  const link = (formData.get("link") as string)?.trim() || null;
+  const rewardSpins = Number(formData.get("reward_spins")) || 1;
+  const multiUse = formData.get("multi_use") === "1";
+  const imageFile = formData.get("image") as File | null;
+
+  if (!title) return { error: "Title is required" };
   if (rewardSpins < 1) return { error: "Reward must be at least 1 spin" };
 
   const supabase = createAdminClient();
 
+  const updates: Record<string, unknown> = {
+    title,
+    description,
+    link,
+    reward_spins: rewardSpins,
+    multi_use: multiUse,
+  };
+
+  if (imageFile && imageFile.size > 0) {
+    const { data: quest } = await supabase
+      .from("quests")
+      .select("image_url, club_id")
+      .eq("id", questId)
+      .single();
+
+    if (quest?.image_url) {
+      const { deleteClubImage } = await import("@/lib/supabase/storage");
+      await deleteClubImage(quest.image_url);
+    }
+
+    const { uploadClubImage } = await import("@/lib/supabase/storage");
+    const result = await uploadClubImage(quest?.club_id ?? "", imageFile);
+    if ("error" in result) return { error: result.error };
+    updates.image_url = result.url;
+  }
+
   const { error } = await supabase
     .from("quests")
-    .update({
-      title: title.trim(),
-      description: description.trim() || null,
-      link: link.trim() || null,
-      reward_spins: rewardSpins,
-      multi_use: multiUse,
-    })
+    .update(updates)
     .eq("id", questId);
 
   if (error) return { error: "Failed to update quest" };
@@ -269,8 +304,22 @@ export async function updateQuest(
   return { ok: true };
 }
 
-export async function deleteQuest(questId: string, clubSlug: string) {
+export async function deleteQuest(
+  questId: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
   const supabase = createAdminClient();
+
+  const { data: quest } = await supabase
+    .from("quests")
+    .select("image_url")
+    .eq("id", questId)
+    .single();
+
+  if (quest?.image_url) {
+    const { deleteClubImage } = await import("@/lib/supabase/storage");
+    await deleteClubImage(quest.image_url);
+  }
 
   const { error } = await supabase
     .from("quests")
@@ -414,6 +463,135 @@ export async function deleteEvent(
     .eq("id", eventId);
 
   if (error) return { error: "Failed to delete event" };
+
+  revalidatePath(`/${clubSlug}/admin`);
+  return { ok: true };
+}
+
+// --- Service actions ---
+
+export async function addService(
+  clubId: string,
+  formData: FormData,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const title = (formData.get("title") as string)?.trim();
+  const description = (formData.get("description") as string)?.trim() || null;
+  const link = (formData.get("link") as string)?.trim() || null;
+  const priceStr = (formData.get("price") as string)?.trim();
+  const imageFile = formData.get("image") as File | null;
+
+  if (!title) return { error: "Title is required" };
+
+  const supabase = createAdminClient();
+
+  const { data: existing } = await supabase
+    .from("services")
+    .select("display_order")
+    .eq("club_id", clubId)
+    .order("display_order", { ascending: false })
+    .limit(1);
+
+  const nextOrder = existing && existing.length > 0 ? existing[0].display_order + 1 : 0;
+
+  let imageUrl: string | null = null;
+  if (imageFile && imageFile.size > 0) {
+    const { uploadClubImage } = await import("@/lib/supabase/storage");
+    const result = await uploadClubImage(clubId, imageFile);
+    if ("error" in result) return { error: result.error };
+    imageUrl = result.url;
+  }
+
+  const { error } = await supabase.from("services").insert({
+    club_id: clubId,
+    title,
+    description,
+    link,
+    price: priceStr ? Number(priceStr) : null,
+    image_url: imageUrl,
+    display_order: nextOrder,
+  });
+
+  if (error) return { error: "Failed to add service" };
+
+  revalidatePath(`/${clubSlug}/admin`);
+  return { ok: true };
+}
+
+export async function updateService(
+  serviceId: string,
+  formData: FormData,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const title = (formData.get("title") as string)?.trim();
+  const description = (formData.get("description") as string)?.trim() || null;
+  const link = (formData.get("link") as string)?.trim() || null;
+  const priceStr = (formData.get("price") as string)?.trim();
+  const imageFile = formData.get("image") as File | null;
+
+  if (!title) return { error: "Title is required" };
+
+  const supabase = createAdminClient();
+
+  const updates: Record<string, unknown> = {
+    title,
+    description,
+    link,
+    price: priceStr ? Number(priceStr) : null,
+  };
+
+  if (imageFile && imageFile.size > 0) {
+    const { data: svc } = await supabase
+      .from("services")
+      .select("image_url, club_id")
+      .eq("id", serviceId)
+      .single();
+
+    if (svc?.image_url) {
+      const { deleteClubImage } = await import("@/lib/supabase/storage");
+      await deleteClubImage(svc.image_url);
+    }
+
+    const { uploadClubImage } = await import("@/lib/supabase/storage");
+    const result = await uploadClubImage(svc?.club_id ?? "", imageFile);
+    if ("error" in result) return { error: result.error };
+    updates.image_url = result.url;
+  }
+
+  const { error } = await supabase
+    .from("services")
+    .update(updates)
+    .eq("id", serviceId);
+
+  if (error) return { error: "Failed to update service" };
+
+  revalidatePath(`/${clubSlug}/admin`);
+  return { ok: true };
+}
+
+export async function deleteService(
+  serviceId: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  const { data: svc } = await supabase
+    .from("services")
+    .select("image_url")
+    .eq("id", serviceId)
+    .single();
+
+  if (svc?.image_url) {
+    const { deleteClubImage } = await import("@/lib/supabase/storage");
+    await deleteClubImage(svc.image_url);
+  }
+
+  const { error } = await supabase
+    .from("services")
+    .delete()
+    .eq("id", serviceId);
+
+  if (error) return { error: "Failed to delete service" };
 
   revalidatePath(`/${clubSlug}/admin`);
   return { ok: true };
