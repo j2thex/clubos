@@ -61,6 +61,40 @@ export default function OnboardingPage() {
               />
             </div>
 
+            {/* Owner Email */}
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-gray-800">
+                Your Email
+              </Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="you@example.com"
+                required
+                className="focus-visible:border-green-500 focus-visible:ring-green-500/30"
+              />
+            </div>
+
+            {/* Owner Password */}
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-gray-800">
+                Password
+              </Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="Minimum 8 characters"
+                required
+                minLength={8}
+                className="focus-visible:border-green-500 focus-visible:ring-green-500/30"
+              />
+              <p className="text-xs text-gray-500">
+                Used to access your admin panel
+              </p>
+            </div>
+
             {/* Submit */}
             <Button
               type="submit"

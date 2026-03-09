@@ -96,3 +96,55 @@ export async function clearStaffCookie() {
   const cookieStore = await cookies();
   cookieStore.delete(STAFF_COOKIE);
 }
+
+// --- Owner auth (email + password) ---
+
+const OWNER_COOKIE = "clubos-owner-token";
+
+export function hashPassword(password: string): string {
+  return hashSync(password, 12);
+}
+
+export function verifyPassword(password: string, hash: string): boolean {
+  return compareSync(password, hash);
+}
+
+export async function createOwnerToken(ownerId: string, clubId: string): Promise<string> {
+  return new SignJWT({ owner_id: ownerId, club_id: clubId, is_owner: true })
+    .setProtectedHeader({ alg: "HS256" })
+    .setExpirationTime("24h")
+    .sign(secret);
+}
+
+export async function verifyOwnerToken(token: string) {
+  try {
+    const { payload } = await jwtVerify(token, secret);
+    if (!payload.is_owner) return null;
+    return payload as { owner_id: string; club_id: string; is_owner: true };
+  } catch {
+    return null;
+  }
+}
+
+export async function setOwnerCookie(token: string) {
+  const cookieStore = await cookies();
+  cookieStore.set(OWNER_COOKIE, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24,
+    path: "/",
+  });
+}
+
+export async function getOwnerFromCookie() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(OWNER_COOKIE)?.value;
+  if (!token) return null;
+  return verifyOwnerToken(token);
+}
+
+export async function clearOwnerCookie() {
+  const cookieStore = await cookies();
+  cookieStore.delete(OWNER_COOKIE);
+}

@@ -5,6 +5,7 @@ import { jwtVerify } from "jose";
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 const MEMBER_COOKIE = "clubos-member-token";
 const STAFF_COOKIE = "clubos-staff-token";
+const OWNER_COOKIE = "clubos-owner-token";
 
 // Routes that are not club-scoped
 const PLATFORM_PATHS = ["/onboarding"];
@@ -32,9 +33,27 @@ export async function middleware(request: NextRequest) {
 
   const clubPath = "/" + segments.slice(1).join("/");
 
-  // Admin is public (no auth for now)
+  // Admin routes — require owner token (except admin login)
   if (clubPath.startsWith("/admin")) {
-    return NextResponse.next();
+    if (clubPath === "/admin/login") {
+      return NextResponse.next();
+    }
+
+    const token = request.cookies.get(OWNER_COOKIE)?.value;
+    if (!token) {
+      return NextResponse.redirect(new URL(`/${clubSlug}/admin/login`, request.url));
+    }
+
+    try {
+      const { payload } = await jwtVerify(token, secret);
+      if (!payload.is_owner) throw new Error("Not owner");
+      const response = NextResponse.next();
+      response.headers.set("x-owner-id", payload.owner_id as string);
+      response.headers.set("x-club-id", payload.club_id as string);
+      return response;
+    } catch {
+      return NextResponse.redirect(new URL(`/${clubSlug}/admin/login`, request.url));
+    }
   }
 
   // Member login is public

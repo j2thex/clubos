@@ -1,8 +1,14 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { hashPin } from "@/lib/auth";
+import { hashPin, clearOwnerCookie } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+
+export async function logoutOwner(clubSlug: string) {
+  await clearOwnerCookie();
+  redirect(`/${clubSlug}/admin/login`);
+}
 
 export async function createMember(
   clubId: string,

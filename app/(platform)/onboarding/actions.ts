@@ -1,16 +1,25 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { hashPassword, createOwnerToken, setOwnerCookie } from "@/lib/auth";
 import { generateSlug } from "@/lib/utils";
 import { redirect } from "next/navigation";
 
 export async function createOrgAndClub(formData: FormData) {
   const clubName = formData.get("clubName") as string;
+  const email = (formData.get("email") as string)?.toLowerCase().trim();
+  const password = formData.get("password") as string;
   const timezone = (formData.get("timezone") as string) || "UTC";
   const currency = (formData.get("currency") as string) || "EUR";
 
   if (!clubName) {
     return { error: "Club name is required" };
+  }
+  if (!email) {
+    return { error: "Email is required" };
+  }
+  if (!password || password.length < 8) {
+    return { error: "Password must be at least 8 characters" };
   }
 
   const supabase = createAdminClient();
@@ -45,6 +54,33 @@ export async function createOrgAndClub(formData: FormData) {
 
   // Create default branding
   await supabase.from("club_branding").insert({ club_id: club.id });
+
+  // Create club owner account
+  const { data: owner, error: ownerError } = await supabase
+    .from("club_owners")
+    .insert({
+      email,
+      password_hash: hashPassword(password),
+    })
+    .select()
+    .single();
+
+  if (ownerError) {
+    if (ownerError.code === "23505") {
+      return { error: "An account with this email already exists" };
+    }
+    return { error: "Failed to create owner account" };
+  }
+
+  // Link owner to club
+  await supabase.from("club_owner_clubs").insert({
+    owner_id: owner.id,
+    club_id: club.id,
+  });
+
+  // Auto-login owner so they can access admin panel after onboarding
+  const token = await createOwnerToken(owner.id, club.id);
+  await setOwnerCookie(token);
 
   redirect(`/onboarding/branding?clubId=${club.id}`);
 }

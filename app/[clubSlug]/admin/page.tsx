@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { RoleManager } from "./role-manager";
 import { PeopleManager } from "./people-manager";
 import { WheelManager } from "./wheel-manager";
+import { LogoutButton } from "./logout-button";
 
 export async function generateMetadata({
   params,
@@ -97,8 +98,13 @@ export default async function AdminPage({
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-gradient-to-br from-gray-800 to-gray-900 px-6 pt-10 pb-12">
-        <h1 className="text-2xl font-bold text-white">Club Admin</h1>
-        <p className="mt-1 text-gray-400 text-sm">{club.name}</p>
+        <div className="flex items-start justify-between max-w-2xl mx-auto">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Club Admin</h1>
+            <p className="mt-1 text-gray-400 text-sm">{club.name}</p>
+          </div>
+          <LogoutButton clubSlug={clubSlug} />
+        </div>
       </div>
 
       <div className="px-4 -mt-6 pb-10 max-w-2xl mx-auto space-y-6">
