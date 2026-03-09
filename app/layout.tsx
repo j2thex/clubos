@@ -15,6 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "osocio.club",
   description: "A white-label operating system for private clubs",
+  icons: { icon: "/favicon-member.svg" },
 };
 
 export default function RootLayout({
