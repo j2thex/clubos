@@ -14,7 +14,8 @@ export async function lookupMemberQuests(
         id: string;
         title: string;
         reward_spins: number;
-        completed: boolean;
+        multi_use: boolean;
+        completionCount: number;
       }[];
     }
 > {
@@ -42,7 +43,7 @@ export async function lookupMemberQuests(
   const [{ data: quests }, { data: completions }] = await Promise.all([
     supabase
       .from("quests")
-      .select("id, title, reward_spins")
+      .select("id, title, reward_spins, multi_use")
       .eq("club_id", clubId)
       .eq("active", true)
       .order("display_order", { ascending: true }),
@@ -52,7 +53,11 @@ export async function lookupMemberQuests(
       .eq("member_id", member.id),
   ]);
 
-  const completedIds = new Set((completions ?? []).map((c) => c.quest_id));
+  // Count completions per quest
+  const completionCounts = new Map<string, number>();
+  for (const c of completions ?? []) {
+    completionCounts.set(c.quest_id, (completionCounts.get(c.quest_id) ?? 0) + 1);
+  }
 
   return {
     memberId: member.id,
@@ -61,7 +66,8 @@ export async function lookupMemberQuests(
       id: q.id,
       title: q.title,
       reward_spins: q.reward_spins,
-      completed: completedIds.has(q.id),
+      multi_use: q.multi_use ?? false,
+      completionCount: completionCounts.get(q.id) ?? 0,
     })),
   };
 }
@@ -73,16 +79,30 @@ export async function completeQuest(
 ): Promise<{ error: string } | { ok: true; newBalance: number }> {
   const supabase = createAdminClient();
 
-  // Get quest reward
+  // Get quest reward and multi_use flag
   const { data: quest } = await supabase
     .from("quests")
-    .select("reward_spins")
+    .select("reward_spins, multi_use")
     .eq("id", questId)
     .single();
 
   if (!quest) return { error: "Quest not found" };
 
-  // Insert completion (unique constraint prevents duplicates)
+  // For single-use quests, check if already completed
+  if (!quest.multi_use) {
+    const { data: existing } = await supabase
+      .from("member_quests")
+      .select("id")
+      .eq("quest_id", questId)
+      .eq("member_id", memberId)
+      .limit(1);
+
+    if (existing && existing.length > 0) {
+      return { error: "Quest already completed" };
+    }
+  }
+
+  // Insert completion
   const { error: insertError } = await supabase
     .from("member_quests")
     .insert({
@@ -92,7 +112,6 @@ export async function completeQuest(
     });
 
   if (insertError) {
-    if (insertError.code === "23505") return { error: "Quest already completed" };
     return { error: "Failed to complete quest" };
   }
 

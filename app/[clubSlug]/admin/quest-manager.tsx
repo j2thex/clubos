@@ -11,6 +11,7 @@ interface Quest {
   reward_spins: number;
   display_order: number;
   completions: number;
+  multi_use: boolean;
 }
 
 const TEMPLATES = [
@@ -34,11 +35,13 @@ export function QuestManager({
   const [editDesc, setEditDesc] = useState("");
   const [editLink, setEditLink] = useState("");
   const [editReward, setEditReward] = useState("1");
+  const [editMultiUse, setEditMultiUse] = useState(false);
 
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [newLink, setNewLink] = useState("");
   const [newReward, setNewReward] = useState("1");
+  const [newMultiUse, setNewMultiUse] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -56,6 +59,7 @@ export function QuestManager({
     setEditDesc(q.description ?? "");
     setEditLink(q.link ?? "");
     setEditReward(String(q.reward_spins));
+    setEditMultiUse(q.multi_use);
     setError(null);
   }
 
@@ -67,7 +71,7 @@ export function QuestManager({
   function handleSaveEdit(questId: string) {
     setError(null);
     startTransition(async () => {
-      const result = await updateQuest(questId, editTitle, editDesc, editLink, Number(editReward), clubSlug);
+      const result = await updateQuest(questId, editTitle, editDesc, editLink, Number(editReward), editMultiUse, clubSlug);
       if (result.error) {
         setError(result.error);
       } else {
@@ -88,7 +92,7 @@ export function QuestManager({
     e.preventDefault();
     setError(null);
     startTransition(async () => {
-      const result = await addQuest(clubId, newTitle, newDesc, newLink, Number(newReward), clubSlug);
+      const result = await addQuest(clubId, newTitle, newDesc, newLink, Number(newReward), newMultiUse, clubSlug);
       if (result.error) {
         setError(result.error);
       } else {
@@ -96,6 +100,7 @@ export function QuestManager({
         setNewDesc("");
         setNewLink("");
         setNewReward("1");
+        setNewMultiUse(false);
       }
     });
   }
@@ -174,6 +179,15 @@ export function QuestManager({
                         />
                       </div>
                     </div>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={editMultiUse}
+                        onChange={(e) => setEditMultiUse(e.target.checked)}
+                        className="rounded border-gray-300 text-gray-800 focus:ring-gray-400"
+                      />
+                      <span className="text-xs text-gray-600">Repeatable (can be completed multiple times)</span>
+                    </label>
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleSaveEdit(q.id)}
@@ -193,7 +207,12 @@ export function QuestManager({
                 ) : (
                   <div className="px-5 py-3 flex items-center gap-3">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{q.title}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-medium text-gray-900 truncate">{q.title}</p>
+                        {q.multi_use && (
+                          <span className="text-[10px] font-medium text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded-full shrink-0">Repeatable</span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-xs text-gray-400">
                           {q.reward_spins} {q.reward_spins === 1 ? "spin" : "spins"}
@@ -283,6 +302,15 @@ export function QuestManager({
               Add
             </button>
           </div>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={newMultiUse}
+              onChange={(e) => setNewMultiUse(e.target.checked)}
+              className="rounded border-gray-300 text-gray-800 focus:ring-gray-400"
+            />
+            <span className="text-xs text-gray-600">Repeatable (can be completed multiple times)</span>
+          </label>
         </form>
 
         {error && (

@@ -33,7 +33,7 @@ export default async function MemberDashboard({
       .eq("member_id", session.member_id),
     supabase
       .from("quests")
-      .select("id, title, description, link, reward_spins")
+      .select("id, title, description, link, reward_spins, multi_use")
       .eq("club_id", session.club_id)
       .eq("active", true)
       .order("display_order", { ascending: true }),
@@ -49,7 +49,11 @@ export default async function MemberDashboard({
   const totalSpins = spinsDone ?? 0;
   const level = Math.min(10, Math.floor(totalSpins / 5) + 1);
 
-  const completedQuestIds = new Set((completedQuests ?? []).map((c) => c.quest_id));
+  // Count completions per quest (for multi-use support)
+  const questCompletionCounts = new Map<string, number>();
+  for (const c of completedQuests ?? []) {
+    questCompletionCounts.set(c.quest_id, (questCompletionCounts.get(c.quest_id) ?? 0) + 1);
+  }
   const activeQuests = quests ?? [];
 
   return (
@@ -112,7 +116,9 @@ export default async function MemberDashboard({
             </h2>
             <div className="space-y-3">
               {activeQuests.map((q) => {
-                const done = completedQuestIds.has(q.id);
+                const count = questCompletionCounts.get(q.id) ?? 0;
+                const done = count > 0;
+                const isMultiUse = q.multi_use ?? false;
                 return (
                   <div key={q.id} className="bg-white rounded-2xl shadow p-4 flex items-center gap-4">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${done ? "club-tint-bg club-primary" : "bg-gray-100 text-gray-300"}`}>
@@ -125,7 +131,7 @@ export default async function MemberDashboard({
                       {q.description && (
                         <p className="text-xs text-gray-400">{q.description}</p>
                       )}
-                      {q.link && !done && (
+                      {q.link && (!done || isMultiUse) && (
                         <a
                           href={q.link}
                           target="_blank"
@@ -137,7 +143,11 @@ export default async function MemberDashboard({
                       )}
                     </div>
                     <span className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${done ? "club-tint-bg club-tint-text" : "bg-gray-100 text-gray-400"}`}>
-                      {done ? "Done" : `+${q.reward_spins} spin${q.reward_spins === 1 ? "" : "s"}`}
+                      {done
+                        ? isMultiUse
+                          ? `Done ${count}x`
+                          : "Done"
+                        : `+${q.reward_spins} spin${q.reward_spins === 1 ? "" : "s"}`}
                     </span>
                   </div>
                 );

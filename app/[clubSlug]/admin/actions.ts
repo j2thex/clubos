@@ -205,6 +205,7 @@ export async function addQuest(
   description: string,
   link: string,
   rewardSpins: number,
+  multiUse: boolean,
   clubSlug: string,
 ) {
   if (!title.trim()) return { error: "Title is required" };
@@ -227,6 +228,7 @@ export async function addQuest(
     description: description.trim() || null,
     link: link.trim() || null,
     reward_spins: rewardSpins,
+    multi_use: multiUse,
     display_order: nextOrder,
   });
 
@@ -242,6 +244,7 @@ export async function updateQuest(
   description: string,
   link: string,
   rewardSpins: number,
+  multiUse: boolean,
   clubSlug: string,
 ) {
   if (!title.trim()) return { error: "Title is required" };
@@ -256,6 +259,7 @@ export async function updateQuest(
       description: description.trim() || null,
       link: link.trim() || null,
       reward_spins: rewardSpins,
+      multi_use: multiUse,
     })
     .eq("id", questId);
 

@@ -70,7 +70,7 @@ export default async function AdminPage({
       .order("display_order", { ascending: true }),
     supabase
       .from("quests")
-      .select("id, title, description, link, reward_spins, display_order, active")
+      .select("id, title, description, link, reward_spins, display_order, active, multi_use")
       .eq("club_id", club.id)
       .eq("active", true)
       .order("display_order", { ascending: true }),
@@ -134,6 +134,7 @@ export default async function AdminPage({
     reward_spins: q.reward_spins,
     display_order: q.display_order,
     completions: completionCounts.get(q.id) ?? 0,
+    multi_use: q.multi_use ?? false,
   }));
 
   // Count RSVPs and checkins per event

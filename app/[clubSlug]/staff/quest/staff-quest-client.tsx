@@ -26,7 +26,7 @@ export function StaffQuestClient({
   const [activeMember, setActiveMember] = useState<{
     id: string;
     code: string;
-    quests: { id: string; title: string; reward_spins: number; completed: boolean }[];
+    quests: { id: string; title: string; reward_spins: number; multi_use: boolean; completionCount: number }[];
   } | null>(null);
 
   function handleLookup(e: React.FormEvent) {
@@ -63,13 +63,13 @@ export function StaffQuestClient({
       }
       const quest = activeMember.quests.find((q) => q.id === questId);
       setSuccess(`Quest completed! +${quest?.reward_spins ?? 0} spin${(quest?.reward_spins ?? 0) === 1 ? "" : "s"} awarded (balance: ${res.newBalance})`);
-      // Mark quest as completed locally
+      // Update completion count locally
       setActiveMember((prev) =>
         prev
           ? {
               ...prev,
               quests: prev.quests.map((q) =>
-                q.id === questId ? { ...q, completed: true } : q,
+                q.id === questId ? { ...q, completionCount: q.completionCount + 1 } : q,
               ),
             }
           : null,
@@ -77,8 +77,10 @@ export function StaffQuestClient({
     });
   }
 
-  const incompleteQuests = activeMember?.quests.filter((q) => !q.completed) ?? [];
-  const completedQuests = activeMember?.quests.filter((q) => q.completed) ?? [];
+  // Completable: not yet done, or multi-use (always completable)
+  const completableQuests = activeMember?.quests.filter((q) => q.multi_use || q.completionCount === 0) ?? [];
+  // Done: single-use and completed (not shown as completable)
+  const doneQuests = activeMember?.quests.filter((q) => !q.multi_use && q.completionCount > 0) ?? [];
 
   return (
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
@@ -132,20 +134,24 @@ export function StaffQuestClient({
             </p>
           </div>
 
-          {incompleteQuests.length > 0 ? (
+          {completableQuests.length > 0 ? (
             <div className="divide-y divide-gray-100">
-              {incompleteQuests.map((q) => (
+              {completableQuests.map((q) => (
                 <div key={q.id} className="px-5 py-3 flex items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900">{q.title}</p>
-                    <p className="text-xs text-gray-400">+{q.reward_spins} spin{q.reward_spins === 1 ? "" : "s"}</p>
+                    <p className="text-xs text-gray-400">
+                      {q.multi_use && q.completionCount > 0
+                        ? `Done ${q.completionCount}x`
+                        : `+${q.reward_spins} spin${q.reward_spins === 1 ? "" : "s"}`}
+                    </p>
                   </div>
                   <button
                     onClick={() => handleComplete(q.id)}
                     disabled={isPending}
                     className="rounded-lg bg-green-600 text-white px-4 py-1.5 text-xs font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors shrink-0"
                   >
-                    Complete
+                    Complete +{q.reward_spins}
                   </button>
                 </div>
               ))}
@@ -156,9 +162,9 @@ export function StaffQuestClient({
             </div>
           )}
 
-          {completedQuests.length > 0 && (
+          {doneQuests.length > 0 && (
             <div className="border-t border-gray-100 divide-y divide-gray-50">
-              {completedQuests.map((q) => (
+              {doneQuests.map((q) => (
                 <div key={q.id} className="px-5 py-2 flex items-center gap-3 opacity-50">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-gray-500">{q.title}</p>
