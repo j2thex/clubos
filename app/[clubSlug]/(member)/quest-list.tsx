@@ -70,23 +70,37 @@ export function QuestList({
                 </a>
               )}
             </div>
-            <div className="shrink-0">
-              {done ? (
+            <div className="shrink-0 flex flex-col items-end gap-1">
+              {done && !isMultiUse ? (
                 <span className="text-xs font-semibold px-2.5 py-1 rounded-full club-tint-bg club-tint-text">
-                  {isMultiUse ? `Done ${count}x` : "Done"}
+                  Done
                 </span>
               ) : isPendingQuest ? (
-                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-yellow-50 text-yellow-600">
-                  Pending
-                </span>
+                <>
+                  {isMultiUse && count > 0 && (
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full club-tint-bg club-tint-text">
+                      Done {count}x
+                    </span>
+                  )}
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-yellow-50 text-yellow-600">
+                    Pending
+                  </span>
+                </>
               ) : (
-                <button
-                  onClick={() => handleSubmit(q.id)}
-                  disabled={isPending}
-                  className="text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50 transition-colors"
-                >
-                  Mark done
-                </button>
+                <>
+                  {isMultiUse && count > 0 && (
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full club-tint-bg club-tint-text">
+                      Done {count}x
+                    </span>
+                  )}
+                  <button
+                    onClick={() => handleSubmit(q.id)}
+                    disabled={isPending}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50 transition-colors"
+                  >
+                    Mark done
+                  </button>
+                </>
               )}
             </div>
           </div>

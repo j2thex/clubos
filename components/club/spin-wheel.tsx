@@ -133,11 +133,6 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
 
     return (
       <div className="flex flex-col items-center gap-6">
-        {/* Balance display */}
-        <div className="flex items-baseline gap-2">
-          <span className="text-4xl font-bold club-primary">Spins remaining: {currentBalance}</span>
-        </div>
-
         {/* Wheel container */}
         <div className="relative" style={{ width: 392, height: 392 }}>
           <div ref={containerRef} className="w-full h-full" />

@@ -38,6 +38,7 @@ export function StaffQuestClient({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [successMemberCode, setSuccessMemberCode] = useState<string | null>(null);
+  const [approvedInfo, setApprovedInfo] = useState<{ message: string; memberCode: string } | null>(null);
   const [referralCode, setReferralCode] = useState("");
   const [pendingReferralCodes, setPendingReferralCodes] = useState<Record<string, string>>({});
   const [pendingQuests, setPendingQuests] = useState(initialPending);
@@ -79,6 +80,7 @@ export function StaffQuestClient({
     setError(null);
     setSuccess(null);
     setSuccessMemberCode(null);
+    setApprovedInfo(null);
     startTransition(async () => {
       const res = await completeQuest(
         activeMember.id,
@@ -118,6 +120,7 @@ export function StaffQuestClient({
     setError(null);
     setSuccess(null);
     setSuccessMemberCode(null);
+    setApprovedInfo(null);
     startTransition(async () => {
       const pq = pendingQuests.find((p) => p.id === pendingId);
       const refCode = questType === "referral" ? (pendingReferralCodes[pendingId] ?? "").trim().toUpperCase() : undefined;
@@ -126,8 +129,10 @@ export function StaffQuestClient({
         setError(res.error);
         return;
       }
-      setSuccess(`Quest approved! +${res.rewardSpins} spin${res.rewardSpins === 1 ? "" : "s"} awarded`);
-      setSuccessMemberCode(pq?.member_code ?? null);
+      setApprovedInfo({
+        message: `Quest approved! +${res.rewardSpins} spin${res.rewardSpins === 1 ? "" : "s"} awarded`,
+        memberCode: pq?.member_code ?? "",
+      });
       setPendingQuests((prev) => prev.filter((p) => p.id !== pendingId));
       setPendingReferralCodes((prev) => {
         const next = { ...prev };
@@ -143,13 +148,26 @@ export function StaffQuestClient({
   return (
     <div className="space-y-6">
       {/* Pending Validations */}
-      {pendingQuests.length > 0 && (
+      {(pendingQuests.length > 0 || approvedInfo) && (
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           <div className="px-5 py-3 border-b border-gray-100">
             <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
-              Pending Validations ({pendingQuests.length})
+              Pending Validations{pendingQuests.length > 0 ? ` (${pendingQuests.length})` : ""}
             </h3>
           </div>
+          {approvedInfo && (
+            <div className="px-5 py-2 text-xs text-green-700 bg-green-50 border-b border-green-100 flex items-center justify-between">
+              <span>{approvedInfo.message}</span>
+              {approvedInfo.memberCode && (
+                <a
+                  href={`/${clubSlug}/staff/?member=${approvedInfo.memberCode}`}
+                  className="ml-3 rounded-lg bg-gray-800 text-white px-3 py-1 text-xs font-semibold hover:bg-gray-700 transition-colors shrink-0"
+                >
+                  Spin
+                </a>
+              )}
+            </div>
+          )}
           <div className="divide-y divide-gray-100">
             {pendingQuests.map((pq) => (
               <div key={pq.id} className="px-5 py-3 space-y-2">

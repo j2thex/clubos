@@ -74,7 +74,7 @@ export function StaffSpinClient({
           <button
             type="submit"
             disabled={isPending || !memberCode.trim()}
-            className="rounded-lg bg-gray-800 text-white px-6 py-2.5 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+            className="rounded-lg bg-gray-800 text-white w-[72px] py-2.5 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
           >
             {isPending ? "..." : "Spin"}
           </button>
