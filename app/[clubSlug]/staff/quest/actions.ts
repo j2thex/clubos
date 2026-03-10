@@ -236,3 +236,57 @@ export async function approveQuest(
 
   return { ok: true, rewardSpins: quest.reward_spins };
 }
+
+export async function declineQuest(
+  memberQuestId: string,
+  staffMemberId: string,
+  clubSlug?: string,
+): Promise<{ error: string } | { ok: true }> {
+  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
+  const supabase = createAdminClient();
+
+  const { data: mq } = await supabase
+    .from("member_quests")
+    .select("id, member_id, quest_id, status")
+    .eq("id", memberQuestId)
+    .single();
+
+  if (!mq) return { error: "Quest submission not found" };
+  if (mq.status !== "pending") return { error: "Quest is not pending" };
+  if (staffMemberId === mq.member_id) return { error: "Cannot decline your own quest" };
+
+  const { data: quest } = await supabase
+    .from("quests")
+    .select("title, club_id")
+    .eq("id", mq.quest_id)
+    .single();
+
+  // Delete the record so member can re-submit
+  const { error: deleteError } = await supabase
+    .from("member_quests")
+    .delete()
+    .eq("id", memberQuestId);
+
+  if (deleteError) return { error: "Failed to decline quest" };
+
+  const { data: targetMember } = await supabase
+    .from("members")
+    .select("member_code")
+    .eq("id", mq.member_id)
+    .single();
+
+  await logActivity({
+    clubId: quest?.club_id ?? "",
+    staffMemberId,
+    action: "quest_declined",
+    targetMemberCode: targetMember?.member_code,
+    details: quest?.title ?? "Unknown quest",
+  });
+
+  if (clubSlug) {
+    revalidatePath(`/${clubSlug}`);
+    revalidatePath(`/${clubSlug}/staff`);
+  }
+
+  return { ok: true };
+}

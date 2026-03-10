@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { lookupMemberQuests, completeQuest, approveQuest } from "./actions";
+import { lookupMemberQuests, completeQuest, approveQuest, declineQuest } from "./actions";
 
 interface Quest {
   id: string;
@@ -19,6 +19,11 @@ interface PendingQuest {
   quest_type: string;
   completed_at: string;
 }
+
+type ItemFeedback =
+  | { type: "approved"; message: string; memberCode: string }
+  | { type: "declined" }
+  | { type: "error"; message: string };
 
 export function StaffQuestClient({
   clubId,
@@ -38,10 +43,10 @@ export function StaffQuestClient({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [successMemberCode, setSuccessMemberCode] = useState<string | null>(null);
-  const [approvedInfo, setApprovedInfo] = useState<{ message: string; memberCode: string } | null>(null);
   const [referralCode, setReferralCode] = useState("");
   const [pendingReferralCodes, setPendingReferralCodes] = useState<Record<string, string>>({});
   const [pendingQuests, setPendingQuests] = useState(initialPending);
+  const [itemFeedback, setItemFeedback] = useState<Record<string, ItemFeedback>>({});
 
   const [activeMember, setActiveMember] = useState<{
     id: string;
@@ -80,7 +85,6 @@ export function StaffQuestClient({
     setError(null);
     setSuccess(null);
     setSuccessMemberCode(null);
-    setApprovedInfo(null);
     startTransition(async () => {
       const res = await completeQuest(
         activeMember.id,
@@ -113,26 +117,27 @@ export function StaffQuestClient({
     if (questType === "referral") {
       const code = (pendingReferralCodes[pendingId] ?? "").trim();
       if (!code) {
-        setError("Please enter the referred member's code");
+        setItemFeedback((prev) => ({ ...prev, [pendingId]: { type: "error", message: "Please enter the referred member's code" } }));
         return;
       }
     }
-    setError(null);
-    setSuccess(null);
-    setSuccessMemberCode(null);
-    setApprovedInfo(null);
+    setItemFeedback((prev) => { const next = { ...prev }; delete next[pendingId]; return next; });
     startTransition(async () => {
       const pq = pendingQuests.find((p) => p.id === pendingId);
       const refCode = questType === "referral" ? (pendingReferralCodes[pendingId] ?? "").trim().toUpperCase() : undefined;
       const res = await approveQuest(pendingId, staffMemberId, clubSlug, refCode);
       if ("error" in res) {
-        setError(res.error);
+        setItemFeedback((prev) => ({ ...prev, [pendingId]: { type: "error", message: res.error } }));
         return;
       }
-      setApprovedInfo({
-        message: `Quest approved! +${res.rewardSpins} spin${res.rewardSpins === 1 ? "" : "s"} awarded`,
-        memberCode: pq?.member_code ?? "",
-      });
+      setItemFeedback((prev) => ({
+        ...prev,
+        [pendingId]: {
+          type: "approved",
+          message: `+${res.rewardSpins} spin${res.rewardSpins === 1 ? "" : "s"} awarded`,
+          memberCode: pq?.member_code ?? "",
+        },
+      }));
       setPendingQuests((prev) => prev.filter((p) => p.id !== pendingId));
       setPendingReferralCodes((prev) => {
         const next = { ...prev };
@@ -142,63 +147,110 @@ export function StaffQuestClient({
     });
   }
 
+  function handleDecline(pendingId: string) {
+    setItemFeedback((prev) => { const next = { ...prev }; delete next[pendingId]; return next; });
+    startTransition(async () => {
+      const res = await declineQuest(pendingId, staffMemberId, clubSlug);
+      if ("error" in res) {
+        setItemFeedback((prev) => ({ ...prev, [pendingId]: { type: "error", message: res.error } }));
+        return;
+      }
+      setItemFeedback((prev) => ({ ...prev, [pendingId]: { type: "declined" } }));
+      setPendingQuests((prev) => prev.filter((p) => p.id !== pendingId));
+    });
+  }
+
+  // Items to render: pending quests + any resolved items that still have feedback
+  const feedbackOnlyIds = Object.keys(itemFeedback).filter(
+    (id) => !pendingQuests.some((pq) => pq.id === id) && itemFeedback[id].type !== "error",
+  );
+  const hasPendingSection = pendingQuests.length > 0 || feedbackOnlyIds.length > 0;
+
   const completableQuests = activeMember?.quests.filter((q) => q.multi_use || q.completionCount === 0) ?? [];
   const doneQuests = activeMember?.quests.filter((q) => !q.multi_use && q.completionCount > 0) ?? [];
 
   return (
     <div className="space-y-6">
       {/* Pending Validations */}
-      {(pendingQuests.length > 0 || approvedInfo) && (
+      {hasPendingSection && (
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           <div className="px-5 py-3 border-b border-gray-100">
             <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
               Pending Validations{pendingQuests.length > 0 ? ` (${pendingQuests.length})` : ""}
             </h3>
           </div>
-          {approvedInfo && (
-            <div className="px-5 py-2 text-xs text-green-700 bg-green-50 border-b border-green-100 flex items-center justify-between">
-              <span>{approvedInfo.message}</span>
-              {approvedInfo.memberCode && (
-                <a
-                  href={`/${clubSlug}/staff/?member=${approvedInfo.memberCode}`}
-                  className="ml-3 rounded-lg bg-gray-800 text-white px-3 py-1 text-xs font-semibold hover:bg-gray-700 transition-colors shrink-0"
-                >
-                  Spin
-                </a>
-              )}
-            </div>
-          )}
           <div className="divide-y divide-gray-100">
-            {pendingQuests.map((pq) => (
-              <div key={pq.id} className="px-5 py-3 space-y-2">
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">{pq.quest_title}</p>
-                    <p className="text-xs text-gray-400">
-                      <span className="font-mono font-bold">{pq.member_code}</span>
-                      {pq.member_name && ` — ${pq.member_name}`}
-                    </p>
+            {/* Resolved feedback rows (approved/declined items already removed from pendingQuests) */}
+            {feedbackOnlyIds.map((id) => {
+              const fb = itemFeedback[id];
+              if (fb.type === "approved") {
+                return (
+                  <div key={id} className="px-5 py-3 bg-green-50 flex items-center justify-between">
+                    <span className="text-xs text-green-700 font-medium">Approved {fb.message}</span>
+                    {fb.memberCode && (
+                      <a
+                        href={`/${clubSlug}/staff/?member=${fb.memberCode}`}
+                        className="ml-3 rounded-lg bg-gray-800 text-white px-3 py-1 text-xs font-semibold hover:bg-gray-700 transition-colors shrink-0"
+                      >
+                        Spin
+                      </a>
+                    )}
                   </div>
-                  <button
-                    onClick={() => handleApprove(pq.id, pq.quest_type)}
-                    disabled={isPending}
-                    className="rounded-lg bg-green-600 text-white px-4 py-1.5 text-xs font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors shrink-0"
-                  >
-                    Approve +{pq.reward_spins}
-                  </button>
+                );
+              }
+              if (fb.type === "declined") {
+                return (
+                  <div key={id} className="px-5 py-3 bg-gray-50">
+                    <span className="text-xs text-gray-500 font-medium">Declined — member can re-submit</span>
+                  </div>
+                );
+              }
+              return null;
+            })}
+            {/* Active pending items */}
+            {pendingQuests.map((pq) => {
+              const fb = itemFeedback[pq.id];
+              return (
+                <div key={pq.id} className="px-5 py-3 space-y-2">
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900">{pq.quest_title}</p>
+                      <p className="text-xs text-gray-400">
+                        <span className="font-mono font-bold">{pq.member_code}</span>
+                        {pq.member_name && ` — ${pq.member_name}`}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleDecline(pq.id)}
+                      disabled={isPending}
+                      className="rounded-lg border border-gray-300 text-gray-500 px-3 py-1.5 text-xs font-semibold hover:bg-gray-50 disabled:opacity-50 transition-colors shrink-0"
+                    >
+                      Decline
+                    </button>
+                    <button
+                      onClick={() => handleApprove(pq.id, pq.quest_type)}
+                      disabled={isPending}
+                      className="rounded-lg bg-green-600 text-white px-4 py-1.5 text-xs font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors shrink-0"
+                    >
+                      Approve +{pq.reward_spins}
+                    </button>
+                  </div>
+                  {pq.quest_type === "referral" && (
+                    <input
+                      type="text"
+                      value={pendingReferralCodes[pq.id] ?? ""}
+                      onChange={(e) => setPendingReferralCodes((prev) => ({ ...prev, [pq.id]: e.target.value.toUpperCase() }))}
+                      placeholder="Referred member code"
+                      maxLength={6}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-mono tracking-wide uppercase text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition text-center"
+                    />
+                  )}
+                  {fb?.type === "error" && (
+                    <p className="text-xs text-red-600">{fb.message}</p>
+                  )}
                 </div>
-                {pq.quest_type === "referral" && (
-                  <input
-                    type="text"
-                    value={pendingReferralCodes[pq.id] ?? ""}
-                    onChange={(e) => setPendingReferralCodes((prev) => ({ ...prev, [pq.id]: e.target.value.toUpperCase() }))}
-                    placeholder="Referred member code"
-                    maxLength={6}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-mono tracking-wide uppercase text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition text-center"
-                  />
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
