@@ -79,6 +79,33 @@ export async function createStaffMember(
   return { ok: true };
 }
 
+export async function toggleStaffStatus(
+  memberId: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true; newStatus: string }> {
+  const supabase = createAdminClient();
+
+  const { data: member } = await supabase
+    .from("members")
+    .select("status")
+    .eq("id", memberId)
+    .single();
+
+  if (!member) return { error: "Staff member not found" };
+
+  const newStatus = member.status === "active" ? "inactive" : "active";
+
+  const { error } = await supabase
+    .from("members")
+    .update({ status: newStatus })
+    .eq("id", memberId);
+
+  if (error) return { error: "Failed to update status" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true, newStatus };
+}
+
 export async function addRole(clubId: string, name: string, clubSlug: string) {
   if (!name.trim()) return { error: "Role name is required" };
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { createMember, createStaffMember } from "./actions";
+import { createMember, createStaffMember, toggleStaffStatus } from "./actions";
 
 interface Member {
   id: string;
@@ -158,15 +158,33 @@ export function PeopleManager({
                     <p className="text-xs text-gray-400 mt-0.5 truncate">{person.full_name}</p>
                   )}
                 </div>
-                <div className="text-right shrink-0">
+                <div className="text-right shrink-0 flex items-center gap-2">
                   {tab === "members" && (
                     <p className="text-sm font-semibold text-gray-900">
                       {person.spin_balance} <span className="text-xs font-normal text-gray-400">spins</span>
                     </p>
                   )}
-                  <p className={`text-xs ${person.status === "active" ? "text-green-600" : "text-red-500"}`}>
-                    {person.status}
-                  </p>
+                  {tab === "staff" ? (
+                    <button
+                      onClick={() => {
+                        startTransition(async () => {
+                          await toggleStaffStatus(person.id, clubSlug);
+                        });
+                      }}
+                      disabled={isPending}
+                      className={`text-xs font-medium px-2.5 py-1 rounded-full transition-colors disabled:opacity-50 ${
+                        person.status === "active"
+                          ? "bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-700"
+                          : "bg-red-100 text-red-600 hover:bg-green-100 hover:text-green-700"
+                      }`}
+                    >
+                      {person.status === "active" ? "Active" : "Inactive"}
+                    </button>
+                  ) : (
+                    <p className={`text-xs ${person.status === "active" ? "text-green-600" : "text-red-500"}`}>
+                      {person.status}
+                    </p>
+                  )}
                 </div>
               </div>
             ))}

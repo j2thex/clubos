@@ -3,6 +3,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { logActivity } from "@/lib/activity-log";
+import { requireActiveStaff } from "@/lib/auth";
 
 export async function lookupMemberQuests(
   memberCode: string,
@@ -82,6 +83,7 @@ export async function completeQuest(
   staffMemberId: string,
   referralMemberCode?: string,
 ): Promise<{ error: string } | { ok: true; newBalance: number }> {
+  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
   const supabase = createAdminClient();
 
   // Get quest reward and multi_use flag
@@ -164,6 +166,7 @@ export async function approveQuest(
   clubSlug?: string,
   referralMemberCode?: string,
 ): Promise<{ error: string } | { ok: true; rewardSpins: number }> {
+  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
   const supabase = createAdminClient();
 
   // Get the pending quest

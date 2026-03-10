@@ -97,6 +97,33 @@ export async function clearStaffCookie() {
   cookieStore.delete(STAFF_COOKIE);
 }
 
+/**
+ * Verify the current staff session is active. Call from server actions
+ * to block deactivated staff. Throws an error (not redirect) so client
+ * components can catch and display it. Middleware handles the actual
+ * redirect on the next page load/navigation.
+ */
+export async function requireActiveStaff(): Promise<{ member_id: string; club_id: string }> {
+  const session = await getStaffFromCookie();
+  if (!session) {
+    throw new Error("Not authenticated");
+  }
+
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const supabase = createAdminClient();
+  const { data: member } = await supabase
+    .from("members")
+    .select("status")
+    .eq("id", session.member_id)
+    .single();
+
+  if (!member || member.status !== "active") {
+    throw new Error("Account is inactive");
+  }
+
+  return session;
+}
+
 // --- Owner auth (email + password) ---
 
 const OWNER_COOKIE = "clubos-owner-token";

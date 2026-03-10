@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logActivity } from "@/lib/activity-log";
+import { requireActiveStaff } from "@/lib/auth";
 
 export async function getServiceOrders(
   serviceId: string,
@@ -67,9 +68,9 @@ export async function getServiceOrders(
       created_at: o.created_at,
       fulfilled_at: o.fulfilled_at,
       member_code: memberMap.get(o.member_id)?.code ?? "???",
-      member_name: memberMap.get(o.member_id)?.name ?? "Unknown",
+      member_name: memberMap.get(o.member_id)?.name ?? "",
       fulfilled_by_name: o.fulfilled_by
-        ? memberMap.get(o.fulfilled_by)?.name ?? "Unknown"
+        ? memberMap.get(o.fulfilled_by)?.name || memberMap.get(o.fulfilled_by)?.code || ""
         : null,
     })),
   };
@@ -80,6 +81,7 @@ export async function fulfillOrder(
   staffMemberId: string,
   clubSlug: string,
 ): Promise<{ error: string } | { ok: true }> {
+  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
   const supabase = createAdminClient();
 
   // Get order details for logging before updating
@@ -127,6 +129,7 @@ export async function addWalkinOrder(
   staffMemberId: string,
   clubSlug: string,
 ): Promise<{ error: string } | { ok: true }> {
+  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
   const code = memberCode.trim().toUpperCase();
   if (!code || code.length < 3 || code.length > 6) return { error: "Invalid member code" };
   if (!/^[A-Z0-9]+$/.test(code)) return { error: "Invalid member code" };

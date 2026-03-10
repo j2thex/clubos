@@ -1,11 +1,12 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { hashPin, getStaffFromCookie } from "@/lib/auth";
+import { hashPin, getStaffFromCookie, requireActiveStaff } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { logActivity } from "@/lib/activity-log";
 
 export async function updateMemberRole(memberId: string, roleId: string | null, clubSlug: string) {
+  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
   const supabase = createAdminClient();
 
   const { error } = await supabase
@@ -44,6 +45,7 @@ export async function createMember(
   clubSlug: string,
   periodId?: string | null,
 ) {
+  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
   const code = memberCode.trim().toUpperCase();
 
   if (!code || code.length < 3 || code.length > 6) {
@@ -101,6 +103,7 @@ export async function createMember(
 }
 
 export async function prolongateMembership(memberId: string, clubSlug: string) {
+  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
   const supabase = createAdminClient();
 
   const { data: member } = await supabase
@@ -158,6 +161,7 @@ export async function assignMembershipPeriod(
   periodId: string | null,
   clubSlug: string,
 ) {
+  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
   const supabase = createAdminClient();
 
   if (!periodId) {
@@ -215,6 +219,7 @@ export async function createStaffMember(
   pin: string,
   clubSlug: string,
 ) {
+  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
   const code = memberCode.trim().toUpperCase();
   const trimmedPin = pin.trim();
 

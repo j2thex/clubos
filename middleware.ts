@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+);
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 const MEMBER_COOKIE = "clubos-member-token";
@@ -75,6 +81,26 @@ export async function middleware(request: NextRequest) {
     try {
       const { payload } = await jwtVerify(token, secret);
       if (!payload.is_staff) throw new Error("Not staff");
+
+      // Check DB status for page loads and RSC navigation,
+      // but skip for server actions (handled by requireActiveStaff)
+      const isServerAction = request.headers.has("next-action");
+      if (!isServerAction) {
+        const { data: staffMember } = await supabaseAdmin
+          .from("members")
+          .select("status")
+          .eq("id", payload.member_id as string)
+          .single();
+
+        if (!staffMember || staffMember.status !== "active") {
+          const res = NextResponse.redirect(
+            new URL(`/${clubSlug}/staff/login`, request.url),
+          );
+          res.cookies.delete(STAFF_COOKIE);
+          return res;
+        }
+      }
+
       const response = NextResponse.next();
       response.headers.set("x-member-id", payload.member_id as string);
       response.headers.set("x-club-id", payload.club_id as string);

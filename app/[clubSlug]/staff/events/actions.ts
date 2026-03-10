@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logActivity } from "@/lib/activity-log";
+import { requireActiveStaff } from "@/lib/auth";
 
 export async function checkinMember(
   memberCode: string,
@@ -9,6 +10,7 @@ export async function checkinMember(
   clubId: string,
   staffMemberId: string,
 ): Promise<{ error: string } | { ok: true; newBalance: number }> {
+  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
   const code = memberCode.trim().toUpperCase();
 
   if (!code || code.length < 3 || code.length > 6) {
@@ -78,6 +80,7 @@ export async function checkinMemberById(
   eventId: string,
   staffMemberId: string,
 ): Promise<{ error: string } | { ok: true; newBalance: number }> {
+  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
   const supabase = createAdminClient();
 
   const { data: member } = await supabase
