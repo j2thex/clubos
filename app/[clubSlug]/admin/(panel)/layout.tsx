@@ -42,25 +42,39 @@ export default async function AdminPanelLayout({
 
   if (!club) notFound();
 
+  const { data: branding } = await supabase
+    .from("club_branding")
+    .select("cover_url")
+    .eq("club_id", club.id)
+    .single();
+
+  const coverUrl = branding?.cover_url ?? null;
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
-      <div className="bg-gradient-to-br from-gray-800 to-gray-900 px-6 pt-10 pb-12">
-        <div className="flex items-start justify-between max-w-2xl mx-auto">
+      <div
+        className={`relative px-6 pt-10 pb-12 bg-cover bg-center ${coverUrl ? "" : "bg-gradient-to-br from-gray-800 to-gray-900"}`}
+        style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : undefined}
+      >
+        {coverUrl && (
+          <div className="absolute inset-0 bg-black/60" />
+        )}
+        <div className="relative flex items-start justify-between max-w-2xl mx-auto">
           <div>
             <h1 className="text-2xl font-bold text-white">Club Admin</h1>
             <p className="mt-1 text-gray-400 text-sm">{club.name}</p>
           </div>
           <LogoutButton clubSlug={clubSlug} />
         </div>
-        <div className="flex gap-3 mt-4 max-w-2xl mx-auto">
+        <div className="relative flex gap-3 mt-4 max-w-2xl mx-auto">
           <a
             href={`/${clubSlug}/staff`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-xs text-gray-400 hover:text-white border border-gray-600 rounded-lg px-3 py-1.5 transition-colors"
           >
-            View Staff Page
+            Staff Console
           </a>
           <a
             href={`/${clubSlug}`}
@@ -68,7 +82,7 @@ export default async function AdminPanelLayout({
             rel="noopener noreferrer"
             className="text-xs text-gray-400 hover:text-white border border-gray-600 rounded-lg px-3 py-1.5 transition-colors"
           >
-            View Member Page
+            Member Portal
           </a>
         </div>
       </div>
