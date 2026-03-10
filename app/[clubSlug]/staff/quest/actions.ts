@@ -171,7 +171,7 @@ export async function approveQuest(
   // Get the pending quest
   const { data: mq } = await supabase
     .from("member_quests")
-    .select("id, member_id, quest_id, status")
+    .select("id, member_id, quest_id, status, proof_url")
     .eq("id", memberQuestId)
     .single();
 
@@ -226,7 +226,7 @@ export async function approveQuest(
     staffMemberId: staffMemberId,
     action: "quest_approved",
     targetMemberCode: targetMember?.member_code,
-    details: `${quest.title} (+${quest.reward_spins} spins)`,
+    details: `${quest.title} (+${quest.reward_spins} spins)${mq.proof_url ? ` — proof: ${mq.proof_url}` : ""}`,
   });
 
   if (clubSlug) {

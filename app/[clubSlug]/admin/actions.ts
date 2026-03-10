@@ -237,6 +237,8 @@ export async function addQuest(
   const rewardSpins = Number(formData.get("reward_spins")) || 1;
   const multiUse = formData.get("multi_use") === "1";
   const questType = (formData.get("quest_type") as string) || "default";
+  const proofMode = (formData.get("proof_mode") as string) || "none";
+  const proofPlaceholder = (formData.get("proof_placeholder") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
 
   if (!title) return { error: "Title is required" };
@@ -269,6 +271,8 @@ export async function addQuest(
     reward_spins: rewardSpins,
     multi_use: multiUse,
     quest_type: questType,
+    proof_mode: proofMode,
+    proof_placeholder: proofPlaceholder,
     image_url: imageUrl,
     display_order: nextOrder,
   });
@@ -290,6 +294,8 @@ export async function updateQuest(
   const rewardSpins = Number(formData.get("reward_spins")) || 1;
   const multiUse = formData.get("multi_use") === "1";
   const questType = (formData.get("quest_type") as string) || "default";
+  const proofMode = (formData.get("proof_mode") as string) || "none";
+  const proofPlaceholder = (formData.get("proof_placeholder") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
 
   if (!title) return { error: "Title is required" };
@@ -304,6 +310,8 @@ export async function updateQuest(
     reward_spins: rewardSpins,
     multi_use: multiUse,
     quest_type: questType,
+    proof_mode: proofMode,
+    proof_placeholder: proofPlaceholder,
   };
 
   if (imageFile && imageFile.size > 0) {

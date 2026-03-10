@@ -7,6 +7,7 @@ export async function submitQuest(
   memberId: string,
   questId: string,
   clubSlug: string,
+  proofUrl?: string,
 ): Promise<{ error: string } | { ok: true }> {
   const supabase = createAdminClient();
 
@@ -35,11 +36,15 @@ export async function submitQuest(
   }
 
   // Insert as pending (no verified_by, no spins awarded yet)
-  const { error } = await supabase.from("member_quests").insert({
+  const insertData: Record<string, unknown> = {
     quest_id: questId,
     member_id: memberId,
     status: "pending",
-  });
+  };
+  if (proofUrl?.trim()) {
+    insertData.proof_url = proofUrl.trim();
+  }
+  const { error } = await supabase.from("member_quests").insert(insertData);
 
   if (error) return { error: "Failed to submit quest" };
 

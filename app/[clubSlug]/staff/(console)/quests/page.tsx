@@ -30,7 +30,7 @@ export default async function StaffQuestsPage({
       .order("display_order", { ascending: true }),
     supabase
       .from("member_quests")
-      .select("id, completed_at, quests!inner(title, reward_spins, quest_type, club_id), members!member_quests_member_id_fkey!inner(member_code, full_name)")
+      .select("id, completed_at, proof_url, quests!inner(title, reward_spins, quest_type, club_id), members!member_quests_member_id_fkey!inner(member_code, full_name)")
       .eq("status", "pending")
       .eq("quests.club_id", club.id)
       .order("completed_at", { ascending: true }),
@@ -47,6 +47,7 @@ export default async function StaffQuestsPage({
       member_code: member.member_code,
       member_name: member.full_name,
       completed_at: p.completed_at as string,
+      proof_url: (p.proof_url as string) ?? null,
     };
   });
 

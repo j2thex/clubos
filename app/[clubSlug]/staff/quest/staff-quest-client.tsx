@@ -18,6 +18,7 @@ interface PendingQuest {
   reward_spins: number;
   quest_type: string;
   completed_at: string;
+  proof_url: string | null;
 }
 
 type ItemFeedback =
@@ -219,6 +220,30 @@ export function StaffQuestClient({
                         <span className="font-mono font-bold">{pq.member_code}</span>
                         {pq.member_name && ` — ${pq.member_name}`}
                       </p>
+                      {pq.proof_url && (
+                        /^https?:\/\//.test(pq.proof_url) ? (
+                          <a
+                            href={pq.proof_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-block mt-0.5 text-xs font-medium text-blue-600 underline truncate max-w-[200px]"
+                          >
+                            {pq.proof_url}
+                          </a>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => navigator.clipboard.writeText(pq.proof_url!)}
+                            className="inline-flex items-center gap-1 mt-0.5 text-xs font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                            title="Click to copy"
+                          >
+                            <span className="font-mono">{pq.proof_url}</span>
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                          </button>
+                        )
+                      )}
                     </div>
                     <button
                       onClick={() => handleDecline(pq.id)}

@@ -14,6 +14,8 @@ interface Quest {
   completions: number;
   multi_use: boolean;
   quest_type: string;
+  proof_mode: string;
+  proof_placeholder: string | null;
 }
 
 const TEMPLATES = [
@@ -40,6 +42,8 @@ export function QuestManager({
   const [editMultiUse, setEditMultiUse] = useState(false);
   const [editImage, setEditImage] = useState<File | null>(null);
   const [editQuestType, setEditQuestType] = useState("default");
+  const [editProofMode, setEditProofMode] = useState("none");
+  const [editProofPlaceholder, setEditProofPlaceholder] = useState("");
 
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
@@ -48,6 +52,8 @@ export function QuestManager({
   const [newMultiUse, setNewMultiUse] = useState(false);
   const [newImage, setNewImage] = useState<File | null>(null);
   const [newQuestType, setNewQuestType] = useState("default");
+  const [newProofMode, setNewProofMode] = useState("none");
+  const [newProofPlaceholder, setNewProofPlaceholder] = useState("");
 
   const [showForm, setShowForm] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -70,6 +76,8 @@ export function QuestManager({
     setEditReward(String(q.reward_spins));
     setEditMultiUse(q.multi_use);
     setEditQuestType(q.quest_type ?? "default");
+    setEditProofMode(q.proof_mode ?? "none");
+    setEditProofPlaceholder(q.proof_placeholder ?? "");
     setEditImage(null);
     setError(null);
   }
@@ -89,6 +97,8 @@ export function QuestManager({
       fd.set("reward_spins", editReward);
       fd.set("multi_use", editMultiUse ? "1" : "0");
       fd.set("quest_type", editQuestType);
+      fd.set("proof_mode", editProofMode);
+      fd.set("proof_placeholder", editProofPlaceholder);
       if (editImage) fd.set("image", editImage);
 
       const result = await updateQuest(questId, fd, clubSlug);
@@ -119,6 +129,8 @@ export function QuestManager({
       fd.set("reward_spins", newReward);
       fd.set("multi_use", newMultiUse ? "1" : "0");
       fd.set("quest_type", newQuestType);
+      fd.set("proof_mode", newProofMode);
+      fd.set("proof_placeholder", newProofPlaceholder);
       if (newImage) fd.set("image", newImage);
 
       const result = await addQuest(clubId, fd, clubSlug);
@@ -132,6 +144,8 @@ export function QuestManager({
         setNewReward("1");
         setNewMultiUse(false);
         setNewQuestType("default");
+        setNewProofMode("none");
+        setNewProofPlaceholder("");
         setNewImage(null);
         setSuccessMsg(`"${createdTitle}" created successfully`);
         setShowForm(false);
@@ -193,7 +207,7 @@ export function QuestManager({
                       <div>
                         <label className="block text-xs font-medium text-gray-500 mb-1">Link (optional)</label>
                         <input
-                          type="url"
+                          type="text"
                           value={editLink}
                           onChange={(e) => setEditLink(e.target.value)}
                           placeholder="https://..."
@@ -241,6 +255,31 @@ export function QuestManager({
                         <option value="referral">Referral</option>
                       </select>
                     </div>
+                    {editQuestType === "default" && (
+                      <div className="space-y-2">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 mb-1">Proof Link</label>
+                          <select
+                            value={editProofMode}
+                            onChange={(e) => setEditProofMode(e.target.value)}
+                            className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                          >
+                            <option value="none">Not needed</option>
+                            <option value="optional">Optional</option>
+                            <option value="required">Required</option>
+                          </select>
+                        </div>
+                        {editProofMode !== "none" && (
+                          <input
+                            type="text"
+                            value={editProofPlaceholder}
+                            onChange={(e) => setEditProofPlaceholder(e.target.value)}
+                            placeholder="e.g. Paste your Instagram profile link"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                          />
+                        )}
+                      </div>
+                    )}
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleSaveEdit(q.id)}
@@ -355,11 +394,11 @@ export function QuestManager({
               className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
             />
           </div>
-          <div className="grid grid-cols-[1fr_auto_auto] gap-3 items-end">
+          <div className="grid grid-cols-[1fr_auto] gap-3 items-end">
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">Link (optional)</label>
               <input
-                type="url"
+                type="text"
                 value={newLink}
                 onChange={(e) => setNewLink(e.target.value)}
                 placeholder="https://example.com/link"
@@ -378,13 +417,6 @@ export function QuestManager({
                 className="w-16 rounded-lg border border-gray-300 px-2 py-1.5 text-sm text-gray-900 text-center focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
               />
             </div>
-            <button
-              type="submit"
-              disabled={isPending || !newTitle.trim()}
-              className="rounded-lg bg-gray-800 text-white px-4 py-1.5 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Add
-            </button>
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Image (optional)</label>
@@ -415,6 +447,38 @@ export function QuestManager({
               <option value="referral">Referral</option>
             </select>
           </div>
+          {newQuestType === "default" && (
+            <div className="space-y-2">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Proof Link</label>
+                <select
+                  value={newProofMode}
+                  onChange={(e) => setNewProofMode(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                >
+                  <option value="none">Not needed</option>
+                  <option value="optional">Optional</option>
+                  <option value="required">Required</option>
+                </select>
+              </div>
+              {newProofMode !== "none" && (
+                <input
+                  type="text"
+                  value={newProofPlaceholder}
+                  onChange={(e) => setNewProofPlaceholder(e.target.value)}
+                  placeholder="e.g. Paste your Instagram profile link"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                />
+              )}
+            </div>
+          )}
+          <button
+            type="submit"
+            disabled={isPending || !newTitle.trim()}
+            className="w-full rounded-lg bg-gray-800 text-white px-4 py-2 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isPending ? "Adding..." : "Add Quest"}
+          </button>
         </form>
         </div>
         )}
