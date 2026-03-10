@@ -56,12 +56,16 @@ export default async function AdminPanelLayout({
         <div className="flex gap-3 mt-4 max-w-2xl mx-auto">
           <a
             href={`/${clubSlug}/staff`}
+            target="_blank"
+            rel="noopener noreferrer"
             className="text-xs text-gray-400 hover:text-white border border-gray-600 rounded-lg px-3 py-1.5 transition-colors"
           >
             View Staff Page
           </a>
           <a
             href={`/${clubSlug}`}
+            target="_blank"
+            rel="noopener noreferrer"
             className="text-xs text-gray-400 hover:text-white border border-gray-600 rounded-lg px-3 py-1.5 transition-colors"
           >
             View Member Page

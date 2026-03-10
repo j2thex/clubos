@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
+import { BrandingManager } from "../../branding-manager";
 import { WheelManager } from "../../wheel-manager";
 import { RoleManager } from "../../role-manager";
 import { MembershipPeriodManager } from "../../membership-period-manager";
@@ -21,7 +22,12 @@ export default async function SettingsPage({
 
   if (!club) notFound();
 
-  const [{ data: segments }, { data: roles }, { data: membershipPeriods }] = await Promise.all([
+  const [{ data: branding }, { data: segments }, { data: roles }, { data: membershipPeriods }] = await Promise.all([
+    supabase
+      .from("club_branding")
+      .select("logo_url, cover_url, primary_color, secondary_color, hero_content")
+      .eq("club_id", club.id)
+      .single(),
     supabase
       .from("wheel_configs")
       .select(
@@ -45,6 +51,17 @@ export default async function SettingsPage({
 
   return (
     <div className="space-y-6">
+      <BrandingManager
+        branding={{
+          logo_url: branding?.logo_url ?? null,
+          cover_url: branding?.cover_url ?? null,
+          primary_color: branding?.primary_color ?? "#16a34a",
+          secondary_color: branding?.secondary_color ?? "#052e16",
+          hero_content: branding?.hero_content ?? null,
+        }}
+        clubId={club.id}
+        clubSlug={clubSlug}
+      />
       <WheelManager
         segments={(segments ?? []).map((s) => ({
           id: s.id,
