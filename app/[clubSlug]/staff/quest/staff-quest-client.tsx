@@ -37,6 +37,7 @@ export function StaffQuestClient({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [successMemberCode, setSuccessMemberCode] = useState<string | null>(null);
   const [referralCode, setReferralCode] = useState("");
   const [pendingReferralCodes, setPendingReferralCodes] = useState<Record<string, string>>({});
   const [pendingQuests, setPendingQuests] = useState(initialPending);
@@ -77,6 +78,7 @@ export function StaffQuestClient({
     }
     setError(null);
     setSuccess(null);
+    setSuccessMemberCode(null);
     startTransition(async () => {
       const res = await completeQuest(
         activeMember.id,
@@ -90,6 +92,7 @@ export function StaffQuestClient({
       }
       const quest = activeMember.quests.find((q) => q.id === questId);
       setSuccess(`Quest completed! +${quest?.reward_spins ?? 0} spin${(quest?.reward_spins ?? 0) === 1 ? "" : "s"} awarded (balance: ${res.newBalance})`);
+      setSuccessMemberCode(activeMember.code);
       setReferralCode("");
       setActiveMember((prev) =>
         prev
@@ -114,7 +117,9 @@ export function StaffQuestClient({
     }
     setError(null);
     setSuccess(null);
+    setSuccessMemberCode(null);
     startTransition(async () => {
+      const pq = pendingQuests.find((p) => p.id === pendingId);
       const refCode = questType === "referral" ? (pendingReferralCodes[pendingId] ?? "").trim().toUpperCase() : undefined;
       const res = await approveQuest(pendingId, staffMemberId, clubSlug, refCode);
       if ("error" in res) {
@@ -122,6 +127,7 @@ export function StaffQuestClient({
         return;
       }
       setSuccess(`Quest approved! +${res.rewardSpins} spin${res.rewardSpins === 1 ? "" : "s"} awarded`);
+      setSuccessMemberCode(pq?.member_code ?? null);
       setPendingQuests((prev) => prev.filter((p) => p.id !== pendingId));
       setPendingReferralCodes((prev) => {
         const next = { ...prev };
@@ -218,8 +224,16 @@ export function StaffQuestClient({
         )}
 
         {success && (
-          <div className="px-5 py-2 text-xs text-green-700 bg-green-50 border-t border-green-100">
-            {success}
+          <div className="px-5 py-2 text-xs text-green-700 bg-green-50 border-t border-green-100 flex items-center justify-between">
+            <span>{success}</span>
+            {successMemberCode && (
+              <a
+                href={`/${clubSlug}/staff/?member=${successMemberCode}`}
+                className="ml-3 rounded-lg bg-gray-800 text-white px-3 py-1 text-xs font-semibold hover:bg-gray-700 transition-colors shrink-0"
+              >
+                Spin
+              </a>
+            )}
           </div>
         )}
 

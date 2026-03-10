@@ -14,11 +14,13 @@ interface Segment {
 export function StaffSpinClient({
   clubId,
   segments,
+  initialMemberCode,
 }: {
   clubId: string;
   segments: Segment[];
+  initialMemberCode?: string;
 }) {
-  const [memberCode, setMemberCode] = useState("");
+  const [memberCode, setMemberCode] = useState(initialMemberCode ?? "");
   const [isPending, startTransition] = useTransition();
   const [memberBalance, setMemberBalance] = useState<number>(0);
   const [activeMemberCode, setActiveMemberCode] = useState<string | null>(null);

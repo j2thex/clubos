@@ -4,10 +4,13 @@ import { StaffSpinClient } from "../spin/staff-spin-client";
 
 export default async function StaffSpinPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ clubSlug: string }>;
+  searchParams: Promise<{ member?: string }>;
 }) {
   const { clubSlug } = await params;
+  const { member } = await searchParams;
   const supabase = createAdminClient();
 
   const { data: club } = await supabase
@@ -29,6 +32,7 @@ export default async function StaffSpinPage({
   return segments && segments.length > 0 ? (
     <StaffSpinClient
       clubId={club.id}
+      initialMemberCode={member}
       segments={segments.map((s) => ({
         label: s.label,
         color: s.color ?? "#16a34a",
