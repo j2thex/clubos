@@ -84,9 +84,8 @@ export async function completeQuest(
   referralMemberCode?: string,
 ): Promise<{ error: string } | { ok: true; newBalance: number }> {
   try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
+  if (staffMemberId === memberId) return { error: "Cannot validate your own quest" };
   const supabase = createAdminClient();
-
-  // Get quest reward and multi_use flag
   const { data: quest } = await supabase
     .from("quests")
     .select("reward_spins, multi_use, title, club_id")
@@ -178,6 +177,7 @@ export async function approveQuest(
 
   if (!mq) return { error: "Quest submission not found" };
   if (mq.status !== "pending") return { error: "Quest is not pending" };
+  if (staffMemberId === mq.member_id) return { error: "Cannot approve your own quest" };
 
   // Get reward amount
   const { data: quest } = await supabase

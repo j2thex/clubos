@@ -79,7 +79,7 @@ export async function createStaffMember(
   return { ok: true };
 }
 
-export async function toggleStaffStatus(
+export async function toggleMemberStatus(
   memberId: string,
   clubSlug: string,
 ): Promise<{ error: string } | { ok: true; newStatus: string }> {
@@ -91,7 +91,7 @@ export async function toggleStaffStatus(
     .eq("id", memberId)
     .single();
 
-  if (!member) return { error: "Staff member not found" };
+  if (!member) return { error: "Member not found" };
 
   const newStatus = member.status === "active" ? "inactive" : "active";
 

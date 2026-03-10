@@ -30,7 +30,8 @@ export async function lookupMember(memberCode: string, clubId: string): Promise<
 }
 
 export async function performSpinForMember(memberCode: string, clubId: string): Promise<{ error: string } | { outcome: { label: string; rewardType: string; value: number; color: string }; newBalance: number; segmentIndex: number }> {
-  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
+  let staffSession: { member_id: string; club_id: string };
+  try { staffSession = await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
   const code = memberCode.trim().toUpperCase();
   if (!code || code.length < 3 || code.length > 6) {
     return { error: "Invalid member code" };
@@ -48,6 +49,10 @@ export async function performSpinForMember(memberCode: string, clubId: string): 
 
   if (!member) {
     return { error: "Member not found" };
+  }
+
+  if (member.id === staffSession.member_id) {
+    return { error: "Cannot spin for yourself" };
   }
 
   if (member.spin_balance <= 0) {

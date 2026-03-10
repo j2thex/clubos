@@ -32,6 +32,7 @@ export async function checkinMember(
     .single();
 
   if (!member) return { error: "Member not found" };
+  if (member.id === staffMemberId) return { error: "Cannot check in yourself" };
 
   // Get event reward
   const { data: event } = await supabase
@@ -81,6 +82,7 @@ export async function checkinMemberById(
   staffMemberId: string,
 ): Promise<{ error: string } | { ok: true; newBalance: number }> {
   try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
+  if (memberId === staffMemberId) return { error: "Cannot check in yourself" };
   const supabase = createAdminClient();
 
   const { data: member } = await supabase
