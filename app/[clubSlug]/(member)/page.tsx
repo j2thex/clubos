@@ -25,7 +25,7 @@ export default async function MemberDashboard({
       .single(),
     supabase
       .from("clubs")
-      .select("id, name, club_branding(logo_url, cover_url)")
+      .select("id, name, club_branding(logo_url, cover_url, hero_content)")
       .eq("id", session.club_id)
       .single(),
     supabase
@@ -52,6 +52,7 @@ export default async function MemberDashboard({
     : club?.club_branding;
   const logoUrl = branding?.logo_url ?? null;
   const coverUrl = branding?.cover_url ?? null;
+  const heroContent = branding?.hero_content ?? null;
   const totalSpins = spinsDone ?? 0;
   const level = Math.min(10, Math.floor(totalSpins / 5) + 1);
 
@@ -94,7 +95,7 @@ export default async function MemberDashboard({
             </p>
           )}
           <h1 className="text-2xl font-bold text-white">
-            Welcome back, {displayName}
+            {heroContent ? heroContent.replace("{name}", displayName) : `Welcome back, ${displayName}`}
           </h1>
         </div>
       </div>
