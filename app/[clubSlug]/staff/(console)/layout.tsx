@@ -31,7 +31,7 @@ export default async function StaffConsoleLayout({
   return (
     <div className="min-h-screen bg-gray-50">
       <div
-        className={`relative px-6 pt-10 pb-20 bg-cover bg-center ${coverUrl ? "" : "bg-gradient-to-br from-gray-800 to-gray-900"}`}
+        className={`relative px-6 pt-10 bg-cover bg-center ${coverUrl ? "pb-6" : "pb-20 bg-gradient-to-br from-gray-800 to-gray-900"}`}
         style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : undefined}
       >
         {coverUrl && (
@@ -56,7 +56,7 @@ export default async function StaffConsoleLayout({
           </div>
         </div>
       </div>
-      <div className="px-4 -mt-12 pb-10 max-w-2xl mx-auto space-y-6 relative z-10">
+      <div className={`px-4 pb-10 max-w-2xl mx-auto space-y-6 relative z-10 ${coverUrl ? "mt-4" : "-mt-12"}`}>
         {children}
       </div>
     </div>
