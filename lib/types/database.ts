@@ -131,6 +131,7 @@ export type Database = {
           status: string;
           membership_period_id: string | null;
           valid_till: string | null;
+          referred_by: string | null;
           created_at: string;
         };
         Insert: {
@@ -144,6 +145,7 @@ export type Database = {
           status?: string;
           membership_period_id?: string | null;
           valid_till?: string | null;
+          referred_by?: string | null;
           created_at?: string;
         };
         Update: {
@@ -157,6 +159,7 @@ export type Database = {
           status?: string;
           membership_period_id?: string | null;
           valid_till?: string | null;
+          referred_by?: string | null;
           created_at?: string;
         };
         Relationships: [

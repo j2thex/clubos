@@ -44,6 +44,7 @@ export async function createMember(
   memberCode: string,
   clubSlug: string,
   periodId?: string | null,
+  referredBy?: string | null,
 ) {
   try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
   const code = memberCode.trim().toUpperCase();
@@ -56,6 +57,25 @@ export async function createMember(
   }
 
   const supabase = createAdminClient();
+
+  // Validate referral code if provided
+  let referredByCode: string | null = null;
+  if (referredBy) {
+    const refCode = referredBy.trim().toUpperCase();
+    if (refCode) {
+      if (refCode === code) {
+        return { error: "Member cannot refer themselves" };
+      }
+      const { data: referrer } = await supabase
+        .from("members")
+        .select("id")
+        .eq("club_id", clubId)
+        .eq("member_code", refCode)
+        .single();
+      if (!referrer) return { error: "Referral code not found" };
+      referredByCode = refCode;
+    }
+  }
 
   // Calculate valid_till if period selected
   let membershipPeriodId: string | null = null;
@@ -82,6 +102,7 @@ export async function createMember(
     spin_balance: 0,
     membership_period_id: membershipPeriodId,
     valid_till: validTill,
+    referred_by: referredByCode,
   });
 
   if (error) {
@@ -90,12 +111,17 @@ export async function createMember(
   }
 
   const staff = await getStaffFromCookie();
+  const details = [
+    validTill ? `Period till ${validTill}` : null,
+    referredByCode ? `Referred by ${referredByCode}` : null,
+  ].filter(Boolean).join(", ");
+
   await logActivity({
     clubId,
     staffMemberId: staff?.member_id,
     action: "member_created",
     targetMemberCode: code,
-    details: validTill ? `Period till ${validTill}` : undefined,
+    details: details || undefined,
   });
 
   revalidatePath(`/${clubSlug}/staff/members`);

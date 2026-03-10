@@ -14,6 +14,7 @@ export function StaffMemberCreator({
 }) {
   const [memberCode, setMemberCode] = useState("");
   const [selectedPeriodId, setSelectedPeriodId] = useState("");
+  const [referredBy, setReferredBy] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -24,13 +25,14 @@ export function StaffMemberCreator({
     setSuccess(null);
 
     startTransition(async () => {
-      const result = await createMember(clubId, memberCode, clubSlug, selectedPeriodId || null);
+      const result = await createMember(clubId, memberCode, clubSlug, selectedPeriodId || null, referredBy || null);
       if (result.error) {
         setError(result.error);
       } else {
         setSuccess(`Member ${memberCode.toUpperCase()} created`);
         setMemberCode("");
         setSelectedPeriodId("");
+        setReferredBy("");
         setTimeout(() => setSuccess(null), 3000);
       }
     });
@@ -66,6 +68,19 @@ export function StaffMemberCreator({
             >
               {isPending ? "..." : "Create"}
             </button>
+          </div>
+          <div className="px-5 pb-2">
+            <label className="block text-xs font-medium text-gray-500 mb-1">
+              Referred by
+            </label>
+            <input
+              type="text"
+              value={referredBy}
+              onChange={(e) => setReferredBy(e.target.value.toUpperCase())}
+              placeholder="Member code (optional)"
+              maxLength={6}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono tracking-wide uppercase text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition"
+            />
           </div>
           {periods.length > 0 && (
             <div className="px-5 pb-2">

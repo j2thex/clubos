@@ -58,6 +58,16 @@ export default async function ProfilePage({
       .single(),
   ]);
 
+  // Fetch referrals (members referred by this member's code)
+  const { data: referrals } = member?.member_code
+    ? await supabase
+        .from("members")
+        .select("member_code, full_name, created_at")
+        .eq("club_id", session.club_id)
+        .eq("referred_by", member.member_code)
+        .order("created_at", { ascending: false })
+    : { data: [] };
+
   const logoUrl = branding?.logo_url ?? null;
 
   const memberCode = member?.member_code ?? "";
@@ -203,6 +213,47 @@ export default async function ProfilePage({
             </div>
           )}
         </div>
+
+        {/* Referrals */}
+        {referrals && referrals.length > 0 && (
+          <div className="space-y-2">
+            <h2 className="text-sm font-semibold text-white/80 uppercase tracking-wide px-1">
+              Your Referrals
+            </h2>
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+              <div className="club-tint-bg px-5 py-3 flex items-center justify-between border-b club-tint-border">
+                <span className="text-sm font-semibold club-tint-text">
+                  People you referred
+                </span>
+                <span className="text-xs font-bold club-tint-text px-2.5 py-1 rounded-full" style={{ backgroundColor: "color-mix(in srgb, var(--club-primary, #16a34a) 15%, white)" }}>
+                  {referrals.length}
+                </span>
+              </div>
+              <div className="divide-y divide-gray-100">
+                {referrals.map((ref) => (
+                  <div key={ref.member_code} className="px-5 py-3 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 font-mono tracking-wide">
+                        {ref.member_code}
+                      </p>
+                      {ref.full_name && (
+                        <p className="text-xs text-gray-400 truncate">{ref.full_name}</p>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-400 shrink-0">
+                      {new Date(ref.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Logout */}
         <form action={logoutWithSlug}>
