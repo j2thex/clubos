@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { logActivity } from "@/lib/activity-log";
 
 export async function lookupMemberQuests(
   memberCode: string,
@@ -86,7 +87,7 @@ export async function completeQuest(
   // Get quest reward and multi_use flag
   const { data: quest } = await supabase
     .from("quests")
-    .select("reward_spins, multi_use")
+    .select("reward_spins, multi_use, title, club_id")
     .eq("id", questId)
     .single();
 
@@ -139,6 +140,21 @@ export async function completeQuest(
     .update({ spin_balance: newBalance })
     .eq("id", memberId);
 
+  // Log activity
+  const { data: targetMember } = await supabase
+    .from("members")
+    .select("member_code")
+    .eq("id", memberId)
+    .single();
+
+  await logActivity({
+    clubId: quest.club_id,
+    staffMemberId: staffMemberId,
+    action: "quest_validated",
+    targetMemberCode: targetMember?.member_code,
+    details: `${quest.title} (+${quest.reward_spins} spins)`,
+  });
+
   return { ok: true, newBalance };
 }
 
@@ -163,7 +179,7 @@ export async function approveQuest(
   // Get reward amount
   const { data: quest } = await supabase
     .from("quests")
-    .select("reward_spins")
+    .select("reward_spins, title, club_id")
     .eq("id", mq.quest_id)
     .single();
 
@@ -194,6 +210,21 @@ export async function approveQuest(
     .from("members")
     .update({ spin_balance: newBalance })
     .eq("id", mq.member_id);
+
+  // Log activity
+  const { data: targetMember } = await supabase
+    .from("members")
+    .select("member_code")
+    .eq("id", mq.member_id)
+    .single();
+
+  await logActivity({
+    clubId: quest.club_id,
+    staffMemberId: staffMemberId,
+    action: "quest_approved",
+    targetMemberCode: targetMember?.member_code,
+    details: `${quest.title} (+${quest.reward_spins} spins)`,
+  });
 
   if (clubSlug) {
     revalidatePath(`/${clubSlug}`);

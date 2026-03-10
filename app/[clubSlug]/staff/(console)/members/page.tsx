@@ -68,11 +68,13 @@ export default async function StaffMembersPage({
                       roleId: member.role_id,
                       roleName: roleName ?? null,
                       validTill: member.valid_till ?? null,
+                      membershipPeriodId: member.membership_period_id ?? null,
                       periodDurationMonths: member.membership_period_id
                         ? periodMap.get(member.membership_period_id) ?? null
                         : null,
                     }}
                     roles={roles ?? []}
+                    periods={periods ?? []}
                     clubSlug={clubSlug}
                   />
                 );

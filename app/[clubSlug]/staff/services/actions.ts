@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logActivity } from "@/lib/activity-log";
 
 export async function getServiceOrders(
   serviceId: string,
@@ -81,6 +82,13 @@ export async function fulfillOrder(
 ): Promise<{ error: string } | { ok: true }> {
   const supabase = createAdminClient();
 
+  // Get order details for logging before updating
+  const { data: order } = await supabase
+    .from("service_orders")
+    .select("member_id, service_id")
+    .eq("id", orderId)
+    .single();
+
   const { error } = await supabase
     .from("service_orders")
     .update({
@@ -92,6 +100,21 @@ export async function fulfillOrder(
     .eq("status", "pending");
 
   if (error) return { error: "Failed to fulfill order" };
+
+  if (order) {
+    const [{ data: memberForLog }, { data: service }] = await Promise.all([
+      supabase.from("members").select("member_code, club_id").eq("id", order.member_id).single(),
+      supabase.from("services").select("title").eq("id", order.service_id).single(),
+    ]);
+
+    await logActivity({
+      clubId: memberForLog?.club_id ?? "",
+      staffMemberId,
+      action: "order_fulfilled",
+      targetMemberCode: memberForLog?.member_code,
+      details: service?.title,
+    });
+  }
 
   revalidatePath(`/${clubSlug}/staff/services`);
   return { ok: true };
@@ -129,6 +152,20 @@ export async function addWalkinOrder(
   });
 
   if (error) return { error: "Failed to add order" };
+
+  const { data: service } = await supabase
+    .from("services")
+    .select("title")
+    .eq("id", serviceId)
+    .single();
+
+  await logActivity({
+    clubId,
+    staffMemberId,
+    action: "walkin_order",
+    targetMemberCode: code,
+    details: service?.title,
+  });
 
   revalidatePath(`/${clubSlug}/staff/services`);
   return { ok: true };

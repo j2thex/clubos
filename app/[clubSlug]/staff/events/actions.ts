@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logActivity } from "@/lib/activity-log";
 
 export async function checkinMember(
   memberCode: string,
@@ -33,7 +34,7 @@ export async function checkinMember(
   // Get event reward
   const { data: event } = await supabase
     .from("events")
-    .select("reward_spins")
+    .select("reward_spins, title")
     .eq("id", eventId)
     .single();
 
@@ -61,6 +62,14 @@ export async function checkinMember(
     .update({ spin_balance: newBalance })
     .eq("id", member.id);
 
+  await logActivity({
+    clubId,
+    staffMemberId,
+    action: "checkin",
+    targetMemberCode: code,
+    details: `${event.title} (+${event.reward_spins} spins)`,
+  });
+
   return { ok: true, newBalance };
 }
 
@@ -81,7 +90,7 @@ export async function checkinMemberById(
 
   const { data: event } = await supabase
     .from("events")
-    .select("reward_spins")
+    .select("reward_spins, title, club_id")
     .eq("id", eventId)
     .single();
 
@@ -106,6 +115,21 @@ export async function checkinMemberById(
     .from("members")
     .update({ spin_balance: newBalance })
     .eq("id", memberId);
+
+  // Get member code for logging
+  const { data: memberForLog } = await supabase
+    .from("members")
+    .select("member_code")
+    .eq("id", memberId)
+    .single();
+
+  await logActivity({
+    clubId: event.club_id,
+    staffMemberId,
+    action: "checkin",
+    targetMemberCode: memberForLog?.member_code,
+    details: `${event.title} (+${event.reward_spins} spins)`,
+  });
 
   return { ok: true, newBalance };
 }

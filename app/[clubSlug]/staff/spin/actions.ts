@@ -1,6 +1,8 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getStaffFromCookie } from "@/lib/auth";
+import { logActivity } from "@/lib/activity-log";
 
 export async function lookupMember(memberCode: string, clubId: string): Promise<{ error: string } | { memberCode: string; balance: number }> {
   const code = memberCode.trim().toUpperCase();
@@ -89,6 +91,15 @@ export async function performSpinForMember(memberCode: string, clubId: string): 
     member_id: member.id,
     outcome_label: selected.label,
     outcome_value: selected.reward_value,
+  });
+
+  const staff = await getStaffFromCookie();
+  await logActivity({
+    clubId,
+    staffMemberId: staff?.member_id,
+    action: "spin_performed",
+    targetMemberCode: code,
+    details: `${selected.label}${selected.reward_value > 0 ? ` (+${selected.reward_value} spins)` : ""}`,
   });
 
   return {

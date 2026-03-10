@@ -1,8 +1,9 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { hashPin } from "@/lib/auth";
+import { hashPin, getStaffFromCookie } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { logActivity } from "@/lib/activity-log";
 
 export async function updateMemberRole(memberId: string, roleId: string | null, clubSlug: string) {
   const supabase = createAdminClient();
@@ -15,6 +16,23 @@ export async function updateMemberRole(memberId: string, roleId: string | null, 
   if (error) {
     return { error: "Failed to update role" };
   }
+
+  // Log role assignment
+  const [{ data: memberForLog }, roleData] = await Promise.all([
+    supabase.from("members").select("member_code, club_id").eq("id", memberId).single(),
+    roleId
+      ? supabase.from("member_roles").select("name").eq("id", roleId).single()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  const staff = await getStaffFromCookie();
+  await logActivity({
+    clubId: memberForLog?.club_id ?? "",
+    staffMemberId: staff?.member_id,
+    action: "role_assigned",
+    targetMemberCode: memberForLog?.member_code,
+    details: roleData?.data?.name ?? "No role",
+  });
 
   revalidatePath(`/${clubSlug}/staff/members`);
   return { ok: true };
@@ -69,6 +87,15 @@ export async function createMember(
     return { error: "Failed to create member" };
   }
 
+  const staff = await getStaffFromCookie();
+  await logActivity({
+    clubId,
+    staffMemberId: staff?.member_id,
+    action: "member_created",
+    targetMemberCode: code,
+    details: validTill ? `Period till ${validTill}` : undefined,
+  });
+
   revalidatePath(`/${clubSlug}/staff/members`);
   return { ok: true };
 }
@@ -105,6 +132,78 @@ export async function prolongateMembership(memberId: string, clubSlug: string) {
     .eq("id", memberId);
 
   if (error) return { error: "Failed to extend membership" };
+
+  // Get member code for logging
+  const { data: memberForLog } = await supabase
+    .from("members")
+    .select("member_code, club_id")
+    .eq("id", memberId)
+    .single();
+
+  const staff = await getStaffFromCookie();
+  await logActivity({
+    clubId: memberForLog?.club_id ?? "",
+    staffMemberId: staff?.member_id,
+    action: "membership_prolongated",
+    targetMemberCode: memberForLog?.member_code,
+    details: `Extended to ${newValidTill}`,
+  });
+
+  revalidatePath(`/${clubSlug}/staff/members`);
+  return { ok: true };
+}
+
+export async function assignMembershipPeriod(
+  memberId: string,
+  periodId: string | null,
+  clubSlug: string,
+) {
+  const supabase = createAdminClient();
+
+  if (!periodId) {
+    const { error } = await supabase
+      .from("members")
+      .update({ membership_period_id: null, valid_till: null })
+      .eq("id", memberId);
+    if (error) return { error: "Failed to update membership" };
+    revalidatePath(`/${clubSlug}/staff/members`);
+    return { ok: true };
+  }
+
+  const { data: period } = await supabase
+    .from("membership_periods")
+    .select("duration_months")
+    .eq("id", periodId)
+    .single();
+
+  if (!period) return { error: "Period not found" };
+
+  const d = new Date();
+  d.setMonth(d.getMonth() + period.duration_months);
+  const validTill = d.toISOString().split("T")[0];
+
+  const { error } = await supabase
+    .from("members")
+    .update({ membership_period_id: periodId, valid_till: validTill })
+    .eq("id", memberId);
+
+  if (error) return { error: "Failed to assign period" };
+
+  // Get member code for logging
+  const { data: memberForLog } = await supabase
+    .from("members")
+    .select("member_code, club_id")
+    .eq("id", memberId)
+    .single();
+
+  const staff = await getStaffFromCookie();
+  await logActivity({
+    clubId: memberForLog?.club_id ?? "",
+    staffMemberId: staff?.member_id,
+    action: "membership_assigned",
+    targetMemberCode: memberForLog?.member_code,
+    details: `${period.duration_months}mo period, valid till ${validTill}`,
+  });
 
   revalidatePath(`/${clubSlug}/staff/members`);
   return { ok: true };

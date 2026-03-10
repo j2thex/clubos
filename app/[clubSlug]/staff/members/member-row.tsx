@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
-import { updateMemberRole, prolongateMembership } from "./actions";
+import { updateMemberRole, prolongateMembership, assignMembershipPeriod } from "./actions";
 
 interface MemberInfo {
   id: string;
@@ -11,6 +11,7 @@ interface MemberInfo {
   roleId: string | null;
   roleName: string | null;
   validTill: string | null;
+  membershipPeriodId: string | null;
   periodDurationMonths: number | null;
 }
 
@@ -19,13 +20,21 @@ interface Role {
   name: string;
 }
 
+interface Period {
+  id: string;
+  name: string;
+  duration_months: number;
+}
+
 export function StaffMemberRow({
   member,
   roles,
+  periods,
   clubSlug,
 }: {
   member: MemberInfo;
   roles: Role[];
+  periods: Period[];
   clubSlug: string;
 }) {
   const [isPending, startTransition] = useTransition();
@@ -78,6 +87,26 @@ export function StaffMemberRow({
             </div>
           );
         })()}
+        {!member.validTill && periods.length > 0 && (
+          <select
+            value=""
+            onChange={(e) => {
+              const pid = e.target.value || null;
+              startTransition(async () => {
+                await assignMembershipPeriod(member.id, pid, clubSlug);
+              });
+            }}
+            disabled={isPending}
+            className="mt-1 rounded-lg border border-gray-300 px-2 py-1 text-xs text-gray-500 bg-white transition disabled:opacity-50"
+          >
+            <option value="">Assign period...</option>
+            {periods.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name} ({p.duration_months}mo)
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       <select
