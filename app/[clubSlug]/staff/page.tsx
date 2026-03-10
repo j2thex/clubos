@@ -22,7 +22,7 @@ export default async function StaffDashboard({
 
   if (!club) notFound();
 
-  const [{ data: segments }, { data: quests }] = await Promise.all([
+  const [{ data: segments }, { data: quests }, { data: pendingRaw }] = await Promise.all([
     supabase
       .from("wheel_configs")
       .select("label, color, label_color, probability")
@@ -31,11 +31,31 @@ export default async function StaffDashboard({
       .order("display_order", { ascending: true }),
     supabase
       .from("quests")
-      .select("id, title, reward_spins")
+      .select("id, title, reward_spins, quest_type")
       .eq("club_id", club.id)
       .eq("active", true)
       .order("display_order", { ascending: true }),
+    supabase
+      .from("member_quests")
+      .select("id, completed_at, quests!inner(title, reward_spins, quest_type, club_id), members!member_quests_member_id_fkey!inner(member_code, full_name)")
+      .eq("status", "pending")
+      .eq("quests.club_id", club.id)
+      .order("completed_at", { ascending: true }),
   ]);
+
+  const pendingQuests = (pendingRaw ?? []).map((p: Record<string, unknown>) => {
+    const quest = (Array.isArray(p.quests) ? p.quests[0] : p.quests) as { title: string; reward_spins: number; quest_type: string };
+    const member = (Array.isArray(p.members) ? p.members[0] : p.members) as { member_code: string; full_name: string | null };
+    return {
+      id: p.id as string,
+      quest_title: quest.title,
+      reward_spins: quest.reward_spins,
+      quest_type: quest.quest_type ?? "default",
+      member_code: member.member_code,
+      member_name: member.full_name,
+      completed_at: p.completed_at as string,
+    };
+  });
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -74,12 +94,15 @@ export default async function StaffDashboard({
         {quests && quests.length > 0 && (
           <StaffQuestClient
             clubId={club.id}
+            clubSlug={clubSlug}
             quests={quests.map((q) => ({
               id: q.id,
               title: q.title,
               reward_spins: q.reward_spins,
+              quest_type: q.quest_type ?? "default",
             }))}
             staffMemberId={session?.member_id ?? ""}
+            pendingQuests={pendingQuests}
           />
         )}
       </div>

@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { revalidatePath } from "next/cache";
 
 export async function lookupMemberQuests(
   memberCode: string,
@@ -15,6 +16,7 @@ export async function lookupMemberQuests(
         title: string;
         reward_spins: number;
         multi_use: boolean;
+        quest_type: string;
         completionCount: number;
       }[];
     }
@@ -43,7 +45,7 @@ export async function lookupMemberQuests(
   const [{ data: quests }, { data: completions }] = await Promise.all([
     supabase
       .from("quests")
-      .select("id, title, reward_spins, multi_use")
+      .select("id, title, reward_spins, multi_use, quest_type")
       .eq("club_id", clubId)
       .eq("active", true)
       .order("display_order", { ascending: true }),
@@ -67,6 +69,7 @@ export async function lookupMemberQuests(
       title: q.title,
       reward_spins: q.reward_spins,
       multi_use: q.multi_use ?? false,
+      quest_type: q.quest_type ?? "default",
       completionCount: completionCounts.get(q.id) ?? 0,
     })),
   };
@@ -76,6 +79,7 @@ export async function completeQuest(
   memberId: string,
   questId: string,
   staffMemberId: string,
+  referralMemberCode?: string,
 ): Promise<{ error: string } | { ok: true; newBalance: number }> {
   const supabase = createAdminClient();
 
@@ -103,13 +107,19 @@ export async function completeQuest(
   }
 
   // Insert completion
+  const insertData: Record<string, unknown> = {
+    quest_id: questId,
+    member_id: memberId,
+    verified_by: staffMemberId,
+    status: "verified",
+  };
+  if (referralMemberCode) {
+    insertData.referral_member_code = referralMemberCode;
+  }
+
   const { error: insertError } = await supabase
     .from("member_quests")
-    .insert({
-      quest_id: questId,
-      member_id: memberId,
-      verified_by: staffMemberId,
-    });
+    .insert(insertData);
 
   if (insertError) {
     return { error: "Failed to complete quest" };
@@ -130,4 +140,65 @@ export async function completeQuest(
     .eq("id", memberId);
 
   return { ok: true, newBalance };
+}
+
+export async function approveQuest(
+  memberQuestId: string,
+  staffMemberId: string,
+  clubSlug?: string,
+  referralMemberCode?: string,
+): Promise<{ error: string } | { ok: true; rewardSpins: number }> {
+  const supabase = createAdminClient();
+
+  // Get the pending quest
+  const { data: mq } = await supabase
+    .from("member_quests")
+    .select("id, member_id, quest_id, status")
+    .eq("id", memberQuestId)
+    .single();
+
+  if (!mq) return { error: "Quest submission not found" };
+  if (mq.status !== "pending") return { error: "Quest is not pending" };
+
+  // Get reward amount
+  const { data: quest } = await supabase
+    .from("quests")
+    .select("reward_spins")
+    .eq("id", mq.quest_id)
+    .single();
+
+  if (!quest) return { error: "Quest not found" };
+
+  // Mark as verified
+  const updateData: Record<string, unknown> = { status: "verified", verified_by: staffMemberId };
+  if (referralMemberCode) {
+    updateData.referral_member_code = referralMemberCode;
+  }
+  const { error: updateError } = await supabase
+    .from("member_quests")
+    .update(updateData)
+    .eq("id", memberQuestId);
+
+  if (updateError) return { error: "Failed to approve quest" };
+
+  // Award spins
+  const { data: member } = await supabase
+    .from("members")
+    .select("spin_balance")
+    .eq("id", mq.member_id)
+    .single();
+
+  const newBalance = (member?.spin_balance ?? 0) + quest.reward_spins;
+
+  await supabase
+    .from("members")
+    .update({ spin_balance: newBalance })
+    .eq("id", mq.member_id);
+
+  if (clubSlug) {
+    revalidatePath(`/${clubSlug}`);
+    revalidatePath(`/${clubSlug}/staff`);
+  }
+
+  return { ok: true, rewardSpins: quest.reward_spins };
 }

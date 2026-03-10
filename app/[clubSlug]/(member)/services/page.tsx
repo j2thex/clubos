@@ -17,18 +17,25 @@ export default async function ServicesPage({
 
   const supabase = createAdminClient();
 
-  const { data: services } = await supabase
-    .from("services")
-    .select("id, title, description, image_url, link, price")
-    .eq("club_id", session.club_id)
-    .eq("active", true)
-    .order("display_order", { ascending: true });
+  const [{ data: services }, { data: orders }, { data: branding }] = await Promise.all([
+    supabase
+      .from("services")
+      .select("id, title, description, image_url, link, price")
+      .eq("club_id", session.club_id)
+      .eq("active", true)
+      .order("display_order", { ascending: true }),
+    supabase
+      .from("service_orders")
+      .select("id, service_id, status")
+      .eq("member_id", session.member_id),
+    supabase
+      .from("club_branding")
+      .select("logo_url")
+      .eq("club_id", session.club_id)
+      .single(),
+  ]);
 
-  // Get member's service orders
-  const { data: orders } = await supabase
-    .from("service_orders")
-    .select("id, service_id, status")
-    .eq("member_id", session.member_id);
+  const logoUrl = branding?.logo_url ?? null;
 
   const list = (services ?? []).map((s) => ({
     ...s,
@@ -44,6 +51,9 @@ export default async function ServicesPage({
   return (
     <div className="min-h-screen club-page-bg">
       <div className="club-hero px-6 pt-10 pb-12 text-center">
+        {logoUrl && (
+          <img src={logoUrl} alt="Club logo" className="w-10 h-10 rounded-lg object-cover mx-auto mb-2 shadow ring-2 ring-white/20" />
+        )}
         <h1 className="text-2xl font-bold text-white">Services</h1>
         <p className="mt-1 club-light-text text-sm">Available club services</p>
       </div>

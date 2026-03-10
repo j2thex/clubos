@@ -33,7 +33,7 @@ export default async function ProfilePage({
 
   const supabase = createAdminClient();
 
-  const [{ data: member }, { data: spins }, { data: roles }] = await Promise.all([
+  const [{ data: member }, { data: spins }, { data: roles }, { data: branding }] = await Promise.all([
     supabase
       .from("members")
       .select("member_code, spin_balance, role_id, created_at")
@@ -51,7 +51,14 @@ export default async function ProfilePage({
       .select("id, name")
       .eq("club_id", session.club_id)
       .order("display_order", { ascending: true }),
+    supabase
+      .from("club_branding")
+      .select("logo_url")
+      .eq("club_id", session.club_id)
+      .single(),
   ]);
+
+  const logoUrl = branding?.logo_url ?? null;
 
   const memberCode = member?.member_code ?? "";
   const spinBalance = member?.spin_balance ?? 0;
@@ -71,6 +78,9 @@ export default async function ProfilePage({
     <div className="min-h-screen club-page-bg">
       {/* Header */}
       <div className="club-hero px-6 pt-10 pb-16 text-center">
+        {logoUrl && (
+          <img src={logoUrl} alt="Club logo" className="w-10 h-10 rounded-lg object-cover mx-auto mb-2 shadow ring-2 ring-white/20" />
+        )}
         <h1 className="text-2xl font-bold text-white">Your Profile</h1>
         <p className="club-light-text text-sm mt-1">{memberCode}</p>
       </div>

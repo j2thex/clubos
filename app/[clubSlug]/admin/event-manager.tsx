@@ -45,6 +45,8 @@ export function EventManager({
   const [newReward, setNewReward] = useState("1");
   const [newImage, setNewImage] = useState<File | null>(null);
 
+  const [showForm, setShowForm] = useState(false);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -114,6 +116,7 @@ export function EventManager({
       if ("error" in result) {
         setError(result.error);
       } else {
+        const createdTitle = newTitle;
         setNewTitle("");
         setNewDesc("");
         setNewDate("");
@@ -122,6 +125,9 @@ export function EventManager({
         setNewLink("");
         setNewReward("1");
         setNewImage(null);
+        setSuccessMsg(`"${createdTitle}" created successfully`);
+        setShowForm(false);
+        setTimeout(() => setSuccessMsg(null), 4000);
       }
     });
   }
@@ -142,6 +148,21 @@ export function EventManager({
       </div>
 
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+        {successMsg && (
+          <div className="px-5 py-2.5 bg-green-50 border-b border-green-100 flex items-center gap-2">
+            <svg className="w-4 h-4 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            <span className="text-sm font-medium text-green-700">{successMsg}</span>
+          </div>
+        )}
+
+        <div className="px-5 py-2 bg-gray-50 border-b border-gray-100">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+            Active Events ({events.length})
+          </p>
+        </div>
+
         {/* Event list */}
         {events.length > 0 && (
           <div className="divide-y divide-gray-100">
@@ -296,9 +317,20 @@ export function EventManager({
           </div>
         )}
 
+        {/* Toggle button */}
+        <button
+          onClick={() => { setShowForm(!showForm); setSuccessMsg(null); }}
+          className="w-full px-5 py-3 border-t border-gray-100 flex items-center justify-between text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+        >
+          <span>{showForm ? "Cancel" : "Add New Event"}</span>
+          <svg className={`w-4 h-4 transition-transform ${showForm ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
         {/* Add new event */}
-        <form onSubmit={handleAdd} className="px-5 py-4 border-t border-gray-100 space-y-3">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Add Event</p>
+        {showForm && (
+        <form onSubmit={handleAdd} className="px-5 py-4 border-t border-gray-100 space-y-3 bg-gray-50">
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Title</label>
             <input
@@ -327,6 +359,7 @@ export function EventManager({
                 type="date"
                 value={newDate}
                 onChange={(e) => setNewDate(e.target.value)}
+                min={new Date().toISOString().split("T")[0]}
                 required
                 className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
               />
@@ -394,6 +427,7 @@ export function EventManager({
             Add Event
           </button>
         </form>
+        )}
 
         {error && (
           <div className="px-5 py-2 text-xs text-red-600 bg-red-50 border-t border-red-100">

@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { uploadClubImage } from "@/lib/supabase/storage";
 import { hashPassword, createOwnerToken, setOwnerCookie } from "@/lib/auth";
 import { generateSlug } from "@/lib/utils";
 import { redirect } from "next/navigation";
@@ -90,18 +91,40 @@ export async function updateBranding(formData: FormData) {
   const primaryColor = formData.get("primaryColor") as string;
   const secondaryColor = formData.get("secondaryColor") as string;
   const heroContent = formData.get("heroContent") as string;
+  const logoFile = formData.get("logo") as File | null;
+  const coverFile = formData.get("cover") as File | null;
 
   if (!clubId) return { error: "Club ID is required" };
 
+  // Upload images if provided
+  let logoUrl: string | undefined;
+  let coverUrl: string | undefined;
+
+  if (logoFile && logoFile.size > 0) {
+    const result = await uploadClubImage(clubId, logoFile);
+    if ("error" in result) return { error: result.error };
+    logoUrl = result.url;
+  }
+
+  if (coverFile && coverFile.size > 0) {
+    const result = await uploadClubImage(clubId, coverFile);
+    if ("error" in result) return { error: result.error };
+    coverUrl = result.url;
+  }
+
   const supabase = createAdminClient();
+
+  const updateData: Record<string, string> = {
+    primary_color: primaryColor || "#16a34a",
+    secondary_color: secondaryColor || "#052e16",
+    hero_content: heroContent,
+  };
+  if (logoUrl) updateData.logo_url = logoUrl;
+  if (coverUrl) updateData.cover_url = coverUrl;
 
   const { error } = await supabase
     .from("club_branding")
-    .update({
-      primary_color: primaryColor || "#16a34a",
-      secondary_color: secondaryColor || "#052e16",
-      hero_content: heroContent,
-    })
+    .update(updateData)
     .eq("club_id", clubId);
 
   if (error) {

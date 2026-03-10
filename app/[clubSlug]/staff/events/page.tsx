@@ -26,6 +26,7 @@ export default async function StaffEventsPage({
     .select("id, title, date, reward_spins")
     .eq("club_id", club.id)
     .eq("active", true)
+    .gte("date", new Date().toISOString().split("T")[0])
     .order("date", { ascending: true });
 
   return (

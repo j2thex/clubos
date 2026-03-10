@@ -37,7 +37,7 @@ export async function createMember(
     return { error: "Failed to create member" };
   }
 
-  revalidatePath(`/${clubSlug}/admin`);
+  revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
 }
 
@@ -75,7 +75,7 @@ export async function createStaffMember(
     return { error: "Failed to create staff member" };
   }
 
-  revalidatePath(`/${clubSlug}/admin`);
+  revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
 }
 
@@ -93,7 +93,7 @@ export async function addRole(clubId: string, name: string, clubSlug: string) {
     return { error: "Failed to add role" };
   }
 
-  revalidatePath(`/${clubSlug}/admin`);
+  revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
 }
 
@@ -109,7 +109,7 @@ export async function deleteRole(roleId: string, clubSlug: string) {
     return { error: "Failed to delete role" };
   }
 
-  revalidatePath(`/${clubSlug}/admin`);
+  revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
 }
 
@@ -151,7 +151,7 @@ export async function addSegment(
 
   if (error) return { error: "Failed to add segment" };
 
-  revalidatePath(`/${clubSlug}/admin`);
+  revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
 }
 
@@ -179,7 +179,7 @@ export async function updateSegment(
 
   if (error) return { error: "Failed to update segment" };
 
-  revalidatePath(`/${clubSlug}/admin`);
+  revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
 }
 
@@ -193,7 +193,7 @@ export async function deleteSegment(segmentId: string, clubSlug: string) {
 
   if (error) return { error: "Failed to delete segment" };
 
-  revalidatePath(`/${clubSlug}/admin`);
+  revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
 }
 
@@ -209,6 +209,7 @@ export async function addQuest(
   const link = (formData.get("link") as string)?.trim() || null;
   const rewardSpins = Number(formData.get("reward_spins")) || 1;
   const multiUse = formData.get("multi_use") === "1";
+  const questType = (formData.get("quest_type") as string) || "default";
   const imageFile = formData.get("image") as File | null;
 
   if (!title) return { error: "Title is required" };
@@ -240,13 +241,14 @@ export async function addQuest(
     link,
     reward_spins: rewardSpins,
     multi_use: multiUse,
+    quest_type: questType,
     image_url: imageUrl,
     display_order: nextOrder,
   });
 
   if (error) return { error: "Failed to add quest" };
 
-  revalidatePath(`/${clubSlug}/admin`);
+  revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
 }
 
@@ -260,6 +262,7 @@ export async function updateQuest(
   const link = (formData.get("link") as string)?.trim() || null;
   const rewardSpins = Number(formData.get("reward_spins")) || 1;
   const multiUse = formData.get("multi_use") === "1";
+  const questType = (formData.get("quest_type") as string) || "default";
   const imageFile = formData.get("image") as File | null;
 
   if (!title) return { error: "Title is required" };
@@ -273,6 +276,7 @@ export async function updateQuest(
     link,
     reward_spins: rewardSpins,
     multi_use: multiUse,
+    quest_type: questType,
   };
 
   if (imageFile && imageFile.size > 0) {
@@ -300,7 +304,7 @@ export async function updateQuest(
 
   if (error) return { error: "Failed to update quest" };
 
-  revalidatePath(`/${clubSlug}/admin`);
+  revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
 }
 
@@ -328,7 +332,7 @@ export async function deleteQuest(
 
   if (error) return { error: "Failed to delete quest" };
 
-  revalidatePath(`/${clubSlug}/admin`);
+  revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
 }
 
@@ -376,7 +380,7 @@ export async function addEvent(
 
   if (error) return { error: "Failed to add event" };
 
-  revalidatePath(`/${clubSlug}/admin`);
+  revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
 }
 
@@ -435,7 +439,7 @@ export async function updateEvent(
 
   if (error) return { error: "Failed to update event" };
 
-  revalidatePath(`/${clubSlug}/admin`);
+  revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
 }
 
@@ -464,7 +468,7 @@ export async function deleteEvent(
 
   if (error) return { error: "Failed to delete event" };
 
-  revalidatePath(`/${clubSlug}/admin`);
+  revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
 }
 
@@ -514,7 +518,7 @@ export async function addService(
 
   if (error) return { error: "Failed to add service" };
 
-  revalidatePath(`/${clubSlug}/admin`);
+  revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
 }
 
@@ -565,7 +569,7 @@ export async function updateService(
 
   if (error) return { error: "Failed to update service" };
 
-  revalidatePath(`/${clubSlug}/admin`);
+  revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
 }
 
@@ -593,6 +597,6 @@ export async function deleteService(
 
   if (error) return { error: "Failed to delete service" };
 
-  revalidatePath(`/${clubSlug}/admin`);
+  revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
 }

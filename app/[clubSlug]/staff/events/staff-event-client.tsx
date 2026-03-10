@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { checkinMember, getEventRsvps } from "./actions";
+import { useState, useTransition, useEffect, useCallback } from "react";
+import { checkinMember, checkinMemberById, getEventRsvps } from "./actions";
 
 interface Event {
   id: string;
@@ -34,9 +34,27 @@ export function StaffEventClient({
   const [success, setSuccess] = useState<string | null>(null);
 
   const [rsvps, setRsvps] = useState<Rsvp[]>([]);
-  const [rsvpLoaded, setRsvpLoaded] = useState<string | null>(null);
 
-  function handleCheckin(e: React.FormEvent) {
+  const loadRsvps = useCallback(
+    (eventId: string) => {
+      startTransition(async () => {
+        const res = await getEventRsvps(eventId, clubId);
+        if (!("error" in res)) {
+          setRsvps(res.rsvps);
+        }
+      });
+    },
+    [clubId, startTransition],
+  );
+
+  // Auto-load RSVPs when event changes
+  useEffect(() => {
+    if (selectedEventId) {
+      loadRsvps(selectedEventId);
+    }
+  }, [selectedEventId, loadRsvps]);
+
+  function handleManualCheckin(e: React.FormEvent) {
     e.preventDefault();
     const code = memberCode.trim().toUpperCase();
     if (!code || !selectedEventId) return;
@@ -51,22 +69,30 @@ export function StaffEventClient({
       }
       const event = events.find((ev) => ev.id === selectedEventId);
       setSuccess(
-        `Checked in! +${event?.reward_spins ?? 0} spin${(event?.reward_spins ?? 0) === 1 ? "" : "s"} awarded (balance: ${res.newBalance})`,
+        `Checked in! +${event?.reward_spins ?? 0} spin${(event?.reward_spins ?? 0) === 1 ? "" : "s"} awarded`,
       );
       setMemberCode("");
-      // Refresh RSVP list if loaded
-      if (rsvpLoaded === selectedEventId) {
-        loadRsvps(selectedEventId);
-      }
+      loadRsvps(selectedEventId);
     });
   }
 
-  function loadRsvps(eventId: string) {
+  function handleRsvpCheckin(memberId: string) {
+    setError(null);
+    setSuccess(null);
     startTransition(async () => {
-      const res = await getEventRsvps(eventId, clubId);
-      if ("error" in res) return;
-      setRsvps(res.rsvps);
-      setRsvpLoaded(eventId);
+      const res = await checkinMemberById(memberId, selectedEventId, staffMemberId);
+      if ("error" in res) {
+        setError(res.error);
+        return;
+      }
+      const event = events.find((ev) => ev.id === selectedEventId);
+      setSuccess(
+        `Checked in! +${event?.reward_spins ?? 0} spin${(event?.reward_spins ?? 0) === 1 ? "" : "s"} awarded`,
+      );
+      // Update locally for instant feedback
+      setRsvps((prev) =>
+        prev.map((r) => (r.member_id === memberId ? { ...r, checked_in: true } : r)),
+      );
     });
   }
 
@@ -75,7 +101,6 @@ export function StaffEventClient({
     setError(null);
     setSuccess(null);
     setRsvps([]);
-    setRsvpLoaded(null);
   }
 
   function formatDate(d: string) {
@@ -84,6 +109,9 @@ export function StaffEventClient({
       day: "numeric",
     });
   }
+
+  const notCheckedIn = rsvps.filter((r) => !r.checked_in);
+  const checkedIn = rsvps.filter((r) => r.checked_in);
 
   return (
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
@@ -109,31 +137,6 @@ export function StaffEventClient({
         </select>
       </div>
 
-      {/* Member code input */}
-      <form onSubmit={handleCheckin} className="px-5 py-4 flex gap-3 items-end">
-        <div className="flex-1">
-          <label htmlFor="eventMemberCode" className="block text-xs font-medium text-gray-500 mb-1">
-            Member Code
-          </label>
-          <input
-            id="eventMemberCode"
-            type="text"
-            value={memberCode}
-            onChange={(e) => setMemberCode(e.target.value.toUpperCase())}
-            placeholder="ABC12"
-            maxLength={6}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm font-mono tracking-wide uppercase text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition text-center"
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={isPending || !memberCode.trim() || !selectedEventId}
-          className="rounded-lg bg-gray-800 text-white px-6 py-2.5 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
-        >
-          {isPending ? "..." : "Check In"}
-        </button>
-      </form>
-
       {error && (
         <div className="px-5 py-2 text-xs text-red-600 bg-red-50 border-t border-red-100">
           {error}
@@ -146,50 +149,89 @@ export function StaffEventClient({
         </div>
       )}
 
-      {/* RSVP section */}
-      <div className="border-t border-gray-100">
-        <div className="px-5 py-3 flex items-center justify-between">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">RSVPs</p>
-          <button
-            onClick={() => loadRsvps(selectedEventId)}
-            disabled={isPending || !selectedEventId}
-            className="text-xs text-gray-500 hover:text-gray-700 disabled:opacity-50 transition-colors"
-          >
-            {rsvpLoaded === selectedEventId ? "Refresh" : "Load RSVPs"}
-          </button>
-        </div>
-
-        {rsvpLoaded === selectedEventId && (
-          <div className="px-5 pb-3">
-            {rsvps.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-2">No RSVPs yet</p>
-            ) : (
-              <div className="space-y-1">
-                {rsvps.map((r) => (
-                  <div key={r.member_id} className="flex items-center justify-between py-1.5">
-                    <div className="min-w-0">
-                      <p className="text-sm text-gray-900">
-                        <span className="font-mono text-xs text-gray-500">{r.member_code}</span>{" "}
-                        {r.full_name}
-                      </p>
-                    </div>
-                    {r.checked_in ? (
-                      <span className="text-xs text-green-600 font-medium shrink-0 flex items-center gap-1">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                        Checked in
-                      </span>
-                    ) : (
-                      <span className="text-xs text-gray-400 shrink-0">RSVPed</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+      {/* RSVPs — not checked in */}
+      {notCheckedIn.length > 0 && (
+        <div className="border-t border-gray-100">
+          <div className="px-5 py-2 bg-gray-50">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+              RSVPs ({notCheckedIn.length})
+            </p>
           </div>
-        )}
-      </div>
+          <div className="divide-y divide-gray-100">
+            {notCheckedIn.map((r) => (
+              <div key={r.member_id} className="px-5 py-2.5 flex items-center justify-between">
+                <div className="min-w-0">
+                  <p className="text-sm text-gray-900">
+                    <span className="font-mono text-xs text-gray-500">{r.member_code}</span>
+                    {r.full_name && <span className="ml-1.5">{r.full_name}</span>}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleRsvpCheckin(r.member_id)}
+                  disabled={isPending}
+                  className="rounded-lg bg-green-600 text-white px-4 py-1.5 text-xs font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors shrink-0"
+                >
+                  Check In
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Already checked in */}
+      {checkedIn.length > 0 && (
+        <div className="border-t border-gray-100">
+          <div className="px-5 py-2 bg-gray-50">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+              Checked In ({checkedIn.length})
+            </p>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {checkedIn.map((r) => (
+              <div key={r.member_id} className="px-5 py-2 flex items-center justify-between opacity-60">
+                <div className="min-w-0">
+                  <p className="text-sm text-gray-700">
+                    <span className="font-mono text-xs text-gray-400">{r.member_code}</span>
+                    {r.full_name && <span className="ml-1.5">{r.full_name}</span>}
+                  </p>
+                </div>
+                <span className="text-xs text-green-600 font-medium shrink-0 flex items-center gap-1">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Done
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Manual check-in for walk-ins */}
+      <form onSubmit={handleManualCheckin} className="px-5 py-4 border-t border-gray-100 flex gap-3 items-end">
+        <div className="flex-1">
+          <label htmlFor="eventMemberCode" className="block text-xs font-medium text-gray-500 mb-1">
+            Walk-in Check-In
+          </label>
+          <input
+            id="eventMemberCode"
+            type="text"
+            value={memberCode}
+            onChange={(e) => setMemberCode(e.target.value.toUpperCase())}
+            placeholder="Member code"
+            maxLength={6}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm font-mono tracking-wide uppercase text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition text-center"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={isPending || !memberCode.trim() || !selectedEventId}
+          className="rounded-lg bg-gray-800 text-white px-6 py-2.5 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+        >
+          {isPending ? "..." : "Check In"}
+        </button>
+      </form>
     </div>
   );
 }

@@ -80,6 +80,7 @@ export type Database = {
           id: string;
           club_id: string;
           logo_url: string | null;
+          cover_url: string | null;
           theme_name: string;
           primary_color: string;
           secondary_color: string;
@@ -90,6 +91,7 @@ export type Database = {
           id?: string;
           club_id: string;
           logo_url?: string | null;
+          cover_url?: string | null;
           theme_name?: string;
           primary_color?: string;
           secondary_color?: string;
@@ -100,6 +102,7 @@ export type Database = {
           id?: string;
           club_id?: string;
           logo_url?: string | null;
+          cover_url?: string | null;
           theme_name?: string;
           primary_color?: string;
           secondary_color?: string;

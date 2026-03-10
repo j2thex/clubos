@@ -1,0 +1,69 @@
+import { createAdminClient } from "@/lib/supabase/admin";
+import { notFound } from "next/navigation";
+import { EventManager } from "../../event-manager";
+
+export default async function EventsPage({
+  params,
+}: {
+  params: Promise<{ clubSlug: string }>;
+}) {
+  const { clubSlug } = await params;
+  const supabase = createAdminClient();
+
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("id")
+    .eq("slug", clubSlug)
+    .eq("active", true)
+    .single();
+
+  if (!club) notFound();
+
+  const [{ data: events }, { data: eventRsvps }, { data: eventCheckins }] =
+    await Promise.all([
+      supabase
+        .from("events")
+        .select(
+          "id, title, description, date, time, price, image_url, link, reward_spins"
+        )
+        .eq("club_id", club.id)
+        .eq("active", true)
+        .order("date", { ascending: true }),
+      supabase
+        .from("event_rsvps")
+        .select("event_id, events!inner(club_id)")
+        .eq("events.club_id", club.id),
+      supabase
+        .from("event_checkins")
+        .select("event_id, events!inner(club_id)")
+        .eq("events.club_id", club.id),
+    ]);
+
+  // Count RSVPs and checkins per event
+  const rsvpCounts = new Map<string, number>();
+  for (const r of eventRsvps ?? []) {
+    rsvpCounts.set(r.event_id, (rsvpCounts.get(r.event_id) ?? 0) + 1);
+  }
+  const checkinCounts = new Map<string, number>();
+  for (const c of eventCheckins ?? []) {
+    checkinCounts.set(c.event_id, (checkinCounts.get(c.event_id) ?? 0) + 1);
+  }
+
+  const eventList = (events ?? []).map((e) => ({
+    id: e.id,
+    title: e.title,
+    description: e.description,
+    date: e.date,
+    time: e.time,
+    price: e.price != null ? Number(e.price) : null,
+    image_url: e.image_url,
+    link: e.link,
+    reward_spins: e.reward_spins,
+    rsvps: rsvpCounts.get(e.id) ?? 0,
+    checkins: checkinCounts.get(e.id) ?? 0,
+  }));
+
+  return (
+    <EventManager events={eventList} clubId={club.id} clubSlug={clubSlug} />
+  );
+}

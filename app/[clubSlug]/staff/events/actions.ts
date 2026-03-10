@@ -64,6 +64,52 @@ export async function checkinMember(
   return { ok: true, newBalance };
 }
 
+export async function checkinMemberById(
+  memberId: string,
+  eventId: string,
+  staffMemberId: string,
+): Promise<{ error: string } | { ok: true; newBalance: number }> {
+  const supabase = createAdminClient();
+
+  const { data: member } = await supabase
+    .from("members")
+    .select("id, spin_balance")
+    .eq("id", memberId)
+    .single();
+
+  if (!member) return { error: "Member not found" };
+
+  const { data: event } = await supabase
+    .from("events")
+    .select("reward_spins")
+    .eq("id", eventId)
+    .single();
+
+  if (!event) return { error: "Event not found" };
+
+  const { error: insertError } = await supabase
+    .from("event_checkins")
+    .insert({
+      event_id: eventId,
+      member_id: memberId,
+      verified_by: staffMemberId,
+    });
+
+  if (insertError) {
+    if (insertError.code === "23505") return { error: "Already checked in" };
+    return { error: "Failed to check in" };
+  }
+
+  const newBalance = (member.spin_balance ?? 0) + event.reward_spins;
+
+  await supabase
+    .from("members")
+    .update({ spin_balance: newBalance })
+    .eq("id", memberId);
+
+  return { ok: true, newBalance };
+}
+
 export async function getEventRsvps(
   eventId: string,
   clubId: string,
@@ -125,7 +171,7 @@ export async function getEventRsvps(
     rsvps: (rsvps ?? []).map((r) => ({
       member_id: r.member_id,
       member_code: memberMap.get(r.member_id)?.code ?? "???",
-      full_name: memberMap.get(r.member_id)?.name ?? "Unknown",
+      full_name: memberMap.get(r.member_id)?.name ?? "",
       rsvp_date: r.created_at,
       checked_in: checkinSet.has(r.member_id),
     })),

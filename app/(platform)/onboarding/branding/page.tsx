@@ -20,6 +20,8 @@ function BrandingForm() {
   const [primaryColor, setPrimaryColor] = useState("#16a34a");
   const [secondaryColor, setSecondaryColor] = useState("#052e16");
   const [heroContent, setHeroContent] = useState("");
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
 
   return (
     <div className="space-y-6">
@@ -49,6 +51,58 @@ function BrandingForm() {
 
           <form action={dispatch} className="space-y-5">
             <input type="hidden" name="clubId" value={clubId} />
+
+            {/* Club Logo */}
+            <div className="space-y-2">
+              <Label htmlFor="logo" className="text-gray-800">
+                Club Logo
+              </Label>
+              <p className="text-xs text-gray-500">Square image recommended (e.g. 512×512px)</p>
+              <input
+                type="file"
+                id="logo"
+                name="logo"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) setLogoPreview(URL.createObjectURL(file));
+                }}
+                className="w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-green-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-green-700 hover:file:bg-green-100"
+              />
+              {logoPreview && (
+                <img
+                  src={logoPreview}
+                  alt="Logo preview"
+                  className="h-16 w-16 rounded-lg object-cover border border-gray-200"
+                />
+              )}
+            </div>
+
+            {/* Cover Image */}
+            <div className="space-y-2">
+              <Label htmlFor="cover" className="text-gray-800">
+                Cover Image
+              </Label>
+              <p className="text-xs text-gray-500">Recommended size: 1200×400px (3:1 ratio)</p>
+              <input
+                type="file"
+                id="cover"
+                name="cover"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) setCoverPreview(URL.createObjectURL(file));
+                }}
+                className="w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-green-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-green-700 hover:file:bg-green-100"
+              />
+              {coverPreview && (
+                <img
+                  src={coverPreview}
+                  alt="Cover preview"
+                  className="w-full h-24 rounded-lg object-cover border border-gray-200"
+                />
+              )}
+            </div>
 
             {/* Primary Color */}
             <div className="space-y-2">

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getMemberFromCookie } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { QuestList } from "./quest-list";
 
 export default async function MemberDashboard({
   params,
@@ -24,7 +25,7 @@ export default async function MemberDashboard({
       .single(),
     supabase
       .from("clubs")
-      .select("id, name")
+      .select("id, name, club_branding(logo_url, cover_url)")
       .eq("id", session.club_id)
       .single(),
     supabase
@@ -33,45 +34,73 @@ export default async function MemberDashboard({
       .eq("member_id", session.member_id),
     supabase
       .from("quests")
-      .select("id, title, description, link, reward_spins, multi_use")
+      .select("id, title, description, link, image_url, reward_spins, multi_use")
       .eq("club_id", session.club_id)
       .eq("active", true)
       .order("display_order", { ascending: true }),
     supabase
       .from("member_quests")
-      .select("quest_id")
+      .select("quest_id, status")
       .eq("member_id", session.member_id),
   ]);
 
   const displayName = member?.full_name || "Member";
   const spinBalance = member?.spin_balance ?? 0;
   const clubName = club?.name ?? "";
+  const branding = Array.isArray(club?.club_branding)
+    ? club.club_branding[0]
+    : club?.club_branding;
+  const logoUrl = branding?.logo_url ?? null;
+  const coverUrl = branding?.cover_url ?? null;
   const totalSpins = spinsDone ?? 0;
   const level = Math.min(10, Math.floor(totalSpins / 5) + 1);
 
-  // Count completions per quest (for multi-use support)
-  const questCompletionCounts = new Map<string, number>();
+  // Count verified completions per quest, track pending ones
+  const questCompletionCounts: Record<string, number> = {};
+  const pendingQuestIds: string[] = [];
   for (const c of completedQuests ?? []) {
-    questCompletionCounts.set(c.quest_id, (questCompletionCounts.get(c.quest_id) ?? 0) + 1);
+    if (c.status === "pending") {
+      if (!pendingQuestIds.includes(c.quest_id)) pendingQuestIds.push(c.quest_id);
+    } else {
+      questCompletionCounts[c.quest_id] = (questCompletionCounts[c.quest_id] ?? 0) + 1;
+    }
   }
   const activeQuests = quests ?? [];
 
   return (
     <div className="min-h-screen club-page-bg">
       {/* Hero area */}
-      <div className="club-hero px-6 pt-10 pb-16 text-center">
-        {clubName && (
-          <p className="club-light-text text-sm font-medium tracking-wide uppercase mb-2">
-            {clubName}
-          </p>
-        )}
-        <h1 className="text-2xl font-bold text-white">
-          Welcome back, {displayName}
-        </h1>
+      <div
+        className="relative px-6 pt-10 pb-16 text-center bg-cover bg-center overflow-hidden"
+        style={
+          coverUrl
+            ? { backgroundImage: `url(${coverUrl})` }
+            : undefined
+        }
+      >
+        {/* Gradient overlay — always present for text readability */}
+        <div className={`absolute inset-0 ${coverUrl ? "bg-black/50" : "club-hero"}`} />
+        <div className="relative">
+          {logoUrl && (
+            <img
+              src={logoUrl}
+              alt={`${clubName} logo`}
+              className="w-14 h-14 rounded-xl object-cover mx-auto mb-3 shadow-lg ring-2 ring-white/20"
+            />
+          )}
+          {clubName && (
+            <p className={`text-sm font-medium tracking-wide uppercase mb-2 ${coverUrl ? "text-white/70" : "club-light-text"}`}>
+              {clubName}
+            </p>
+          )}
+          <h1 className="text-2xl font-bold text-white">
+            Welcome back, {displayName}
+          </h1>
+        </div>
       </div>
 
       {/* Content cards */}
-      <div className="px-4 -mt-8 pb-10 max-w-md mx-auto space-y-4">
+      <div className="relative z-10 px-4 -mt-8 pb-10 max-w-md mx-auto space-y-4">
         {/* Stats row */}
         <div className="grid grid-cols-3 gap-3">
           {/* Remaining Spins */}
@@ -114,45 +143,13 @@ export default async function MemberDashboard({
             <h2 className="text-sm font-semibold text-white/80 uppercase tracking-wide px-1">
               Quests
             </h2>
-            <div className="space-y-3">
-              {activeQuests.map((q) => {
-                const count = questCompletionCounts.get(q.id) ?? 0;
-                const done = count > 0;
-                const isMultiUse = q.multi_use ?? false;
-                return (
-                  <div key={q.id} className="bg-white rounded-2xl shadow p-4 flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${done ? "club-tint-bg club-primary" : "bg-gray-100 text-gray-300"}`}>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d={done ? "M5 13l4 4L19 7" : "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"} />
-                      </svg>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 text-sm">{q.title}</p>
-                      {q.description && (
-                        <p className="text-xs text-gray-400">{q.description}</p>
-                      )}
-                      {q.link && (!done || isMultiUse) && (
-                        <a
-                          href={q.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-block mt-1 text-xs font-medium club-primary underline"
-                        >
-                          Open link
-                        </a>
-                      )}
-                    </div>
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${done ? "club-tint-bg club-tint-text" : "bg-gray-100 text-gray-400"}`}>
-                      {done
-                        ? isMultiUse
-                          ? `Done ${count}x`
-                          : "Done"
-                        : `+${q.reward_spins} spin${q.reward_spins === 1 ? "" : "s"}`}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+            <QuestList
+              quests={activeQuests}
+              completionCounts={questCompletionCounts}
+              pendingQuestIds={pendingQuestIds}
+              memberId={session.member_id}
+              clubSlug={clubSlug}
+            />
           </div>
         )}
       </div>

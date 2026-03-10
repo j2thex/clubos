@@ -17,18 +17,26 @@ export default async function EventsPage({
 
   const supabase = createAdminClient();
 
-  const [{ data: events }, { data: rsvps }] = await Promise.all([
+  const [{ data: events }, { data: rsvps }, { data: branding }] = await Promise.all([
     supabase
       .from("events")
       .select("id, title, description, date, time, price, image_url, link, reward_spins")
       .eq("club_id", session.club_id)
       .eq("active", true)
+      .gte("date", new Date().toISOString().split("T")[0])
       .order("date", { ascending: true }),
     supabase
       .from("event_rsvps")
       .select("event_id")
       .eq("member_id", session.member_id),
+    supabase
+      .from("club_branding")
+      .select("logo_url")
+      .eq("club_id", session.club_id)
+      .single(),
   ]);
+
+  const logoUrl = branding?.logo_url ?? null;
 
   const rsvpSet = new Set((rsvps ?? []).map((r) => r.event_id));
 
@@ -48,6 +56,9 @@ export default async function EventsPage({
   return (
     <div className="min-h-screen club-page-bg">
       <div className="club-hero px-6 pt-10 pb-12 text-center">
+        {logoUrl && (
+          <img src={logoUrl} alt="Club logo" className="w-10 h-10 rounded-lg object-cover mx-auto mb-2 shadow ring-2 ring-white/20" />
+        )}
         <h1 className="text-2xl font-bold text-white">Events</h1>
         <p className="mt-1 club-light-text text-sm">Upcoming club events</p>
       </div>

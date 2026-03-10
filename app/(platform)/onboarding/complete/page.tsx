@@ -90,18 +90,21 @@ export default async function CompletePage({
           <div className="grid grid-cols-3 gap-3">
             <Link
               href={adminUrl}
+              target="_blank"
               className="block rounded-md bg-gray-800 px-3 py-3 text-center text-sm font-semibold text-white shadow-sm hover:bg-gray-700 transition-colors"
             >
               Admin Panel
             </Link>
             <Link
               href={staffUrl}
+              target="_blank"
               className="block rounded-md bg-gray-600 px-3 py-3 text-center text-sm font-semibold text-white shadow-sm hover:bg-gray-500 transition-colors"
             >
               Staff Console
             </Link>
             <Link
               href={memberUrl}
+              target="_blank"
               className="block rounded-md bg-green-600 px-3 py-3 text-center text-sm font-semibold text-white shadow-sm hover:bg-green-700 transition-colors"
             >
               Member Portal

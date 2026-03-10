@@ -13,13 +13,14 @@ interface Quest {
   display_order: number;
   completions: number;
   multi_use: boolean;
+  quest_type: string;
 }
 
 const TEMPLATES = [
-  { title: "Follow us on Instagram", description: "Follow our Instagram page", link: "", rewardSpins: 1 },
-  { title: "Follow us on TikTok", description: "Follow our TikTok account", link: "", rewardSpins: 1 },
-  { title: "Leave a Google Review", description: "Leave us a review on Google Maps", link: "", rewardSpins: 2 },
-  { title: "Refer a Friend", description: "Bring a friend to the club", link: "", rewardSpins: 2 },
+  { title: "Follow us on Instagram", description: "Follow our Instagram page", link: "", rewardSpins: 1, questType: "default" },
+  { title: "Follow us on TikTok", description: "Follow our TikTok account", link: "", rewardSpins: 1, questType: "default" },
+  { title: "Leave a Google Review", description: "Leave us a review on Google Maps", link: "", rewardSpins: 2, questType: "default" },
+  { title: "Refer a Friend", description: "Bring a friend to the club", link: "", rewardSpins: 2, questType: "referral" },
 ];
 
 export function QuestManager({
@@ -38,6 +39,7 @@ export function QuestManager({
   const [editReward, setEditReward] = useState("1");
   const [editMultiUse, setEditMultiUse] = useState(false);
   const [editImage, setEditImage] = useState<File | null>(null);
+  const [editQuestType, setEditQuestType] = useState("default");
 
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
@@ -45,7 +47,10 @@ export function QuestManager({
   const [newReward, setNewReward] = useState("1");
   const [newMultiUse, setNewMultiUse] = useState(false);
   const [newImage, setNewImage] = useState<File | null>(null);
+  const [newQuestType, setNewQuestType] = useState("default");
 
+  const [showForm, setShowForm] = useState(false);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -54,6 +59,7 @@ export function QuestManager({
     setNewDesc(t.description);
     setNewLink(t.link);
     setNewReward(String(t.rewardSpins));
+    setNewQuestType(t.questType);
   }
 
   function startEdit(q: Quest) {
@@ -63,6 +69,7 @@ export function QuestManager({
     setEditLink(q.link ?? "");
     setEditReward(String(q.reward_spins));
     setEditMultiUse(q.multi_use);
+    setEditQuestType(q.quest_type ?? "default");
     setEditImage(null);
     setError(null);
   }
@@ -81,6 +88,7 @@ export function QuestManager({
       fd.set("link", editLink);
       fd.set("reward_spins", editReward);
       fd.set("multi_use", editMultiUse ? "1" : "0");
+      fd.set("quest_type", editQuestType);
       if (editImage) fd.set("image", editImage);
 
       const result = await updateQuest(questId, fd, clubSlug);
@@ -110,18 +118,24 @@ export function QuestManager({
       fd.set("link", newLink);
       fd.set("reward_spins", newReward);
       fd.set("multi_use", newMultiUse ? "1" : "0");
+      fd.set("quest_type", newQuestType);
       if (newImage) fd.set("image", newImage);
 
       const result = await addQuest(clubId, fd, clubSlug);
       if ("error" in result) {
         setError(result.error);
       } else {
+        const createdTitle = newTitle;
         setNewTitle("");
         setNewDesc("");
         setNewLink("");
         setNewReward("1");
         setNewMultiUse(false);
+        setNewQuestType("default");
         setNewImage(null);
+        setSuccessMsg(`"${createdTitle}" created successfully`);
+        setShowForm(false);
+        setTimeout(() => setSuccessMsg(null), 4000);
       }
     });
   }
@@ -135,21 +149,19 @@ export function QuestManager({
       </div>
 
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-        {/* Templates */}
-        <div className="px-5 py-4 border-b border-gray-100">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Quick Add</p>
-          <div className="flex flex-wrap gap-2">
-            {TEMPLATES.map((t) => (
-              <button
-                key={t.title}
-                type="button"
-                onClick={() => applyTemplate(t)}
-                className="text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors"
-              >
-                {t.title}
-              </button>
-            ))}
+        {successMsg && (
+          <div className="px-5 py-2.5 bg-green-50 border-b border-green-100 flex items-center gap-2">
+            <svg className="w-4 h-4 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            <span className="text-sm font-medium text-green-700">{successMsg}</span>
           </div>
+        )}
+
+        <div className="px-5 py-2 bg-gray-50 border-b border-gray-100">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+            Active Quests ({quests.length})
+          </p>
         </div>
 
         {/* Quest list */}
@@ -218,6 +230,17 @@ export function QuestManager({
                       />
                       <span className="text-xs text-gray-600">Repeatable (can be completed multiple times)</span>
                     </label>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Quest Type</label>
+                      <select
+                        value={editQuestType}
+                        onChange={(e) => setEditQuestType(e.target.value)}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                      >
+                        <option value="default">Default</option>
+                        <option value="referral">Referral</option>
+                      </select>
+                    </div>
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleSaveEdit(q.id)}
@@ -280,16 +303,44 @@ export function QuestManager({
           </div>
         )}
 
+        {/* Toggle button */}
+        <button
+          onClick={() => { setShowForm(!showForm); setSuccessMsg(null); }}
+          className="w-full px-5 py-3 border-t border-gray-100 flex items-center justify-between text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+        >
+          <span>{showForm ? "Cancel" : "Add New Quest"}</span>
+          <svg className={`w-4 h-4 transition-transform ${showForm ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
         {/* Add new quest */}
-        <form onSubmit={handleAdd} className="px-5 py-4 border-t border-gray-100 space-y-3">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Add Quest</p>
+        {showForm && (
+        <div>
+          {/* Templates */}
+          <div className="px-5 py-4 border-t border-gray-100 bg-gray-50">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Quick Add</p>
+            <div className="flex flex-wrap gap-2">
+              {TEMPLATES.map((t) => (
+                <button
+                  key={t.title}
+                  type="button"
+                  onClick={() => applyTemplate(t)}
+                  className="text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors"
+                >
+                  {t.title}
+                </button>
+              ))}
+            </div>
+          </div>
+        <form onSubmit={handleAdd} className="px-5 py-4 border-t border-gray-100 space-y-3 bg-gray-50">
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Title</label>
             <input
               type="text"
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
-              placeholder="Follow us on Instagram"
+              placeholder="e.g. Follow us on Instagram"
               required
               className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
             />
@@ -300,7 +351,7 @@ export function QuestManager({
               type="text"
               value={newDesc}
               onChange={(e) => setNewDesc(e.target.value)}
-              placeholder="Follow our Instagram page"
+              placeholder="e.g. Describe the quest"
               className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
             />
           </div>
@@ -311,7 +362,7 @@ export function QuestManager({
                 type="url"
                 value={newLink}
                 onChange={(e) => setNewLink(e.target.value)}
-                placeholder="https://instagram.com/yourclub"
+                placeholder="https://example.com/link"
                 className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
               />
             </div>
@@ -353,7 +404,20 @@ export function QuestManager({
             />
             <span className="text-xs text-gray-600">Repeatable (can be completed multiple times)</span>
           </label>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Quest Type</label>
+            <select
+              value={newQuestType}
+              onChange={(e) => setNewQuestType(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+            >
+              <option value="default">Default</option>
+              <option value="referral">Referral</option>
+            </select>
+          </div>
         </form>
+        </div>
+        )}
 
         {error && (
           <div className="px-5 py-2 text-xs text-red-600 bg-red-50 border-t border-red-100">
