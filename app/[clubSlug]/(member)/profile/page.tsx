@@ -36,7 +36,7 @@ export default async function ProfilePage({
   const [{ data: member }, { data: spins }, { data: roles }, { data: branding }] = await Promise.all([
     supabase
       .from("members")
-      .select("member_code, spin_balance, role_id, created_at")
+      .select("member_code, spin_balance, role_id, valid_till, created_at")
       .eq("id", session.member_id)
       .single(),
     supabase
@@ -111,14 +111,34 @@ export default async function ProfilePage({
               />
             </div>
 
-            {/* Member Since */}
-            <div className="px-6 py-4">
-              <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Member Since
-              </p>
-              <p className="mt-1 text-lg font-semibold text-gray-900">
-                {memberSince}
-              </p>
+            {/* Dates row */}
+            <div className={`px-6 py-4 grid ${member?.valid_till ? "grid-cols-2 gap-4" : ""}`}>
+              <div>
+                <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  Member Since
+                </p>
+                <p className="mt-1 text-sm font-semibold text-gray-900">
+                  {memberSince}
+                </p>
+              </div>
+              {member?.valid_till && (() => {
+                const validDate = new Date(member.valid_till + "T00:00:00");
+                const now = new Date();
+                const daysLeft = Math.ceil((validDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                const isExpired = daysLeft < 0;
+                const isExpiringSoon = daysLeft >= 0 && daysLeft <= 30;
+                const formatted = validDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                return (
+                  <div className="text-right">
+                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      Valid Till
+                    </p>
+                    <p className={`mt-1 text-sm font-semibold ${isExpired ? "text-red-500" : isExpiringSoon ? "text-amber-500" : "text-green-600"}`}>
+                      {formatted}
+                    </p>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>

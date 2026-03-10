@@ -20,10 +20,10 @@ export default async function StaffMembersPage({
 
   if (!club) notFound();
 
-  const [{ data: members }, { data: roles }] = await Promise.all([
+  const [{ data: members }, { data: roles }, { data: periods }] = await Promise.all([
     supabase
       .from("members")
-      .select("id, member_code, full_name, spin_balance, status, role_id, member_roles(id, name)")
+      .select("id, member_code, full_name, spin_balance, status, role_id, membership_period_id, valid_till, member_roles(id, name)")
       .eq("club_id", club.id)
       .order("created_at", { ascending: false }),
     supabase
@@ -31,11 +31,20 @@ export default async function StaffMembersPage({
       .select("id, name")
       .eq("club_id", club.id)
       .order("display_order", { ascending: true }),
+    supabase
+      .from("membership_periods")
+      .select("id, name, duration_months")
+      .eq("club_id", club.id)
+      .eq("active", true)
+      .order("display_order", { ascending: true }),
   ]);
+
+  // Build a map of period id -> duration for member rows
+  const periodMap = new Map((periods ?? []).map((p) => [p.id, p.duration_months]));
 
   return (
     <>
-      <StaffMemberCreator clubId={club.id} clubSlug={clubSlug} />
+      <StaffMemberCreator clubId={club.id} clubSlug={clubSlug} periods={periods ?? []} />
 
       <div className="space-y-2">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-1">
@@ -58,6 +67,10 @@ export default async function StaffMembersPage({
                       spinBalance: member.spin_balance,
                       roleId: member.role_id,
                       roleName: roleName ?? null,
+                      validTill: member.valid_till ?? null,
+                      periodDurationMonths: member.membership_period_id
+                        ? periodMap.get(member.membership_period_id) ?? null
+                        : null,
                     }}
                     roles={roles ?? []}
                     clubSlug={clubSlug}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
-import { updateMemberRole } from "./actions";
+import { updateMemberRole, prolongateMembership } from "./actions";
 
 interface MemberInfo {
   id: string;
@@ -10,6 +10,8 @@ interface MemberInfo {
   spinBalance: number;
   roleId: string | null;
   roleName: string | null;
+  validTill: string | null;
+  periodDurationMonths: number | null;
 }
 
 interface Role {
@@ -47,6 +49,35 @@ export function StaffMemberRow({
         <p className="text-xs text-gray-400 mt-0.5">
           {member.spinBalance} {member.spinBalance === 1 ? "spin" : "spins"}
         </p>
+        {member.validTill && (() => {
+          const validDate = new Date(member.validTill + "T00:00:00");
+          const now = new Date();
+          const daysLeft = Math.ceil((validDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          const isExpired = daysLeft < 0;
+          const isExpiringSoon = daysLeft >= 0 && daysLeft <= 30;
+          const formatted = validDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+          return (
+            <div className="flex items-center gap-2 mt-0.5">
+              <p className={`text-xs ${isExpired ? "text-red-500" : isExpiringSoon ? "text-amber-500" : "text-green-600"}`}>
+                {isExpired ? `Expired ${formatted}` : `Valid till ${formatted}`}
+              </p>
+              {member.periodDurationMonths && (
+                <button
+                  onClick={() => {
+                    startTransition(async () => {
+                      await prolongateMembership(member.id, clubSlug);
+                    });
+                  }}
+                  disabled={isPending}
+                  className="text-[10px] font-medium text-blue-600 hover:text-blue-700 disabled:opacity-50 transition-colors"
+                >
+                  +{member.periodDurationMonths}mo
+                </button>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       <select

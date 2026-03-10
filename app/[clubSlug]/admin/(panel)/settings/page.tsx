@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { WheelManager } from "../../wheel-manager";
 import { RoleManager } from "../../role-manager";
+import { MembershipPeriodManager } from "../../membership-period-manager";
 
 export default async function SettingsPage({
   params,
@@ -20,7 +21,7 @@ export default async function SettingsPage({
 
   if (!club) notFound();
 
-  const [{ data: segments }, { data: roles }] = await Promise.all([
+  const [{ data: segments }, { data: roles }, { data: membershipPeriods }] = await Promise.all([
     supabase
       .from("wheel_configs")
       .select(
@@ -33,6 +34,12 @@ export default async function SettingsPage({
       .from("member_roles")
       .select("id, name, display_order")
       .eq("club_id", club.id)
+      .order("display_order", { ascending: true }),
+    supabase
+      .from("membership_periods")
+      .select("id, name, duration_months, display_order")
+      .eq("club_id", club.id)
+      .eq("active", true)
       .order("display_order", { ascending: true }),
   ]);
 
@@ -52,6 +59,15 @@ export default async function SettingsPage({
       />
       <RoleManager
         roles={roles ?? []}
+        clubId={club.id}
+        clubSlug={clubSlug}
+      />
+      <MembershipPeriodManager
+        periods={(membershipPeriods ?? []).map((p) => ({
+          id: p.id,
+          name: p.name,
+          duration_months: p.duration_months,
+        }))}
         clubId={club.id}
         clubSlug={clubSlug}
       />

@@ -600,3 +600,56 @@ export async function deleteService(
   revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
 }
+
+// --- Membership period actions ---
+
+export async function addMembershipPeriod(
+  clubId: string,
+  name: string,
+  durationMonths: number,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  if (!name.trim()) return { error: "Name is required" };
+  if (durationMonths < 1) return { error: "Duration must be at least 1 month" };
+
+  const supabase = createAdminClient();
+
+  // Auto display_order
+  const { data: existing } = await supabase
+    .from("membership_periods")
+    .select("display_order")
+    .eq("club_id", clubId)
+    .order("display_order", { ascending: false })
+    .limit(1);
+
+  const nextOrder = (existing?.[0]?.display_order ?? -1) + 1;
+
+  const { error } = await supabase.from("membership_periods").insert({
+    club_id: clubId,
+    name: name.trim(),
+    duration_months: durationMonths,
+    display_order: nextOrder,
+  });
+
+  if (error) return { error: "Failed to add membership period" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
+export async function deleteMembershipPeriod(
+  periodId: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("membership_periods")
+    .delete()
+    .eq("id", periodId);
+
+  if (error) return { error: "Failed to delete membership period" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}

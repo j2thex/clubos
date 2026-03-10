@@ -129,6 +129,8 @@ export type Database = {
           role_id: string | null;
           spin_balance: number;
           status: string;
+          membership_period_id: string | null;
+          valid_till: string | null;
           created_at: string;
         };
         Insert: {
@@ -140,6 +142,8 @@ export type Database = {
           role_id?: string | null;
           spin_balance?: number;
           status?: string;
+          membership_period_id?: string | null;
+          valid_till?: string | null;
           created_at?: string;
         };
         Update: {
@@ -151,6 +155,8 @@ export type Database = {
           role_id?: string | null;
           spin_balance?: number;
           status?: string;
+          membership_period_id?: string | null;
+          valid_till?: string | null;
           created_at?: string;
         };
         Relationships: [
@@ -195,6 +201,40 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "member_roles_club_id_fkey";
+            columns: ["club_id"];
+            isOneToOne: false;
+            referencedRelation: "clubs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      membership_periods: {
+        Row: {
+          id: string;
+          club_id: string;
+          name: string;
+          duration_months: number;
+          display_order: number;
+          active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          club_id: string;
+          name: string;
+          duration_months: number;
+          display_order?: number;
+          active?: boolean;
+        };
+        Update: {
+          name?: string;
+          duration_months?: number;
+          display_order?: number;
+          active?: boolean;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "membership_periods_club_id_fkey";
             columns: ["club_id"];
             isOneToOne: false;
             referencedRelation: "clubs";
