@@ -85,7 +85,7 @@ export function PeopleManager({
         </div>
 
         {/* Create form */}
-        <form onSubmit={handleCreate} className="px-5 py-4 border-b border-gray-100">
+        <form onSubmit={handleCreate} className="px-4 py-4 border-b border-gray-100">
           <div className={`flex gap-3 items-end ${tab === "staff" ? "" : ""}`}>
             <div className="flex-1">
               <label className="block text-xs font-medium text-gray-500 mb-1">
@@ -142,7 +142,7 @@ export function PeopleManager({
         {list.length > 0 ? (
           <div className="divide-y divide-gray-100">
             {list.map((person) => (
-              <div key={person.id} className="px-5 py-3 flex items-center gap-4">
+              <div key={person.id} className="px-4 py-3 flex items-center gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-mono font-semibold text-gray-900 text-sm tracking-wide">

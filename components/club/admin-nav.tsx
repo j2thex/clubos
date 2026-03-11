@@ -85,7 +85,7 @@ export function AdminNav({ clubSlug }: AdminNavProps) {
             <Link
               key={item.label}
               href={href}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1 text-xs transition-colors ${
+              className={`flex flex-col items-center gap-0.5 px-1.5 py-1 text-xs transition-colors ${
                 isActive ? "text-gray-900 font-semibold" : "text-gray-400 hover:text-gray-600"
               }`}
             >
