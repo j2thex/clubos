@@ -50,7 +50,7 @@ export default async function PublicProfilePage({
     await Promise.all([
       supabase
         .from("events")
-        .select("id, title, description, date, time, price, image_url")
+        .select("id, title, description, date, time, price, image_url, link, reward_spins")
         .eq("club_id", club.id)
         .eq("active", true)
         .eq("is_public", true)
@@ -58,14 +58,14 @@ export default async function PublicProfilePage({
         .order("date", { ascending: true }),
       supabase
         .from("quests")
-        .select("id, title, description, image_url")
+        .select("id, title, description, image_url, link, reward_spins")
         .eq("club_id", club.id)
         .eq("active", true)
         .eq("is_public", true)
         .order("display_order", { ascending: true }),
       supabase
         .from("services")
-        .select("id, title, description, image_url, price")
+        .select("id, title, description, image_url, link, price")
         .eq("club_id", club.id)
         .eq("active", true)
         .eq("is_public", true)
@@ -82,6 +82,14 @@ export default async function PublicProfilePage({
       month: "short",
       day: "numeric",
     });
+  }
+
+  function formatTime(t: string) {
+    const [h, m] = t.split(":");
+    const hour = parseInt(h);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const h12 = hour % 12 || 12;
+    return `${h12}:${m} ${ampm}`;
   }
 
   return (
@@ -132,38 +140,51 @@ export default async function PublicProfilePage({
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-2">
               Upcoming Events
             </h2>
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden divide-y divide-gray-100">
+            <div className="space-y-3">
               {events.map((ev) => (
-                <div key={ev.id} className="p-4 flex gap-3">
+                <div key={ev.id} className="bg-white rounded-2xl shadow overflow-hidden">
                   {ev.image_url && (
                     <img
                       src={ev.image_url}
                       alt=""
-                      className="w-16 h-16 rounded-xl object-cover shrink-0"
+                      className="w-full h-36 object-cover"
                     />
                   )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">
-                      {ev.title}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {formatDate(ev.date)}
-                      {ev.time && ` at ${ev.time}`}
-                    </p>
-                    {ev.description && (
-                      <p className="text-xs text-gray-400 mt-1 line-clamp-2">
-                        {ev.description}
-                      </p>
-                    )}
-                    <div className="mt-1.5">
-                      {ev.price != null ? (
-                        <span className="text-xs font-medium club-primary">
-                          ${Number(ev.price).toFixed(2)}
+                  <div className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-900">{ev.title}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {formatDate(ev.date)}
+                          {ev.time && ` at ${formatTime(ev.time)}`}
+                        </p>
+                        {ev.description && (
+                          <p className="text-xs text-gray-400 mt-1">{ev.description}</p>
+                        )}
+                      </div>
+                      <div className="text-right shrink-0">
+                        {ev.price != null ? (
+                          <span className="text-sm font-bold text-gray-900">${Number(ev.price).toFixed(2)}</span>
+                        ) : (
+                          <span className="text-sm font-bold text-green-600">Free</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 mt-3">
+                      {ev.reward_spins > 0 && (
+                        <span className="text-xs club-tint-text font-medium px-2 py-0.5 club-tint-bg rounded-full">
+                          +{ev.reward_spins} spin{ev.reward_spins === 1 ? "" : "s"}
                         </span>
-                      ) : (
-                        <span className="text-xs font-medium text-green-600">
-                          Free
-                        </span>
+                      )}
+                      {ev.link && (
+                        <a
+                          href={ev.link.match(/^https?:\/\//) ? ev.link : `https://${ev.link}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-medium club-primary underline"
+                        >
+                          Learn more
+                        </a>
                       )}
                     </div>
                   </div>
@@ -179,24 +200,48 @@ export default async function PublicProfilePage({
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-2">
               Quests
             </h2>
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden divide-y divide-gray-100">
+            <div className="space-y-3">
               {quests.map((q) => (
-                <div key={q.id} className="p-4 flex gap-3">
-                  {q.image_url && (
-                    <img
-                      src={q.image_url}
-                      alt=""
-                      className="w-12 h-12 rounded-xl object-cover shrink-0"
-                    />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">
-                      {q.title}
-                    </p>
-                    {q.description && (
-                      <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">
-                        {q.description}
-                      </p>
+                <div key={q.id} className="bg-white rounded-2xl shadow p-4">
+                  <div className="flex items-center gap-4">
+                    {q.image_url ? (
+                      <img src={q.image_url} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-gray-100 text-gray-300">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-900 text-sm">{q.title}</p>
+                      {q.description && (
+                        <p className="text-xs text-gray-400">{q.description}</p>
+                      )}
+                      {q.link && (() => {
+                        const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(q.link!);
+                        const href = isEmail
+                          ? `mailto:${q.link}`
+                          : q.link!.match(/^https?:\/\//) ? q.link! : `https://${q.link}`;
+                        const display = isEmail
+                          ? q.link!
+                          : q.link!.replace(/^https?:\/\//, "").replace(/\/$/, "");
+                        return (
+                          <a
+                            href={href}
+                            target={isEmail ? undefined : "_blank"}
+                            rel={isEmail ? undefined : "noopener noreferrer"}
+                            className="inline-block mt-1 text-xs font-medium club-primary underline truncate max-w-[200px]"
+                          >
+                            {display.length > 40 ? `${display.slice(0, 37)}...` : display}
+                          </a>
+                        );
+                      })()}
+                    </div>
+                    {q.reward_spins > 0 && (
+                      <span className="shrink-0 text-xs club-tint-text font-medium px-2 py-0.5 club-tint-bg rounded-full">
+                        +{q.reward_spins} spin{q.reward_spins === 1 ? "" : "s"}
+                      </span>
                     )}
                   </div>
                 </div>
@@ -211,29 +256,39 @@ export default async function PublicProfilePage({
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-2">
               Services
             </h2>
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden divide-y divide-gray-100">
+            <div className="space-y-3">
               {services.map((s) => (
-                <div key={s.id} className="p-4 flex gap-3">
+                <div key={s.id} className="bg-white rounded-2xl shadow overflow-hidden">
                   {s.image_url && (
-                    <img
-                      src={s.image_url}
-                      alt=""
-                      className="w-12 h-12 rounded-xl object-cover shrink-0"
-                    />
+                    <img src={s.image_url} alt="" className="w-full h-36 object-cover" />
                   )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">
-                      {s.title}
-                    </p>
-                    {s.description && (
-                      <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">
-                        {s.description}
-                      </p>
-                    )}
-                    {s.price != null && (
-                      <p className="text-xs font-medium club-primary mt-1">
-                        ${Number(s.price).toFixed(2)}
-                      </p>
+                  <div className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-900">{s.title}</p>
+                        {s.description && (
+                          <p className="text-xs text-gray-500 mt-1">{s.description}</p>
+                        )}
+                      </div>
+                      <div className="text-right shrink-0">
+                        {s.price != null ? (
+                          <span className="text-sm font-bold text-gray-900">${Number(s.price).toFixed(2)}</span>
+                        ) : (
+                          <span className="text-sm font-bold text-green-600">Free</span>
+                        )}
+                      </div>
+                    </div>
+                    {s.link && (
+                      <div className="mt-3">
+                        <a
+                          href={s.link.match(/^https?:\/\//) ? s.link : `https://${s.link}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-medium club-primary underline"
+                        >
+                          Learn more
+                        </a>
+                      </div>
                     )}
                   </div>
                 </div>

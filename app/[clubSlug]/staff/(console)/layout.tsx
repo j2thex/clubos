@@ -44,7 +44,7 @@ export default async function StaffConsoleLayout({
               <p className="mt-1 text-gray-400 text-sm">{club.name}</p>
             </div>
           </div>
-          <div className="mt-4">
+          <div className="flex gap-3 mt-4">
             <a
               href={`/${clubSlug}`}
               target="_blank"
@@ -52,6 +52,14 @@ export default async function StaffConsoleLayout({
               className="text-xs text-gray-400 hover:text-white border border-gray-600 rounded-lg px-3 py-1.5 transition-colors"
             >
               Member Portal
+            </a>
+            <a
+              href={`/${clubSlug}/public`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-gray-400 hover:text-white border border-gray-600 rounded-lg px-3 py-1.5 transition-colors"
+            >
+              Public Page
             </a>
           </div>
         </div>
