@@ -1,7 +1,7 @@
 "use client";
 
-import { useTransition } from "react";
-import { updateMemberRole, prolongateMembership, assignMembershipPeriod } from "./actions";
+import { useState, useTransition } from "react";
+import { updateMemberRole, prolongateMembership, assignMembershipPeriod, setManualValidTill } from "./actions";
 
 interface MemberInfo {
   id: string;
@@ -38,6 +38,8 @@ export function StaffMemberRow({
   clubSlug: string;
 }) {
   const [isPending, startTransition] = useTransition();
+  const [manualDate, setManualDate] = useState("");
+  const [editingDate, setEditingDate] = useState(false);
 
   function handleRoleChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const newRoleId = e.target.value || null;
@@ -71,7 +73,7 @@ export function StaffMemberRow({
               <p className={`text-xs ${isExpired ? "text-red-500" : isExpiringSoon ? "text-amber-500" : "text-green-600"}`}>
                 {isExpired ? `Expired ${formatted}` : `Valid till ${formatted}`}
               </p>
-              {member.periodDurationMonths && (
+              {member.periodDurationMonths ? (
                 <button
                   onClick={() => {
                     startTransition(async () => {
@@ -83,29 +85,94 @@ export function StaffMemberRow({
                 >
                   +{member.periodDurationMonths}mo
                 </button>
+              ) : (
+                <button
+                  onClick={() => setEditingDate(!editingDate)}
+                  className="text-[10px] font-medium text-gray-400 hover:text-blue-600 transition-colors"
+                >
+                  edit
+                </button>
               )}
             </div>
           );
         })()}
-        {!member.validTill && periods.length > 0 && (
-          <select
-            value=""
-            onChange={(e) => {
-              const pid = e.target.value || null;
-              startTransition(async () => {
-                await assignMembershipPeriod(member.id, pid, clubSlug);
-              });
-            }}
-            disabled={isPending}
-            className="mt-1 rounded-lg border border-gray-300 px-2 py-1 text-xs text-gray-500 bg-white transition disabled:opacity-50"
-          >
-            <option value="">Assign period...</option>
-            {periods.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name} ({p.duration_months}mo)
-              </option>
-            ))}
-          </select>
+        {member.validTill && editingDate && (
+          <div className="flex items-center gap-1 mt-0.5">
+            <input
+              type="date"
+              defaultValue={member.validTill}
+              onChange={(e) => setManualDate(e.target.value)}
+              disabled={isPending}
+              className="rounded-lg border border-gray-300 px-2 py-1 text-xs text-gray-500 bg-white transition disabled:opacity-50"
+            />
+            <button
+              onClick={() => {
+                if (!manualDate) return;
+                startTransition(async () => {
+                  await setManualValidTill(member.id, manualDate, clubSlug);
+                  setManualDate("");
+                  setEditingDate(false);
+                });
+              }}
+              disabled={isPending || !manualDate}
+              className="text-[10px] font-medium text-blue-600 hover:text-blue-700 disabled:opacity-50 transition-colors"
+            >
+              Save
+            </button>
+            <button
+              onClick={() => { setEditingDate(false); setManualDate(""); }}
+              className="text-[10px] font-medium text-gray-400 hover:text-gray-500 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+        {!member.validTill && (
+          <div className="mt-1 flex flex-col gap-1">
+            {periods.length > 0 && (
+              <select
+                value=""
+                onChange={(e) => {
+                  const pid = e.target.value || null;
+                  startTransition(async () => {
+                    await assignMembershipPeriod(member.id, pid, clubSlug);
+                  });
+                }}
+                disabled={isPending}
+                className="rounded-lg border border-gray-300 px-2 py-1 text-xs text-gray-500 bg-white transition disabled:opacity-50"
+              >
+                <option value="">Assign period...</option>
+                {periods.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} ({p.duration_months}mo)
+                  </option>
+                ))}
+              </select>
+            )}
+            <div className="flex items-center gap-1">
+              <input
+                type="date"
+                value={manualDate}
+                onChange={(e) => setManualDate(e.target.value)}
+                disabled={isPending}
+                className="rounded-lg border border-gray-300 px-2 py-1 text-xs text-gray-500 bg-white transition disabled:opacity-50"
+              />
+              {manualDate && (
+                <button
+                  onClick={() => {
+                    startTransition(async () => {
+                      await setManualValidTill(member.id, manualDate, clubSlug);
+                      setManualDate("");
+                    });
+                  }}
+                  disabled={isPending}
+                  className="text-[10px] font-medium text-blue-600 hover:text-blue-700 disabled:opacity-50 transition-colors"
+                >
+                  Set
+                </button>
+              )}
+            </div>
+          </div>
         )}
       </div>
 

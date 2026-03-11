@@ -137,16 +137,10 @@ export async function updateBranding(formData: FormData) {
 export async function seedClubDefaults(clubId: string) {
   const supabase = createAdminClient();
 
-  // Guard against re-seeding (e.g. page refresh)
-  const { count } = await supabase
-    .from("wheel_configs")
-    .select("*", { count: "exact", head: true })
-    .eq("club_id", clubId);
+  // Upsert is idempotent — safe on page refresh and concurrent requests.
+  // Unique constraints: wheel_configs(club_id, display_order), membership_periods(club_id, name)
 
-  if (count && count > 0) return;
-
-  // Seed default wheel segments (ignoreDuplicates handles race conditions)
-  await supabase.from("wheel_configs").insert([
+  await supabase.from("wheel_configs").upsert([
     { club_id: clubId, label: "No prize", reward_type: "nothing", reward_value: 0, probability: 0.20, color: "#4b5563", label_color: "#d1d5db", display_order: 0 },
     { club_id: clubId, label: "Mascotte", reward_type: "prize", reward_value: 1, probability: 0.15, color: "#c4a265", label_color: "#1c1008", display_order: 1 },
     { club_id: clubId, label: "Free Drink", reward_type: "prize", reward_value: 1, probability: 0.15, color: "#0284c7", label_color: "#e0f2fe", display_order: 2 },
@@ -155,15 +149,14 @@ export async function seedClubDefaults(clubId: string) {
     { club_id: clubId, label: "Blue Pre-roll", reward_type: "prize", reward_value: 1, probability: 0.10, color: "#4f46e5", label_color: "#eef2ff", display_order: 5 },
     { club_id: clubId, label: "Yellow Pre-roll", reward_type: "prize", reward_value: 1, probability: 0.10, color: "#ca8a04", label_color: "#fefce8", display_order: 6 },
     { club_id: clubId, label: "Orange Pre-roll", reward_type: "prize", reward_value: 1, probability: 0.10, color: "#ea580c", label_color: "#fff7ed", display_order: 7 },
-  ]);
+  ], { onConflict: "club_id,display_order", ignoreDuplicates: true });
 
-  // Seed default membership period (12 months)
-  await supabase.from("membership_periods").insert({
+  await supabase.from("membership_periods").upsert({
     club_id: clubId,
     name: "12 Months",
     duration_months: 12,
     display_order: 0,
     active: true,
-  });
+  }, { onConflict: "club_id,name", ignoreDuplicates: true });
 
 }

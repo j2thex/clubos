@@ -239,6 +239,45 @@ export async function assignMembershipPeriod(
   return { ok: true };
 }
 
+export async function setManualValidTill(
+  memberId: string,
+  validTill: string,
+  clubSlug: string,
+) {
+  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(validTill)) {
+    return { error: "Invalid date format" };
+  }
+
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("members")
+    .update({ valid_till: validTill })
+    .eq("id", memberId);
+
+  if (error) return { error: "Failed to set validity date" };
+
+  const { data: memberForLog } = await supabase
+    .from("members")
+    .select("member_code, club_id")
+    .eq("id", memberId)
+    .single();
+
+  const staff = await getStaffFromCookie();
+  await logActivity({
+    clubId: memberForLog?.club_id ?? "",
+    staffMemberId: staff?.member_id,
+    action: "validity_set_manual",
+    targetMemberCode: memberForLog?.member_code,
+    details: `Valid till ${validTill}`,
+  });
+
+  revalidatePath(`/${clubSlug}/staff/members`);
+  return { ok: true };
+}
+
 export async function createStaffMember(
   clubId: string,
   memberCode: string,
