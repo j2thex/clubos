@@ -81,7 +81,7 @@ export function QuestList({
                 {q.description && (
                   <p className="text-xs text-gray-400">{q.description}</p>
                 )}
-                {q.link && (!done || isMultiUse) && !isPendingQuest && (() => {
+                {q.link && (() => {
                   const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(q.link!);
                   const href = isEmail
                     ? `mailto:${q.link}`
