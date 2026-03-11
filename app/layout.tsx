@@ -22,6 +22,10 @@ export const metadata: Metadata = {
   title: "osocio.club",
   description: "A white-label operating system for private clubs",
   icons: { icon: "/favicon-member.svg" },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export default function RootLayout({
