@@ -218,7 +218,7 @@ export function QuestManager({
                         <label className="block text-xs font-medium text-gray-500 mb-1">Spins</label>
                         <input
                           type="number"
-                          min="1"
+                          min="0"
                           max="100"
                           value={editReward}
                           onChange={(e) => setEditReward(e.target.value)}
@@ -409,7 +409,7 @@ export function QuestManager({
               <label className="block text-xs font-medium text-gray-500 mb-1">Spins</label>
               <input
                 type="number"
-                min="1"
+                min="0"
                 max="100"
                 value={newReward}
                 onChange={(e) => setNewReward(e.target.value)}

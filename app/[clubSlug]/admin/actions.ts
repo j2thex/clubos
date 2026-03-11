@@ -234,7 +234,8 @@ export async function addQuest(
   const title = (formData.get("title") as string)?.trim();
   const description = (formData.get("description") as string)?.trim() || null;
   const link = (formData.get("link") as string)?.trim() || null;
-  const rewardSpins = Number(formData.get("reward_spins")) || 1;
+  const rawSpins = formData.get("reward_spins");
+  const rewardSpins = rawSpins !== null && rawSpins !== "" ? Number(rawSpins) : 1;
   const multiUse = formData.get("multi_use") === "1";
   const questType = (formData.get("quest_type") as string) || "default";
   const proofMode = (formData.get("proof_mode") as string) || "none";
@@ -242,7 +243,7 @@ export async function addQuest(
   const imageFile = formData.get("image") as File | null;
 
   if (!title) return { error: "Title is required" };
-  if (rewardSpins < 1) return { error: "Reward must be at least 1 spin" };
+  if (rewardSpins < 0) return { error: "Reward cannot be negative" };
 
   const supabase = createAdminClient();
 
@@ -291,7 +292,8 @@ export async function updateQuest(
   const title = (formData.get("title") as string)?.trim();
   const description = (formData.get("description") as string)?.trim() || null;
   const link = (formData.get("link") as string)?.trim() || null;
-  const rewardSpins = Number(formData.get("reward_spins")) || 1;
+  const rawSpins = formData.get("reward_spins");
+  const rewardSpins = rawSpins !== null && rawSpins !== "" ? Number(rawSpins) : 1;
   const multiUse = formData.get("multi_use") === "1";
   const questType = (formData.get("quest_type") as string) || "default";
   const proofMode = (formData.get("proof_mode") as string) || "none";
@@ -299,7 +301,7 @@ export async function updateQuest(
   const imageFile = formData.get("image") as File | null;
 
   if (!title) return { error: "Title is required" };
-  if (rewardSpins < 1) return { error: "Reward must be at least 1 spin" };
+  if (rewardSpins < 0) return { error: "Reward cannot be negative" };
 
   const supabase = createAdminClient();
 
@@ -384,12 +386,13 @@ export async function addEvent(
   const time = (formData.get("time") as string) || null;
   const priceStr = (formData.get("price") as string)?.trim();
   const link = (formData.get("link") as string)?.trim() || null;
-  const rewardSpins = Number(formData.get("reward_spins")) || 1;
+  const rawSpins = formData.get("reward_spins");
+  const rewardSpins = rawSpins !== null && rawSpins !== "" ? Number(rawSpins) : 1;
   const imageFile = formData.get("image") as File | null;
 
   if (!title) return { error: "Title is required" };
   if (!date) return { error: "Date is required" };
-  if (rewardSpins < 1) return { error: "Reward must be at least 1 spin" };
+  if (rewardSpins < 0) return { error: "Reward cannot be negative" };
 
   const supabase = createAdminClient();
 
@@ -430,7 +433,8 @@ export async function updateEvent(
   const time = (formData.get("time") as string) || null;
   const priceStr = (formData.get("price") as string)?.trim();
   const link = (formData.get("link") as string)?.trim() || null;
-  const rewardSpins = Number(formData.get("reward_spins")) || 1;
+  const rawSpins = formData.get("reward_spins");
+  const rewardSpins = rawSpins !== null && rawSpins !== "" ? Number(rawSpins) : 1;
   const imageFile = formData.get("image") as File | null;
 
   if (!title) return { error: "Title is required" };

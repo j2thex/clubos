@@ -54,7 +54,7 @@ export default async function AdminPanelLayout({
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
       <div
-        className={`relative px-6 pt-10 bg-cover bg-center ${coverUrl ? "pb-6" : "pb-20 bg-gradient-to-br from-gray-800 to-gray-900"}`}
+        className={`relative px-6 pt-10 bg-cover bg-center overflow-hidden ${coverUrl ? "pb-6" : "pb-20 bg-gradient-to-br from-gray-800 to-gray-900"}`}
         style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : undefined}
       >
         {coverUrl && (
