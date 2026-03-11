@@ -67,6 +67,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Public club profile is public
+  if (clubPath.startsWith("/public")) {
+    return NextResponse.next();
+  }
+
   // Staff routes — require staff token (except staff login)
   if (clubPath.startsWith("/staff")) {
     if (clubPath === "/staff/login") {

@@ -292,6 +292,7 @@ export async function addQuest(
   const rawSpins = formData.get("reward_spins");
   const rewardSpins = rawSpins !== null && rawSpins !== "" ? Number(rawSpins) : 1;
   const multiUse = formData.get("multi_use") === "1";
+  const isPublic = formData.get("is_public") === "1";
   const questType = (formData.get("quest_type") as string) || "default";
   const proofMode = (formData.get("proof_mode") as string) || "none";
   const proofPlaceholder = (formData.get("proof_placeholder") as string)?.trim() || null;
@@ -326,6 +327,7 @@ export async function addQuest(
     link,
     reward_spins: rewardSpins,
     multi_use: multiUse,
+    is_public: isPublic,
     quest_type: questType,
     proof_mode: proofMode,
     proof_placeholder: proofPlaceholder,
@@ -350,6 +352,7 @@ export async function updateQuest(
   const rawSpins = formData.get("reward_spins");
   const rewardSpins = rawSpins !== null && rawSpins !== "" ? Number(rawSpins) : 1;
   const multiUse = formData.get("multi_use") === "1";
+  const isPublic = formData.get("is_public") === "1";
   const questType = (formData.get("quest_type") as string) || "default";
   const proofMode = (formData.get("proof_mode") as string) || "none";
   const proofPlaceholder = (formData.get("proof_placeholder") as string)?.trim() || null;
@@ -366,6 +369,7 @@ export async function updateQuest(
     link,
     reward_spins: rewardSpins,
     multi_use: multiUse,
+    is_public: isPublic,
     quest_type: questType,
     proof_mode: proofMode,
     proof_placeholder: proofPlaceholder,
@@ -443,6 +447,7 @@ export async function addEvent(
   const link = (formData.get("link") as string)?.trim() || null;
   const rawSpins = formData.get("reward_spins");
   const rewardSpins = rawSpins !== null && rawSpins !== "" ? Number(rawSpins) : 1;
+  const isPublic = formData.get("is_public") === "1";
   const imageFile = formData.get("image") as File | null;
 
   if (!title) return { error: "Title is required" };
@@ -469,6 +474,7 @@ export async function addEvent(
     image_url: imageUrl,
     link,
     reward_spins: rewardSpins,
+    is_public: isPublic,
   });
 
   if (error) return { error: "Failed to add event" };
@@ -490,6 +496,7 @@ export async function updateEvent(
   const link = (formData.get("link") as string)?.trim() || null;
   const rawSpins = formData.get("reward_spins");
   const rewardSpins = rawSpins !== null && rawSpins !== "" ? Number(rawSpins) : 1;
+  const isPublic = formData.get("is_public") === "1";
   const imageFile = formData.get("image") as File | null;
 
   if (!title) return { error: "Title is required" };
@@ -505,6 +512,7 @@ export async function updateEvent(
     price: priceStr ? Number(priceStr) : null,
     link,
     reward_spins: rewardSpins,
+    is_public: isPublic,
   };
 
   if (imageFile && imageFile.size > 0) {
@@ -577,6 +585,7 @@ export async function addService(
   const description = (formData.get("description") as string)?.trim() || null;
   const link = (formData.get("link") as string)?.trim() || null;
   const priceStr = (formData.get("price") as string)?.trim();
+  const isPublic = formData.get("is_public") === "1";
   const imageFile = formData.get("image") as File | null;
 
   if (!title) return { error: "Title is required" };
@@ -606,6 +615,7 @@ export async function addService(
     description,
     link,
     price: priceStr ? Number(priceStr) : null,
+    is_public: isPublic,
     image_url: imageUrl,
     display_order: nextOrder,
   });
@@ -625,6 +635,7 @@ export async function updateService(
   const description = (formData.get("description") as string)?.trim() || null;
   const link = (formData.get("link") as string)?.trim() || null;
   const priceStr = (formData.get("price") as string)?.trim();
+  const isPublic = formData.get("is_public") === "1";
   const imageFile = formData.get("image") as File | null;
 
   if (!title) return { error: "Title is required" };
@@ -636,6 +647,7 @@ export async function updateService(
     description,
     link,
     price: priceStr ? Number(priceStr) : null,
+    is_public: isPublic,
   };
 
   if (imageFile && imageFile.size > 0) {

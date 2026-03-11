@@ -24,7 +24,7 @@ export default async function QuestsPage({
     supabase
       .from("quests")
       .select(
-        "id, title, description, link, image_url, reward_spins, display_order, active, multi_use, quest_type, proof_mode, proof_placeholder"
+        "id, title, description, link, image_url, reward_spins, display_order, active, multi_use, is_public, quest_type, proof_mode, proof_placeholder"
       )
       .eq("club_id", club.id)
       .eq("active", true)
@@ -54,6 +54,7 @@ export default async function QuestsPage({
     display_order: q.display_order,
     completions: completionCounts.get(q.id) ?? 0,
     multi_use: q.multi_use ?? false,
+    is_public: q.is_public ?? false,
     quest_type: q.quest_type ?? "default",
     proof_mode: q.proof_mode ?? "none",
     proof_placeholder: q.proof_placeholder ?? null,

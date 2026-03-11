@@ -13,6 +13,7 @@ interface Quest {
   display_order: number;
   completions: number;
   multi_use: boolean;
+  is_public: boolean;
   quest_type: string;
   proof_mode: string;
   proof_placeholder: string | null;
@@ -40,6 +41,7 @@ export function QuestManager({
   const [editLink, setEditLink] = useState("");
   const [editReward, setEditReward] = useState("1");
   const [editMultiUse, setEditMultiUse] = useState(false);
+  const [editIsPublic, setEditIsPublic] = useState(false);
   const [editImage, setEditImage] = useState<File | null>(null);
   const [editQuestType, setEditQuestType] = useState("default");
   const [editProofMode, setEditProofMode] = useState("none");
@@ -50,6 +52,7 @@ export function QuestManager({
   const [newLink, setNewLink] = useState("");
   const [newReward, setNewReward] = useState("1");
   const [newMultiUse, setNewMultiUse] = useState(false);
+  const [newIsPublic, setNewIsPublic] = useState(false);
   const [newImage, setNewImage] = useState<File | null>(null);
   const [newQuestType, setNewQuestType] = useState("default");
   const [newProofMode, setNewProofMode] = useState("none");
@@ -75,6 +78,7 @@ export function QuestManager({
     setEditLink(q.link ?? "");
     setEditReward(String(q.reward_spins));
     setEditMultiUse(q.multi_use);
+    setEditIsPublic(q.is_public);
     setEditQuestType(q.quest_type ?? "default");
     setEditProofMode(q.proof_mode ?? "none");
     setEditProofPlaceholder(q.proof_placeholder ?? "");
@@ -96,6 +100,7 @@ export function QuestManager({
       fd.set("link", editLink);
       fd.set("reward_spins", editReward);
       fd.set("multi_use", editMultiUse ? "1" : "0");
+      fd.set("is_public", editIsPublic ? "1" : "0");
       fd.set("quest_type", editQuestType);
       fd.set("proof_mode", editProofMode);
       fd.set("proof_placeholder", editProofPlaceholder);
@@ -128,6 +133,7 @@ export function QuestManager({
       fd.set("link", newLink);
       fd.set("reward_spins", newReward);
       fd.set("multi_use", newMultiUse ? "1" : "0");
+      fd.set("is_public", newIsPublic ? "1" : "0");
       fd.set("quest_type", newQuestType);
       fd.set("proof_mode", newProofMode);
       fd.set("proof_placeholder", newProofPlaceholder);
@@ -143,6 +149,7 @@ export function QuestManager({
         setNewLink("");
         setNewReward("1");
         setNewMultiUse(false);
+        setNewIsPublic(false);
         setNewQuestType("default");
         setNewProofMode("none");
         setNewProofPlaceholder("");
@@ -244,6 +251,15 @@ export function QuestManager({
                       />
                       <span className="text-xs text-gray-600">Repeatable (can be completed multiple times)</span>
                     </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={editIsPublic}
+                        onChange={(e) => setEditIsPublic(e.target.checked)}
+                        className="rounded border-gray-300 text-gray-800 focus:ring-gray-400"
+                      />
+                      <span className="text-xs text-gray-600">Show on public profile</span>
+                    </label>
                     <div>
                       <label className="block text-xs font-medium text-gray-500 mb-1">Quest Type</label>
                       <select
@@ -306,6 +322,9 @@ export function QuestManager({
                         <p className="text-sm font-medium text-gray-900 truncate">{q.title}</p>
                         {q.multi_use && (
                           <span className="text-[10px] font-medium text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded-full shrink-0">Repeatable</span>
+                        )}
+                        {q.is_public && (
+                          <span className="text-[10px] font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full shrink-0">Public</span>
                         )}
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
@@ -435,6 +454,15 @@ export function QuestManager({
               className="rounded border-gray-300 text-gray-800 focus:ring-gray-400"
             />
             <span className="text-xs text-gray-600">Repeatable (can be completed multiple times)</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={newIsPublic}
+              onChange={(e) => setNewIsPublic(e.target.checked)}
+              className="rounded border-gray-300 text-gray-800 focus:ring-gray-400"
+            />
+            <span className="text-xs text-gray-600">Show on public profile</span>
           </label>
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Quest Type</label>

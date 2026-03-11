@@ -19,6 +19,7 @@ interface Service {
   price: number | null;
   pending_orders: number;
   fulfilled_orders: number;
+  is_public: boolean;
 }
 
 export function ServiceManager({
@@ -35,12 +36,14 @@ export function ServiceManager({
   const [editDesc, setEditDesc] = useState("");
   const [editLink, setEditLink] = useState("");
   const [editPrice, setEditPrice] = useState("");
+  const [editIsPublic, setEditIsPublic] = useState(false);
   const [editImage, setEditImage] = useState<File | null>(null);
 
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [newLink, setNewLink] = useState("");
   const [newPrice, setNewPrice] = useState("");
+  const [newIsPublic, setNewIsPublic] = useState(false);
   const [newImage, setNewImage] = useState<File | null>(null);
 
   const [showForm, setShowForm] = useState(false);
@@ -59,6 +62,7 @@ export function ServiceManager({
     setEditDesc(s.description ?? "");
     setEditLink(s.link ?? "");
     setEditPrice(s.price != null ? String(s.price) : "");
+    setEditIsPublic(s.is_public);
     setEditImage(null);
     setError(null);
   }
@@ -76,6 +80,7 @@ export function ServiceManager({
       fd.set("description", editDesc);
       fd.set("link", editLink);
       fd.set("price", editPrice);
+      fd.set("is_public", editIsPublic ? "1" : "0");
       if (editImage) fd.set("image", editImage);
 
       const result = await updateService(serviceId, fd, clubSlug);
@@ -104,6 +109,7 @@ export function ServiceManager({
       fd.set("description", newDesc);
       fd.set("link", newLink);
       fd.set("price", newPrice);
+      fd.set("is_public", newIsPublic ? "1" : "0");
       if (newImage) fd.set("image", newImage);
 
       const result = await addService(clubId, fd, clubSlug);
@@ -115,6 +121,7 @@ export function ServiceManager({
         setNewDesc("");
         setNewLink("");
         setNewPrice("");
+        setNewIsPublic(false);
         setNewImage(null);
         setSuccessMsg(`"${createdTitle}" created successfully`);
         setShowForm(false);
@@ -205,6 +212,15 @@ export function ServiceManager({
                         className="w-full text-sm text-gray-500 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
                       />
                     </div>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={editIsPublic}
+                        onChange={(e) => setEditIsPublic(e.target.checked)}
+                        className="rounded border-gray-300 text-gray-800 focus:ring-gray-400"
+                      />
+                      <span className="text-xs text-gray-600">Show on public profile</span>
+                    </label>
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleSaveEdit(s.id)}
@@ -227,7 +243,12 @@ export function ServiceManager({
                       <img src={s.image_url} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{s.title}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-medium text-gray-900 truncate">{s.title}</p>
+                        {s.is_public && (
+                          <span className="text-[10px] font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full shrink-0">Public</span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2 mt-0.5">
                         {s.price != null ? (
                           <span className="text-xs text-gray-400">${Number(s.price).toFixed(2)}</span>
@@ -360,6 +381,15 @@ export function ServiceManager({
               className="w-full text-sm text-gray-500 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
             />
           </div>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={newIsPublic}
+              onChange={(e) => setNewIsPublic(e.target.checked)}
+              className="rounded border-gray-300 text-gray-800 focus:ring-gray-400"
+            />
+            <span className="text-xs text-gray-600">Show on public profile</span>
+          </label>
         </form>
         </div>
         )}

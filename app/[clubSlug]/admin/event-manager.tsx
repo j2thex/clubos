@@ -22,6 +22,7 @@ interface Event {
   reward_spins: number;
   rsvps: number;
   checkins: number;
+  is_public: boolean;
 }
 
 export function EventManager({
@@ -41,6 +42,7 @@ export function EventManager({
   const [editPrice, setEditPrice] = useState("");
   const [editLink, setEditLink] = useState("");
   const [editReward, setEditReward] = useState("1");
+  const [editIsPublic, setEditIsPublic] = useState(false);
   const [editImage, setEditImage] = useState<File | null>(null);
 
   const [newTitle, setNewTitle] = useState("");
@@ -50,6 +52,7 @@ export function EventManager({
   const [newPrice, setNewPrice] = useState("");
   const [newLink, setNewLink] = useState("");
   const [newReward, setNewReward] = useState("1");
+  const [newIsPublic, setNewIsPublic] = useState(false);
   const [newImage, setNewImage] = useState<File | null>(null);
 
   const [showForm, setShowForm] = useState(false);
@@ -72,6 +75,7 @@ export function EventManager({
     setEditPrice(ev.price != null ? String(ev.price) : "");
     setEditLink(ev.link ?? "");
     setEditReward(String(ev.reward_spins));
+    setEditIsPublic(ev.is_public);
     setEditImage(null);
     setError(null);
   }
@@ -92,6 +96,7 @@ export function EventManager({
       fd.set("price", editPrice);
       fd.set("link", editLink);
       fd.set("reward_spins", editReward);
+      fd.set("is_public", editIsPublic ? "1" : "0");
       if (editImage) fd.set("image", editImage);
 
       const result = await updateEvent(eventId, fd, clubSlug);
@@ -123,6 +128,7 @@ export function EventManager({
       fd.set("price", newPrice);
       fd.set("link", newLink);
       fd.set("reward_spins", newReward);
+      fd.set("is_public", newIsPublic ? "1" : "0");
       if (newImage) fd.set("image", newImage);
 
       const result = await addEvent(clubId, fd, clubSlug);
@@ -137,6 +143,7 @@ export function EventManager({
         setNewPrice("");
         setNewLink("");
         setNewReward("1");
+        setNewIsPublic(false);
         setNewImage(null);
         setSuccessMsg(`"${createdTitle}" created successfully`);
         setShowForm(false);
@@ -265,6 +272,15 @@ export function EventManager({
                         className="w-full text-sm text-gray-500 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
                       />
                     </div>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={editIsPublic}
+                        onChange={(e) => setEditIsPublic(e.target.checked)}
+                        className="rounded border-gray-300 text-gray-800 focus:ring-gray-400"
+                      />
+                      <span className="text-xs text-gray-600">Show on public profile</span>
+                    </label>
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleSaveEdit(ev.id)}
@@ -291,7 +307,12 @@ export function EventManager({
                       />
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{ev.title}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-medium text-gray-900 truncate">{ev.title}</p>
+                        {ev.is_public && (
+                          <span className="text-[10px] font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full shrink-0">Public</span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                         <span className="text-xs text-gray-500">{formatDate(ev.date)}</span>
                         {ev.price != null && (
@@ -449,6 +470,15 @@ export function EventManager({
               className="w-full text-sm text-gray-500 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
             />
           </div>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={newIsPublic}
+              onChange={(e) => setNewIsPublic(e.target.checked)}
+              className="rounded border-gray-300 text-gray-800 focus:ring-gray-400"
+            />
+            <span className="text-xs text-gray-600">Show on public profile</span>
+          </label>
           <button
             type="submit"
             disabled={isPending || !newTitle.trim() || !newDate}
