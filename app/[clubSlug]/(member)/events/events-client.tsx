@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useMemo } from "react";
 import { rsvpEvent, cancelRsvp } from "./actions";
 
 interface Event {
@@ -14,6 +14,7 @@ interface Event {
   link: string | null;
   reward_spins: number;
   hasRsvp: boolean;
+  checkedIn: boolean;
 }
 
 export function EventsClient({
@@ -30,8 +31,19 @@ export function EventsClient({
     Object.fromEntries(events.map((e) => [e.id, e.hasRsvp])),
   );
   const [isPending, startTransition] = useTransition();
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
+  // Client-side date split using browser timezone
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
+  const upcomingEvents = useMemo(() => events.filter((e) => e.date >= todayStr), [events, todayStr]);
+  const pastEvents = useMemo(() => events.filter((e) => e.date < todayStr).reverse(), [events, todayStr]);
+
+  const checkedInSet = useMemo(() => new Set(events.filter((e) => e.checkedIn).map((e) => e.id)), [events]);
 
   function handleRsvp(eventId: string) {
+    if (checkedInSet.has(eventId)) return;
     startTransition(async () => {
       const hasIt = rsvpState[eventId];
       if (hasIt) {
@@ -65,11 +77,11 @@ export function EventsClient({
   }
 
   // Calendar logic
-  const today = new Date();
   const [calMonth, setCalMonth] = useState(today.getMonth());
   const [calYear, setCalYear] = useState(today.getFullYear());
 
   const eventDates = new Set(events.map((e) => e.date));
+  const upcomingEventDates = new Set(upcomingEvents.map((e) => e.date));
 
   function getDaysInMonth(year: number, month: number) {
     return new Date(year, month + 1, 0).getDate();
@@ -84,6 +96,7 @@ export function EventsClient({
   const monthName = new Date(calYear, calMonth).toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
   function prevMonth() {
+    setSelectedDate(null);
     if (calMonth === 0) {
       setCalMonth(11);
       setCalYear(calYear - 1);
@@ -93,12 +106,44 @@ export function EventsClient({
   }
 
   function nextMonth() {
+    setSelectedDate(null);
     if (calMonth === 11) {
       setCalMonth(0);
       setCalYear(calYear + 1);
     } else {
       setCalMonth(calMonth + 1);
     }
+  }
+
+  function getInitialSelectedDate() {
+    const upcoming = upcomingEvents[0];
+    return upcoming?.date ?? null;
+  }
+
+  function renderRsvpButton(ev: Event) {
+    if (checkedInSet.has(ev.id)) {
+      return (
+        <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-green-100 text-green-700">
+          Checked In
+        </span>
+      );
+    }
+    return (
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          handleRsvp(ev.id);
+        }}
+        disabled={isPending}
+        className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
+          rsvpState[ev.id]
+            ? "bg-gray-100 text-gray-500 hover:bg-gray-200"
+            : "club-primary-bg text-white hover:opacity-90"
+        } disabled:opacity-50`}
+      >
+        {rsvpState[ev.id] ? "Signed Up" : "Sign Up"}
+      </button>
+    );
   }
 
   return (
@@ -116,7 +161,10 @@ export function EventsClient({
           List
         </button>
         <button
-          onClick={() => setView("calendar")}
+          onClick={() => {
+            setView("calendar");
+            setSelectedDate(getInitialSelectedDate());
+          }}
           className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-colors ${
             view === "calendar"
               ? "bg-white text-gray-900 shadow"
@@ -129,13 +177,13 @@ export function EventsClient({
 
       {view === "list" ? (
         <div className="space-y-3">
-          {events.length === 0 && (
+          {upcomingEvents.length === 0 && (
             <div className="bg-white rounded-2xl shadow-lg p-10 text-center">
-              <p className="text-gray-700 font-semibold text-lg">No events yet</p>
+              <p className="text-gray-700 font-semibold text-lg">No upcoming events</p>
               <p className="text-gray-400 text-sm mt-1">Check back soon for upcoming club events.</p>
             </div>
           )}
-          {events.map((ev) => (
+          {upcomingEvents.map((ev) => (
             <a
               key={ev.id}
               href={`/${clubSlug}/events/${ev.id}`}
@@ -169,20 +217,7 @@ export function EventsClient({
                   <span className="text-xs club-tint-text font-medium px-2 py-0.5 club-tint-bg rounded-full">
                     +{ev.reward_spins} spin{ev.reward_spins === 1 ? "" : "s"}
                   </span>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleRsvp(ev.id);
-                    }}
-                    disabled={isPending}
-                    className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
-                      rsvpState[ev.id]
-                        ? "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                        : "club-primary-bg text-white hover:opacity-90"
-                    } disabled:opacity-50`}
-                  >
-                    {rsvpState[ev.id] ? "Signed Up" : "Sign Up"}
-                  </button>
+                  {renderRsvpButton(ev)}
                 </div>
               </div>
             </a>
@@ -221,6 +256,7 @@ export function EventsClient({
               const day = i + 1;
               const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
               const hasEvent = eventDates.has(dateStr);
+              const isSelected = dateStr === selectedDate;
               const isToday =
                 day === today.getDate() &&
                 calMonth === today.getMonth() &&
@@ -229,18 +265,82 @@ export function EventsClient({
               return (
                 <div
                   key={day}
-                  className={`relative h-9 flex items-center justify-center rounded-lg text-sm ${
-                    isToday ? "font-bold text-gray-900 bg-gray-100" : "text-gray-700"
-                  }`}
+                  onClick={hasEvent ? () => setSelectedDate(isSelected ? null : dateStr) : undefined}
+                  className={`relative h-9 flex items-center justify-center rounded-lg text-sm transition-colors ${
+                    isSelected
+                      ? "club-primary-bg text-white font-semibold"
+                      : isToday
+                        ? "font-bold text-gray-900 bg-gray-100"
+                        : "text-gray-700"
+                  } ${hasEvent ? "cursor-pointer" : ""}`}
                 >
                   {day}
                   {hasEvent && (
-                    <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full club-primary-bg" />
+                    <span
+                      className={`absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full ${
+                        isSelected
+                          ? "bg-white"
+                          : upcomingEventDates.has(dateStr)
+                            ? "club-primary-bg"
+                            : "bg-gray-300"
+                      }`}
+                    />
                   )}
                 </div>
               );
             })}
           </div>
+
+          {/* Event panel for selected date */}
+          {selectedDate && (() => {
+            const dayEvents = events.filter((e) => e.date === selectedDate);
+            const isPastDate = !upcomingEventDates.has(selectedDate);
+            if (dayEvents.length === 0) return null;
+            return (
+              <div className="mt-3 pt-3 border-t border-gray-100 space-y-2">
+                <p className="text-xs font-medium text-gray-400 px-1">
+                  {formatDate(selectedDate)}
+                  {isPastDate && <span className="ml-1 text-gray-300">&middot; Past</span>}
+                </p>
+                {dayEvents.map((ev) => (
+                  <a
+                    key={ev.id}
+                    href={`/${clubSlug}/events/${ev.id}`}
+                    className={`block rounded-xl bg-gray-50 p-3 hover:bg-gray-100 transition-colors ${isPastDate ? "opacity-70" : ""}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {ev.image_url && (
+                        <img
+                          src={ev.image_url}
+                          alt=""
+                          className={`w-12 h-12 rounded-lg object-cover shrink-0 ${isPastDate ? "grayscale-[30%]" : ""}`}
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className={`font-semibold text-sm truncate ${isPastDate ? "text-gray-600" : "text-gray-900"}`}>
+                          {ev.title}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {ev.time ? formatTime(ev.time) : "All day"}
+                          {ev.price != null
+                            ? ` · $${Number(ev.price).toFixed(2)}`
+                            : " · Free"}
+                        </p>
+                      </div>
+                      {!isPastDate && (
+                        <div className="shrink-0 flex flex-col items-end gap-1">
+                          <span className="text-xs club-tint-text font-medium px-2 py-0.5 club-tint-bg rounded-full">
+                            +{ev.reward_spins}
+                          </span>
+                          {renderRsvpButton(ev)}
+                        </div>
+                      )}
+                    </div>
+                  </a>
+                ))}
+              </div>
+            );
+          })()}
         </div>
       )}
     </div>

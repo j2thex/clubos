@@ -7,13 +7,36 @@ export function EventDetailClient({
   eventId,
   memberId,
   hasRsvp: initialHasRsvp,
+  checkedIn,
+  eventDate,
 }: {
   eventId: string;
   memberId: string;
   hasRsvp: boolean;
+  checkedIn: boolean;
+  eventDate: string;
 }) {
   const [hasRsvp, setHasRsvp] = useState(initialHasRsvp);
   const [isPending, startTransition] = useTransition();
+
+  // Client-side date check using browser timezone
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const isPast = eventDate < todayStr;
+
+  if (isPast) {
+    return (
+      <p className="text-center text-sm text-gray-400 py-2">This event has passed</p>
+    );
+  }
+
+  if (checkedIn) {
+    return (
+      <div className="w-full py-3 rounded-xl text-sm font-semibold text-center bg-green-100 text-green-700">
+        Checked In
+      </div>
+    );
+  }
 
   function handleToggle() {
     startTransition(async () => {

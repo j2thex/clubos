@@ -34,14 +34,16 @@ export async function checkinMember(
   if (!member) return { error: "Member not found" };
   if (member.id === staffMemberId) return { error: "Cannot check in yourself" };
 
-  // Get event reward
+  // Get event reward and verify it's not in the past
+  const today = new Date().toISOString().split("T")[0];
   const { data: event } = await supabase
     .from("events")
-    .select("reward_spins, title")
+    .select("reward_spins, title, date")
     .eq("id", eventId)
     .single();
 
   if (!event) return { error: "Event not found" };
+  if (event.date < today) return { error: "Cannot check in for a past event" };
 
   // Insert checkin (unique constraint prevents duplicates)
   const { error: insertError } = await supabase
@@ -93,13 +95,15 @@ export async function checkinMemberById(
 
   if (!member) return { error: "Member not found" };
 
+  const today = new Date().toISOString().split("T")[0];
   const { data: event } = await supabase
     .from("events")
-    .select("reward_spins, title, club_id")
+    .select("reward_spins, title, club_id, date")
     .eq("id", eventId)
     .single();
 
   if (!event) return { error: "Event not found" };
+  if (event.date < today) return { error: "Cannot check in for a past event" };
 
   const { error: insertError } = await supabase
     .from("event_checkins")

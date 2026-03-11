@@ -17,7 +17,7 @@ export default async function EventDetailPage({
 
   const supabase = createAdminClient();
 
-  const [{ data: event }, { data: rsvp }] = await Promise.all([
+  const [{ data: event }, { data: rsvp }, { data: checkin }] = await Promise.all([
     supabase
       .from("events")
       .select("id, title, description, date, time, price, image_url, link, reward_spins")
@@ -27,6 +27,12 @@ export default async function EventDetailPage({
       .single(),
     supabase
       .from("event_rsvps")
+      .select("id")
+      .eq("event_id", eventId)
+      .eq("member_id", session.member_id)
+      .maybeSingle(),
+    supabase
+      .from("event_checkins")
       .select("id")
       .eq("event_id", eventId)
       .eq("member_id", session.member_id)
@@ -68,7 +74,7 @@ export default async function EventDetailPage({
         </div>
       )}
 
-      <div className={`px-4 pb-10 max-w-md mx-auto ${event.image_url ? "-mt-6" : "-mt-6"}`}>
+      <div className={`px-4 pb-10 max-w-md mx-auto ${event.image_url ? "mt-4" : "-mt-6"}`}>
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           <div className="p-5 space-y-4">
             {event.image_url && (
@@ -156,6 +162,8 @@ export default async function EventDetailPage({
               eventId={event.id}
               memberId={session.member_id}
               hasRsvp={!!rsvp}
+              checkedIn={!!checkin}
+              eventDate={event.date}
             />
           </div>
         </div>

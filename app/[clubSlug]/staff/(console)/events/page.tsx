@@ -38,6 +38,7 @@ export default async function StaffEventsPage({
         reward_spins: e.reward_spins,
       }))}
       clubId={club.id}
+      clubSlug={clubSlug}
       staffMemberId={session?.member_id ?? ""}
     />
   ) : (

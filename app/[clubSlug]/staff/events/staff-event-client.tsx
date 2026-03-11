@@ -21,10 +21,12 @@ interface Rsvp {
 export function StaffEventClient({
   events,
   clubId,
+  clubSlug,
   staffMemberId,
 }: {
   events: Event[];
   clubId: string;
+  clubSlug: string;
   staffMemberId: string;
 }) {
   const [selectedEventId, setSelectedEventId] = useState(events[0]?.id ?? "");
@@ -32,6 +34,7 @@ export function StaffEventClient({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [successMemberCode, setSuccessMemberCode] = useState<string | null>(null);
 
   const [rsvps, setRsvps] = useState<Rsvp[]>([]);
 
@@ -61,6 +64,7 @@ export function StaffEventClient({
 
     setError(null);
     setSuccess(null);
+    setSuccessMemberCode(null);
     startTransition(async () => {
       const res = await checkinMember(code, selectedEventId, clubId, staffMemberId);
       if ("error" in res) {
@@ -71,6 +75,7 @@ export function StaffEventClient({
       setSuccess(
         `Checked in! +${event?.reward_spins ?? 0} spin${(event?.reward_spins ?? 0) === 1 ? "" : "s"} awarded`,
       );
+      setSuccessMemberCode(code);
       setMemberCode("");
       loadRsvps(selectedEventId);
     });
@@ -79,6 +84,7 @@ export function StaffEventClient({
   function handleRsvpCheckin(memberId: string) {
     setError(null);
     setSuccess(null);
+    setSuccessMemberCode(null);
     startTransition(async () => {
       const res = await checkinMemberById(memberId, selectedEventId, staffMemberId);
       if ("error" in res) {
@@ -86,9 +92,11 @@ export function StaffEventClient({
         return;
       }
       const event = events.find((ev) => ev.id === selectedEventId);
+      const rsvp = rsvps.find((r) => r.member_id === memberId);
       setSuccess(
         `Checked in! +${event?.reward_spins ?? 0} spin${(event?.reward_spins ?? 0) === 1 ? "" : "s"} awarded`,
       );
+      setSuccessMemberCode(rsvp?.member_code ?? null);
       // Update locally for instant feedback
       setRsvps((prev) =>
         prev.map((r) => (r.member_id === memberId ? { ...r, checked_in: true } : r)),
@@ -144,8 +152,16 @@ export function StaffEventClient({
       )}
 
       {success && (
-        <div className="px-5 py-2 text-xs text-green-700 bg-green-50 border-t border-green-100">
-          {success}
+        <div className="px-5 py-2 text-xs text-green-700 bg-green-50 border-t border-green-100 flex items-center justify-between">
+          <span>{success}</span>
+          {successMemberCode && (
+            <a
+              href={`/${clubSlug}/staff/?member=${successMemberCode}`}
+              className="ml-3 rounded-lg bg-gray-800 text-white px-3 py-1 text-xs font-semibold hover:bg-gray-700 transition-colors shrink-0"
+            >
+              Spin
+            </a>
+          )}
         </div>
       )}
 

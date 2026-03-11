@@ -17,16 +17,19 @@ export default async function EventsPage({
 
   const supabase = createAdminClient();
 
-  const [{ data: events }, { data: rsvps }, { data: branding }] = await Promise.all([
+  const [{ data: events }, { data: rsvps }, { data: checkins }, { data: branding }] = await Promise.all([
     supabase
       .from("events")
       .select("id, title, description, date, time, price, image_url, link, reward_spins")
       .eq("club_id", session.club_id)
       .eq("active", true)
-      .gte("date", new Date().toISOString().split("T")[0])
       .order("date", { ascending: true }),
     supabase
       .from("event_rsvps")
+      .select("event_id")
+      .eq("member_id", session.member_id),
+    supabase
+      .from("event_checkins")
       .select("event_id")
       .eq("member_id", session.member_id),
     supabase
@@ -39,6 +42,7 @@ export default async function EventsPage({
   const logoUrl = branding?.logo_url ?? null;
 
   const rsvpSet = new Set((rsvps ?? []).map((r) => r.event_id));
+  const checkinSet = new Set((checkins ?? []).map((c) => c.event_id));
 
   const eventList = (events ?? []).map((e) => ({
     id: e.id,
@@ -51,6 +55,7 @@ export default async function EventsPage({
     link: e.link,
     reward_spins: e.reward_spins,
     hasRsvp: rsvpSet.has(e.id),
+    checkedIn: checkinSet.has(e.id),
   }));
 
   return (
