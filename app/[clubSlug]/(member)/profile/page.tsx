@@ -3,6 +3,8 @@ import { getMemberFromCookie } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logout } from "./actions";
 import { RoleSelector } from "./role-selector";
+import { MemberQrCard } from "@/components/club/member-qr-card";
+import { AddToHomescreen } from "@/components/club/add-to-homescreen";
 
 function formatTimestamp(iso: string): string {
   const date = new Date(iso);
@@ -97,15 +99,12 @@ export default async function ProfilePage({
 
       {/* Profile card */}
       <div className="px-4 -mt-8 pb-10 max-w-md mx-auto space-y-4">
+        <AddToHomescreen />
+
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-          {/* Member Code */}
-          <div className="club-tint-bg border-b club-tint-border px-6 py-5 text-center">
-            <p className="text-xs font-medium club-tint-text uppercase tracking-wider mb-2">
-              Member Code
-            </p>
-            <p className="text-3xl font-bold font-mono tracking-widest club-tint-text inline-block px-5 py-2 rounded-lg" style={{ backgroundColor: "color-mix(in srgb, var(--club-primary, #16a34a) 15%, white)" }}>
-              {memberCode}
-            </p>
+          {/* QR Code & Member Code */}
+          <div className="club-tint-bg border-b club-tint-border px-6 py-8 text-center">
+            <MemberQrCard memberCode={memberCode} />
           </div>
 
           {/* Info fields */}
