@@ -26,11 +26,30 @@ export async function createMember(
 
   const supabase = createAdminClient();
 
-  const { error } = await supabase.from("members").insert({
+  // Find default membership period for this club
+  const { data: period } = await supabase
+    .from("membership_periods")
+    .select("id, duration_months")
+    .eq("club_id", clubId)
+    .eq("active", true)
+    .order("display_order", { ascending: true })
+    .limit(1)
+    .single();
+
+  const insertData: Record<string, unknown> = {
     club_id: clubId,
     member_code: code,
     spin_balance: 0,
-  });
+  };
+
+  if (period) {
+    const validTill = new Date();
+    validTill.setMonth(validTill.getMonth() + period.duration_months);
+    insertData.membership_period_id = period.id;
+    insertData.valid_till = validTill.toISOString().split("T")[0];
+  }
+
+  const { error } = await supabase.from("members").insert(insertData);
 
   if (error) {
     if (error.code === "23505") return { error: "Member code already exists" };
@@ -62,18 +81,54 @@ export async function createStaffMember(
 
   const supabase = createAdminClient();
 
-  const { error } = await supabase.from("members").insert({
+  // Find default membership period for this club
+  const { data: period } = await supabase
+    .from("membership_periods")
+    .select("id, duration_months")
+    .eq("club_id", clubId)
+    .eq("active", true)
+    .order("display_order", { ascending: true })
+    .limit(1)
+    .single();
+
+  const insertData: Record<string, unknown> = {
     club_id: clubId,
     member_code: code,
     pin_hash: hashPin(trimmedPin),
     spin_balance: 0,
     is_staff: true,
-  });
+  };
+
+  if (period) {
+    const validTill = new Date();
+    validTill.setMonth(validTill.getMonth() + period.duration_months);
+    insertData.membership_period_id = period.id;
+    insertData.valid_till = validTill.toISOString().split("T")[0];
+  }
+
+  const { error } = await supabase.from("members").insert(insertData);
 
   if (error) {
     if (error.code === "23505") return { error: "Code already exists" };
     return { error: "Failed to create staff member" };
   }
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
+export async function deleteMember(
+  memberId: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("members")
+    .delete()
+    .eq("id", memberId);
+
+  if (error) return { error: "Failed to delete member" };
 
   revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };

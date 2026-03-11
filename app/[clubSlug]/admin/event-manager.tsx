@@ -3,6 +3,13 @@
 import { useState, useTransition } from "react";
 import { addEvent, updateEvent, deleteEvent } from "./actions";
 
+const TEMPLATES = [
+  { title: "Weekly Party", description: "Weekly club night", rewardSpins: 1 },
+  { title: "DJ Night", description: "Live DJ set", rewardSpins: 1 },
+  { title: "Members Only Event", description: "Exclusive members event", rewardSpins: 2 },
+  { title: "Open Mic Night", description: "Open mic and live performances", rewardSpins: 1 },
+];
+
 interface Event {
   id: string;
   title: string;
@@ -49,6 +56,12 @@ export function EventManager({
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  function applyTemplate(t: typeof TEMPLATES[number]) {
+    setNewTitle(t.title);
+    setNewDesc(t.description);
+    setNewReward(String(t.rewardSpins));
+  }
 
   function startEdit(ev: Event) {
     setEditingId(ev.id);
@@ -330,6 +343,23 @@ export function EventManager({
 
         {/* Add new event */}
         {showForm && (
+        <div>
+          {/* Templates */}
+          <div className="px-5 py-4 border-t border-gray-100 bg-gray-50">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Quick Add</p>
+            <div className="flex flex-wrap gap-2">
+              {TEMPLATES.map((t) => (
+                <button
+                  key={t.title}
+                  type="button"
+                  onClick={() => applyTemplate(t)}
+                  className="text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors"
+                >
+                  {t.title}
+                </button>
+              ))}
+            </div>
+          </div>
         <form onSubmit={handleAdd} className="px-5 py-4 border-t border-gray-100 space-y-3 bg-gray-50">
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Title</label>
@@ -427,6 +457,7 @@ export function EventManager({
             Add Event
           </button>
         </form>
+        </div>
         )}
 
         {error && (

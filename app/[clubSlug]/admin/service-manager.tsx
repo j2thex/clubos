@@ -3,6 +3,13 @@
 import { useState, useTransition } from "react";
 import { addService, updateService, deleteService } from "./actions";
 
+const TEMPLATES = [
+  { title: "VIP Table", description: "Reserve a VIP table" },
+  { title: "Bottle Service", description: "Premium bottle service" },
+  { title: "Private Event", description: "Book a private event" },
+  { title: "Merchandise", description: "Club branded merchandise" },
+];
+
 interface Service {
   id: string;
   title: string;
@@ -40,6 +47,11 @@ export function ServiceManager({
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  function applyTemplate(t: typeof TEMPLATES[number]) {
+    setNewTitle(t.title);
+    setNewDesc(t.description);
+  }
 
   function startEdit(s: Service) {
     setEditingId(s.id);
@@ -269,6 +281,23 @@ export function ServiceManager({
 
         {/* Add new service */}
         {showForm && (
+        <div>
+          {/* Templates */}
+          <div className="px-5 py-4 border-t border-gray-100 bg-gray-50">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Quick Add</p>
+            <div className="flex flex-wrap gap-2">
+              {TEMPLATES.map((t) => (
+                <button
+                  key={t.title}
+                  type="button"
+                  onClick={() => applyTemplate(t)}
+                  className="text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors"
+                >
+                  {t.title}
+                </button>
+              ))}
+            </div>
+          </div>
         <form onSubmit={handleAdd} className="px-5 py-4 border-t border-gray-100 space-y-3 bg-gray-50">
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Title</label>
@@ -332,6 +361,7 @@ export function ServiceManager({
             />
           </div>
         </form>
+        </div>
         )}
 
         {error && (

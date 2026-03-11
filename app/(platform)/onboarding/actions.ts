@@ -157,4 +157,13 @@ export async function seedClubDefaults(clubId: string) {
     { club_id: clubId, label: "Orange Pre-roll", reward_type: "prize", reward_value: 1, probability: 0.10, color: "#ea580c", label_color: "#fff7ed", display_order: 7 },
   ]);
 
+  // Seed default membership period (12 months)
+  await supabase.from("membership_periods").insert({
+    club_id: clubId,
+    name: "12 Months",
+    duration_months: 12,
+    display_order: 0,
+    active: true,
+  });
+
 }
