@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { getMemberFromCookie } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logout } from "./actions";
-import { RoleSelector } from "./role-selector";
 import { MemberQrCard } from "@/components/club/member-qr-card";
 import { AddToHomescreen } from "@/components/club/add-to-homescreen";
 
@@ -35,10 +34,10 @@ export default async function ProfilePage({
 
   const supabase = createAdminClient();
 
-  const [{ data: member }, { data: spins }, { data: roles }, { data: branding }] = await Promise.all([
+  const [{ data: member }, { data: spins }, { data: branding }] = await Promise.all([
     supabase
       .from("members")
-      .select("member_code, spin_balance, role_id, valid_till, created_at")
+      .select("member_code, spin_balance, valid_till, created_at")
       .eq("id", session.member_id)
       .single(),
     supabase
@@ -48,11 +47,6 @@ export default async function ProfilePage({
       .eq("club_id", session.club_id)
       .order("created_at", { ascending: false })
       .limit(20),
-    supabase
-      .from("member_roles")
-      .select("id, name")
-      .eq("club_id", session.club_id)
-      .order("display_order", { ascending: true }),
     supabase
       .from("club_branding")
       .select("logo_url")
@@ -74,7 +68,6 @@ export default async function ProfilePage({
 
   const memberCode = member?.member_code ?? "";
   const spinBalance = member?.spin_balance ?? 0;
-  const currentRoleId = member?.role_id ?? null;
   const memberSince = member?.created_at
     ? new Date(member.created_at).toLocaleDateString("en-US", {
         year: "numeric",
@@ -109,17 +102,6 @@ export default async function ProfilePage({
 
           {/* Info fields */}
           <div className="divide-y divide-gray-100">
-            {/* Role */}
-            <div className="px-6 py-4">
-              <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
-                Role
-              </p>
-              <RoleSelector
-                roles={roles ?? []}
-                currentRoleId={currentRoleId}
-              />
-            </div>
-
             {/* Dates row */}
             <div className={`px-6 py-4 grid ${member?.valid_till ? "grid-cols-2 gap-4" : ""}`}>
               <div>
