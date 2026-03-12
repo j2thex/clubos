@@ -11,7 +11,7 @@ export default function Home() {
 
         <div className="relative z-10 mx-auto max-w-3xl text-center">
           <h1 className="text-5xl font-bold tracking-tight text-primary sm:text-6xl md:text-7xl">
-            osocio.club
+            osocios.club
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground sm:text-xl">
             The all-in-one operating system for private clubs. Manage members, engage your community, and run daily operations — all under your own brand.
@@ -169,7 +169,7 @@ export default function Home() {
             Built for private clubs
           </h2>
           <p className="mx-auto mt-3 max-w-lg text-muted-foreground">
-            Whether you run a social club, cannabis association, members-only bar, or any private community — osocio gives you the tools to manage it professionally.
+            Whether you run a social club, cannabis association, members-only bar, or any private community — osocios gives you the tools to manage it professionally.
           </p>
           <div className="mt-10">
             <Link
@@ -188,7 +188,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-border/50 px-6 py-8">
         <p className="text-center text-sm text-muted-foreground">
-          osocio.club
+          osocios.club
         </p>
       </footer>
     </div>
