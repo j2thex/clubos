@@ -128,60 +128,6 @@ export async function createMember(
   return { ok: true };
 }
 
-export async function prolongateMembership(memberId: string, clubSlug: string) {
-  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
-  const supabase = createAdminClient();
-
-  const { data: member } = await supabase
-    .from("members")
-    .select("valid_till, membership_period_id")
-    .eq("id", memberId)
-    .single();
-
-  if (!member?.membership_period_id) return { error: "No membership period assigned" };
-
-  const { data: period } = await supabase
-    .from("membership_periods")
-    .select("duration_months")
-    .eq("id", member.membership_period_id)
-    .single();
-
-  if (!period) return { error: "Membership period not found" };
-
-  // Extend from valid_till if future, from today if expired
-  const base = member.valid_till && new Date(member.valid_till) > new Date()
-    ? new Date(member.valid_till)
-    : new Date();
-  base.setMonth(base.getMonth() + period.duration_months);
-  const newValidTill = base.toISOString().split("T")[0];
-
-  const { error } = await supabase
-    .from("members")
-    .update({ valid_till: newValidTill })
-    .eq("id", memberId);
-
-  if (error) return { error: "Failed to extend membership" };
-
-  // Get member code for logging
-  const { data: memberForLog } = await supabase
-    .from("members")
-    .select("member_code, club_id")
-    .eq("id", memberId)
-    .single();
-
-  const staff = await getStaffFromCookie();
-  await logActivity({
-    clubId: memberForLog?.club_id ?? "",
-    staffMemberId: staff?.member_id,
-    action: "membership_prolongated",
-    targetMemberCode: memberForLog?.member_code,
-    details: `Extended to ${newValidTill}`,
-  });
-
-  revalidatePath(`/${clubSlug}/staff/members`);
-  return { ok: true };
-}
-
 export async function assignMembershipPeriod(
   memberId: string,
   periodId: string | null,
@@ -254,7 +200,7 @@ export async function setManualValidTill(
 
   const { error } = await supabase
     .from("members")
-    .update({ valid_till: validTill })
+    .update({ valid_till: validTill, membership_period_id: null })
     .eq("id", memberId);
 
   if (error) return { error: "Failed to set validity date" };
@@ -269,7 +215,7 @@ export async function setManualValidTill(
   await logActivity({
     clubId: memberForLog?.club_id ?? "",
     staffMemberId: staff?.member_id,
-    action: "validity_set_manual",
+    action: "validity_updated",
     targetMemberCode: memberForLog?.member_code,
     details: `Valid till ${validTill}`,
   });

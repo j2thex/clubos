@@ -11,9 +11,9 @@ export default function StaffLoginPage() {
 
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
 
-  const boundLogin = loginStaff.bind(null, clubSlug);
+  const boundLogin = loginStaff.bind(null, clubSlug, locale);
 
   function handleSubmit(formData: FormData) {
     setError(null);

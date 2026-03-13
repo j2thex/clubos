@@ -166,3 +166,37 @@ Quest links (URLs/emails) remain visible after a quest is marked done. Previousl
 - `app/[clubSlug]/(member)/events/actions.ts` — `rsvpEvent` validates future date, `cancelRsvp` rejects if checked in, both call `revalidatePath`
 - `app/[clubSlug]/(member)/events/[eventId]/event-detail-client.tsx` — client-side past check, checkedIn display
 - `app/[clubSlug]/staff/events/actions.ts` — `checkinMember` and `checkinMemberById` reject past events
+
+## i18n — Spanish Language Support
+
+### Custom i18n System
+
+**Request:** Add Spanish language support with browser auto-detection and manual EN/ES switcher in all portals.
+
+**Changes:** Built a custom lightweight i18n system (no library) with: JSON dictionaries, `t()` translation function with parameter interpolation, React context provider for client components, server-side locale via middleware headers. Migrated ~285 hardcoded English strings across ~34 files to use translation keys.
+
+**How it works:** The middleware reads `clubos-lang` cookie (or falls back to `Accept-Language` header for `es` detection) and sets an `x-lang` response header + persists the cookie. The root layout reads the header via `getServerLocale()`, sets `<html lang>` dynamically, and wraps everything in `<LanguageProvider initialLocale={locale}>`.
+
+- **Server Components** use: `const locale = await getServerLocale(); t(locale, "key")`
+- **Client Components** use: `const { t } = useLanguage(); t("key")`
+- **Interpolation:** `t(locale, "member.welcome", { name: "Juan" })` → "Welcome back, Juan" / "Bienvenido, Juan"
+- **Date formatting:** Uses `getDateLocale(locale)` → `"es-ES"` or `"en-US"` for `toLocaleDateString()`
+
+The `LanguageSwitcher` component (EN|ES toggle) is placed in:
+- Landing page: fixed top-right
+- Onboarding: fixed top-right (via platform layout)
+- Member portal: fixed top-right (via member layout)
+- Staff console: in the header bar next to quick links
+- Admin panel: in the header next to logout button
+
+Switching locale writes the `clubos-lang` cookie and calls `router.refresh()` to re-render server components.
+
+**Key files:**
+- `lib/i18n/index.ts` — `t()` function, `Locale` type, `detectLocale()`, `getDateLocale()`
+- `lib/i18n/server.ts` — `getServerLocale()` (server-only, reads `x-lang` header)
+- `lib/i18n/provider.tsx` — `LanguageProvider` context + `useLanguage()` hook for client components
+- `lib/i18n/switcher.tsx` — `LanguageSwitcher` component (EN|ES toggle, light/dark variants)
+- `lib/i18n/dictionaries/en.json` — English dictionary (~285 keys)
+- `lib/i18n/dictionaries/es.json` — Spanish dictionary (~285 keys)
+- `middleware.ts` — `applyLocale()` helper detects locale, sets `x-lang` header + `clubos-lang` cookie
+- `app/layout.tsx` — async root layout, dynamic `<html lang>`, wraps children in `LanguageProvider`

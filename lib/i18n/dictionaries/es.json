@@ -56,6 +56,8 @@
   "login.emailPlaceholder": "tu@ejemplo.com",
   "login.passwordLabel": "Contraseña",
   "login.passwordPlaceholder": "Mínimo 8 caracteres",
+  "login.membershipExpired": "Tu membresía expiró el {date}. Contacta a tu club para renovar.",
+  "login.membershipExpiredGeneric": "Tu membresía ha expirado. Contacta a tu club para renovar.",
 
   "dashboard.remaining": "Restantes",
   "dashboard.spinsLabel": "tiradas",

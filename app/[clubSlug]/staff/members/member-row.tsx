@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { updateMemberRole, prolongateMembership, assignMembershipPeriod, setManualValidTill } from "./actions";
+import { updateMemberRole, setManualValidTill } from "./actions";
 
 interface MemberInfo {
   id: string;
@@ -11,8 +11,6 @@ interface MemberInfo {
   roleId: string | null;
   roleName: string | null;
   validTill: string | null;
-  membershipPeriodId: string | null;
-  periodDurationMonths: number | null;
 }
 
 interface Role {
@@ -20,21 +18,13 @@ interface Role {
   name: string;
 }
 
-interface Period {
-  id: string;
-  name: string;
-  duration_months: number;
-}
-
 export function StaffMemberRow({
   member,
   roles,
-  periods,
   clubSlug,
 }: {
   member: MemberInfo;
   roles: Role[];
-  periods: Period[];
   clubSlug: string;
 }) {
   const [isPending, startTransition] = useTransition();
@@ -60,7 +50,7 @@ export function StaffMemberRow({
         <p className="text-xs text-gray-400 mt-0.5">
           {member.spinBalance} {member.spinBalance === 1 ? "spin" : "spins"}
         </p>
-        {member.validTill && (() => {
+        {member.validTill ? (() => {
           const validDate = new Date(member.validTill + "T00:00:00");
           const now = new Date();
           const daysLeft = Math.ceil((validDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
@@ -69,109 +59,69 @@ export function StaffMemberRow({
           const formatted = validDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
           return (
-            <div className="flex items-center gap-2 mt-0.5">
-              <p className={`text-xs ${isExpired ? "text-red-500" : isExpiringSoon ? "text-amber-500" : "text-green-600"}`}>
+            <>
+              <button
+                onClick={() => setEditingDate(!editingDate)}
+                className={`text-xs mt-0.5 ${isExpired ? "text-red-500" : isExpiringSoon ? "text-amber-500" : "text-green-600"}`}
+              >
                 {isExpired ? `Expired ${formatted}` : `Valid till ${formatted}`}
-              </p>
-              {member.periodDurationMonths ? (
-                <button
-                  onClick={() => {
-                    startTransition(async () => {
-                      await prolongateMembership(member.id, clubSlug);
-                    });
-                  }}
-                  disabled={isPending}
-                  className="text-[10px] font-medium text-blue-600 hover:text-blue-700 disabled:opacity-50 transition-colors"
-                >
-                  +{member.periodDurationMonths}mo
-                </button>
-              ) : (
-                <button
-                  onClick={() => setEditingDate(!editingDate)}
-                  className="text-[10px] font-medium text-gray-400 hover:text-blue-600 transition-colors"
-                >
-                  edit
-                </button>
+              </button>
+              {editingDate && (
+                <div className="flex items-center gap-1 mt-0.5">
+                  <input
+                    type="date"
+                    defaultValue={member.validTill}
+                    onChange={(e) => setManualDate(e.target.value)}
+                    disabled={isPending}
+                    className="rounded-lg border border-gray-300 px-2 py-1 text-xs text-gray-500 bg-white transition disabled:opacity-50"
+                  />
+                  <button
+                    onClick={() => {
+                      if (!manualDate) return;
+                      startTransition(async () => {
+                        await setManualValidTill(member.id, manualDate, clubSlug);
+                        setManualDate("");
+                        setEditingDate(false);
+                      });
+                    }}
+                    disabled={isPending || !manualDate}
+                    className="text-[10px] font-medium text-blue-600 hover:text-blue-700 disabled:opacity-50 transition-colors"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => { setEditingDate(false); setManualDate(""); }}
+                    className="text-[10px] font-medium text-gray-400 hover:text-gray-500 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
               )}
-            </div>
+            </>
           );
-        })()}
-        {member.validTill && editingDate && (
+        })() : (
           <div className="flex items-center gap-1 mt-0.5">
             <input
               type="date"
-              defaultValue={member.validTill}
+              value={manualDate}
               onChange={(e) => setManualDate(e.target.value)}
               disabled={isPending}
               className="rounded-lg border border-gray-300 px-2 py-1 text-xs text-gray-500 bg-white transition disabled:opacity-50"
             />
-            <button
-              onClick={() => {
-                if (!manualDate) return;
-                startTransition(async () => {
-                  await setManualValidTill(member.id, manualDate, clubSlug);
-                  setManualDate("");
-                  setEditingDate(false);
-                });
-              }}
-              disabled={isPending || !manualDate}
-              className="text-[10px] font-medium text-blue-600 hover:text-blue-700 disabled:opacity-50 transition-colors"
-            >
-              Save
-            </button>
-            <button
-              onClick={() => { setEditingDate(false); setManualDate(""); }}
-              className="text-[10px] font-medium text-gray-400 hover:text-gray-500 transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        )}
-        {!member.validTill && (
-          <div className="mt-1 flex flex-col gap-1">
-            {periods.length > 0 && (
-              <select
-                value=""
-                onChange={(e) => {
-                  const pid = e.target.value || null;
+            {manualDate && (
+              <button
+                onClick={() => {
                   startTransition(async () => {
-                    await assignMembershipPeriod(member.id, pid, clubSlug);
+                    await setManualValidTill(member.id, manualDate, clubSlug);
+                    setManualDate("");
                   });
                 }}
                 disabled={isPending}
-                className="rounded-lg border border-gray-300 px-2 py-1 text-xs text-gray-500 bg-white transition disabled:opacity-50"
+                className="text-[10px] font-medium text-blue-600 hover:text-blue-700 disabled:opacity-50 transition-colors"
               >
-                <option value="">Assign period...</option>
-                {periods.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({p.duration_months}mo)
-                  </option>
-                ))}
-              </select>
+                Set
+              </button>
             )}
-            <div className="flex items-center gap-1">
-              <input
-                type="date"
-                value={manualDate}
-                onChange={(e) => setManualDate(e.target.value)}
-                disabled={isPending}
-                className="rounded-lg border border-gray-300 px-2 py-1 text-xs text-gray-500 bg-white transition disabled:opacity-50"
-              />
-              {manualDate && (
-                <button
-                  onClick={() => {
-                    startTransition(async () => {
-                      await setManualValidTill(member.id, manualDate, clubSlug);
-                      setManualDate("");
-                    });
-                  }}
-                  disabled={isPending}
-                  className="text-[10px] font-medium text-blue-600 hover:text-blue-700 disabled:opacity-50 transition-colors"
-                >
-                  Set
-                </button>
-              )}
-            </div>
           </div>
         )}
       </div>

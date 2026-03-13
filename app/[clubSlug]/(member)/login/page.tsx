@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { loginMember } from "./actions";
 import { useLanguage } from "@/lib/i18n/provider";
@@ -8,12 +8,14 @@ import { useLanguage } from "@/lib/i18n/provider";
 export default function MemberLoginPage() {
   const params = useParams<{ clubSlug: string }>();
   const clubSlug = params.clubSlug;
+  const searchParams = useSearchParams();
+  const isExpired = searchParams.get("expired") === "1";
 
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
 
-  const boundLogin = loginMember.bind(null, clubSlug);
+  const boundLogin = loginMember.bind(null, clubSlug, locale);
 
   function handleSubmit(formData: FormData) {
     setError(null);
@@ -50,6 +52,12 @@ export default function MemberLoginPage() {
               {t("login.memberSubtitle")}
             </p>
           </div>
+
+          {isExpired && !error && (
+            <div className="mb-6 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+              {t("login.membershipExpiredGeneric")}
+            </div>
+          )}
 
           {error && (
             <div className="mb-6 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">

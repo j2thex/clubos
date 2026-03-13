@@ -41,8 +41,6 @@ export default async function StaffMembersPage({
       .order("display_order", { ascending: true }),
   ]);
 
-  // Build a map of period id -> duration for member rows
-  const periodMap = new Map((periods ?? []).map((p) => [p.id, p.duration_months]));
   const locale = await getServerLocale();
 
   return (
@@ -71,13 +69,8 @@ export default async function StaffMembersPage({
                       roleId: member.role_id,
                       roleName: roleName ?? null,
                       validTill: member.valid_till ?? null,
-                      membershipPeriodId: member.membership_period_id ?? null,
-                      periodDurationMonths: member.membership_period_id
-                        ? periodMap.get(member.membership_period_id) ?? null
-                        : null,
                     }}
                     roles={roles ?? []}
-                    periods={periods ?? []}
                     clubSlug={clubSlug}
                   />
                 );
