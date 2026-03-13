@@ -30,8 +30,8 @@ declare module "spin-wheel" {
     rotationResistance?: number;
     itemBackgroundColors?: string[];
     itemLabelColors?: string[];
-    overlayImage?: string;
-    image?: string;
+    overlayImage?: HTMLImageElement | null;
+    image?: HTMLImageElement | null;
   }
 
   export class Wheel {

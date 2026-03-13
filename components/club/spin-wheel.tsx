@@ -67,6 +67,22 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
         // Wait for Amatic SC font to be available
         await document.fonts.ready;
 
+        // Load SVG images as HTMLImageElements
+        const loadImage = (src: string): Promise<HTMLImageElement> =>
+          new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = src;
+          });
+
+        const [hubImg, overlayImg] = await Promise.all([
+          loadImage("/wheel/hub.svg"),
+          loadImage("/wheel/overlay.svg"),
+        ]);
+
+        if (!mounted || !containerRef.current) return;
+
         const wheel = new Wheel(containerRef.current, {
           items,
           isInteractive: false,
@@ -82,8 +98,8 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
           lineWidth: 1,
           lineColor: "#fff",
           borderWidth: 0,
-          overlayImage: "/wheel/overlay.svg",
-          image: "/wheel/hub.svg",
+          overlayImage: overlayImg,
+          image: hubImg,
         });
 
         wheelRef.current = wheel;
