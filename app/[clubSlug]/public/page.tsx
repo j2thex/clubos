@@ -301,7 +301,7 @@ export default async function PublicProfilePage({
 
         {/* Footer */}
         <p className="text-center text-xs text-gray-300 pt-4">
-          Powered by osocios
+          © {new Date().getFullYear()} {club.name} · Powered by osocios
         </p>
       </div>
     </div>
