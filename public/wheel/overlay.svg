@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" style="fill-rule:evenodd;clip-rule:evenodd;">
+    <!-- Outer ring -->
+    <circle cx="250" cy="250" r="210" style="fill:none;stroke:#333;stroke-width:8px;"/>
+    <!-- Pointer at top -->
+    <path d="M250,41.7C253.3,41.7 256.6,41.8 259.8,42L259.8,12L240,12L240,42C243.4,41.8 246.7,41.7 250,41.7Z" style="fill:#333;fill-rule:nonzero;"/>
+    <path d="M256,26.3L250,21.8L244,26.3L250,38.9L256,26.3Z" style="fill:#facc15;fill-rule:nonzero;stroke:#facc15;stroke-width:0.5px;stroke-linejoin:round;"/>
+</svg>

@@ -64,19 +64,26 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
           labelColor: seg.labelColor ?? "#ffffff",
         }));
 
+        // Wait for Amatic SC font to be available
+        await document.fonts.ready;
+
         const wheel = new Wheel(containerRef.current, {
           items,
           isInteractive: false,
-          pointerAngle: 180,
-          itemLabelFontSizeMax: 36,
-          itemLabelRadius: 0.92,
-          itemLabelRadiusMax: 0.4,
-          itemLabelAlign: "right",
-          borderWidth: 3,
-          borderColor: "#065f46",
+          pointerAngle: 0,
+          radius: 0.84,
+          itemLabelRotation: 180,
+          itemLabelAlign: "left",
+          itemLabelFont: "Amatic SC",
+          itemLabelFontSizeMax: 55,
+          itemLabelRadius: 0.93,
+          itemLabelRadiusMax: 0.35,
+          itemLabelBaselineOffset: -0.07,
           lineWidth: 1,
-          lineColor: "#065f46",
-          radius: 0.95,
+          lineColor: "#fff",
+          borderWidth: 0,
+          overlayImage: "/wheel/overlay.svg",
+          image: "/wheel/hub.svg",
         });
 
         wheelRef.current = wheel;
@@ -136,21 +143,6 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
         {/* Wheel container */}
         <div className="relative" style={{ width: 392, height: 392 }}>
           <div ref={containerRef} className="w-full h-full" />
-
-          {/* Pointer triangle at bottom */}
-          <div
-            className="absolute left-1/2 z-10"
-            style={{
-              bottom: -8,
-              transform: "translateX(-50%)",
-              width: 0,
-              height: 0,
-              borderLeft: "12px solid transparent",
-              borderRight: "12px solid transparent",
-              borderBottom: "22px solid #facc15",
-              filter: "drop-shadow(0 0 12px rgba(250, 204, 21, 0.9))",
-            }}
-          />
 
           {/* Result overlay */}
           {result && !spinning && (
