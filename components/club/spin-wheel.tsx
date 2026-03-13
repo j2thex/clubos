@@ -36,6 +36,7 @@ export interface SpinWheelHandle {
 const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
   function SpinWheel({ segments, balance, onSpin, hideButton }, ref) {
     const [spinning, setSpinning] = useState(false);
+    const [fullscreen, setFullscreen] = useState(false);
     const [currentBalance, setCurrentBalance] = useState(balance);
     const [result, setResult] = useState<SpinResult["outcome"] | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -114,16 +115,22 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
 
     const fireConfetti = useCallback(() => {
       confetti({
-        particleCount: 80,
-        spread: 70,
+        particleCount: 120,
+        spread: 90,
         origin: { y: 0.5 },
         colors: ["#facc15", "#22c55e", "#3b82f6", "#ef4444", "#a855f7"],
       });
     }, []);
 
+    const dismissFullscreen = useCallback(() => {
+      setFullscreen(false);
+      setResult(null);
+    }, []);
+
     const animateSpin = useCallback((spinResult: SpinResult) => {
       if (!wheelRef.current) return;
 
+      setFullscreen(true);
       setSpinning(true);
       setResult(null);
       setError(null);
@@ -166,8 +173,23 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
 
     return (
       <div className="flex flex-col items-center gap-6">
-        {/* Wheel container — responsive */}
-        <div className="relative w-full max-w-[480px] aspect-square mx-auto">
+        {/* Dark backdrop when fullscreen */}
+        {fullscreen && (
+          <div
+            className="fixed inset-0 z-[9990] bg-black/85 transition-opacity"
+            onClick={!spinning && result ? dismissFullscreen : undefined}
+          />
+        )}
+
+        {/* Wheel container — goes fullscreen when spinning */}
+        <div
+          className={
+            fullscreen
+              ? "fixed z-[9991] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[92vmin] h-[92vmin] max-w-[600px] max-h-[600px]"
+              : "relative w-full max-w-[480px] aspect-square mx-auto"
+          }
+          style={{ transition: "all 0.3s ease-out" }}
+        >
           <div ref={containerRef} className="w-full h-full" />
 
           {/* Result overlay */}
@@ -184,12 +206,22 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
                 backgroundColor: "rgba(0, 0, 0, 0.72)",
               }}
             >
-              <span className="text-center font-bold" style={{ color: "#facc15", fontSize: "1.1rem" }}>
+              <span className="text-center font-bold" style={{ color: "#facc15", fontSize: "1.3rem" }}>
                 {result.label}
               </span>
             </div>
           )}
         </div>
+
+        {/* Tap to close hint */}
+        {fullscreen && result && !spinning && (
+          <div
+            className="fixed z-[9992] bottom-8 left-0 right-0 text-center"
+            onClick={dismissFullscreen}
+          >
+            <p className="text-white/60 text-sm animate-pulse">Tap anywhere to close</p>
+          </div>
+        )}
 
         {/* Spin button — hidden when parent controls spinning */}
         {!hideButton && (
