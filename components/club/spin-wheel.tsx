@@ -49,6 +49,7 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
 
     const containerRef = useRef<HTMLDivElement>(null);
     const wheelRef = useRef<import("spin-wheel").Wheel | null>(null);
+    const spinningRef = useRef(false);
 
     useEffect(() => {
       let mounted = true;
@@ -89,8 +90,8 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
           radius: 0.84,
           itemLabelRotation: 180,
           itemLabelAlign: "left",
-          itemLabelFont: "Impact, Arial Black, sans-serif",
-          itemLabelFontSizeMax: 36,
+          itemLabelFont: "Arial, Helvetica, sans-serif",
+          itemLabelFontSizeMax: 28,
           itemLabelRadius: 0.93,
           itemLabelRadiusMax: 0.35,
           itemLabelBaselineOffset: -0.07,
@@ -130,6 +131,7 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
     const animateSpin = useCallback((spinResult: SpinResult) => {
       if (!wheelRef.current) return;
 
+      spinningRef.current = true;
       setFullscreen(true);
       setSpinning(true);
       setResult(null);
@@ -139,6 +141,7 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
       wheelRef.current.spinToItem(spinResult.segmentIndex, duration, true, 2, 1);
 
       setTimeout(() => {
+        spinningRef.current = false;
         setResult(spinResult.outcome);
         setCurrentBalance(spinResult.newBalance);
         setSpinning(false);
@@ -150,12 +153,13 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
 
     useImperativeHandle(ref, () => ({
       spin: animateSpin,
-      isSpinning: () => spinning,
-    }), [animateSpin, spinning]);
+      isSpinning: () => spinningRef.current,
+    }), [animateSpin]);
 
     const handleSpin = useCallback(async () => {
-      if (spinning || currentBalance <= 0 || !wheelRef.current || !onSpin) return;
+      if (spinningRef.current || currentBalance <= 0 || !wheelRef.current || !onSpin) return;
 
+      spinningRef.current = true;
       setSpinning(true);
       setResult(null);
       setError(null);
@@ -164,12 +168,13 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
 
       if ("error" in res) {
         setError(res.error);
+        spinningRef.current = false;
         setSpinning(false);
         return;
       }
 
       animateSpin(res as SpinResult);
-    }, [spinning, currentBalance, onSpin, animateSpin]);
+    }, [currentBalance, onSpin, animateSpin]);
 
     return (
       <div className="flex flex-col items-center gap-6">
@@ -188,7 +193,6 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
               ? "fixed z-[9991] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[92vmin] h-[92vmin] max-w-[600px] max-h-[600px]"
               : "relative w-full max-w-[480px] aspect-square mx-auto"
           }
-          style={{ transition: "all 0.3s ease-out" }}
         >
           <div ref={containerRef} className="w-full h-full" />
 
