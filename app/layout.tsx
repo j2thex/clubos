@@ -22,7 +22,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: "osocios.club",
-  description: "A white-label operating system for private clubs",
+  description: "The operating system for private clubs",
   icons: { icon: "/favicon-member.svg" },
   appleWebApp: {
     capable: true,
