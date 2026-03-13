@@ -65,9 +65,6 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
           labelColor: seg.labelColor ?? "#ffffff",
         }));
 
-        // Force-load the font before creating the wheel
-        await document.fonts.load('bold 48px "Amatic SC"');
-
         // Load SVG images as HTMLImageElements
         const loadImage = (src: string): Promise<HTMLImageElement> =>
           new Promise((resolve, reject) => {
@@ -91,8 +88,8 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
           radius: 0.84,
           itemLabelRotation: 180,
           itemLabelAlign: "left",
-          itemLabelFont: "Amatic SC",
-          itemLabelFontSizeMax: 55,
+          itemLabelFont: "sans-serif",
+          itemLabelFontSizeMax: 30,
           itemLabelRadius: 0.93,
           itemLabelRadiusMax: 0.35,
           itemLabelBaselineOffset: -0.07,

@@ -39,12 +39,6 @@ export default async function RootLayout({
 
   return (
     <html lang={locale}>
-      <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Amatic+SC:wght@700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
