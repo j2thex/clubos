@@ -99,7 +99,7 @@ export function StaffSpinClient({
       </div>
 
       {/* Wheel — always visible, button hidden */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
+      <div className="bg-white rounded-2xl shadow-lg p-2">
         <SpinWheel
           ref={wheelRef}
           segments={segments}

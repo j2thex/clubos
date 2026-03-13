@@ -88,8 +88,8 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
           radius: 0.84,
           itemLabelRotation: 180,
           itemLabelAlign: "left",
-          itemLabelFont: "sans-serif",
-          itemLabelFontSizeMax: 30,
+          itemLabelFont: "Impact, Arial Black, sans-serif",
+          itemLabelFontSizeMax: 36,
           itemLabelRadius: 0.93,
           itemLabelRadiusMax: 0.35,
           itemLabelBaselineOffset: -0.07,
@@ -167,7 +167,7 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
     return (
       <div className="flex flex-col items-center gap-6">
         {/* Wheel container — responsive */}
-        <div className="relative w-full max-w-[420px] aspect-square">
+        <div className="relative w-full max-w-[480px] aspect-square mx-auto">
           <div ref={containerRef} className="w-full h-full" />
 
           {/* Result overlay */}
