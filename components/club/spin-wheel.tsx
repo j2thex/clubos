@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect, useImperativeHandle, forwardRef } from "react";
+import confetti from "canvas-confetti";
 
 interface Segment {
   label: string;
@@ -64,8 +65,8 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
           labelColor: seg.labelColor ?? "#ffffff",
         }));
 
-        // Wait for Amatic SC font to be available
-        await document.fonts.ready;
+        // Force-load the font before creating the wheel
+        await document.fonts.load('bold 48px "Amatic SC"');
 
         // Load SVG images as HTMLImageElements
         const loadImage = (src: string): Promise<HTMLImageElement> =>
@@ -114,6 +115,15 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
       };
     }, [segments]);
 
+    const fireConfetti = useCallback(() => {
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.5 },
+        colors: ["#facc15", "#22c55e", "#3b82f6", "#ef4444", "#a855f7"],
+      });
+    }, []);
+
     const animateSpin = useCallback((spinResult: SpinResult) => {
       if (!wheelRef.current) return;
 
@@ -128,8 +138,11 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
         setResult(spinResult.outcome);
         setCurrentBalance(spinResult.newBalance);
         setSpinning(false);
+        if (spinResult.outcome.rewardType !== "nothing") {
+          fireConfetti();
+        }
       }, duration);
-    }, []);
+    }, [fireConfetti]);
 
     useImperativeHandle(ref, () => ({
       spin: animateSpin,
@@ -156,8 +169,8 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
 
     return (
       <div className="flex flex-col items-center gap-6">
-        {/* Wheel container */}
-        <div className="relative" style={{ width: 392, height: 392 }}>
+        {/* Wheel container — responsive */}
+        <div className="relative w-full max-w-[420px] aspect-square">
           <div ref={containerRef} className="w-full h-full" />
 
           {/* Result overlay */}
@@ -168,13 +181,13 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
                 top: "50%",
                 left: "50%",
                 transform: "translate(-50%, -50%)",
-                width: 168,
-                height: 168,
+                width: "40%",
+                height: "40%",
                 borderRadius: "50%",
                 backgroundColor: "rgba(0, 0, 0, 0.72)",
               }}
             >
-              <span className="text-center font-bold" style={{ color: "#facc15", fontSize: "0.95rem" }}>
+              <span className="text-center font-bold" style={{ color: "#facc15", fontSize: "1.1rem" }}>
                 {result.label}
               </span>
             </div>

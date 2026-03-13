@@ -1,9 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" style="fill-rule:evenodd;clip-rule:evenodd;">
-    <!-- Hub background -->
-    <circle cx="250" cy="250" r="48" style="fill:#fff;"/>
-    <!-- Hub border -->
-    <circle cx="250" cy="250" r="48" style="fill:none;stroke:#333;stroke-width:3px;"/>
-    <!-- Center dot -->
-    <circle cx="250" cy="250" r="4" style="fill:#333;"/>
+<svg width="100%" height="100%" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <radialGradient id="hubGrad" cx="45%" cy="40%">
+            <stop offset="0%" stop-color="#fff"/>
+            <stop offset="70%" stop-color="#e8e8e8"/>
+            <stop offset="100%" stop-color="#ccc"/>
+        </radialGradient>
+        <filter id="hubShadow">
+            <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
+    </defs>
+    <!-- Outer ring -->
+    <circle cx="250" cy="250" r="52" style="fill:#444;" filter="url(#hubShadow)"/>
+    <!-- Middle ring -->
+    <circle cx="250" cy="250" r="46" style="fill:url(#hubGrad);"/>
+    <!-- Inner accent ring -->
+    <circle cx="250" cy="250" r="36" style="fill:none;stroke:#ddd;stroke-width:1.5px;"/>
+    <!-- Center boss -->
+    <circle cx="250" cy="250" r="12" style="fill:#555;"/>
+    <circle cx="250" cy="250" r="7" style="fill:#888;"/>
+    <circle cx="250" cy="250" r="3" style="fill:#bbb;"/>
 </svg>
