@@ -61,7 +61,7 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
         if (!mounted || !containerRef.current) return;
 
         const items = segments.map((seg) => ({
-          label: seg.label,
+          label: seg.label.toUpperCase(),
           backgroundColor: seg.color,
           labelColor: seg.labelColor ?? "#ffffff",
         }));
