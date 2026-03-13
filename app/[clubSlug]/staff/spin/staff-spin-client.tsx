@@ -3,6 +3,7 @@
 import { useState, useRef, useTransition } from "react";
 import SpinWheel, { type SpinWheelHandle } from "@/components/club/spin-wheel";
 import { performSpinForMember } from "./actions";
+import { useLanguage } from "@/lib/i18n/provider";
 
 interface Segment {
   label: string;
@@ -22,6 +23,7 @@ export function StaffSpinClient({
 }) {
   const [memberCode, setMemberCode] = useState(initialMemberCode ?? "");
   const [isPending, startTransition] = useTransition();
+  const { t } = useLanguage();
   const [memberBalance, setMemberBalance] = useState<number>(0);
   const [activeMemberCode, setActiveMemberCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -58,14 +60,14 @@ export function StaffSpinClient({
         <form onSubmit={handleSpin} className="px-5 py-4 flex gap-3 items-end">
           <div className="flex-1">
             <label htmlFor="memberCode" className="block text-xs font-medium text-gray-500 mb-1">
-              Member Code
+              {t("staff.memberCodeLabel")}
             </label>
             <input
               id="memberCode"
               type="text"
               value={memberCode}
               onChange={(e) => setMemberCode(e.target.value.toUpperCase())}
-              placeholder="ABC12"
+              placeholder={t("staff.memberCodePlaceholder")}
               maxLength={6}
               autoFocus
               className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm font-mono tracking-wide uppercase text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition text-center"
@@ -76,7 +78,7 @@ export function StaffSpinClient({
             disabled={isPending || !memberCode.trim()}
             className="rounded-lg bg-gray-800 text-white w-[72px] py-2.5 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
           >
-            {isPending ? "..." : "Spin"}
+            {isPending ? "..." : t("staff.spinButton")}
           </button>
         </form>
 
@@ -90,7 +92,7 @@ export function StaffSpinClient({
           <div className="px-5 py-2 border-t border-gray-100">
             <p className="text-sm text-gray-900">
               <span className="font-mono font-bold">{activeMemberCode}</span>
-              <span className="text-gray-400 ml-2">{memberBalance} {memberBalance === 1 ? "spin" : "spins"} remaining</span>
+              <span className="text-gray-400 ml-2">{t(memberBalance === 1 ? "staff.spinsRemaining" : "staff.spinsRemainingPlural", { balance: memberBalance })}</span>
             </p>
           </div>
         )}

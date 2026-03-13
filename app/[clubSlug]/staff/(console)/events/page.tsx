@@ -2,6 +2,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getStaffFromCookie } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { StaffEventClient } from "../../events/staff-event-client";
+import { t } from "@/lib/i18n";
+import { getServerLocale } from "@/lib/i18n/server";
 
 export default async function StaffEventsPage({
   params,
@@ -29,6 +31,8 @@ export default async function StaffEventsPage({
     .gte("date", new Date().toISOString().split("T")[0])
     .order("date", { ascending: true });
 
+  const locale = await getServerLocale();
+
   return events && events.length > 0 ? (
     <StaffEventClient
       events={events.map((e) => ({
@@ -48,8 +52,8 @@ export default async function StaffEventsPage({
           <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
       </div>
-      <p className="text-sm font-medium text-gray-900">No events yet</p>
-      <p className="text-xs text-gray-400 mt-1">Events will appear here once created by admin.</p>
+      <p className="text-sm font-medium text-gray-900">{t(locale, "staff.noEvents")}</p>
+      <p className="text-xs text-gray-400 mt-1">{t(locale, "staff.eventsFromAdmin")}</p>
     </div>
   );
 }

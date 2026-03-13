@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useLanguage } from "@/lib/i18n/provider";
 
 export function AddToHomescreen() {
   const [show, setShow] = useState(false);
   const [platform, setPlatform] = useState<"ios" | "android" | null>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     // Don't show if already dismissed or if running in standalone mode
@@ -37,18 +39,16 @@ export function AddToHomescreen() {
         </svg>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-900">Add to Home Screen</p>
+        <p className="text-sm font-semibold text-gray-900">{t("a2hs.title")}</p>
         <p className="text-xs text-gray-500 mt-0.5">
-          {platform === "ios"
-            ? "Tap the Share button, then \"Add to Home Screen\" for quick access."
-            : "Tap the menu (\u22ee), then \"Add to Home Screen\" for quick access."}
+          {platform === "ios" ? t("a2hs.ios") : t("a2hs.android")}
         </p>
       </div>
       <button
         onClick={dismiss}
         className="shrink-0 text-xs font-semibold club-primary hover:opacity-70 transition-opacity mt-1"
       >
-        Got it
+        {t("a2hs.dismiss")}
       </button>
     </div>
   );

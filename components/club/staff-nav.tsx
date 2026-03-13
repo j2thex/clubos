@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useLanguage } from "@/lib/i18n/provider";
 
 interface StaffNavProps {
   clubSlug: string;
@@ -9,7 +10,7 @@ interface StaffNavProps {
 
 const navItems = [
   {
-    label: "Spin",
+    labelKey: "nav.spin",
     path: "",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -18,7 +19,7 @@ const navItems = [
     ),
   },
   {
-    label: "Quests",
+    labelKey: "nav.quests",
     path: "/quests",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -27,7 +28,7 @@ const navItems = [
     ),
   },
   {
-    label: "Events",
+    labelKey: "nav.events",
     path: "/events",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -36,7 +37,7 @@ const navItems = [
     ),
   },
   {
-    label: "Services",
+    labelKey: "nav.services",
     path: "/services",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -45,7 +46,7 @@ const navItems = [
     ),
   },
   {
-    label: "Members",
+    labelKey: "nav.members",
     path: "/members",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -57,6 +58,7 @@ const navItems = [
 
 export function StaffNav({ clubSlug }: StaffNavProps) {
   const pathname = usePathname();
+  const { t } = useLanguage();
   const basePath = `/${clubSlug}/staff`;
 
   if (pathname.endsWith("/staff/login")) {
@@ -75,14 +77,14 @@ export function StaffNav({ clubSlug }: StaffNavProps) {
 
           return (
             <Link
-              key={item.label}
+              key={item.labelKey}
               href={href}
               className={`flex flex-col items-center gap-0.5 px-3 py-1 text-xs transition-colors ${
                 isActive ? "text-gray-900 font-semibold" : "text-gray-400 hover:text-gray-600"
               }`}
             >
               {item.icon}
-              <span>{item.label}</span>
+              <span>{t(item.labelKey)}</span>
             </Link>
           );
         })}

@@ -1,5 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
+import { t } from "@/lib/i18n";
+import { getServerLocale } from "@/lib/i18n/server";
+import { LanguageSwitcher } from "@/lib/i18n/switcher";
 
 export default async function StaffConsoleLayout({
   children,
@@ -19,6 +22,7 @@ export default async function StaffConsoleLayout({
     .single();
 
   if (!club) notFound();
+  const locale = await getServerLocale();
 
   const { data: branding } = await supabase
     .from("club_branding")
@@ -40,7 +44,7 @@ export default async function StaffConsoleLayout({
         <div className="relative max-w-2xl mx-auto">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-white">Staff Console</h1>
+              <h1 className="text-2xl font-bold text-white">{t(locale, "staff.consoleTitle")}</h1>
               <p className="mt-1 text-gray-400 text-sm">{club.name}</p>
             </div>
           </div>
@@ -51,7 +55,7 @@ export default async function StaffConsoleLayout({
               rel="noopener noreferrer"
               className="text-xs text-gray-400 hover:text-white border border-gray-600 rounded-lg px-3 py-1.5 transition-colors"
             >
-              Member Portal
+              {t(locale, "staff.memberPortal")}
             </a>
             <a
               href={`/${clubSlug}/public`}
@@ -59,8 +63,9 @@ export default async function StaffConsoleLayout({
               rel="noopener noreferrer"
               className="text-xs text-gray-400 hover:text-white border border-gray-600 rounded-lg px-3 py-1.5 transition-colors"
             >
-              Public Page
+              {t(locale, "staff.publicPage")}
             </a>
+            <LanguageSwitcher variant="light" />
           </div>
         </div>
       </div>

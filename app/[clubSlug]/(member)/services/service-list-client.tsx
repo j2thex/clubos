@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { requestService, cancelServiceRequest } from "./actions";
+import { useLanguage } from "@/lib/i18n/provider";
 
 interface ServiceItem {
   id: string;
@@ -24,6 +25,7 @@ export function ServiceListClient({
   clubSlug: string;
 }) {
   const [isPending, startTransition] = useTransition();
+  const { t } = useLanguage();
 
   function handleRequest(serviceId: string) {
     startTransition(async () => {
@@ -63,12 +65,12 @@ export function ServiceListClient({
                   rel="noopener noreferrer"
                   className="inline-block mt-1 text-xs font-medium club-primary underline"
                 >
-                  Learn more
+                  {t("services.learnMore")}
                 </a>
               )}
               {s.fulfilled_count > 0 && (
                 <span className="text-xs text-gray-400 ml-2">
-                  {s.fulfilled_count}x fulfilled
+                  {t("services.fulfilledCount", { count: s.fulfilled_count })}
                 </span>
               )}
             </div>
@@ -76,7 +78,7 @@ export function ServiceListClient({
               {s.price != null ? (
                 <span className="text-sm font-bold text-gray-900">${s.price.toFixed(2)}</span>
               ) : (
-                <span className="text-sm font-bold text-green-600">Free</span>
+                <span className="text-sm font-bold text-green-600">{t("common.free")}</span>
               )}
               {s.order ? (
                 <button
@@ -84,7 +86,7 @@ export function ServiceListClient({
                   disabled={isPending}
                   className="text-xs font-semibold px-3 py-1.5 rounded-full border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 disabled:opacity-50 transition-colors"
                 >
-                  {isPending ? "..." : "Requested"}
+                  {isPending ? "..." : t("services.requested")}
                 </button>
               ) : (
                 <button
@@ -92,7 +94,7 @@ export function ServiceListClient({
                   disabled={isPending}
                   className="text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50 transition-colors"
                 >
-                  {isPending ? "..." : "Request"}
+                  {isPending ? "..." : t("services.request")}
                 </button>
               )}
             </div>

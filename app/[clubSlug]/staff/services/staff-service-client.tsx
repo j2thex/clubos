@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { fulfillOrder, addWalkinOrder } from "./actions";
+import { useLanguage } from "@/lib/i18n/provider";
 
 interface Order {
   id: string;
@@ -36,6 +37,7 @@ export function StaffServiceClient({
   const [memberCode, setMemberCode] = useState("");
   const [walkinServiceId, setWalkinServiceId] = useState(services[0]?.id ?? "");
   const [isPending, startTransition] = useTransition();
+  const { t } = useLanguage();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -58,7 +60,7 @@ export function StaffServiceClient({
             : o,
         ),
       );
-      setSuccess("Order fulfilled");
+      setSuccess(t("staff.orderFulfilled"));
       setTimeout(() => setSuccess(null), 3000);
     });
   }
@@ -90,7 +92,7 @@ export function StaffServiceClient({
         },
         ...prev,
       ]);
-      setSuccess(`Walk-in order fulfilled for ${code}`);
+      setSuccess(t("staff.walkinFulfilled", { code }));
       setMemberCode("");
       setTimeout(() => setSuccess(null), 3000);
     });
@@ -110,7 +112,7 @@ export function StaffServiceClient({
       {/* Pending Orders */}
       <div className="space-y-2">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-1">
-          Pending Orders ({pendingOrders.length})
+          {t("staff.pendingOrders", { count: pendingOrders.length })}
         </h2>
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           {pendingOrders.length > 0 ? (
@@ -132,14 +134,14 @@ export function StaffServiceClient({
                     disabled={isPending}
                     className="rounded-lg bg-green-600 text-white px-4 py-2 text-xs font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors shrink-0"
                   >
-                    Fulfill
+                    {t("staff.fulfillOrder")}
                   </button>
                 </div>
               ))}
             </div>
           ) : (
             <div className="px-5 py-6 text-center text-sm text-gray-400">
-              No pending orders
+              {t("staff.noPendingOrders")}
             </div>
           )}
         </div>
@@ -148,13 +150,13 @@ export function StaffServiceClient({
       {/* Walk-in Order */}
       <div className="space-y-2">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-1">
-          Walk-in Order
+          {t("staff.walkinOrder")}
         </h2>
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           <form onSubmit={handleWalkin} className="px-5 py-4">
             <div className="flex gap-3 items-end">
               <div className="flex-1">
-                <label className="block text-xs font-medium text-gray-500 mb-1">Service</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1">{t("staff.serviceLabel")}</label>
                 <select
                   value={walkinServiceId}
                   onChange={(e) => setWalkinServiceId(e.target.value)}
@@ -166,12 +168,12 @@ export function StaffServiceClient({
                 </select>
               </div>
               <div className="w-24">
-                <label className="block text-xs font-medium text-gray-500 mb-1">Member</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1">{t("staff.memberLabel")}</label>
                 <input
                   type="text"
                   value={memberCode}
                   onChange={(e) => setMemberCode(e.target.value.toUpperCase())}
-                  placeholder="ABC12"
+                  placeholder={t("staff.memberCodePlaceholder")}
                   maxLength={6}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono tracking-wide uppercase text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition text-center"
                 />
@@ -181,7 +183,7 @@ export function StaffServiceClient({
                 disabled={isPending || !memberCode.trim()}
                 className="rounded-lg bg-gray-800 text-white px-4 py-2 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
               >
-                Fulfill
+                {t("staff.fulfillOrder")}
               </button>
             </div>
           </form>
@@ -192,7 +194,7 @@ export function StaffServiceClient({
       {fulfilledOrders.length > 0 && (
         <div className="space-y-2">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-1">
-            Recently Fulfilled
+            {t("staff.recentlyFulfilled")}
           </h2>
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden divide-y divide-gray-100">
             {fulfilledOrders.map((o) => (
@@ -208,7 +210,7 @@ export function StaffServiceClient({
                     {o.fulfilled_at ? formatDate(o.fulfilled_at) : ""}
                   </p>
                 </div>
-                <span className="text-[10px] text-green-600 font-semibold shrink-0">Done</span>
+                <span className="text-[10px] text-green-600 font-semibold shrink-0">{t("common.done")}</span>
               </div>
             ))}
           </div>

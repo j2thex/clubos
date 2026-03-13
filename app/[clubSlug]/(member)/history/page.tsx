@@ -2,16 +2,20 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getMemberFromCookie } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { t, getDateLocale } from "@/lib/i18n";
+import { getServerLocale } from "@/lib/i18n/server";
+import type { Locale } from "@/lib/i18n";
 
-function formatTimestamp(iso: string): string {
+function formatTimestamp(iso: string, locale: Locale): string {
+  const dl = getDateLocale(locale);
   const date = new Date(iso);
-  return date.toLocaleDateString("en-US", {
+  return date.toLocaleDateString(dl, {
     month: "short",
     day: "numeric",
     year: "numeric",
   }) +
-    " at " +
-    date.toLocaleTimeString("en-US", {
+    " " +
+    date.toLocaleTimeString(dl, {
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
@@ -39,14 +43,15 @@ export default async function SpinHistoryPage({
     .eq("club_id", session.club_id)
     .order("created_at", { ascending: false });
 
+  const locale = await getServerLocale();
   const hasSpins = spins && spins.length > 0;
 
   return (
     <div className="min-h-screen club-page-bg">
       {/* Header */}
       <div className="club-hero px-6 pt-10 pb-12 text-center">
-        <h1 className="text-2xl font-bold text-white">Spin History</h1>
-        <p className="mt-1 club-light-text text-sm">Your past spin results</p>
+        <h1 className="text-2xl font-bold text-white">{t(locale, "history.title")}</h1>
+        <p className="mt-1 club-light-text text-sm">{t(locale, "history.subtitle")}</p>
       </div>
 
       {/* Content */}
@@ -104,7 +109,7 @@ export default async function SpinHistoryPage({
                         {spin.outcome_label}
                       </p>
                       <p className="text-xs text-gray-400 mt-0.5">
-                        {formatTimestamp(spin.created_at)}
+                        {formatTimestamp(spin.created_at, locale)}
                       </p>
                     </div>
                   </div>
@@ -115,7 +120,7 @@ export default async function SpinHistoryPage({
                         : "bg-gray-100 text-gray-500"
                     }`}
                   >
-                    {isWin ? `+${spin.outcome_value}` : "No Win"}
+                    {isWin ? `+${spin.outcome_value}` : t(locale, "common.noWin")}
                   </span>
                 </div>
               );
@@ -140,16 +145,16 @@ export default async function SpinHistoryPage({
               </svg>
             </div>
             <p className="text-gray-700 font-semibold text-lg">
-              No spins yet
+              {t(locale, "history.noSpins")}
             </p>
             <p className="text-gray-400 text-sm mt-1">
-              Try your luck and spin the wheel!
+              {t(locale, "history.trySpin")}
             </p>
             <Link
               href={`/${clubSlug}/spin`}
               className="club-btn mt-6 inline-block rounded-xl py-3 px-8 text-sm font-semibold"
             >
-              Spin the Wheel
+              {t(locale, "history.spinTheWheel")}
             </Link>
           </div>
         )}
@@ -160,7 +165,7 @@ export default async function SpinHistoryPage({
             href={`/${clubSlug}`}
             className="text-sm font-medium club-primary hover:opacity-80 transition-opacity"
           >
-            &larr; Back to Dashboard
+            {t(locale, "history.backToDashboard")}
           </Link>
         </div>
       </div>

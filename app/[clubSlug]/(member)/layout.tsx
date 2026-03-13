@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { MemberNav } from "@/components/club/member-nav";
+import { LanguageSwitcher } from "@/lib/i18n/switcher";
 
 export async function generateMetadata({
   params,
@@ -32,6 +33,9 @@ export default async function MemberLayout({
 
   return (
     <div className="pb-20">
+      <div className="absolute top-2 right-4 z-50">
+        <LanguageSwitcher />
+      </div>
       {children}
       <MemberNav clubSlug={clubSlug} />
     </div>

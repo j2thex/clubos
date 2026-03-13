@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { createMember, createStaffMember, toggleMemberStatus, deleteMember } from "./actions";
+import { useLanguage } from "@/lib/i18n/provider";
 
 interface Member {
   id: string;
@@ -30,6 +31,7 @@ export function PeopleManager({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const { t } = useLanguage();
 
   function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -44,7 +46,7 @@ export function PeopleManager({
       if (result.error) {
         setError(result.error);
       } else {
-        setSuccess(`${tab === "staff" ? "Staff" : "Member"} ${code.toUpperCase()} created`);
+        setSuccess(t("admin.codeCreated", { code: code.toUpperCase() }));
         setCode("");
         setPin("");
         setTimeout(() => setSuccess(null), 3000);
@@ -57,7 +59,7 @@ export function PeopleManager({
   return (
     <div className="space-y-2">
       <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-1">
-        People
+        {t("admin.people")}
       </h2>
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
         {/* Tab toggle */}
@@ -70,7 +72,7 @@ export function PeopleManager({
                 : "text-gray-400 hover:text-gray-600"
             }`}
           >
-            Members ({members.length})
+            {t("admin.membersCount", { count: members.length })}
           </button>
           <button
             onClick={() => { setTab("staff"); setError(null); setSuccess(null); }}
@@ -80,7 +82,7 @@ export function PeopleManager({
                 : "text-gray-400 hover:text-gray-600"
             }`}
           >
-            Staff ({staff.length})
+            {t("admin.staffCount", { count: staff.length })}
           </button>
         </div>
 
@@ -89,7 +91,7 @@ export function PeopleManager({
           <div className={`flex gap-3 items-end ${tab === "staff" ? "" : ""}`}>
             <div className="flex-1">
               <label className="block text-xs font-medium text-gray-500 mb-1">
-                {tab === "staff" ? "Staff Code" : "Member Code"}
+                {tab === "staff" ? t("common.staffCode") : t("common.memberCode")}
               </label>
               <input
                 type="text"
@@ -105,13 +107,13 @@ export function PeopleManager({
             {tab === "staff" && (
               <div className="w-24">
                 <label className="block text-xs font-medium text-gray-500 mb-1">
-                  PIN
+                  {t("common.pin")}
                 </label>
                 <input
                   type="password"
                   value={pin}
                   onChange={(e) => setPin(e.target.value)}
-                  placeholder="1234"
+                  placeholder={t("admin.pinPlaceholder")}
                   maxLength={4}
                   inputMode="numeric"
                   pattern="[0-9]{4}"
@@ -126,7 +128,7 @@ export function PeopleManager({
               disabled={isPending || !code.trim() || (tab === "staff" && !pin.trim())}
               className="rounded-lg bg-gray-800 text-white px-5 py-2 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
             >
-              {isPending ? "..." : "Add"}
+              {isPending ? "..." : t("common.add")}
             </button>
           </div>
 
@@ -161,7 +163,7 @@ export function PeopleManager({
                 <div className="text-right shrink-0 flex items-center gap-2">
                   {tab === "members" && (
                     <p className="text-sm font-semibold text-gray-900">
-                      {person.spin_balance} <span className="text-xs font-normal text-gray-400">spins</span>
+                      {person.spin_balance} <span className="text-xs font-normal text-gray-400">{t("common.spinsLabel")}</span>
                     </p>
                   )}
                   <button
@@ -177,11 +179,11 @@ export function PeopleManager({
                         : "bg-red-100 text-red-600 hover:bg-green-100 hover:text-green-700"
                     }`}
                   >
-                    {person.status === "active" ? "Active" : "Inactive"}
+                    {person.status === "active" ? t("common.active") : t("common.inactive")}
                   </button>
                   <button
                     onClick={() => {
-                      if (window.confirm(`Delete ${person.member_code}? This cannot be undone.`)) {
+                      if (window.confirm(t("admin.deleteConfirm", { code: person.member_code }))) {
                         startTransition(async () => {
                           await deleteMember(person.id, clubSlug);
                         });
@@ -201,7 +203,7 @@ export function PeopleManager({
           </div>
         ) : (
           <div className="p-8 text-center text-gray-400 text-sm">
-            No {tab} yet
+            {tab === "members" ? t("admin.noMembers") : t("admin.noStaff")}
           </div>
         )}
       </div>

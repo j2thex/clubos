@@ -2,6 +2,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ServiceManager } from "../../service-manager";
+import { t } from "@/lib/i18n";
+import { getServerLocale } from "@/lib/i18n/server";
 
 export default async function ServicesPage({
   params,
@@ -19,6 +21,7 @@ export default async function ServicesPage({
     .single();
 
   if (!club) notFound();
+  const locale = await getServerLocale();
 
   const [{ data: services }, { data: serviceOrders }] = await Promise.all([
     supabase
@@ -68,7 +71,7 @@ export default async function ServicesPage({
         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
-        Content
+        {t(locale, "admin.backToContent")}
       </Link>
       <ServiceManager
         services={serviceList}

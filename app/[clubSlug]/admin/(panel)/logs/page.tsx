@@ -1,6 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { LogViewer } from "../../log-viewer";
+import { t } from "@/lib/i18n";
+import { getServerLocale } from "@/lib/i18n/server";
 
 export default async function AdminLogsPage({
   params,
@@ -18,6 +20,7 @@ export default async function AdminLogsPage({
     .single();
 
   if (!club) notFound();
+  const locale = await getServerLocale();
 
   const { data: logs } = await supabase
     .from("activity_log")
@@ -53,7 +56,7 @@ export default async function AdminLogsPage({
   return (
     <div className="space-y-2">
       <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-1">
-        Activity Log
+        {t(locale, "admin.activityLog")}
       </h2>
       <LogViewer logs={enrichedLogs} />
     </div>

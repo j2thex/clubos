@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useEffect, useCallback } from "react";
 import { checkinMember, checkinMemberById, getEventRsvps } from "./actions";
+import { useLanguage } from "@/lib/i18n/provider";
 
 interface Event {
   id: string;
@@ -32,6 +33,7 @@ export function StaffEventClient({
   const [selectedEventId, setSelectedEventId] = useState(events[0]?.id ?? "");
   const [memberCode, setMemberCode] = useState("");
   const [isPending, startTransition] = useTransition();
+  const { t } = useLanguage();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [successMemberCode, setSuccessMemberCode] = useState<string | null>(null);
@@ -73,7 +75,7 @@ export function StaffEventClient({
       }
       const event = events.find((ev) => ev.id === selectedEventId);
       setSuccess(
-        `Checked in! +${event?.reward_spins ?? 0} spin${(event?.reward_spins ?? 0) === 1 ? "" : "s"} awarded`,
+        t("staff.checkedInSuccess", { spins: event?.reward_spins ?? 0 }),
       );
       setSuccessMemberCode(code);
       setMemberCode("");
@@ -94,7 +96,7 @@ export function StaffEventClient({
       const event = events.find((ev) => ev.id === selectedEventId);
       const rsvp = rsvps.find((r) => r.member_id === memberId);
       setSuccess(
-        `Checked in! +${event?.reward_spins ?? 0} spin${(event?.reward_spins ?? 0) === 1 ? "" : "s"} awarded`,
+        t("staff.checkedInSuccess", { spins: event?.reward_spins ?? 0 }),
       );
       setSuccessMemberCode(rsvp?.member_code ?? null);
       // Update locally for instant feedback
@@ -125,13 +127,13 @@ export function StaffEventClient({
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
       <div className="px-5 py-3 border-b border-gray-100">
         <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
-          Event Check-In
+          {t("staff.eventCheckIn")}
         </h3>
       </div>
 
       {/* Event selector */}
       <div className="px-5 py-3 border-b border-gray-100">
-        <label className="block text-xs font-medium text-gray-500 mb-1">Event</label>
+        <label className="block text-xs font-medium text-gray-500 mb-1">{t("staff.eventLabel")}</label>
         <select
           value={selectedEventId}
           onChange={(e) => handleSelectEvent(e.target.value)}
@@ -159,7 +161,7 @@ export function StaffEventClient({
               href={`/${clubSlug}/staff/?member=${successMemberCode}`}
               className="ml-3 rounded-lg bg-gray-800 text-white px-3 py-1 text-xs font-semibold hover:bg-gray-700 transition-colors shrink-0"
             >
-              Spin
+              {t("nav.spin")}
             </a>
           )}
         </div>
@@ -170,7 +172,7 @@ export function StaffEventClient({
         <div className="border-t border-gray-100">
           <div className="px-5 py-2 bg-gray-50">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-              RSVPs ({notCheckedIn.length})
+              {t("staff.rsvps", { count: notCheckedIn.length })}
             </p>
           </div>
           <div className="divide-y divide-gray-100">
@@ -187,7 +189,7 @@ export function StaffEventClient({
                   disabled={isPending}
                   className="rounded-lg bg-green-600 text-white px-4 py-1.5 text-xs font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors shrink-0"
                 >
-                  Check In
+                  {t("staff.checkIn")}
                 </button>
               </div>
             ))}
@@ -200,7 +202,7 @@ export function StaffEventClient({
         <div className="border-t border-gray-100">
           <div className="px-5 py-2 bg-gray-50">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-              Checked In ({checkedIn.length})
+              {t("staff.checkedInCount", { count: checkedIn.length })}
             </p>
           </div>
           <div className="divide-y divide-gray-50">
@@ -216,7 +218,7 @@ export function StaffEventClient({
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
-                  Done
+                  {t("common.done")}
                 </span>
               </div>
             ))}
@@ -228,14 +230,14 @@ export function StaffEventClient({
       <form onSubmit={handleManualCheckin} className="px-5 py-4 border-t border-gray-100 flex gap-3 items-end">
         <div className="flex-1">
           <label htmlFor="eventMemberCode" className="block text-xs font-medium text-gray-500 mb-1">
-            Walk-in Check-In
+            {t("staff.walkinCheckIn")}
           </label>
           <input
             id="eventMemberCode"
             type="text"
             value={memberCode}
             onChange={(e) => setMemberCode(e.target.value.toUpperCase())}
-            placeholder="Member code"
+            placeholder={t("staff.memberCodePlaceholder")}
             maxLength={6}
             className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm font-mono tracking-wide uppercase text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition text-center"
           />
@@ -245,7 +247,7 @@ export function StaffEventClient({
           disabled={isPending || !memberCode.trim() || !selectedEventId}
           className="rounded-lg bg-gray-800 text-white px-6 py-2.5 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
         >
-          {isPending ? "..." : "Check In"}
+          {isPending ? "..." : t("staff.checkIn")}
         </button>
       </form>
     </div>

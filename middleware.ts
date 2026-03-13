@@ -12,29 +12,47 @@ const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 const MEMBER_COOKIE = "clubos-member-token";
 const STAFF_COOKIE = "clubos-staff-token";
 const OWNER_COOKIE = "clubos-owner-token";
+const LOCALE_COOKIE = "clubos-lang";
 
 // Routes that are not club-scoped
 const PLATFORM_PATHS = ["/onboarding"];
+
+function applyLocale(request: NextRequest, response: NextResponse) {
+  const cookieValue = request.cookies.get(LOCALE_COOKIE)?.value;
+  let locale = "en";
+  if (cookieValue === "es" || cookieValue === "en") {
+    locale = cookieValue;
+  } else {
+    const acceptLang = request.headers.get("accept-language") ?? "";
+    if (acceptLang.toLowerCase().startsWith("es") || acceptLang.toLowerCase().includes(",es")) {
+      locale = "es";
+    }
+    // Auto-set cookie so detection only runs once
+    response.cookies.set(LOCALE_COOKIE, locale, { path: "/", maxAge: 60 * 60 * 24 * 30, sameSite: "lax" });
+  }
+  response.headers.set("x-lang", locale);
+  return response;
+}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Skip platform routes
   if (PLATFORM_PATHS.some((p) => pathname.startsWith(p))) {
-    return NextResponse.next();
+    return applyLocale(request, NextResponse.next());
   }
 
   // Extract club slug from path: /club-slug/...
   const segments = pathname.split("/").filter(Boolean);
   if (segments.length === 0) {
-    return NextResponse.next();
+    return applyLocale(request, NextResponse.next());
   }
 
   const clubSlug = segments[0];
 
   // Skip static files and API routes
   if (clubSlug.startsWith("_next") || clubSlug.startsWith("api") || clubSlug === "favicon.ico") {
-    return NextResponse.next();
+    return applyLocale(request, NextResponse.next());
   }
 
   const clubPath = "/" + segments.slice(1).join("/");
@@ -42,7 +60,7 @@ export async function middleware(request: NextRequest) {
   // Admin routes — require owner token (except admin login)
   if (clubPath.startsWith("/admin")) {
     if (clubPath === "/admin/login") {
-      return NextResponse.next();
+      return applyLocale(request, NextResponse.next());
     }
 
     const token = request.cookies.get(OWNER_COOKIE)?.value;
@@ -53,7 +71,7 @@ export async function middleware(request: NextRequest) {
     try {
       const { payload } = await jwtVerify(token, secret);
       if (!payload.is_owner) throw new Error("Not owner");
-      const response = NextResponse.next();
+      const response = applyLocale(request, NextResponse.next());
       response.headers.set("x-owner-id", payload.owner_id as string);
       response.headers.set("x-club-id", payload.club_id as string);
       return response;
@@ -64,18 +82,18 @@ export async function middleware(request: NextRequest) {
 
   // Member login is public
   if (clubPath.startsWith("/login")) {
-    return NextResponse.next();
+    return applyLocale(request, NextResponse.next());
   }
 
   // Public club profile is public
   if (clubPath.startsWith("/public")) {
-    return NextResponse.next();
+    return applyLocale(request, NextResponse.next());
   }
 
   // Staff routes — require staff token (except staff login)
   if (clubPath.startsWith("/staff")) {
     if (clubPath === "/staff/login") {
-      return NextResponse.next();
+      return applyLocale(request, NextResponse.next());
     }
 
     const token = request.cookies.get(STAFF_COOKIE)?.value;
@@ -106,7 +124,7 @@ export async function middleware(request: NextRequest) {
         }
       }
 
-      const response = NextResponse.next();
+      const response = applyLocale(request, NextResponse.next());
       response.headers.set("x-member-id", payload.member_id as string);
       response.headers.set("x-club-id", payload.club_id as string);
       return response;
@@ -123,7 +141,7 @@ export async function middleware(request: NextRequest) {
 
   try {
     const { payload } = await jwtVerify(token, secret);
-    const response = NextResponse.next();
+    const response = applyLocale(request, NextResponse.next());
     response.headers.set("x-member-id", payload.member_id as string);
     response.headers.set("x-club-id", payload.club_id as string);
     return response;

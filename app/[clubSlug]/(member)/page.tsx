@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { getMemberFromCookie } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { QuestList } from "./quest-list";
+import { t } from "@/lib/i18n";
+import { getServerLocale } from "@/lib/i18n/server";
 
 export default async function MemberDashboard({
   params,
@@ -44,6 +46,7 @@ export default async function MemberDashboard({
       .eq("member_id", session.member_id),
   ]);
 
+  const locale = await getServerLocale();
   const displayName = member?.full_name || "Member";
   const spinBalance = member?.spin_balance ?? 0;
   const clubName = club?.name ?? "";
@@ -107,29 +110,29 @@ export default async function MemberDashboard({
           {/* Remaining Spins */}
           <div className="bg-white rounded-2xl shadow-lg p-4 text-center">
             <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
-              Remaining
+              {t(locale, "dashboard.remaining")}
             </p>
             <p className="mt-1 text-3xl font-extrabold club-primary">
               {spinBalance}
             </p>
-            <p className="text-xs text-gray-400 mt-0.5">spins</p>
+            <p className="text-xs text-gray-400 mt-0.5">{t(locale, "dashboard.spinsLabel")}</p>
           </div>
 
           {/* Spins Done */}
           <div className="bg-white rounded-2xl shadow-lg p-4 text-center">
             <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
-              Completed
+              {t(locale, "dashboard.completed")}
             </p>
             <p className="mt-1 text-3xl font-extrabold club-primary">
               {totalSpins}
             </p>
-            <p className="text-xs text-gray-400 mt-0.5">spins</p>
+            <p className="text-xs text-gray-400 mt-0.5">{t(locale, "dashboard.spinsLabel")}</p>
           </div>
 
           {/* Level */}
           <div className="bg-white rounded-2xl shadow-lg p-4 text-center">
             <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
-              Level
+              {t(locale, "dashboard.level")}
             </p>
             <p className="mt-1 text-3xl font-extrabold club-primary">
               {level}
@@ -142,7 +145,7 @@ export default async function MemberDashboard({
         {activeQuests.length > 0 && (
           <div className="space-y-2">
             <h2 className="text-sm font-semibold text-white/80 uppercase tracking-wide px-1">
-              Quests
+              {t(locale, "dashboard.quests")}
             </h2>
             <QuestList
               quests={activeQuests}

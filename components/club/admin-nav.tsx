@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useLanguage } from "@/lib/i18n/provider";
 
 interface AdminNavProps {
   clubSlug: string;
@@ -9,7 +10,7 @@ interface AdminNavProps {
 
 const navItems = [
   {
-    label: "People",
+    labelKey: "nav.people",
     path: "",
     activePaths: [] as string[],
     icon: (
@@ -19,7 +20,7 @@ const navItems = [
     ),
   },
   {
-    label: "Content",
+    labelKey: "nav.content",
     path: "/content",
     activePaths: ["/content", "/events", "/quests", "/services"],
     icon: (
@@ -29,7 +30,7 @@ const navItems = [
     ),
   },
   {
-    label: "Referrals",
+    labelKey: "nav.referrals",
     path: "/referrals",
     activePaths: [] as string[],
     icon: (
@@ -39,7 +40,7 @@ const navItems = [
     ),
   },
   {
-    label: "Logs",
+    labelKey: "nav.logs",
     path: "/logs",
     activePaths: [] as string[],
     icon: (
@@ -49,7 +50,7 @@ const navItems = [
     ),
   },
   {
-    label: "Settings",
+    labelKey: "nav.settings",
     path: "/settings",
     activePaths: [] as string[],
     icon: (
@@ -63,6 +64,7 @@ const navItems = [
 
 export function AdminNav({ clubSlug }: AdminNavProps) {
   const pathname = usePathname();
+  const { t } = useLanguage();
   const basePath = `/${clubSlug}/admin`;
 
   if (pathname.endsWith("/admin/login")) {
@@ -83,14 +85,14 @@ export function AdminNav({ clubSlug }: AdminNavProps) {
 
           return (
             <Link
-              key={item.label}
+              key={item.labelKey}
               href={href}
               className={`flex flex-col items-center gap-0.5 px-1.5 py-1 text-xs transition-colors ${
                 isActive ? "text-gray-900 font-semibold" : "text-gray-400 hover:text-gray-600"
               }`}
             >
               {item.icon}
-              <span>{item.label}</span>
+              <span>{t(item.labelKey)}</span>
             </Link>
           );
         })}

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { updateBranding } from "../actions";
+import { useLanguage } from "@/lib/i18n/provider";
 
 function formAction(_prev: { error: string } | undefined, formData: FormData) {
   return updateBranding(formData);
@@ -16,6 +17,7 @@ function BrandingForm() {
   const searchParams = useSearchParams();
   const clubId = searchParams.get("clubId") ?? "";
   const [state, dispatch, isPending] = useActionState(formAction, undefined);
+  const { t } = useLanguage();
 
   const [primaryColor, setPrimaryColor] = useState("#16a34a");
   const [secondaryColor, setSecondaryColor] = useState("#052e16");
@@ -27,7 +29,7 @@ function BrandingForm() {
     <div className="space-y-6">
       {/* Step indicator */}
       <div className="text-center space-y-1">
-        <p className="text-sm font-medium text-green-700">Step 2 of 3</p>
+        <p className="text-sm font-medium text-green-700">{t("onboarding.step2")}</p>
         <div className="flex items-center justify-center gap-2">
           <span className="h-2 w-8 rounded-full bg-green-600" />
           <span className="h-2 w-8 rounded-full bg-green-600" />
@@ -37,9 +39,9 @@ function BrandingForm() {
 
       <Card className="border-green-200 shadow-lg shadow-green-100/50">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl text-gray-900">Customize Your Branding</CardTitle>
+          <CardTitle className="text-2xl text-gray-900">{t("onboarding.brandingTitle")}</CardTitle>
           <CardDescription className="text-gray-600">
-            Choose your club colors and welcome message.
+            {t("onboarding.brandingSubtitle")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -55,9 +57,9 @@ function BrandingForm() {
             {/* Club Logo */}
             <div className="space-y-2">
               <Label htmlFor="logo" className="text-gray-800">
-                Club Logo
+                {t("onboarding.logoLabel")}
               </Label>
-              <p className="text-xs text-gray-500">Square image recommended (e.g. 512×512px)</p>
+              <p className="text-xs text-gray-500">{t("onboarding.logoHelp")}</p>
               <input
                 type="file"
                 id="logo"
@@ -81,9 +83,9 @@ function BrandingForm() {
             {/* Cover Image */}
             <div className="space-y-2">
               <Label htmlFor="cover" className="text-gray-800">
-                Cover Image
+                {t("onboarding.coverLabel")}
               </Label>
-              <p className="text-xs text-gray-500">Recommended size: 1200×400px (3:1 ratio)</p>
+              <p className="text-xs text-gray-500">{t("onboarding.coverHelp")}</p>
               <input
                 type="file"
                 id="cover"
@@ -107,7 +109,7 @@ function BrandingForm() {
             {/* Primary Color */}
             <div className="space-y-2">
               <Label htmlFor="primaryColor" className="text-gray-800">
-                Primary Color
+                {t("onboarding.primaryColor")}
               </Label>
               <div className="flex items-center gap-3">
                 <input
@@ -125,7 +127,7 @@ function BrandingForm() {
             {/* Secondary Color */}
             <div className="space-y-2">
               <Label htmlFor="secondaryColor" className="text-gray-800">
-                Secondary Color
+                {t("onboarding.secondaryColor")}
               </Label>
               <div className="flex items-center gap-3">
                 <input
@@ -143,13 +145,13 @@ function BrandingForm() {
             {/* Hero Content */}
             <div className="space-y-2">
               <Label htmlFor="heroContent" className="text-gray-800">
-                Welcome Message
+                {t("onboarding.welcomeMessage")}
               </Label>
               <textarea
                 id="heroContent"
                 name="heroContent"
                 rows={3}
-                placeholder="e.g. Welcome to our exclusive club! Enjoy premium perks and rewards."
+                placeholder={t("onboarding.welcomePlaceholder")}
                 value={heroContent}
                 onChange={(e) => setHeroContent(e.target.value)}
                 className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-green-500 focus-visible:ring-[3px] focus-visible:ring-green-500/30 resize-none"
@@ -158,7 +160,7 @@ function BrandingForm() {
 
             {/* Live Preview */}
             <div className="space-y-2">
-              <Label className="text-gray-800">Preview</Label>
+              <Label className="text-gray-800">{t("onboarding.preview")}</Label>
               <div
                 className="rounded-lg border p-5 transition-colors"
                 style={{ backgroundColor: secondaryColor }}
@@ -167,16 +169,16 @@ function BrandingForm() {
                   className="text-lg font-bold mb-2"
                   style={{ color: primaryColor }}
                 >
-                  Your Club
+                  {t("onboarding.previewClub")}
                 </h3>
                 <p className="text-sm" style={{ color: primaryColor, opacity: 0.85 }}>
-                  {heroContent || "Your welcome message will appear here..."}
+                  {heroContent || t("onboarding.previewPlaceholder")}
                 </p>
                 <div
                   className="mt-3 inline-block rounded-md px-4 py-1.5 text-xs font-semibold"
                   style={{ backgroundColor: primaryColor, color: secondaryColor }}
                 >
-                  Sample Button
+                  {t("onboarding.sampleButton")}
                 </div>
               </div>
             </div>
@@ -188,7 +190,7 @@ function BrandingForm() {
               className="w-full bg-green-600 text-white hover:bg-green-700 focus-visible:ring-green-500/30"
               size="lg"
             >
-              {isPending ? "Saving..." : "Continue"}
+              {isPending ? t("onboarding.saving") : t("common.continue")}
             </Button>
           </form>
         </CardContent>
@@ -198,8 +200,9 @@ function BrandingForm() {
 }
 
 export default function BrandingPage() {
+  const { t } = useLanguage();
   return (
-    <Suspense fallback={<div className="text-center text-gray-500 py-12">Loading...</div>}>
+    <Suspense fallback={<div className="text-center text-gray-500 py-12">{t("common.loading")}</div>}>
       <BrandingForm />
     </Suspense>
   );

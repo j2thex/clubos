@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { getMemberFromCookie } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EventsClient } from "./events-client";
+import { t } from "@/lib/i18n";
+import { getServerLocale } from "@/lib/i18n/server";
 
 export default async function EventsPage({
   params,
@@ -40,6 +42,7 @@ export default async function EventsPage({
   ]);
 
   const logoUrl = branding?.logo_url ?? null;
+  const locale = await getServerLocale();
 
   const rsvpSet = new Set((rsvps ?? []).map((r) => r.event_id));
   const checkinSet = new Set((checkins ?? []).map((c) => c.event_id));
@@ -64,8 +67,8 @@ export default async function EventsPage({
         {logoUrl && (
           <img src={logoUrl} alt="Club logo" className="w-10 h-10 rounded-lg object-cover mx-auto mb-2 shadow ring-2 ring-white/20" />
         )}
-        <h1 className="text-2xl font-bold text-white">Events</h1>
-        <p className="mt-1 club-light-text text-sm">Upcoming club events</p>
+        <h1 className="text-2xl font-bold text-white">{t(locale, "events.title")}</h1>
+        <p className="mt-1 club-light-text text-sm">{t(locale, "events.subtitle")}</p>
       </div>
 
       <div className="px-4 -mt-6 pb-10 max-w-md mx-auto">

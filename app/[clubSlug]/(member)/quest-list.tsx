@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { submitQuest } from "./quest-actions";
+import { useLanguage } from "@/lib/i18n/provider";
 
 interface Quest {
   id: string;
@@ -32,6 +33,7 @@ export function QuestList({
   const [proofUrls, setProofUrls] = useState<Record<string, string>>({});
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const pendingSet = new Set(pendingQuestIds);
+  const { t } = useLanguage();
 
   function handleMarkDone(quest: Quest) {
     const mode = quest.proof_mode ?? "none";
@@ -104,24 +106,24 @@ export function QuestList({
               <div className="shrink-0 flex flex-col items-end gap-1">
                 {done && !isMultiUse ? (
                   <span className="text-xs font-semibold px-2.5 py-1 rounded-full club-tint-bg club-tint-text">
-                    Done
+                    {t("quest.done")}
                   </span>
                 ) : isPendingQuest ? (
                   <>
                     {isMultiUse && count > 0 && (
                       <span className="text-xs font-semibold px-2.5 py-1 rounded-full club-tint-bg club-tint-text">
-                        Done {count}x
+                        {t("quest.doneCount", { count })}
                       </span>
                     )}
                     <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-yellow-50 text-yellow-600">
-                      Pending
+                      {t("quest.pending")}
                     </span>
                   </>
                 ) : (
                   <>
                     {isMultiUse && count > 0 && (
                       <span className="text-xs font-semibold px-2.5 py-1 rounded-full club-tint-bg club-tint-text">
-                        Done {count}x
+                        {t("quest.doneCount", { count })}
                       </span>
                     )}
                     <button
@@ -129,7 +131,7 @@ export function QuestList({
                       disabled={isPending}
                       className="text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50 transition-colors"
                     >
-                      Mark done
+                      {t("quest.markDone")}
                     </button>
                   </>
                 )}
@@ -141,7 +143,7 @@ export function QuestList({
                   type="text"
                   value={proofUrls[q.id] ?? ""}
                   onChange={(e) => setProofUrls((prev) => ({ ...prev, [q.id]: e.target.value }))}
-                  placeholder={q.proof_placeholder || "Paste proof link"}
+                  placeholder={q.proof_placeholder || t("quest.proofPlaceholder")}
                   autoFocus
                   className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-700 placeholder:text-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300 transition"
                 />
@@ -150,7 +152,7 @@ export function QuestList({
                   disabled={isPending || (q.proof_mode === "required" && !proofUrls[q.id]?.trim())}
                   className="text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-50 transition-colors shrink-0"
                 >
-                  {isPending ? "..." : "Submit"}
+                  {isPending ? "..." : t("common.submit")}
                 </button>
               </div>
             )}

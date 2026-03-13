@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { addQuest, updateQuest, deleteQuest } from "./actions";
+import { useLanguage } from "@/lib/i18n/provider";
 
 interface Quest {
   id: string;
@@ -20,10 +21,10 @@ interface Quest {
 }
 
 const TEMPLATES = [
-  { title: "Follow us on Instagram", description: "Follow our Instagram page", link: "", rewardSpins: 1, questType: "default" },
-  { title: "Follow us on TikTok", description: "Follow our TikTok account", link: "", rewardSpins: 1, questType: "default" },
-  { title: "Leave a Google Review", description: "Leave us a review on Google Maps", link: "", rewardSpins: 2, questType: "default" },
-  { title: "Refer a Friend", description: "Bring a friend to the club", link: "", rewardSpins: 2, questType: "referral" },
+  { titleKey: "admin.quickFollowInstagram", descKey: "admin.quickFollowInstagramDesc", link: "", rewardSpins: 1, questType: "default" },
+  { titleKey: "admin.quickFollowTiktok", descKey: "admin.quickFollowTiktokDesc", link: "", rewardSpins: 1, questType: "default" },
+  { titleKey: "admin.quickGoogleReview", descKey: "admin.quickGoogleReviewDesc", link: "", rewardSpins: 2, questType: "default" },
+  { titleKey: "admin.quickReferFriend", descKey: "admin.quickReferFriendDesc", link: "", rewardSpins: 2, questType: "referral" },
 ];
 
 export function QuestManager({
@@ -62,13 +63,14 @@ export function QuestManager({
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const { t } = useLanguage();
 
-  function applyTemplate(t: typeof TEMPLATES[number]) {
-    setNewTitle(t.title);
-    setNewDesc(t.description);
-    setNewLink(t.link);
-    setNewReward(String(t.rewardSpins));
-    setNewQuestType(t.questType);
+  function applyTemplate(tmpl: typeof TEMPLATES[number]) {
+    setNewTitle(t(tmpl.titleKey));
+    setNewDesc(t(tmpl.descKey));
+    setNewLink(tmpl.link);
+    setNewReward(String(tmpl.rewardSpins));
+    setNewQuestType(tmpl.questType);
   }
 
   function startEdit(q: Quest) {
@@ -154,7 +156,7 @@ export function QuestManager({
         setNewProofMode("none");
         setNewProofPlaceholder("");
         setNewImage(null);
-        setSuccessMsg(`"${createdTitle}" created successfully`);
+        setSuccessMsg(t("admin.questCreated", { title: createdTitle }));
         setShowForm(false);
         setTimeout(() => setSuccessMsg(null), 4000);
       }
@@ -165,7 +167,7 @@ export function QuestManager({
     <div className="space-y-2">
       <div className="flex items-center justify-between px-1">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
-          Quests ({quests.length})
+          {t("admin.questsCount", { count: quests.length })}
         </h2>
       </div>
 
@@ -181,7 +183,7 @@ export function QuestManager({
 
         <div className="px-5 py-2 bg-gray-50 border-b border-gray-100">
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-            Active Quests ({quests.length})
+            {t("admin.activeQuestsCount", { count: quests.length })}
           </p>
         </div>
 
@@ -193,7 +195,7 @@ export function QuestManager({
                 {editingId === q.id ? (
                   <div className="px-5 py-3 space-y-3 bg-gray-50">
                     <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Title</label>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questTitle")}</label>
                       <input
                         type="text"
                         value={editTitle}
@@ -202,7 +204,7 @@ export function QuestManager({
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Description</label>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questDescription")}</label>
                       <input
                         type="text"
                         value={editDesc}
@@ -212,7 +214,7 @@ export function QuestManager({
                     </div>
                     <div className="grid grid-cols-[1fr_auto] gap-3">
                       <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1">Link (optional)</label>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questLink")}</label>
                         <input
                           type="text"
                           value={editLink}
@@ -222,7 +224,7 @@ export function QuestManager({
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1">Spins</label>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questSpins")}</label>
                         <input
                           type="number"
                           min="0"
@@ -234,7 +236,7 @@ export function QuestManager({
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Image (optional)</label>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questImage")}</label>
                       <input
                         type="file"
                         accept="image/jpeg,image/png,image/webp,image/gif"
@@ -249,7 +251,7 @@ export function QuestManager({
                         onChange={(e) => setEditMultiUse(e.target.checked)}
                         className="rounded border-gray-300 text-gray-800 focus:ring-gray-400"
                       />
-                      <span className="text-xs text-gray-600">Repeatable (can be completed multiple times)</span>
+                      <span className="text-xs text-gray-600">{t("admin.questRepeatable")}</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
@@ -258,31 +260,31 @@ export function QuestManager({
                         onChange={(e) => setEditIsPublic(e.target.checked)}
                         className="rounded border-gray-300 text-gray-800 focus:ring-gray-400"
                       />
-                      <span className="text-xs text-gray-600">Show on public profile</span>
+                      <span className="text-xs text-gray-600">{t("admin.questShowPublic")}</span>
                     </label>
                     <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Quest Type</label>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questType")}</label>
                       <select
                         value={editQuestType}
                         onChange={(e) => setEditQuestType(e.target.value)}
                         className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
                       >
-                        <option value="default">Default</option>
-                        <option value="referral">Referral</option>
+                        <option value="default">{t("admin.questTypeDefault")}</option>
+                        <option value="referral">{t("admin.questTypeReferral")}</option>
                       </select>
                     </div>
                     {editQuestType === "default" && (
                       <div className="space-y-2">
                         <div>
-                          <label className="block text-xs font-medium text-gray-500 mb-1">Proof Link</label>
+                          <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.proofLink")}</label>
                           <select
                             value={editProofMode}
                             onChange={(e) => setEditProofMode(e.target.value)}
                             className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
                           >
-                            <option value="none">Not needed</option>
-                            <option value="optional">Optional</option>
-                            <option value="required">Required</option>
+                            <option value="none">{t("admin.proofNotNeeded")}</option>
+                            <option value="optional">{t("admin.proofOptional")}</option>
+                            <option value="required">{t("admin.proofRequired")}</option>
                           </select>
                         </div>
                         {editProofMode !== "none" && (
@@ -290,7 +292,7 @@ export function QuestManager({
                             type="text"
                             value={editProofPlaceholder}
                             onChange={(e) => setEditProofPlaceholder(e.target.value)}
-                            placeholder="e.g. Paste your Instagram profile link"
+                            placeholder={t("admin.proofPlaceholderHint")}
                             className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
                           />
                         )}
@@ -302,13 +304,13 @@ export function QuestManager({
                         disabled={isPending}
                         className="rounded-lg bg-gray-800 text-white px-4 py-1.5 text-xs font-semibold hover:bg-gray-700 disabled:opacity-50 transition-colors"
                       >
-                        Save
+                        {t("common.save")}
                       </button>
                       <button
                         onClick={cancelEdit}
                         className="rounded-lg border border-gray-300 px-4 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-100 transition-colors"
                       >
-                        Cancel
+                        {t("common.cancel")}
                       </button>
                     </div>
                   </div>
@@ -321,21 +323,21 @@ export function QuestManager({
                       <div className="flex items-center gap-1.5">
                         <p className="text-sm font-medium text-gray-900 truncate">{q.title}</p>
                         {q.multi_use && (
-                          <span className="text-[10px] font-medium text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded-full shrink-0">Repeatable</span>
+                          <span className="text-[10px] font-medium text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded-full shrink-0">{t("common.repeatable")}</span>
                         )}
                         {q.is_public && (
-                          <span className="text-[10px] font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full shrink-0">Public</span>
+                          <span className="text-[10px] font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full shrink-0">{t("common.public")}</span>
                         )}
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-xs text-gray-400">
-                          {q.reward_spins} {q.reward_spins === 1 ? "spin" : "spins"}
+                          {q.reward_spins} {q.reward_spins === 1 ? t("common.spin") : t("common.spinsLabel")}
                         </span>
                         {q.link && (
                           <span className="text-xs text-blue-500 truncate max-w-[150px]">{q.link}</span>
                         )}
                         <span className="text-xs text-gray-300">
-                          {q.completions} done
+                          {q.completions} {t("admin.questDoneCount")}
                         </span>
                       </div>
                     </div>
@@ -344,14 +346,14 @@ export function QuestManager({
                         onClick={() => startEdit(q)}
                         className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
                       >
-                        Edit
+                        {t("common.edit")}
                       </button>
                       <button
                         onClick={() => handleDelete(q.id)}
                         disabled={isPending}
                         className="text-xs text-red-500 hover:text-red-700 disabled:opacity-50 transition-colors"
                       >
-                        Remove
+                        {t("common.remove")}
                       </button>
                     </div>
                   </div>
@@ -366,7 +368,7 @@ export function QuestManager({
           onClick={() => { setShowForm(!showForm); setSuccessMsg(null); }}
           className="w-full px-5 py-3 border-t border-gray-100 flex items-center justify-between text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
         >
-          <span>{showForm ? "Cancel" : "Add New Quest"}</span>
+          <span>{showForm ? t("common.cancel") : t("admin.addNewQuest")}</span>
           <svg className={`w-4 h-4 transition-transform ${showForm ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
@@ -377,55 +379,55 @@ export function QuestManager({
         <div>
           {/* Templates */}
           <div className="px-5 py-4 border-t border-gray-100 bg-gray-50">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Quick Add</p>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">{t("admin.quickAdd")}</p>
             <div className="flex flex-wrap gap-2">
-              {TEMPLATES.map((t) => (
+              {TEMPLATES.map((tmpl) => (
                 <button
-                  key={t.title}
+                  key={tmpl.titleKey}
                   type="button"
-                  onClick={() => applyTemplate(t)}
+                  onClick={() => applyTemplate(tmpl)}
                   className="text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors"
                 >
-                  {t.title}
+                  {t(tmpl.titleKey)}
                 </button>
               ))}
             </div>
           </div>
         <form onSubmit={handleAdd} className="px-5 py-4 border-t border-gray-100 space-y-3 bg-gray-50">
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Title</label>
+            <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questTitle")}</label>
             <input
               type="text"
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
-              placeholder="e.g. Follow us on Instagram"
+              placeholder={t("admin.questTitlePlaceholder")}
               required
               className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Description (optional)</label>
+            <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questDescOptional")}</label>
             <input
               type="text"
               value={newDesc}
               onChange={(e) => setNewDesc(e.target.value)}
-              placeholder="e.g. Describe the quest"
+              placeholder={t("admin.questDescPlaceholder")}
               className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
             />
           </div>
           <div className="grid grid-cols-[1fr_auto] gap-3 items-end">
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Link (optional)</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questLink")}</label>
               <input
                 type="text"
                 value={newLink}
                 onChange={(e) => setNewLink(e.target.value)}
-                placeholder="https://example.com/link"
+                placeholder={t("admin.questLinkPlaceholder")}
                 className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Spins</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questSpins")}</label>
               <input
                 type="number"
                 min="0"
@@ -438,7 +440,7 @@ export function QuestManager({
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Image (optional)</label>
+            <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questImage")}</label>
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp,image/gif"
@@ -453,7 +455,7 @@ export function QuestManager({
               onChange={(e) => setNewMultiUse(e.target.checked)}
               className="rounded border-gray-300 text-gray-800 focus:ring-gray-400"
             />
-            <span className="text-xs text-gray-600">Repeatable (can be completed multiple times)</span>
+            <span className="text-xs text-gray-600">{t("admin.questRepeatable")}</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -462,31 +464,31 @@ export function QuestManager({
               onChange={(e) => setNewIsPublic(e.target.checked)}
               className="rounded border-gray-300 text-gray-800 focus:ring-gray-400"
             />
-            <span className="text-xs text-gray-600">Show on public profile</span>
+            <span className="text-xs text-gray-600">{t("admin.questShowPublic")}</span>
           </label>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Quest Type</label>
+            <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questType")}</label>
             <select
               value={newQuestType}
               onChange={(e) => setNewQuestType(e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
             >
-              <option value="default">Default</option>
-              <option value="referral">Referral</option>
+              <option value="default">{t("admin.questTypeDefault")}</option>
+              <option value="referral">{t("admin.questTypeReferral")}</option>
             </select>
           </div>
           {newQuestType === "default" && (
             <div className="space-y-2">
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Proof Link</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.proofLink")}</label>
                 <select
                   value={newProofMode}
                   onChange={(e) => setNewProofMode(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
                 >
-                  <option value="none">Not needed</option>
-                  <option value="optional">Optional</option>
-                  <option value="required">Required</option>
+                  <option value="none">{t("admin.proofNotNeeded")}</option>
+                  <option value="optional">{t("admin.proofOptional")}</option>
+                  <option value="required">{t("admin.proofRequired")}</option>
                 </select>
               </div>
               {newProofMode !== "none" && (
@@ -494,7 +496,7 @@ export function QuestManager({
                   type="text"
                   value={newProofPlaceholder}
                   onChange={(e) => setNewProofPlaceholder(e.target.value)}
-                  placeholder="e.g. Paste your Instagram profile link"
+                  placeholder={t("admin.proofPlaceholderHint")}
                   className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
                 />
               )}
@@ -505,7 +507,7 @@ export function QuestManager({
             disabled={isPending || !newTitle.trim()}
             className="w-full rounded-lg bg-gray-800 text-white px-4 py-2 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {isPending ? "Adding..." : "Add Quest"}
+            {isPending ? t("admin.adding") : t("admin.addQuest")}
           </button>
         </form>
         </div>

@@ -1,8 +1,17 @@
 import Link from "next/link";
+import { t } from "@/lib/i18n";
+import { getServerLocale } from "@/lib/i18n/server";
+import { LanguageSwitcher } from "@/lib/i18n/switcher";
 
-export default function Home() {
+export default async function Home() {
+  const locale = await getServerLocale();
   return (
     <div className="min-h-screen bg-background">
+      {/* Language switcher */}
+      <div className="fixed top-4 right-4 z-50">
+        <LanguageSwitcher variant="dark" />
+      </div>
+
       {/* Hero */}
       <section className="relative overflow-hidden px-6 pt-20 pb-24 sm:pt-28 sm:pb-32">
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -11,17 +20,17 @@ export default function Home() {
 
         <div className="relative z-10 mx-auto max-w-3xl text-center">
           <h1 className="text-5xl font-bold tracking-tight text-primary sm:text-6xl md:text-7xl">
-            osocios.club
+            {t(locale, "landing.brandName")}
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground sm:text-xl">
-            The all-in-one operating system for private clubs. Manage members, engage your community, and run daily operations — all under your own brand.
+            {t(locale, "landing.heroSubtitle")}
           </p>
           <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link
               href="/onboarding"
               className="inline-flex h-12 items-center justify-center rounded-lg bg-primary px-8 text-base font-medium text-primary-foreground shadow-md transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              Create Your Club
+              {t(locale, "landing.heroCta")}
             </Link>
           </div>
         </div>
@@ -31,10 +40,10 @@ export default function Home() {
       <section className="border-t border-border/50 bg-card px-6 py-20 sm:py-24">
         <div className="mx-auto max-w-4xl">
           <h2 className="text-center text-2xl font-bold text-foreground sm:text-3xl">
-            Up and running in minutes
+            {t(locale, "landing.howItWorksTitle")}
           </h2>
           <p className="mx-auto mt-3 max-w-lg text-center text-muted-foreground">
-            Three steps to launch your club&apos;s digital home.
+            {t(locale, "landing.howItWorksSubtitle")}
           </p>
 
           <div className="mt-14 grid gap-10 sm:grid-cols-3 sm:gap-8">
@@ -42,27 +51,27 @@ export default function Home() {
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
                 1
               </div>
-              <h3 className="mt-4 text-base font-semibold text-foreground">Name your club</h3>
+              <h3 className="mt-4 text-base font-semibold text-foreground">{t(locale, "landing.step1Title")}</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                Pick a name, set your owner credentials, and we create your private space instantly.
+                {t(locale, "landing.step1Desc")}
               </p>
             </div>
             <div className="text-center">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
                 2
               </div>
-              <h3 className="mt-4 text-base font-semibold text-foreground">Brand it yours</h3>
+              <h3 className="mt-4 text-base font-semibold text-foreground">{t(locale, "landing.step2Title")}</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                Choose your colors and hero content. Members see your brand, not ours.
+                {t(locale, "landing.step2Desc")}
               </p>
             </div>
             <div className="text-center">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
                 3
               </div>
-              <h3 className="mt-4 text-base font-semibold text-foreground">Add members & go</h3>
+              <h3 className="mt-4 text-base font-semibold text-foreground">{t(locale, "landing.step3Title")}</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                Register members in the admin panel, hand out codes, and your club is live.
+                {t(locale, "landing.step3Desc")}
               </p>
             </div>
           </div>
@@ -73,10 +82,10 @@ export default function Home() {
       <section className="px-6 py-20 sm:py-24">
         <div className="mx-auto max-w-4xl">
           <h2 className="text-center text-2xl font-bold text-foreground sm:text-3xl">
-            Everything your club needs
+            {t(locale, "landing.featuresTitle")}
           </h2>
           <p className="mx-auto mt-3 max-w-lg text-center text-muted-foreground">
-            Three portals. One platform. Zero hassle.
+            {t(locale, "landing.featuresSubtitle")}
           </p>
 
           <div className="mt-14 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
@@ -87,9 +96,9 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
-              <h3 className="mt-4 font-semibold text-foreground">Member Portal</h3>
+              <h3 className="mt-4 font-semibold text-foreground">{t(locale, "landing.featureMemberPortal")}</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                White-label mobile-first app for your members. Login with a simple code, check spin balance, view history, and manage their profile.
+                {t(locale, "landing.featureMemberPortalDesc")}
               </p>
             </div>
 
@@ -100,9 +109,9 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
               </div>
-              <h3 className="mt-4 font-semibold text-foreground">Staff Console</h3>
+              <h3 className="mt-4 font-semibold text-foreground">{t(locale, "landing.featureStaffConsole")}</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                Fast, single-action workflows for your team. Spin the wheel for members, track events, and manage services — all from one screen.
+                {t(locale, "landing.featureStaffConsoleDesc")}
               </p>
             </div>
 
@@ -114,9 +123,9 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
-              <h3 className="mt-4 font-semibold text-foreground">Owner Admin Panel</h3>
+              <h3 className="mt-4 font-semibold text-foreground">{t(locale, "landing.featureAdminPanel")}</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                Full control over your club. Manage members and staff, configure the prize wheel, define roles — secured with email and password.
+                {t(locale, "landing.featureAdminPanelDesc")}
               </p>
             </div>
 
@@ -127,9 +136,9 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="mt-4 font-semibold text-foreground">Spin-the-Wheel Rewards</h3>
+              <h3 className="mt-4 font-semibold text-foreground">{t(locale, "landing.featureSpinWheel")}</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                Gamify your club experience. Configure prizes, probabilities, and colors. Staff spins the wheel for members in one tap.
+                {t(locale, "landing.featureSpinWheelDesc")}
               </p>
             </div>
 
@@ -140,9 +149,9 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
                 </svg>
               </div>
-              <h3 className="mt-4 font-semibold text-foreground">Fully White-Label</h3>
+              <h3 className="mt-4 font-semibold text-foreground">{t(locale, "landing.featureWhiteLabel")}</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                Your brand, your colors, your identity. Every member sees your club — not a generic platform. Custom colors applied everywhere.
+                {t(locale, "landing.featureWhiteLabelDesc")}
               </p>
             </div>
 
@@ -153,9 +162,9 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
               </div>
-              <h3 className="mt-4 font-semibold text-foreground">Secure & Isolated</h3>
+              <h3 className="mt-4 font-semibold text-foreground">{t(locale, "landing.featureSecure")}</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                Each club is completely separate. Row-level security ensures member data never leaks between clubs. Owner, staff, and member access are all distinct.
+                {t(locale, "landing.featureSecureDesc")}
               </p>
             </div>
           </div>
@@ -166,20 +175,20 @@ export default function Home() {
       <section className="border-t border-border/50 bg-card px-6 py-20 sm:py-24">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="text-2xl font-bold text-foreground sm:text-3xl">
-            Built for private clubs
+            {t(locale, "landing.builtForTitle")}
           </h2>
           <p className="mx-auto mt-3 max-w-lg text-muted-foreground">
-            Whether you run a social club, cannabis association, members-only bar, or any private community — osocios gives you the tools to manage it professionally.
+            {t(locale, "landing.builtForDesc")}
           </p>
           <div className="mt-10">
             <Link
               href="/onboarding"
               className="inline-flex h-12 items-center justify-center rounded-lg bg-primary px-8 text-base font-medium text-primary-foreground shadow-md transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              Get Started — It&apos;s Free
+              {t(locale, "landing.getStartedCta")}
             </Link>
             <p className="mt-4 text-sm text-muted-foreground">
-              Set up takes less than 2 minutes. No credit card required.
+              {t(locale, "landing.setupTime")}
             </p>
           </div>
         </div>
@@ -188,7 +197,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-border/50 px-6 py-8">
         <p className="text-center text-sm text-muted-foreground">
-          osocios.club
+          {t(locale, "landing.brandName")}
         </p>
       </footer>
     </div>

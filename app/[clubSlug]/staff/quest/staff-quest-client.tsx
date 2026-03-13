@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { lookupMemberQuests, completeQuest, approveQuest, declineQuest } from "./actions";
+import { useLanguage } from "@/lib/i18n/provider";
 
 interface Quest {
   id: string;
@@ -41,6 +42,7 @@ export function StaffQuestClient({
 }) {
   const [memberCode, setMemberCode] = useState("");
   const [isPending, startTransition] = useTransition();
+  const { t } = useLanguage();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [successMemberCode, setSuccessMemberCode] = useState<string | null>(null);
@@ -80,7 +82,7 @@ export function StaffQuestClient({
   function handleComplete(questId: string, questType: string) {
     if (!activeMember) return;
     if (questType === "referral" && !referralCode.trim()) {
-      setError("Please enter the referred member's code");
+      setError(t("staff.enterReferredCode"));
       return;
     }
     setError(null);
@@ -98,7 +100,7 @@ export function StaffQuestClient({
         return;
       }
       const quest = activeMember.quests.find((q) => q.id === questId);
-      setSuccess(`Quest completed! +${quest?.reward_spins ?? 0} spin${(quest?.reward_spins ?? 0) === 1 ? "" : "s"} awarded (balance: ${res.newBalance})`);
+      setSuccess(t("staff.questCompleted", { spins: quest?.reward_spins ?? 0, balance: res.newBalance }));
       setSuccessMemberCode(activeMember.code);
       setReferralCode("");
       setActiveMember((prev) =>
@@ -118,7 +120,7 @@ export function StaffQuestClient({
     if (questType === "referral") {
       const code = (pendingReferralCodes[pendingId] ?? "").trim();
       if (!code) {
-        setItemFeedback((prev) => ({ ...prev, [pendingId]: { type: "error", message: "Please enter the referred member's code" } }));
+        setItemFeedback((prev) => ({ ...prev, [pendingId]: { type: "error", message: t("staff.enterReferredCode") } }));
         return;
       }
     }
@@ -177,7 +179,7 @@ export function StaffQuestClient({
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           <div className="px-5 py-3 border-b border-gray-100">
             <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
-              Pending Validations{pendingQuests.length > 0 ? ` (${pendingQuests.length})` : ""}
+              {t("staff.pendingValidations", { count: pendingQuests.length })}
             </h3>
           </div>
           <div className="divide-y divide-gray-100">
@@ -187,13 +189,13 @@ export function StaffQuestClient({
               if (fb.type === "approved") {
                 return (
                   <div key={id} className="px-5 py-3 bg-green-50 flex items-center justify-between">
-                    <span className="text-xs text-green-700 font-medium">Approved {fb.message}</span>
+                    <span className="text-xs text-green-700 font-medium">{t("staff.questApproved", { message: fb.message })}</span>
                     {fb.memberCode && (
                       <a
                         href={`/${clubSlug}/staff/?member=${fb.memberCode}`}
                         className="ml-3 rounded-lg bg-gray-800 text-white px-3 py-1 text-xs font-semibold hover:bg-gray-700 transition-colors shrink-0"
                       >
-                        Spin
+                        {t("nav.spin")}
                       </a>
                     )}
                   </div>
@@ -202,7 +204,7 @@ export function StaffQuestClient({
               if (fb.type === "declined") {
                 return (
                   <div key={id} className="px-5 py-3 bg-gray-50">
-                    <span className="text-xs text-gray-500 font-medium">Declined — member can re-submit</span>
+                    <span className="text-xs text-gray-500 font-medium">{t("staff.questDeclined")}</span>
                   </div>
                 );
               }
@@ -250,14 +252,14 @@ export function StaffQuestClient({
                       disabled={isPending}
                       className="rounded-lg border border-gray-300 text-gray-500 px-3 py-1.5 text-xs font-semibold hover:bg-gray-50 disabled:opacity-50 transition-colors shrink-0"
                     >
-                      Decline
+                      {t("staff.declineQuest")}
                     </button>
                     <button
                       onClick={() => handleApprove(pq.id, pq.quest_type)}
                       disabled={isPending}
                       className="rounded-lg bg-green-600 text-white px-4 py-1.5 text-xs font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors shrink-0"
                     >
-                      Approve +{pq.reward_spins}
+                      {t("staff.approveQuest", { spins: pq.reward_spins })}
                     </button>
                   </div>
                   {pq.quest_type === "referral" && (
@@ -265,7 +267,7 @@ export function StaffQuestClient({
                       type="text"
                       value={pendingReferralCodes[pq.id] ?? ""}
                       onChange={(e) => setPendingReferralCodes((prev) => ({ ...prev, [pq.id]: e.target.value.toUpperCase() }))}
-                      placeholder="Referred member code"
+                      placeholder={t("staff.referredCodePlaceholder")}
                       maxLength={6}
                       className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-mono tracking-wide uppercase text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition text-center"
                     />
@@ -284,21 +286,21 @@ export function StaffQuestClient({
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
         <div className="px-5 py-3 border-b border-gray-100">
           <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
-            Quest Completion
+            {t("staff.questCompletion")}
           </h3>
         </div>
 
         <form onSubmit={handleLookup} className="px-5 py-4 flex gap-3 items-end">
           <div className="flex-1">
             <label htmlFor="questMemberCode" className="block text-xs font-medium text-gray-500 mb-1">
-              Member Code
+              {t("staff.memberCodeLabel")}
             </label>
             <input
               id="questMemberCode"
               type="text"
               value={memberCode}
               onChange={(e) => setMemberCode(e.target.value.toUpperCase())}
-              placeholder="ABC12"
+              placeholder={t("staff.memberCodePlaceholder")}
               maxLength={6}
               className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm font-mono tracking-wide uppercase text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition text-center"
             />
@@ -308,7 +310,7 @@ export function StaffQuestClient({
             disabled={isPending || !memberCode.trim()}
             className="rounded-lg bg-gray-800 text-white px-6 py-2.5 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
           >
-            {isPending ? "..." : "Check"}
+            {isPending ? "..." : t("common.check")}
           </button>
         </form>
 
@@ -326,7 +328,7 @@ export function StaffQuestClient({
                 href={`/${clubSlug}/staff/?member=${successMemberCode}`}
                 className="ml-3 rounded-lg bg-gray-800 text-white px-3 py-1 text-xs font-semibold hover:bg-gray-700 transition-colors shrink-0"
               >
-                Spin
+                {t("nav.spin")}
               </a>
             )}
           </div>
@@ -349,8 +351,8 @@ export function StaffQuestClient({
                         <p className="text-sm font-medium text-gray-900">{q.title}</p>
                         <p className="text-xs text-gray-400">
                           {q.multi_use && q.completionCount > 0
-                            ? `Done ${q.completionCount}x`
-                            : `+${q.reward_spins} spin${q.reward_spins === 1 ? "" : "s"}`}
+                            ? t("quest.doneCount", { count: q.completionCount })
+                            : `+${q.reward_spins} ${q.reward_spins === 1 ? t("common.spin") : t("common.spins")}`}
                         </p>
                       </div>
                       <button
@@ -358,7 +360,7 @@ export function StaffQuestClient({
                         disabled={isPending}
                         className="rounded-lg bg-green-600 text-white px-4 py-1.5 text-xs font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors shrink-0"
                       >
-                        Complete +{q.reward_spins}
+                        {t("staff.completeQuest", { spins: q.reward_spins })}
                       </button>
                     </div>
                     {q.quest_type === "referral" && (
@@ -367,7 +369,7 @@ export function StaffQuestClient({
                           type="text"
                           value={referralCode}
                           onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                          placeholder="Referred member code"
+                          placeholder={t("staff.referredCodePlaceholder")}
                           maxLength={6}
                           className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-mono tracking-wide uppercase text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition text-center"
                         />
@@ -378,7 +380,7 @@ export function StaffQuestClient({
               </div>
             ) : (
               <div className="px-5 py-4 text-sm text-gray-400 text-center">
-                All quests completed
+                {t("staff.allQuestsCompleted")}
               </div>
             )}
 
@@ -389,7 +391,7 @@ export function StaffQuestClient({
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-gray-500">{q.title}</p>
                     </div>
-                    <span className="text-xs text-green-600 font-medium">Done</span>
+                    <span className="text-xs text-green-600 font-medium">{t("common.done")}</span>
                   </div>
                 ))}
               </div>

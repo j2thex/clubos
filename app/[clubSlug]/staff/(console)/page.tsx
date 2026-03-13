@@ -1,6 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { StaffSpinClient } from "../spin/staff-spin-client";
+import { t } from "@/lib/i18n";
+import { getServerLocale } from "@/lib/i18n/server";
 
 export default async function StaffSpinPage({
   params,
@@ -29,6 +31,8 @@ export default async function StaffSpinPage({
     .eq("active", true)
     .order("display_order", { ascending: true });
 
+  const locale = await getServerLocale();
+
   return segments && segments.length > 0 ? (
     <StaffSpinClient
       clubId={club.id}
@@ -42,7 +46,7 @@ export default async function StaffSpinPage({
     />
   ) : (
     <div className="bg-white rounded-2xl shadow-lg p-8 text-center text-gray-400 text-sm">
-      Wheel not configured yet.
+      {t(locale, "staff.wheelNotConfigured")}
     </div>
   );
 }

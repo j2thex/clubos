@@ -3,6 +3,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { LogoutButton } from "../logout-button";
 import { AdminNav } from "@/components/club/admin-nav";
+import { t } from "@/lib/i18n";
+import { getServerLocale } from "@/lib/i18n/server";
+import { LanguageSwitcher } from "@/lib/i18n/switcher";
 
 export async function generateMetadata({
   params,
@@ -49,6 +52,7 @@ export default async function AdminPanelLayout({
     .single();
 
   const coverUrl = branding?.cover_url ?? null;
+  const locale = await getServerLocale();
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -62,10 +66,13 @@ export default async function AdminPanelLayout({
         )}
         <div className="relative flex items-start justify-between max-w-2xl mx-auto">
           <div>
-            <h1 className="text-2xl font-bold text-white">Club Admin</h1>
+            <h1 className="text-2xl font-bold text-white">{t(locale, "admin.title")}</h1>
             <p className="mt-1 text-gray-400 text-sm">{club.name}</p>
           </div>
-          <LogoutButton clubSlug={clubSlug} />
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher />
+            <LogoutButton clubSlug={clubSlug} />
+          </div>
         </div>
         <div className="relative flex gap-3 mt-4 max-w-2xl mx-auto">
           <a
@@ -74,7 +81,7 @@ export default async function AdminPanelLayout({
             rel="noopener noreferrer"
             className="text-xs text-gray-400 hover:text-white border border-gray-600 rounded-lg px-3 py-1.5 transition-colors"
           >
-            Staff Console
+            {t(locale, "admin.staffConsole")}
           </a>
           <a
             href={`/${clubSlug}`}
@@ -82,7 +89,7 @@ export default async function AdminPanelLayout({
             rel="noopener noreferrer"
             className="text-xs text-gray-400 hover:text-white border border-gray-600 rounded-lg px-3 py-1.5 transition-colors"
           >
-            Member Portal
+            {t(locale, "admin.memberPortal")}
           </a>
           <a
             href={`/${clubSlug}/public`}
@@ -90,7 +97,7 @@ export default async function AdminPanelLayout({
             rel="noopener noreferrer"
             className="text-xs text-gray-400 hover:text-white border border-gray-600 rounded-lg px-3 py-1.5 transition-colors"
           >
-            Public Page
+            {t(locale, "admin.publicPage")}
           </a>
         </div>
       </div>

@@ -2,6 +2,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getStaffFromCookie } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { StaffServiceClient } from "../../services/staff-service-client";
+import { t } from "@/lib/i18n";
+import { getServerLocale } from "@/lib/i18n/server";
 
 export default async function StaffServicesPage({
   params,
@@ -30,6 +32,8 @@ export default async function StaffServicesPage({
 
   const serviceList = services ?? [];
 
+  const locale = await getServerLocale();
+
   if (serviceList.length === 0) {
     return (
       <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
@@ -38,8 +42,8 @@ export default async function StaffServicesPage({
             <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
           </svg>
         </div>
-        <p className="text-sm font-medium text-gray-900">No services yet</p>
-        <p className="text-xs text-gray-400 mt-1">Services will appear here once created by admin.</p>
+        <p className="text-sm font-medium text-gray-900">{t(locale, "staff.noServices")}</p>
+        <p className="text-xs text-gray-400 mt-1">{t(locale, "staff.servicesFromAdmin")}</p>
       </div>
     );
   }

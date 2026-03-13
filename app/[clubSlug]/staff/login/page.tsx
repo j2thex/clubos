@@ -3,6 +3,7 @@
 import { useParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { loginStaff } from "./actions";
+import { useLanguage } from "@/lib/i18n/provider";
 
 export default function StaffLoginPage() {
   const params = useParams<{ clubSlug: string }>();
@@ -10,6 +11,7 @@ export default function StaffLoginPage() {
 
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const { t } = useLanguage();
 
   const boundLogin = loginStaff.bind(null, clubSlug);
 
@@ -43,9 +45,9 @@ export default function StaffLoginPage() {
                 />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Staff Login</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t("login.staffTitle")}</h1>
             <p className="text-sm text-gray-500 mt-1">
-              Enter your staff code and PIN
+              {t("login.staffSubtitle")}
             </p>
           </div>
 
@@ -61,7 +63,7 @@ export default function StaffLoginPage() {
                 htmlFor="staffCode"
                 className="block text-sm font-medium text-gray-700 mb-1.5"
               >
-                Staff Code
+                {t("common.staffCode")}
               </label>
               <input
                 id="staffCode"
@@ -71,7 +73,7 @@ export default function StaffLoginPage() {
                 maxLength={6}
                 autoCapitalize="characters"
                 autoComplete="off"
-                placeholder="ABC123"
+                placeholder={t("login.staffCodePlaceholder")}
                 className="block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-lg font-mono tracking-widest uppercase placeholder:text-gray-400 placeholder:tracking-widest transition focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400"
                 onChange={(e) => {
                   e.target.value = e.target.value.toUpperCase();
@@ -84,7 +86,7 @@ export default function StaffLoginPage() {
                 htmlFor="pin"
                 className="block text-sm font-medium text-gray-700 mb-1.5"
               >
-                PIN
+                {t("common.pin")}
               </label>
               <input
                 id="pin"
@@ -95,7 +97,7 @@ export default function StaffLoginPage() {
                 inputMode="numeric"
                 pattern="[0-9]{4}"
                 autoComplete="off"
-                placeholder="----"
+                placeholder={t("login.pinPlaceholder")}
                 className="block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-lg tracking-[0.5em] placeholder:tracking-[0.5em] placeholder:text-gray-400 transition focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400"
               />
             </div>
@@ -105,7 +107,7 @@ export default function StaffLoginPage() {
               disabled={isPending}
               className="w-full rounded-lg bg-gray-800 text-white px-4 py-2.5 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {isPending ? "Signing in..." : "Sign In"}
+              {isPending ? t("common.signingIn") : t("common.signIn")}
             </button>
           </form>
         </div>

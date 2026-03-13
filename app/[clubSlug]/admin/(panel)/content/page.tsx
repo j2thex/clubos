@@ -1,6 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { t } from "@/lib/i18n";
+import { getServerLocale } from "@/lib/i18n/server";
 
 export default async function ContentPage({
   params,
@@ -18,6 +20,7 @@ export default async function ContentPage({
     .single();
 
   if (!club) notFound();
+  const locale = await getServerLocale();
 
   const [{ count: eventCount }, { count: questCount }, { count: serviceCount }] =
     await Promise.all([
@@ -40,7 +43,7 @@ export default async function ContentPage({
 
   const items = [
     {
-      label: "Events",
+      label: t(locale, "admin.contentEvents"),
       href: `/${clubSlug}/admin/events`,
       count: eventCount ?? 0,
       icon: (
@@ -50,7 +53,7 @@ export default async function ContentPage({
       ),
     },
     {
-      label: "Quests",
+      label: t(locale, "admin.contentQuests"),
       href: `/${clubSlug}/admin/quests`,
       count: questCount ?? 0,
       icon: (
@@ -60,7 +63,7 @@ export default async function ContentPage({
       ),
     },
     {
-      label: "Services",
+      label: t(locale, "admin.contentServices"),
       href: `/${clubSlug}/admin/services`,
       count: serviceCount ?? 0,
       icon: (
@@ -83,7 +86,7 @@ export default async function ContentPage({
           <div className="flex-1">
             <p className="text-sm font-semibold text-gray-900">{item.label}</p>
             <p className="text-xs text-gray-400">
-              {item.count} active
+              {t(locale, "admin.activeCount", { count: item.count })}
             </p>
           </div>
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

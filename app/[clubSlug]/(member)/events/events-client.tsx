@@ -2,6 +2,8 @@
 
 import { useState, useTransition, useMemo } from "react";
 import { rsvpEvent, cancelRsvp } from "./actions";
+import { useLanguage } from "@/lib/i18n/provider";
+import { getDateLocale } from "@/lib/i18n";
 
 interface Event {
   id: string;
@@ -26,6 +28,7 @@ export function EventsClient({
   memberId: string;
   clubSlug: string;
 }) {
+  const { t, locale } = useLanguage();
   const [view, setView] = useState<"list" | "calendar">("list");
   const [rsvpState, setRsvpState] = useState<Record<string, boolean>>(
     Object.fromEntries(events.map((e) => [e.id, e.hasRsvp])),
@@ -61,7 +64,7 @@ export function EventsClient({
   }
 
   function formatDate(d: string) {
-    return new Date(d + "T00:00:00").toLocaleDateString("en-US", {
+    return new Date(d + "T00:00:00").toLocaleDateString(getDateLocale(locale), {
       weekday: "short",
       month: "short",
       day: "numeric",
@@ -93,7 +96,7 @@ export function EventsClient({
 
   const daysInMonth = getDaysInMonth(calYear, calMonth);
   const firstDay = getFirstDayOfWeek(calYear, calMonth);
-  const monthName = new Date(calYear, calMonth).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const monthName = new Date(calYear, calMonth).toLocaleDateString(getDateLocale(locale), { month: "long", year: "numeric" });
 
   function prevMonth() {
     setSelectedDate(null);
@@ -124,7 +127,7 @@ export function EventsClient({
     if (checkedInSet.has(ev.id)) {
       return (
         <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-green-100 text-green-700">
-          Checked In
+          {t("events.checkedIn")}
         </span>
       );
     }
@@ -141,7 +144,7 @@ export function EventsClient({
             : "club-primary-bg text-white hover:opacity-90"
         } disabled:opacity-50`}
       >
-        {rsvpState[ev.id] ? "Signed Up" : "Sign Up"}
+        {rsvpState[ev.id] ? t("events.signedUp") : t("events.signUp")}
       </button>
     );
   }
@@ -158,7 +161,7 @@ export function EventsClient({
               : "text-white/70 hover:text-white"
           }`}
         >
-          List
+          {t("events.viewList")}
         </button>
         <button
           onClick={() => {
@@ -171,7 +174,7 @@ export function EventsClient({
               : "text-white/70 hover:text-white"
           }`}
         >
-          Calendar
+          {t("events.viewCalendar")}
         </button>
       </div>
 
@@ -179,8 +182,8 @@ export function EventsClient({
         <div className="space-y-3">
           {upcomingEvents.length === 0 && (
             <div className="bg-white rounded-2xl shadow-lg p-10 text-center">
-              <p className="text-gray-700 font-semibold text-lg">No upcoming events</p>
-              <p className="text-gray-400 text-sm mt-1">Check back soon for upcoming club events.</p>
+              <p className="text-gray-700 font-semibold text-lg">{t("events.noUpcoming")}</p>
+              <p className="text-gray-400 text-sm mt-1">{t("events.checkBackSoon")}</p>
             </div>
           )}
           {upcomingEvents.map((ev) => (
@@ -209,13 +212,13 @@ export function EventsClient({
                     {ev.price != null ? (
                       <span className="text-sm font-bold text-gray-900">${Number(ev.price).toFixed(2)}</span>
                     ) : (
-                      <span className="text-sm font-bold text-green-600">Free</span>
+                      <span className="text-sm font-bold text-green-600">{t("common.free")}</span>
                     )}
                   </div>
                 </div>
                 <div className="flex items-center justify-between mt-3">
                   <span className="text-xs club-tint-text font-medium px-2 py-0.5 club-tint-bg rounded-full">
-                    +{ev.reward_spins} spin{ev.reward_spins === 1 ? "" : "s"}
+                    +{ev.reward_spins} {ev.reward_spins === 1 ? t("common.spin") : t("common.spins")}
                   </span>
                   {renderRsvpButton(ev)}
                 </div>
@@ -300,7 +303,7 @@ export function EventsClient({
               <div className="mt-3 pt-3 border-t border-gray-100 space-y-2">
                 <p className="text-xs font-medium text-gray-400 px-1">
                   {formatDate(selectedDate)}
-                  {isPastDate && <span className="ml-1 text-gray-300">&middot; Past</span>}
+                  {isPastDate && <span className="ml-1 text-gray-300">&middot; {t("events.past")}</span>}
                 </p>
                 {dayEvents.map((ev) => (
                   <a
@@ -321,10 +324,10 @@ export function EventsClient({
                           {ev.title}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {ev.time ? formatTime(ev.time) : "All day"}
+                          {ev.time ? formatTime(ev.time) : t("events.allDay")}
                           {ev.price != null
                             ? ` · $${Number(ev.price).toFixed(2)}`
-                            : " · Free"}
+                            : ` · ${t("common.free")}`}
                         </p>
                       </div>
                       {!isPastDate && (

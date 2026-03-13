@@ -3,6 +3,7 @@
 import { useParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { loginOwner } from "./actions";
+import { useLanguage } from "@/lib/i18n/provider";
 
 export default function AdminLoginPage() {
   const params = useParams<{ clubSlug: string }>();
@@ -10,6 +11,7 @@ export default function AdminLoginPage() {
 
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const { t } = useLanguage();
 
   const boundLogin = loginOwner.bind(null, clubSlug);
 
@@ -43,9 +45,9 @@ export default function AdminLoginPage() {
                 />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Admin Login</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t("login.adminTitle")}</h1>
             <p className="text-sm text-gray-500 mt-1">
-              Enter your email and password
+              {t("login.adminSubtitle")}
             </p>
           </div>
 
@@ -61,7 +63,7 @@ export default function AdminLoginPage() {
                 htmlFor="email"
                 className="block text-sm font-medium text-gray-700 mb-1.5"
               >
-                Email
+                {t("login.emailLabel")}
               </label>
               <input
                 id="email"
@@ -69,7 +71,7 @@ export default function AdminLoginPage() {
                 type="email"
                 required
                 autoComplete="email"
-                placeholder="you@example.com"
+                placeholder={t("login.emailPlaceholder")}
                 className="block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm placeholder:text-gray-400 transition focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400"
               />
             </div>
@@ -79,7 +81,7 @@ export default function AdminLoginPage() {
                 htmlFor="password"
                 className="block text-sm font-medium text-gray-700 mb-1.5"
               >
-                Password
+                {t("login.passwordLabel")}
               </label>
               <input
                 id="password"
@@ -88,7 +90,7 @@ export default function AdminLoginPage() {
                 required
                 minLength={8}
                 autoComplete="current-password"
-                placeholder="Minimum 8 characters"
+                placeholder={t("login.passwordPlaceholder")}
                 className="block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm placeholder:text-gray-400 transition focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400"
               />
             </div>
@@ -98,7 +100,7 @@ export default function AdminLoginPage() {
               disabled={isPending}
               className="w-full rounded-lg bg-gray-800 text-white px-4 py-2.5 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {isPending ? "Signing in..." : "Sign In"}
+              {isPending ? t("common.signingIn") : t("common.signIn")}
             </button>
           </form>
         </div>

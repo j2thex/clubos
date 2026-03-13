@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useLanguage } from "@/lib/i18n/provider";
 
 interface MemberNavProps {
   clubSlug: string;
@@ -9,7 +10,7 @@ interface MemberNavProps {
 
 const navItems = [
   {
-    label: "Dashboard",
+    labelKey: "nav.dashboard" as const,
     path: "",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -18,7 +19,7 @@ const navItems = [
     ),
   },
   {
-    label: "Events",
+    labelKey: "nav.events" as const,
     path: "/events",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -27,7 +28,7 @@ const navItems = [
     ),
   },
   {
-    label: "Services",
+    labelKey: "nav.services" as const,
     path: "/services",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -36,7 +37,7 @@ const navItems = [
     ),
   },
   {
-    label: "Profile",
+    labelKey: "nav.profile" as const,
     path: "/profile",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -48,6 +49,7 @@ const navItems = [
 
 export function MemberNav({ clubSlug }: MemberNavProps) {
   const pathname = usePathname();
+  const { t } = useLanguage();
 
   // Hide nav on the login page
   if (pathname.endsWith("/login")) {
@@ -66,14 +68,14 @@ export function MemberNav({ clubSlug }: MemberNavProps) {
 
           return (
             <Link
-              key={item.label}
+              key={item.labelKey}
               href={href}
               className={`flex flex-col items-center gap-0.5 px-3 py-1 text-xs transition-colors ${
                 isActive ? "club-primary" : "text-gray-400 hover:text-gray-600"
               }`}
             >
               {item.icon}
-              <span>{item.label}</span>
+              <span>{t(item.labelKey)}</span>
             </Link>
           );
         })}

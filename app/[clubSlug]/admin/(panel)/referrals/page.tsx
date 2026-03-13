@@ -1,6 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { ReferralTree } from "../../referral-tree";
+import { t } from "@/lib/i18n";
+import { getServerLocale } from "@/lib/i18n/server";
 
 export default async function AdminReferralsPage({
   params,
@@ -18,6 +20,7 @@ export default async function AdminReferralsPage({
     .single();
 
   if (!club) notFound();
+  const locale = await getServerLocale();
 
   // Get referrals from two sources:
   // 1. Quest-based referrals (member_quests with referral_member_code)
@@ -145,7 +148,7 @@ export default async function AdminReferralsPage({
     return (
       <div className="space-y-2">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-1">
-          Referrals
+          {t(locale, "admin.referralsTitle")}
         </h2>
         <ReferralTree referrers={[]} />
       </div>
@@ -155,7 +158,7 @@ export default async function AdminReferralsPage({
   return (
     <div className="space-y-2">
       <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-1">
-        Referrals ({totalReferrals})
+        {t(locale, "admin.referralsCount", { count: totalReferrals })}
       </h2>
       <ReferralTree referrers={referrers} />
     </div>

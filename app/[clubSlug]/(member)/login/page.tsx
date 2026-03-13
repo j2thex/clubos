@@ -3,6 +3,7 @@
 import { useParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { loginMember } from "./actions";
+import { useLanguage } from "@/lib/i18n/provider";
 
 export default function MemberLoginPage() {
   const params = useParams<{ clubSlug: string }>();
@@ -10,6 +11,7 @@ export default function MemberLoginPage() {
 
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const { t } = useLanguage();
 
   const boundLogin = loginMember.bind(null, clubSlug);
 
@@ -43,9 +45,9 @@ export default function MemberLoginPage() {
                 />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Member Login</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t("login.memberTitle")}</h1>
             <p className="text-sm text-gray-500 mt-1">
-              Enter your member code to sign in
+              {t("login.memberSubtitle")}
             </p>
           </div>
 
@@ -61,7 +63,7 @@ export default function MemberLoginPage() {
                 htmlFor="memberCode"
                 className="block text-sm font-medium text-gray-700 mb-1.5"
               >
-                Member Code
+                {t("common.memberCode")}
               </label>
               <input
                 id="memberCode"
@@ -71,7 +73,7 @@ export default function MemberLoginPage() {
                 maxLength={6}
                 autoCapitalize="characters"
                 autoComplete="off"
-                placeholder="ABC123"
+                placeholder={t("login.memberCodePlaceholder")}
                 className="club-ring block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-lg font-mono tracking-widest uppercase placeholder:text-gray-400 placeholder:tracking-widest transition"
                 onChange={(e) => {
                   e.target.value = e.target.value.toUpperCase();
@@ -84,13 +86,13 @@ export default function MemberLoginPage() {
               disabled={isPending}
               className="club-btn w-full rounded-lg px-4 py-2.5 text-sm font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isPending ? "Signing in..." : "Sign In"}
+              {isPending ? t("common.signingIn") : t("common.signIn")}
             </button>
           </form>
         </div>
 
         <p className="text-center text-xs text-gray-400 mt-6">
-          Contact your club administrator if you need help signing in.
+          {t("login.contactAdminHelp")}
         </p>
       </div>
     </div>

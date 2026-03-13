@@ -4,16 +4,20 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logout } from "./actions";
 import { MemberQrCard } from "@/components/club/member-qr-card";
 import { AddToHomescreen } from "@/components/club/add-to-homescreen";
+import { t, getDateLocale } from "@/lib/i18n";
+import { getServerLocale } from "@/lib/i18n/server";
+import type { Locale } from "@/lib/i18n";
 
-function formatTimestamp(iso: string): string {
+function formatTimestamp(iso: string, locale: Locale): string {
+  const dl = getDateLocale(locale);
   const date = new Date(iso);
-  return date.toLocaleDateString("en-US", {
+  return date.toLocaleDateString(dl, {
     month: "short",
     day: "numeric",
     year: "numeric",
   }) +
-    " at " +
-    date.toLocaleTimeString("en-US", {
+    " " +
+    date.toLocaleTimeString(dl, {
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
@@ -65,11 +69,12 @@ export default async function ProfilePage({
     : { data: [] };
 
   const logoUrl = branding?.logo_url ?? null;
+  const locale = await getServerLocale();
 
   const memberCode = member?.member_code ?? "";
   const spinBalance = member?.spin_balance ?? 0;
   const memberSince = member?.created_at
-    ? new Date(member.created_at).toLocaleDateString("en-US", {
+    ? new Date(member.created_at).toLocaleDateString(getDateLocale(locale), {
         year: "numeric",
         month: "long",
         day: "numeric",
@@ -86,7 +91,7 @@ export default async function ProfilePage({
         {logoUrl && (
           <img src={logoUrl} alt="Club logo" className="w-10 h-10 rounded-lg object-cover mx-auto mb-2 shadow ring-2 ring-white/20" />
         )}
-        <h1 className="text-2xl font-bold text-white">Your Profile</h1>
+        <h1 className="text-2xl font-bold text-white">{t(locale, "profile.title")}</h1>
         <p className="club-light-text text-sm mt-1">{memberCode}</p>
       </div>
 
@@ -106,7 +111,7 @@ export default async function ProfilePage({
             <div className={`px-6 py-4 grid ${member?.valid_till ? "grid-cols-2 gap-4" : ""}`}>
               <div>
                 <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-                  Member Since
+                  {t(locale, "profile.memberSince")}
                 </p>
                 <p className="mt-1 text-sm font-semibold text-gray-900">
                   {memberSince}
@@ -118,11 +123,11 @@ export default async function ProfilePage({
                 const daysLeft = Math.ceil((validDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
                 const isExpired = daysLeft < 0;
                 const isExpiringSoon = daysLeft >= 0 && daysLeft <= 30;
-                const formatted = validDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                const formatted = validDate.toLocaleDateString(getDateLocale(locale), { month: "short", day: "numeric", year: "numeric" });
                 return (
                   <div className="text-right">
                     <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Valid Till
+                      {t(locale, "profile.validTill")}
                     </p>
                     <p className={`mt-1 text-sm font-semibold ${isExpired ? "text-red-500" : isExpiringSoon ? "text-amber-500" : "text-green-600"}`}>
                       {formatted}
@@ -137,7 +142,7 @@ export default async function ProfilePage({
         {/* Spin History */}
         <div className="space-y-2">
           <h2 className="text-sm font-semibold text-white/80 uppercase tracking-wide px-1">
-            Spin History
+            {t(locale, "profile.spinHistory")}
           </h2>
           {hasSpins ? (
             <div className="space-y-3">
@@ -171,7 +176,7 @@ export default async function ProfilePage({
                           {spin.outcome_label}
                         </p>
                         <p className="text-xs text-gray-400 mt-0.5">
-                          {formatTimestamp(spin.created_at)}
+                          {formatTimestamp(spin.created_at, locale)}
                         </p>
                       </div>
                     </div>
@@ -182,7 +187,7 @@ export default async function ProfilePage({
                           : "bg-gray-100 text-gray-500"
                       }`}
                     >
-                      {isWin ? `+${spin.outcome_value}` : "No Win"}
+                      {isWin ? `+${spin.outcome_value}` : t(locale, "common.noWin")}
                     </span>
                   </div>
                 );
@@ -190,7 +195,7 @@ export default async function ProfilePage({
             </div>
           ) : (
             <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-              <p className="text-gray-400 text-sm">No spins yet</p>
+              <p className="text-gray-400 text-sm">{t(locale, "profile.noSpins")}</p>
             </div>
           )}
         </div>
@@ -199,12 +204,12 @@ export default async function ProfilePage({
         {referrals && referrals.length > 0 && (
           <div className="space-y-2">
             <h2 className="text-sm font-semibold text-white/80 uppercase tracking-wide px-1">
-              Your Referrals
+              {t(locale, "profile.referralsTitle")}
             </h2>
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
               <div className="club-tint-bg px-5 py-3 flex items-center justify-between border-b club-tint-border">
                 <span className="text-sm font-semibold club-tint-text">
-                  People you referred
+                  {t(locale, "profile.referredPeople")}
                 </span>
                 <span className="text-xs font-bold club-tint-text px-2.5 py-1 rounded-full" style={{ backgroundColor: "color-mix(in srgb, var(--club-primary, #16a34a) 15%, white)" }}>
                   {referrals.length}
@@ -227,7 +232,7 @@ export default async function ProfilePage({
                       )}
                     </div>
                     <p className="text-xs text-gray-400 shrink-0">
-                      {new Date(ref.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      {new Date(ref.created_at).toLocaleDateString(getDateLocale(locale), { month: "short", day: "numeric" })}
                     </p>
                   </div>
                 ))}
@@ -242,7 +247,7 @@ export default async function ProfilePage({
             type="submit"
             className="w-full rounded-2xl bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-semibold py-3.5 text-center transition-colors shadow"
           >
-            Log Out
+            {t(locale, "common.logout")}
           </button>
         </form>
       </div>

@@ -2,6 +2,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { StaffMemberRow } from "../../members/member-row";
 import { StaffMemberCreator } from "../../members/member-creator";
+import { t } from "@/lib/i18n";
+import { getServerLocale } from "@/lib/i18n/server";
 
 export default async function StaffMembersPage({
   params,
@@ -41,6 +43,7 @@ export default async function StaffMembersPage({
 
   // Build a map of period id -> duration for member rows
   const periodMap = new Map((periods ?? []).map((p) => [p.id, p.duration_months]));
+  const locale = await getServerLocale();
 
   return (
     <>
@@ -48,7 +51,7 @@ export default async function StaffMembersPage({
 
       <div className="space-y-2">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-1">
-          All Members ({members?.length ?? 0})
+          {t(locale, "staff.allMembers", { count: members?.length ?? 0 })}
         </h2>
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           {members && members.length > 0 ? (
@@ -82,7 +85,7 @@ export default async function StaffMembersPage({
             </div>
           ) : (
             <div className="p-8 text-center text-gray-400 text-sm">
-              No members yet
+              {t(locale, "staff.noMembers")}
             </div>
           )}
         </div>
