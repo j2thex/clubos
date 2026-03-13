@@ -1,12 +1,51 @@
 # ClubOS Architecture Reference
 
-## Manual Validity Date Assignment (Staff)
+## Membership Expiration System
 
-Staff can set an exact expiration date on members who don't have one yet, bypassing the period-based calculation. This is useful when onboarding clubs with existing members who have known expiration dates. Members with a manually-set date (no period) show an "edit" link to change the date inline.
+### Login Enforcement (Expired Members Blocked)
+
+**Request:** Hard-block expired members at login — if `valid_till` is set and in the past, reject login with a localized error message showing the expiration date.
+
+**Changes:** Added `valid_till` to the member select query in both `loginMember` and `loginStaff` actions. After the status check, compares `valid_till` against current date. Returns `t(locale, "login.membershipExpired", { date: formatted })` on expiry. Both actions now accept a `locale` parameter (passed from client) for translated error messages. Added `login.membershipExpired` and `login.membershipExpiredGeneric` i18n keys to both EN and ES dictionaries.
+
+**How it works:** When a member or staff member tries to log in, the server action checks `valid_till`. If the date is in the past, login is rejected with a localized message like "Your membership expired on March 10, 2026. Contact your club to renew." The login page also handles `?expired=1` query param (from middleware redirects) to show a generic expiry banner before the user enters their code.
 
 **Key files:**
-- `app/[clubSlug]/staff/members/actions.ts` — `setManualValidTill` action sets `valid_till` directly without a membership period
-- `app/[clubSlug]/staff/members/member-row.tsx` — date picker UI for both new assignment and editing existing manual dates
+- `app/[clubSlug]/(member)/login/actions.ts` — `loginMember` checks `valid_till`, accepts `locale` param
+- `app/[clubSlug]/staff/login/actions.ts` — `loginStaff` checks `valid_till`, accepts `locale` param
+- `app/[clubSlug]/(member)/login/page.tsx` — reads `?expired=1` search param, shows generic expiry banner
+- `lib/i18n/dictionaries/en.json` — `login.membershipExpired`, `login.membershipExpiredGeneric`
+- `lib/i18n/dictionaries/es.json` — same keys in Spanish
+
+### Middleware Expiry Check (Mid-Session Protection)
+
+**Request:** Redirect already-logged-in expired members on page load, so expiry is enforced even for active sessions.
+
+**Changes:** Added a DB check in the member routes section of `middleware.ts` (after JWT verification). Queries `status, valid_till` from members table. If `valid_till` is past, deletes the member cookie and redirects to `/{clubSlug}/login?expired=1`. Skips the check for server actions (same pattern as staff status check).
+
+**How it works:** On every member page load (not server actions), middleware queries the DB for `valid_till`. If expired, the auth cookie is deleted and the member is redirected to login with `?expired=1`. This adds one DB query per member page load — the same pattern already used for staff status checks.
+
+**Key files:**
+- `middleware.ts` — member route section, DB check for `valid_till` after JWT verify
+
+### Staff Date Picker (Unified)
+
+**Request:** Replace the "+Xmo" period-based extension button and separate "edit" link with a single unified date picker for all membership date management.
+
+**Changes:**
+- Removed `prolongateMembership()` function from `actions.ts` entirely
+- Removed `assignMembershipPeriod` import and period dropdown from `member-row.tsx`
+- Removed `Period` interface, `periods` prop, `membershipPeriodId`, and `periodDurationMonths` from `MemberInfo`
+- Simplified UI: members with `validTill` show the date as a tappable button (color-coded: red=expired, amber=expiring soon, green=valid) that toggles an inline date picker. Members without `validTill` show a date input with a "Set" button.
+- `setManualValidTill` now also clears `membership_period_id` (since it's a manual date) and logs as `validity_updated` (was `validity_set_manual`)
+- Updated parent page `staff/(console)/members/page.tsx` to remove `periodMap` and simplified props
+
+**How it works:** Staff members see one unified interaction for all date management. Tap the colored date text → inline date picker appears with Save/Cancel. For members without a date, a date input is always visible. All changes go through `setManualValidTill` which sets the date, clears any period association, and logs `validity_updated` to the activity log. The old `prolongateMembership` ("+Xmo") flow is completely removed.
+
+**Key files:**
+- `app/[clubSlug]/staff/members/member-row.tsx` — unified date picker UI, simplified props (no periods)
+- `app/[clubSlug]/staff/members/actions.ts` — `setManualValidTill` clears `membership_period_id`, logs `validity_updated`; `prolongateMembership` removed
+- `app/[clubSlug]/staff/(console)/members/page.tsx` — simplified props passed to `StaffMemberRow`
 
 ## Role Visibility
 
