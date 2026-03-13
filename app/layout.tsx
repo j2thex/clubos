@@ -43,6 +43,11 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <LanguageProvider initialLocale={locale}>
+          {process.env.NEXT_PUBLIC_VERCEL_ENV === "preview" && (
+            <div className="bg-yellow-500 text-black text-center text-xs py-1 fixed top-0 w-full z-[9999]">
+              STAGING
+            </div>
+          )}
           {children}
         </LanguageProvider>
       </body>
