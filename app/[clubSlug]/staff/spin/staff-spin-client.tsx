@@ -88,18 +88,18 @@ export function StaffSpinClient({
           </div>
         )}
 
-        {activeMemberCode && (
-          <div className="px-5 py-2 border-t border-gray-100">
+        <div className="px-5 py-2 border-t border-gray-100 min-h-[36px]">
+          {activeMemberCode && (
             <p className="text-sm text-gray-900">
               <span className="font-mono font-bold">{activeMemberCode}</span>
               <span className="text-gray-400 ml-2">{t(memberBalance === 1 ? "staff.spinsRemaining" : "staff.spinsRemainingPlural", { balance: memberBalance })}</span>
             </p>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Wheel — always visible, button hidden */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
+      <div className="bg-white rounded-2xl shadow-lg p-2">
         <SpinWheel
           ref={wheelRef}
           segments={segments}

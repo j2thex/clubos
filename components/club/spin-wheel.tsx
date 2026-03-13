@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect, useImperativeHandle, forwardRef } from "react";
+import confetti from "canvas-confetti";
 
 interface Segment {
   label: string;
@@ -64,19 +65,39 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
           labelColor: seg.labelColor ?? "#ffffff",
         }));
 
+        // Load SVG images as HTMLImageElements
+        const loadImage = (src: string): Promise<HTMLImageElement> =>
+          new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = src;
+          });
+
+        const [hubImg, overlayImg] = await Promise.all([
+          loadImage("/wheel/hub.svg"),
+          loadImage("/wheel/overlay.svg"),
+        ]);
+
+        if (!mounted || !containerRef.current) return;
+
         const wheel = new Wheel(containerRef.current, {
           items,
           isInteractive: false,
-          pointerAngle: 180,
+          pointerAngle: 0,
+          radius: 0.84,
+          itemLabelRotation: 180,
+          itemLabelAlign: "left",
+          itemLabelFont: "Impact, Arial Black, sans-serif",
           itemLabelFontSizeMax: 36,
-          itemLabelRadius: 0.92,
-          itemLabelRadiusMax: 0.4,
-          itemLabelAlign: "right",
-          borderWidth: 3,
-          borderColor: "#065f46",
+          itemLabelRadius: 0.93,
+          itemLabelRadiusMax: 0.35,
+          itemLabelBaselineOffset: -0.07,
           lineWidth: 1,
-          lineColor: "#065f46",
-          radius: 0.95,
+          lineColor: "#fff",
+          borderWidth: 0,
+          overlayImage: overlayImg,
+          image: hubImg,
         });
 
         wheelRef.current = wheel;
@@ -90,6 +111,15 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
         wheelRef.current = null;
       };
     }, [segments]);
+
+    const fireConfetti = useCallback(() => {
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.5 },
+        colors: ["#facc15", "#22c55e", "#3b82f6", "#ef4444", "#a855f7"],
+      });
+    }, []);
 
     const animateSpin = useCallback((spinResult: SpinResult) => {
       if (!wheelRef.current) return;
@@ -105,8 +135,11 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
         setResult(spinResult.outcome);
         setCurrentBalance(spinResult.newBalance);
         setSpinning(false);
+        if (spinResult.outcome.rewardType !== "nothing") {
+          fireConfetti();
+        }
       }, duration);
-    }, []);
+    }, [fireConfetti]);
 
     useImperativeHandle(ref, () => ({
       spin: animateSpin,
@@ -133,24 +166,9 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
 
     return (
       <div className="flex flex-col items-center gap-6">
-        {/* Wheel container */}
-        <div className="relative" style={{ width: 392, height: 392 }}>
+        {/* Wheel container — responsive */}
+        <div className="relative w-full max-w-[480px] aspect-square mx-auto">
           <div ref={containerRef} className="w-full h-full" />
-
-          {/* Pointer triangle at bottom */}
-          <div
-            className="absolute left-1/2 z-10"
-            style={{
-              bottom: -8,
-              transform: "translateX(-50%)",
-              width: 0,
-              height: 0,
-              borderLeft: "12px solid transparent",
-              borderRight: "12px solid transparent",
-              borderBottom: "22px solid #facc15",
-              filter: "drop-shadow(0 0 12px rgba(250, 204, 21, 0.9))",
-            }}
-          />
 
           {/* Result overlay */}
           {result && !spinning && (
@@ -160,13 +178,13 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
                 top: "50%",
                 left: "50%",
                 transform: "translate(-50%, -50%)",
-                width: 168,
-                height: 168,
+                width: "40%",
+                height: "40%",
                 borderRadius: "50%",
                 backgroundColor: "rgba(0, 0, 0, 0.72)",
               }}
             >
-              <span className="text-center font-bold" style={{ color: "#facc15", fontSize: "0.95rem" }}>
+              <span className="text-center font-bold" style={{ color: "#facc15", fontSize: "1.1rem" }}>
                 {result.label}
               </span>
             </div>
