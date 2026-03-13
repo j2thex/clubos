@@ -206,6 +206,43 @@ Quest links (URLs/emails) remain visible after a quest is marked done. Previousl
 - `app/[clubSlug]/(member)/events/[eventId]/event-detail-client.tsx` — client-side past check, checkedIn display
 - `app/[clubSlug]/staff/events/actions.ts` — `checkinMember` and `checkinMemberById` reject past events
 
+## Environment Separation (PROD/STAGE)
+
+### Git Branching & Deployment Pipeline
+
+**Request:** Separate staging and production environments across GitHub, Vercel, and Supabase so live clients are protected from untested changes.
+
+**Changes:**
+- Created `develop` branch as the staging branch, `main` remains production
+- Created Supabase staging project `waiuymqdqzccatactrzo` with all migrations synced
+- Created `.github/workflows/migrate-staging.yml` — auto-runs `supabase db push` on push to `develop` when migrations change
+- Created `.github/workflows/migrate-production.yml` — same for `main` targeting production
+- Created `supabase/seed.sql` with test data (demo club, test members, wheel configs)
+- Added staging banner in `app/layout.tsx` using `NEXT_PUBLIC_VERCEL_ENV === "preview"`
+- Vercel env vars scoped: Production uses prod Supabase, Preview uses staging Supabase
+- `staging.osocios.club` domain assigned to `develop` branch in Vercel
+- Branch protection on `main`: requires 1 PR approval
+
+**How it works:** Feature branches are created from `develop`. PRs merge into `develop`, which auto-deploys to `staging.osocios.club` (with yellow STAGING banner) and uses the staging Supabase. When staging is verified, a PR from `develop` → `main` deploys to `osocios.club` (production). GitHub Actions auto-migrate the appropriate Supabase project when migration files change. All PR/merge operations are done via `gh` CLI from terminal.
+
+**Key files:**
+- `.github/workflows/migrate-staging.yml` — staging migration workflow
+- `.github/workflows/migrate-production.yml` — production migration workflow
+- `supabase/seed.sql` — test data for staging/local
+- `app/layout.tsx` — staging banner (line 46-50)
+
+### Storage Buckets Migration
+
+**Request:** Fix "failed to upload image" error on staging — storage buckets existed on production but not staging (they were created manually in dashboard, not via migration).
+
+**Changes:** Created migration `20260313000000_create_storage_buckets.sql` that creates `club-images` and `event-images` buckets with public access, 5MB limit, and image-only MIME types. Includes RLS policies for public read, service role write. Uses `ON CONFLICT DO NOTHING` so it's safe to run on production where buckets already exist.
+
+**How it works:** Storage buckets are now managed via migration instead of manual dashboard setup. Both buckets are public (images served without auth), limited to 5MB, and restricted to image MIME types. Upload code in `lib/supabase/storage.ts` uses the admin client (service role) which bypasses RLS for writes.
+
+**Key files:**
+- `supabase/migrations/20260313000000_create_storage_buckets.sql` — bucket creation + policies
+- `lib/supabase/storage.ts` — upload/delete functions using admin client
+
 ## i18n — Spanish Language Support
 
 ### Custom i18n System
