@@ -66,7 +66,7 @@ export function FeatureGrid({ t }: { t: (key: string) => string }) {
           <h2 className="text-center text-3xl sm:text-4xl lg:text-5xl font-extralight tracking-tight">
             {t("landing.featuresTitle2")}
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-center text-sm opacity-40">
+          <p className="mx-auto mt-4 max-w-xl text-center text-sm opacity-60">
             {t("landing.featuresSubtitle2")}
           </p>
         </ScrollReveal>
@@ -75,11 +75,11 @@ export function FeatureGrid({ t }: { t: (key: string) => string }) {
           {FEATURES.map((f, i) => (
             <ScrollReveal key={i} delay={i * 40} className={f.span ?? ""}>
               <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-5 hover:bg-white/[0.06] transition-colors duration-300 h-full">
-                <svg className="h-4 w-4 opacity-30 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <svg className="h-4 w-4 opacity-50 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                   {f.icon}
                 </svg>
                 <h3 className="font-medium text-sm">{t(f.titleKey)}</h3>
-                <p className="mt-1 text-xs font-light opacity-40 leading-relaxed">{t(f.descKey)}</p>
+                <p className="mt-1 text-xs font-light opacity-60 leading-relaxed">{t(f.descKey)}</p>
               </div>
             </ScrollReveal>
           ))}

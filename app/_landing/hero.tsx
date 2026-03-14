@@ -12,7 +12,7 @@ export function Hero({
     <section className="landing-dark relative min-h-svh flex flex-col">
       {/* Top bar */}
       <div className="relative z-10 flex items-center justify-between px-6 pt-6 sm:px-10">
-        <span className="text-xs font-mono tracking-widest uppercase opacity-40">
+        <span className="text-xs font-mono tracking-widest uppercase opacity-60">
           {t("landing.brandName")}
         </span>
         <LanguageSwitcher variant="dark" />
@@ -29,7 +29,7 @@ export function Hero({
             {t("landing.tagline")}
           </p>
 
-          <p className="mx-auto mt-6 max-w-md text-base sm:text-lg font-light opacity-40 leading-relaxed">
+          <p className="mx-auto mt-6 max-w-md text-base sm:text-lg font-light opacity-60 leading-relaxed">
             {t("landing.heroDescription")}
           </p>
 
@@ -42,7 +42,7 @@ export function Hero({
             </Link>
             <a
               href="#how-it-works"
-              className="text-sm font-light opacity-40 hover:opacity-80 transition-opacity"
+              className="text-sm font-light opacity-60 hover:opacity-80 transition-opacity"
             >
               {t("landing.heroSecondaryCta")} ↓
             </a>
@@ -52,7 +52,7 @@ export function Hero({
 
       {/* Bottom stats */}
       <div className="relative z-10 text-center pb-10">
-        <p className="text-xs font-mono opacity-20 tracking-wider">
+        <p className="text-xs font-mono opacity-40 tracking-wider">
           {stats.clubs > 0 && <>{stats.clubs} clubs</>}
           {stats.members > 0 && <> · {stats.members} members</>}
           {stats.events > 0 && <> · {stats.events} events</>}

@@ -33,7 +33,7 @@ export function MembershipExplorer({
           <h2 className="text-center text-3xl sm:text-4xl lg:text-5xl font-extralight tracking-tight">
             {labels.title}
           </h2>
-          <p className="mx-auto mt-4 max-w-lg text-center text-sm opacity-40">
+          <p className="mx-auto mt-4 max-w-lg text-center text-sm opacity-60">
             {labels.subtitle}
           </p>
         </ScrollReveal>
@@ -60,8 +60,8 @@ export function MembershipExplorer({
                 </div>
                 <div className="flex items-baseline justify-between">
                   <div>
-                    <p className="text-xs opacity-40">{d.name}</p>
-                    <p className="text-[10px] opacity-25 mt-0.5">
+                    <p className="text-xs opacity-60">{d.name}</p>
+                    <p className="text-[10px] opacity-45 mt-0.5">
                       {labels.duration.replace("{months}", String(d.duration_months))}
                     </p>
                   </div>
@@ -69,7 +69,7 @@ export function MembershipExplorer({
                     €{d.price}
                   </span>
                 </div>
-                <p className="text-[10px] opacity-20 mt-3">{labels.viewClub}</p>
+                <p className="text-[10px] opacity-40 mt-3">{labels.viewClub}</p>
               </Link>
             </ScrollReveal>
           ))}

@@ -13,7 +13,7 @@ export function FinalCta({ t }: { t: (key: string) => string }) {
             ),
           )}
         </h2>
-        <p className="mx-auto mt-4 max-w-lg text-sm opacity-40">
+        <p className="mx-auto mt-4 max-w-lg text-sm opacity-60">
           {t("landing.closingSubtitle")}
         </p>
         <div className="mt-10">
@@ -23,7 +23,7 @@ export function FinalCta({ t }: { t: (key: string) => string }) {
           >
             {t("landing.closingCta")}
           </Link>
-          <p className="mt-4 text-xs opacity-20">
+          <p className="mt-4 text-xs opacity-40">
             {t("landing.closingReassurance")}
           </p>
         </div>

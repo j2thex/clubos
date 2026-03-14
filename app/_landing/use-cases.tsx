@@ -16,7 +16,7 @@ export function UseCases({ t }: { t: (key: string) => string }) {
           <h2 className="text-center text-3xl sm:text-4xl lg:text-5xl font-extralight tracking-tight">
             {t("landing.useCasesTitle")}
           </h2>
-          <p className="mx-auto mt-4 max-w-lg text-center text-sm opacity-40">
+          <p className="mx-auto mt-4 max-w-lg text-center text-sm opacity-60">
             {t("landing.useCasesSubtitle")}
           </p>
         </ScrollReveal>
@@ -27,7 +27,7 @@ export function UseCases({ t }: { t: (key: string) => string }) {
             <ScrollReveal key={i} delay={i * 60}>
               <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-5 hover:bg-white/[0.06] transition-colors duration-300 h-full">
                 <h3 className="font-medium text-sm">{c.title}</h3>
-                <p className="mt-2 text-xs font-light opacity-40 leading-relaxed">{c.desc}</p>
+                <p className="mt-2 text-xs font-light opacity-60 leading-relaxed">{c.desc}</p>
               </div>
             </ScrollReveal>
           ))}
@@ -42,7 +42,7 @@ export function UseCases({ t }: { t: (key: string) => string }) {
                 className="snap-start shrink-0 w-[220px] rounded-2xl bg-white/[0.03] border border-white/[0.06] p-5"
               >
                 <h3 className="font-medium text-sm">{c.title}</h3>
-                <p className="mt-2 text-xs font-light opacity-40 leading-relaxed">{c.desc}</p>
+                <p className="mt-2 text-xs font-light opacity-60 leading-relaxed">{c.desc}</p>
               </div>
             ))}
           </div>

@@ -14,7 +14,7 @@ export function HowItWorks({ t }: { t: (key: string) => string }) {
           <h2 className="text-center text-3xl sm:text-4xl lg:text-5xl font-extralight tracking-tight">
             {t("landing.howItWorksTitle2")}
           </h2>
-          <p className="mx-auto mt-4 max-w-lg text-center text-sm opacity-40">
+          <p className="mx-auto mt-4 max-w-lg text-center text-sm opacity-60">
             {t("landing.howItWorksSubtitle2")}
           </p>
         </ScrollReveal>
@@ -29,7 +29,7 @@ export function HowItWorks({ t }: { t: (key: string) => string }) {
                 </span>
                 <div className="relative pt-12 sm:pt-16">
                   <h3 className="font-medium text-base">{step.title}</h3>
-                  <p className="mt-2 text-sm font-light opacity-40 leading-relaxed">{step.desc}</p>
+                  <p className="mt-2 text-sm font-light opacity-60 leading-relaxed">{step.desc}</p>
                 </div>
               </div>
             </ScrollReveal>

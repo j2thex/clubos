@@ -25,7 +25,7 @@ export function ClubDirectory({
           <h2 className="text-center text-3xl sm:text-4xl lg:text-5xl font-extralight tracking-tight">
             {t("landing.directoryTitle")}
           </h2>
-          <p className="mx-auto mt-4 max-w-lg text-center text-sm opacity-40">
+          <p className="mx-auto mt-4 max-w-lg text-center text-sm opacity-60">
             {t("landing.directorySubtitle", { count: clubs.length })}
           </p>
         </ScrollReveal>
@@ -67,7 +67,7 @@ export function ClubDirectory({
                   )}
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">{club.name}</p>
-                    <p className="text-[10px] opacity-30">{t("landing.directoryViewClub")}</p>
+                    <p className="text-[10px] opacity-50">{t("landing.directoryViewClub")}</p>
                   </div>
                 </div>
               </Link>

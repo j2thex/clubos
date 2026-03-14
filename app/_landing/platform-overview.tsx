@@ -37,7 +37,7 @@ export function PlatformOverview({
           <h2 className="text-center text-3xl sm:text-4xl lg:text-5xl font-extralight tracking-tight">
             {t("landing.platformTitle")}
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-center text-sm opacity-40">
+          <p className="mx-auto mt-4 max-w-xl text-center text-sm opacity-60">
             {t("landing.platformSubtitle")}
           </p>
         </ScrollReveal>
@@ -53,10 +53,10 @@ export function PlatformOverview({
                     <div className={`w-1.5 h-1.5 rounded-full ${p.dot}`} />
                     <h3 className="text-xl font-extralight">{p.title}</h3>
                   </div>
-                  <p className="text-xs opacity-40 mb-4">{p.desc}</p>
+                  <p className="text-xs opacity-60 mb-4">{p.desc}</p>
                   <ul className="space-y-1.5">
                     {p.caps.map((c, j) => (
-                      <li key={j} className="flex items-center gap-2 text-xs opacity-50">
+                      <li key={j} className="flex items-center gap-2 text-xs opacity-60">
                         <span className="text-primary text-[10px]">+</span> {c}
                       </li>
                     ))}
@@ -76,10 +76,10 @@ export function PlatformOverview({
                 <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] overflow-hidden">
                   <div className="p-4">{p.mockup}</div>
                   <div className="p-4 pt-2">
-                    <p className="text-xs opacity-40 mb-3">{p.desc}</p>
+                    <p className="text-xs opacity-60 mb-3">{p.desc}</p>
                     <ul className="space-y-1.5">
                       {p.caps.map((c, j) => (
-                        <li key={j} className="flex items-center gap-2 text-xs opacity-50">
+                        <li key={j} className="flex items-center gap-2 text-xs opacity-60">
                           <span className="text-primary text-[10px]">+</span> {c}
                         </li>
                       ))}

@@ -45,10 +45,10 @@ export function ServiceFinder({
   return (
     <section className="landing-dark px-6 py-20 sm:py-28 border-t border-white/[0.04]">
       <div className="mx-auto max-w-5xl">
-        <h2 className="text-center text-3xl sm:text-4xl lg:text-5xl font-extralight tracking-tight text-[oklch(0.9_0.01_150)]">
+        <h2 className="text-center text-3xl sm:text-4xl lg:text-5xl font-extralight tracking-tight">
           {labels.title}
         </h2>
-        <p className="mx-auto mt-4 max-w-lg text-center text-sm opacity-40 text-[oklch(0.9_0.01_150)]">
+        <p className="mx-auto mt-4 max-w-lg text-center text-sm opacity-60">
           {labels.subtitle}
         </p>
 
@@ -59,7 +59,7 @@ export function ServiceFinder({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={labels.placeholder}
-            className="w-full rounded-full bg-white/[0.06] border border-white/[0.08] px-5 py-3 text-sm text-[oklch(0.9_0.01_150)] placeholder:opacity-30 focus:outline-none focus:border-white/[0.15] transition-colors"
+            className="w-full rounded-full bg-white/[0.06] border border-white/[0.08] px-5 py-3 text-sm placeholder:opacity-50 focus:outline-none focus:border-white/[0.15] transition-colors"
           />
         </div>
 
@@ -73,13 +73,13 @@ export function ServiceFinder({
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-medium text-sm text-[oklch(0.9_0.01_150)]">{s.title}</h3>
+                  <h3 className="font-medium text-sm">{s.title}</h3>
                   {s.description && (
-                    <p className="mt-1 text-xs opacity-40 text-[oklch(0.9_0.01_150)] line-clamp-2">{s.description}</p>
+                    <p className="mt-1 text-xs opacity-60 line-clamp-2">{s.description}</p>
                   )}
                 </div>
                 {s.price !== null && (
-                  <span className="text-sm font-mono opacity-60 text-[oklch(0.9_0.01_150)] shrink-0">
+                  <span className="text-sm font-mono opacity-60 shrink-0">
                     {s.price === 0 ? labels.free : `€${s.price}`}
                   </span>
                 )}
@@ -95,15 +95,15 @@ export function ServiceFinder({
                     {s.club_name.charAt(0)}
                   </div>
                 )}
-                <span className="text-[10px] opacity-30 text-[oklch(0.9_0.01_150)]">{s.club_name}</span>
-                <span className="text-[10px] opacity-20 ml-auto text-[oklch(0.9_0.01_150)]">{labels.viewClub}</span>
+                <span className="text-[10px] opacity-50">{s.club_name}</span>
+                <span className="text-[10px] opacity-40 ml-auto">{labels.viewClub}</span>
               </div>
             </Link>
           ))}
         </div>
 
         {filtered.length === 0 && (
-          <p className="text-center text-sm opacity-30 mt-8 text-[oklch(0.9_0.01_150)]">{labels.noResults}</p>
+          <p className="text-center text-sm opacity-50 mt-8">{labels.noResults}</p>
         )}
       </div>
     </section>
