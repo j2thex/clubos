@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LanguageSwitcher } from "@/lib/i18n/switcher";
+import { HeroArt } from "./landing-art";
 
 export function Hero({
   t,
@@ -10,6 +11,7 @@ export function Hero({
 }) {
   return (
     <section className="landing-dark relative min-h-svh flex flex-col">
+      <HeroArt />
       {/* Top bar */}
       <div className="relative z-10 flex items-center justify-between px-6 pt-6 sm:px-10">
         <span className="text-xs font-mono tracking-widest uppercase opacity-60">

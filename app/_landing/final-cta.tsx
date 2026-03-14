@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { CtaPortalArt } from "./landing-art";
 
 export function FinalCta({ t }: { t: (key: string) => string }) {
   return (
     <section className="landing-dark px-6 py-24 sm:py-32 border-t border-white/[0.04]">
       <div className="mx-auto max-w-3xl text-center">
+        <CtaPortalArt />
         <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extralight tracking-tight">
           {t("landing.closingTitle").split(" ").map((word, i, arr) =>
             i === arr.length - 1 ? (

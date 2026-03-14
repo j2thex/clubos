@@ -1,4 +1,5 @@
 import { ScrollReveal } from "./scroll-reveal";
+import { StepArt } from "./landing-art";
 
 export function HowItWorks({ t }: { t: (key: string) => string }) {
   const steps = [
@@ -28,6 +29,7 @@ export function HowItWorks({ t }: { t: (key: string) => string }) {
                   {step.num}
                 </span>
                 <div className="relative pt-12 sm:pt-16">
+                  <StepArt step={(i + 1) as 1 | 2 | 3} />
                   <h3 className="font-medium text-base">{step.title}</h3>
                   <p className="mt-2 text-sm font-light opacity-60 leading-relaxed">{step.desc}</p>
                 </div>
