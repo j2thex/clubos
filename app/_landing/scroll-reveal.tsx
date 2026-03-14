@@ -2,44 +2,42 @@
 
 import { useRef, useState, useEffect } from "react";
 
-interface ScrollRevealProps {
+export function ScrollReveal({
+  children,
+  className,
+  delay,
+}: {
   children: React.ReactNode;
   className?: string;
   delay?: number;
-}
-
-export function ScrollReveal({ children, className, delay }: ScrollRevealProps) {
+}) {
   const ref = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-
+    const el = ref.current;
+    if (!el) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          setIsVisible(true);
+          setVisible(true);
           observer.disconnect();
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.1 },
     );
-
-    observer.observe(element);
-
+    observer.observe(el);
     return () => observer.disconnect();
   }, []);
 
   return (
     <div
       ref={ref}
-      className={`${
-        isVisible
-          ? "animate-in fade-in slide-in-from-bottom-4 duration-700"
-          : "opacity-0 translate-y-4"
-      }${className ? ` ${className}` : ""}`}
-      style={delay ? { animationDelay: `${delay}ms` } : undefined}
+      className={className}
+      style={{
+        opacity: visible ? 1 : 0,
+        transition: `opacity 800ms ease ${delay ? `${delay}ms` : "0ms"}`,
+      }}
     >
       {children}
     </div>

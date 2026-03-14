@@ -372,6 +372,16 @@
   "landing.closingCta": "Empieza — Es Gratis",
   "landing.closingReassurance": "Configuración en menos de 2 minutos. Sin tarjeta de crédito.",
 
+  "landing.serviceFinderTitle": "Encuentra lo que necesitas",
+  "landing.serviceFinderSubtitle": "Explora servicios ofrecidos por clubs en osocios",
+  "landing.serviceFinderPlaceholder": "Buscar servicios o clubs...",
+  "landing.serviceFinderNoResults": "No hay servicios que coincidan",
+  "landing.serviceFree": "Gratis",
+
+  "landing.membershipTitle": "Ofertas de membresía",
+  "landing.membershipSubtitle": "Encuentra el club y plan ideal para ti",
+  "landing.membershipDuration": "{months} meses",
+
   "landing.directoryTitle": "Explora clubs en osocios",
   "landing.directorySubtitle": "{count} clubs ya construyendo su comunidad",
   "landing.directoryViewClub": "Ver perfil público →",
