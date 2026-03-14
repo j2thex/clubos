@@ -296,7 +296,13 @@ export async function addQuest(
   const questType = (formData.get("quest_type") as string) || "default";
   const proofMode = (formData.get("proof_mode") as string) || "none";
   const proofPlaceholder = (formData.get("proof_placeholder") as string)?.trim() || null;
+  const tutorialStepsRaw = formData.get("tutorial_steps") as string | null;
   const imageFile = formData.get("image") as File | null;
+
+  // Enforce type-specific defaults
+  const effectiveMultiUse = questType === "feedback" ? true : questType === "tutorial" ? false : multiUse;
+  const effectiveProofMode = questType === "feedback" ? "required" : questType === "tutorial" ? "none" : proofMode;
+  const tutorialSteps = questType === "tutorial" && tutorialStepsRaw ? JSON.parse(tutorialStepsRaw) : null;
 
   if (!title) return { error: "Title is required" };
   if (rewardSpins < 0) return { error: "Reward cannot be negative" };
@@ -326,13 +332,14 @@ export async function addQuest(
     description,
     link,
     reward_spins: rewardSpins,
-    multi_use: multiUse,
+    multi_use: effectiveMultiUse,
     is_public: isPublic,
     quest_type: questType,
-    proof_mode: proofMode,
+    proof_mode: effectiveProofMode,
     proof_placeholder: proofPlaceholder,
     image_url: imageUrl,
     display_order: nextOrder,
+    tutorial_steps: tutorialSteps,
   });
 
   if (error) return { error: "Failed to add quest" };
@@ -356,7 +363,13 @@ export async function updateQuest(
   const questType = (formData.get("quest_type") as string) || "default";
   const proofMode = (formData.get("proof_mode") as string) || "none";
   const proofPlaceholder = (formData.get("proof_placeholder") as string)?.trim() || null;
+  const tutorialStepsRaw = formData.get("tutorial_steps") as string | null;
   const imageFile = formData.get("image") as File | null;
+
+  // Enforce type-specific defaults
+  const effectiveMultiUse = questType === "feedback" ? true : questType === "tutorial" ? false : multiUse;
+  const effectiveProofMode = questType === "feedback" ? "required" : questType === "tutorial" ? "none" : proofMode;
+  const tutorialSteps = questType === "tutorial" && tutorialStepsRaw ? JSON.parse(tutorialStepsRaw) : null;
 
   if (!title) return { error: "Title is required" };
   if (rewardSpins < 0) return { error: "Reward cannot be negative" };
@@ -368,11 +381,12 @@ export async function updateQuest(
     description,
     link,
     reward_spins: rewardSpins,
-    multi_use: multiUse,
+    multi_use: effectiveMultiUse,
     is_public: isPublic,
     quest_type: questType,
-    proof_mode: proofMode,
+    proof_mode: effectiveProofMode,
     proof_placeholder: proofPlaceholder,
+    tutorial_steps: tutorialSteps,
   };
 
   if (imageFile && imageFile.size > 0) {

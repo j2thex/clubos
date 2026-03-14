@@ -18,6 +18,7 @@ interface Quest {
   quest_type: string;
   proof_mode: string;
   proof_placeholder: string | null;
+  tutorial_steps: string[] | null;
 }
 
 const TEMPLATES = [
@@ -25,6 +26,8 @@ const TEMPLATES = [
   { titleKey: "admin.quickFollowTiktok", descKey: "admin.quickFollowTiktokDesc", link: "", rewardSpins: 1, questType: "default" },
   { titleKey: "admin.quickGoogleReview", descKey: "admin.quickGoogleReviewDesc", link: "", rewardSpins: 2, questType: "default" },
   { titleKey: "admin.quickReferFriend", descKey: "admin.quickReferFriendDesc", link: "", rewardSpins: 2, questType: "referral" },
+  { titleKey: "admin.quickFeedback", descKey: "admin.quickFeedbackDesc", link: "", rewardSpins: 1, questType: "feedback" },
+  { titleKey: "admin.quickTutorial", descKey: "admin.quickTutorialDesc", link: "", rewardSpins: 1, questType: "tutorial" },
 ];
 
 export function QuestManager({
@@ -47,6 +50,7 @@ export function QuestManager({
   const [editQuestType, setEditQuestType] = useState("default");
   const [editProofMode, setEditProofMode] = useState("none");
   const [editProofPlaceholder, setEditProofPlaceholder] = useState("");
+  const [editTutorialSteps, setEditTutorialSteps] = useState<string[]>([]);
 
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
@@ -58,6 +62,7 @@ export function QuestManager({
   const [newQuestType, setNewQuestType] = useState("default");
   const [newProofMode, setNewProofMode] = useState("none");
   const [newProofPlaceholder, setNewProofPlaceholder] = useState("");
+  const [newTutorialSteps, setNewTutorialSteps] = useState<string[]>([]);
 
   const [showForm, setShowForm] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -71,6 +76,49 @@ export function QuestManager({
     setNewLink(tmpl.link);
     setNewReward(String(tmpl.rewardSpins));
     setNewQuestType(tmpl.questType);
+    if (tmpl.questType === "feedback") {
+      setNewMultiUse(true);
+      setNewProofMode("required");
+      setNewProofPlaceholder("");
+      setNewTutorialSteps([]);
+    } else if (tmpl.questType === "tutorial") {
+      setNewMultiUse(false);
+      setNewProofMode("none");
+      setNewTutorialSteps([""]);
+      setNewProofPlaceholder("");
+    } else {
+      setNewTutorialSteps([]);
+    }
+  }
+
+  function handleNewQuestTypeChange(type: string) {
+    setNewQuestType(type);
+    if (type === "feedback") {
+      setNewMultiUse(true);
+      setNewProofMode("required");
+      setNewTutorialSteps([]);
+    } else if (type === "tutorial") {
+      setNewMultiUse(false);
+      setNewProofMode("none");
+      setNewTutorialSteps([""]);
+    } else {
+      setNewTutorialSteps([]);
+    }
+  }
+
+  function handleEditQuestTypeChange(type: string) {
+    setEditQuestType(type);
+    if (type === "feedback") {
+      setEditMultiUse(true);
+      setEditProofMode("required");
+      setEditTutorialSteps([]);
+    } else if (type === "tutorial") {
+      setEditMultiUse(false);
+      setEditProofMode("none");
+      setEditTutorialSteps([""]);
+    } else {
+      setEditTutorialSteps([]);
+    }
   }
 
   function startEdit(q: Quest) {
@@ -84,6 +132,7 @@ export function QuestManager({
     setEditQuestType(q.quest_type ?? "default");
     setEditProofMode(q.proof_mode ?? "none");
     setEditProofPlaceholder(q.proof_placeholder ?? "");
+    setEditTutorialSteps(q.tutorial_steps ?? []);
     setEditImage(null);
     setError(null);
   }
@@ -106,6 +155,9 @@ export function QuestManager({
       fd.set("quest_type", editQuestType);
       fd.set("proof_mode", editProofMode);
       fd.set("proof_placeholder", editProofPlaceholder);
+      if (editQuestType === "tutorial") {
+        fd.set("tutorial_steps", JSON.stringify(editTutorialSteps.filter(s => s.trim())));
+      }
       if (editImage) fd.set("image", editImage);
 
       const result = await updateQuest(questId, fd, clubSlug);
@@ -139,6 +191,9 @@ export function QuestManager({
       fd.set("quest_type", newQuestType);
       fd.set("proof_mode", newProofMode);
       fd.set("proof_placeholder", newProofPlaceholder);
+      if (newQuestType === "tutorial") {
+        fd.set("tutorial_steps", JSON.stringify(newTutorialSteps.filter(s => s.trim())));
+      }
       if (newImage) fd.set("image", newImage);
 
       const result = await addQuest(clubId, fd, clubSlug);
@@ -155,12 +210,118 @@ export function QuestManager({
         setNewQuestType("default");
         setNewProofMode("none");
         setNewProofPlaceholder("");
+        setNewTutorialSteps([]);
         setNewImage(null);
         setSuccessMsg(t("admin.questCreated", { title: createdTitle }));
         setShowForm(false);
         setTimeout(() => setSuccessMsg(null), 4000);
       }
     });
+  }
+
+  function renderQuestTypeFields(
+    questType: string,
+    proofMode: string,
+    setProofMode: (v: string) => void,
+    proofPlaceholder: string,
+    setProofPlaceholder: (v: string) => void,
+    tutorialSteps: string[],
+    setTutorialSteps: (v: string[]) => void,
+  ) {
+    if (questType === "feedback") {
+      return (
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.feedbackPrompt")}</label>
+          <input
+            type="text"
+            value={proofPlaceholder}
+            onChange={(e) => setProofPlaceholder(e.target.value)}
+            placeholder={t("admin.feedbackPromptHint")}
+            className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+          />
+        </div>
+      );
+    }
+    if (questType === "tutorial") {
+      return (
+        <div className="space-y-2">
+          <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.tutorialSteps")}</label>
+          {tutorialSteps.map((step, i) => (
+            <div key={i} className="flex gap-2">
+              <span className="text-xs text-gray-400 pt-2 shrink-0">{i + 1}.</span>
+              <input
+                type="text"
+                value={step}
+                onChange={(e) => {
+                  const next = [...tutorialSteps];
+                  next[i] = e.target.value;
+                  setTutorialSteps(next);
+                }}
+                placeholder={t("admin.stepPlaceholder")}
+                className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+              />
+              {tutorialSteps.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setTutorialSteps(tutorialSteps.filter((_, j) => j !== i))}
+                  className="text-xs text-red-500 hover:text-red-700 shrink-0"
+                >
+                  {t("admin.removeStep")}
+                </button>
+              )}
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => setTutorialSteps([...tutorialSteps, ""])}
+            className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            + {t("admin.addStep")}
+          </button>
+        </div>
+      );
+    }
+    if (questType === "default") {
+      return (
+        <div className="space-y-2">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.proofLink")}</label>
+            <select
+              value={proofMode}
+              onChange={(e) => setProofMode(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+            >
+              <option value="none">{t("admin.proofNotNeeded")}</option>
+              <option value="optional">{t("admin.proofOptional")}</option>
+              <option value="required">{t("admin.proofRequired")}</option>
+            </select>
+          </div>
+          {proofMode !== "none" && (
+            <input
+              type="text"
+              value={proofPlaceholder}
+              onChange={(e) => setProofPlaceholder(e.target.value)}
+              placeholder={t("admin.proofPlaceholderHint")}
+              className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+            />
+          )}
+        </div>
+      );
+    }
+    return null;
+  }
+
+  function renderQuestTypeBadge(questType: string) {
+    if (questType === "feedback") {
+      return <span className="text-[10px] font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full shrink-0">{t("admin.questTypeFeedback")}</span>;
+    }
+    if (questType === "tutorial") {
+      return <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full shrink-0">{t("admin.questTypeTutorial")}</span>;
+    }
+    if (questType === "referral") {
+      return <span className="text-[10px] font-medium text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-full shrink-0">{t("admin.questTypeReferral")}</span>;
+    }
+    return null;
   }
 
   return (
@@ -244,11 +405,12 @@ export function QuestManager({
                         className="w-full text-sm text-gray-500 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
                       />
                     </div>
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    <label className={`flex items-center gap-2 ${editQuestType === "feedback" || editQuestType === "tutorial" ? "opacity-50" : "cursor-pointer"}`}>
                       <input
                         type="checkbox"
                         checked={editMultiUse}
                         onChange={(e) => setEditMultiUse(e.target.checked)}
+                        disabled={editQuestType === "feedback" || editQuestType === "tutorial"}
                         className="rounded border-gray-300 text-gray-800 focus:ring-gray-400"
                       />
                       <span className="text-xs text-gray-600">{t("admin.questRepeatable")}</span>
@@ -266,38 +428,16 @@ export function QuestManager({
                       <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questType")}</label>
                       <select
                         value={editQuestType}
-                        onChange={(e) => setEditQuestType(e.target.value)}
+                        onChange={(e) => handleEditQuestTypeChange(e.target.value)}
                         className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
                       >
                         <option value="default">{t("admin.questTypeDefault")}</option>
                         <option value="referral">{t("admin.questTypeReferral")}</option>
+                        <option value="feedback">{t("admin.questTypeFeedback")}</option>
+                        <option value="tutorial">{t("admin.questTypeTutorial")}</option>
                       </select>
                     </div>
-                    {editQuestType === "default" && (
-                      <div className="space-y-2">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.proofLink")}</label>
-                          <select
-                            value={editProofMode}
-                            onChange={(e) => setEditProofMode(e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
-                          >
-                            <option value="none">{t("admin.proofNotNeeded")}</option>
-                            <option value="optional">{t("admin.proofOptional")}</option>
-                            <option value="required">{t("admin.proofRequired")}</option>
-                          </select>
-                        </div>
-                        {editProofMode !== "none" && (
-                          <input
-                            type="text"
-                            value={editProofPlaceholder}
-                            onChange={(e) => setEditProofPlaceholder(e.target.value)}
-                            placeholder={t("admin.proofPlaceholderHint")}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
-                          />
-                        )}
-                      </div>
-                    )}
+                    {renderQuestTypeFields(editQuestType, editProofMode, setEditProofMode, editProofPlaceholder, setEditProofPlaceholder, editTutorialSteps, setEditTutorialSteps)}
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleSaveEdit(q.id)}
@@ -322,6 +462,7 @@ export function QuestManager({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
                         <p className="text-sm font-medium text-gray-900 truncate">{q.title}</p>
+                        {renderQuestTypeBadge(q.quest_type)}
                         {q.multi_use && (
                           <span className="text-[10px] font-medium text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded-full shrink-0">{t("common.repeatable")}</span>
                         )}
@@ -448,11 +589,12 @@ export function QuestManager({
               className="w-full text-sm text-gray-500 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
             />
           </div>
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label className={`flex items-center gap-2 ${newQuestType === "feedback" || newQuestType === "tutorial" ? "opacity-50" : "cursor-pointer"}`}>
             <input
               type="checkbox"
               checked={newMultiUse}
               onChange={(e) => setNewMultiUse(e.target.checked)}
+              disabled={newQuestType === "feedback" || newQuestType === "tutorial"}
               className="rounded border-gray-300 text-gray-800 focus:ring-gray-400"
             />
             <span className="text-xs text-gray-600">{t("admin.questRepeatable")}</span>
@@ -470,38 +612,16 @@ export function QuestManager({
             <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questType")}</label>
             <select
               value={newQuestType}
-              onChange={(e) => setNewQuestType(e.target.value)}
+              onChange={(e) => handleNewQuestTypeChange(e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
             >
               <option value="default">{t("admin.questTypeDefault")}</option>
               <option value="referral">{t("admin.questTypeReferral")}</option>
+              <option value="feedback">{t("admin.questTypeFeedback")}</option>
+              <option value="tutorial">{t("admin.questTypeTutorial")}</option>
             </select>
           </div>
-          {newQuestType === "default" && (
-            <div className="space-y-2">
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.proofLink")}</label>
-                <select
-                  value={newProofMode}
-                  onChange={(e) => setNewProofMode(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
-                >
-                  <option value="none">{t("admin.proofNotNeeded")}</option>
-                  <option value="optional">{t("admin.proofOptional")}</option>
-                  <option value="required">{t("admin.proofRequired")}</option>
-                </select>
-              </div>
-              {newProofMode !== "none" && (
-                <input
-                  type="text"
-                  value={newProofPlaceholder}
-                  onChange={(e) => setNewProofPlaceholder(e.target.value)}
-                  placeholder={t("admin.proofPlaceholderHint")}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
-                />
-              )}
-            </div>
-          )}
+          {renderQuestTypeFields(newQuestType, newProofMode, setNewProofMode, newProofPlaceholder, setNewProofPlaceholder, newTutorialSteps, setNewTutorialSteps)}
           <button
             type="submit"
             disabled={isPending || !newTitle.trim()}

@@ -223,7 +223,11 @@ export function StaffQuestClient({
                         {pq.member_name && ` — ${pq.member_name}`}
                       </p>
                       {pq.proof_url && (
-                        /^https?:\/\//.test(pq.proof_url) ? (
+                        pq.quest_type === "feedback" ? (
+                          <div className="mt-1 px-2.5 py-1.5 bg-amber-50 border-l-2 border-amber-300 rounded-r-md">
+                            <p className="text-xs text-gray-600 italic whitespace-pre-wrap">{pq.proof_url}</p>
+                          </div>
+                        ) : /^https?:\/\//.test(pq.proof_url) ? (
                           <a
                             href={pq.proof_url}
                             target="_blank"
