@@ -10,6 +10,30 @@ export async function logoutOwner(clubSlug: string) {
   redirect(`/${clubSlug}/admin/login`);
 }
 
+export async function setPremiumReferrer(
+  memberId: string,
+  isPremium: boolean,
+  rewardSpins: number,
+  clubSlug: string,
+) {
+  const supabase = createAdminClient();
+
+  if (rewardSpins < 0) return { error: "Reward spins must be 0 or more" };
+
+  const { error } = await supabase
+    .from("members")
+    .update({
+      is_premium_referrer: isPremium,
+      referral_reward_spins: isPremium ? rewardSpins : 0,
+    })
+    .eq("id", memberId);
+
+  if (error) return { error: "Failed to update referrer status" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
 export async function createMember(
   clubId: string,
   memberCode: string,
@@ -297,6 +321,7 @@ export async function addQuest(
   const proofMode = (formData.get("proof_mode") as string) || "none";
   const proofPlaceholder = (formData.get("proof_placeholder") as string)?.trim() || null;
   const tutorialStepsRaw = formData.get("tutorial_steps") as string | null;
+  const icon = (formData.get("icon") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
 
   // Enforce type-specific defaults
@@ -331,6 +356,7 @@ export async function addQuest(
     title,
     description,
     link,
+    icon,
     reward_spins: rewardSpins,
     multi_use: effectiveMultiUse,
     is_public: isPublic,
@@ -364,6 +390,7 @@ export async function updateQuest(
   const proofMode = (formData.get("proof_mode") as string) || "none";
   const proofPlaceholder = (formData.get("proof_placeholder") as string)?.trim() || null;
   const tutorialStepsRaw = formData.get("tutorial_steps") as string | null;
+  const icon = (formData.get("icon") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
 
   // Enforce type-specific defaults
@@ -380,6 +407,7 @@ export async function updateQuest(
     title,
     description,
     link,
+    icon,
     reward_spins: rewardSpins,
     multi_use: effectiveMultiUse,
     is_public: isPublic,
@@ -462,6 +490,7 @@ export async function addEvent(
   const rawSpins = formData.get("reward_spins");
   const rewardSpins = rawSpins !== null && rawSpins !== "" ? Number(rawSpins) : 1;
   const isPublic = formData.get("is_public") === "1";
+  const icon = (formData.get("icon") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
 
   if (!title) return { error: "Title is required" };
@@ -486,6 +515,7 @@ export async function addEvent(
     time: time || null,
     price: priceStr ? Number(priceStr) : null,
     image_url: imageUrl,
+    icon,
     link,
     reward_spins: rewardSpins,
     is_public: isPublic,
@@ -511,6 +541,7 @@ export async function updateEvent(
   const rawSpins = formData.get("reward_spins");
   const rewardSpins = rawSpins !== null && rawSpins !== "" ? Number(rawSpins) : 1;
   const isPublic = formData.get("is_public") === "1";
+  const icon = (formData.get("icon") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
 
   if (!title) return { error: "Title is required" };
@@ -524,6 +555,7 @@ export async function updateEvent(
     date,
     time: time || null,
     price: priceStr ? Number(priceStr) : null,
+    icon,
     link,
     reward_spins: rewardSpins,
     is_public: isPublic,
@@ -600,6 +632,7 @@ export async function addService(
   const link = (formData.get("link") as string)?.trim() || null;
   const priceStr = (formData.get("price") as string)?.trim();
   const isPublic = formData.get("is_public") === "1";
+  const icon = (formData.get("icon") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
 
   if (!title) return { error: "Title is required" };
@@ -628,6 +661,7 @@ export async function addService(
     title,
     description,
     link,
+    icon,
     price: priceStr ? Number(priceStr) : null,
     is_public: isPublic,
     image_url: imageUrl,
@@ -650,6 +684,7 @@ export async function updateService(
   const link = (formData.get("link") as string)?.trim() || null;
   const priceStr = (formData.get("price") as string)?.trim();
   const isPublic = formData.get("is_public") === "1";
+  const icon = (formData.get("icon") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
 
   if (!title) return { error: "Title is required" };
@@ -660,6 +695,7 @@ export async function updateService(
     title,
     description,
     link,
+    icon,
     price: priceStr ? Number(priceStr) : null,
     is_public: isPublic,
   };

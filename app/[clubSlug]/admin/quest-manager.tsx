@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react";
 import { addQuest, updateQuest, deleteQuest } from "./actions";
 import { useLanguage } from "@/lib/i18n/provider";
+import { IconPicker } from "@/components/icon-picker";
+import { DynamicIcon } from "@/components/dynamic-icon";
 
 interface Quest {
   id: string;
@@ -10,6 +12,7 @@ interface Quest {
   description: string | null;
   link: string | null;
   image_url: string | null;
+  icon: string | null;
   reward_spins: number;
   display_order: number;
   completions: number;
@@ -51,6 +54,7 @@ export function QuestManager({
   const [editProofMode, setEditProofMode] = useState("none");
   const [editProofPlaceholder, setEditProofPlaceholder] = useState("");
   const [editTutorialSteps, setEditTutorialSteps] = useState<string[]>([]);
+  const [editIcon, setEditIcon] = useState<string | null>(null);
 
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
@@ -63,6 +67,7 @@ export function QuestManager({
   const [newProofMode, setNewProofMode] = useState("none");
   const [newProofPlaceholder, setNewProofPlaceholder] = useState("");
   const [newTutorialSteps, setNewTutorialSteps] = useState<string[]>([]);
+  const [newIcon, setNewIcon] = useState<string | null>(null);
 
   const [showForm, setShowForm] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -133,6 +138,7 @@ export function QuestManager({
     setEditProofMode(q.proof_mode ?? "none");
     setEditProofPlaceholder(q.proof_placeholder ?? "");
     setEditTutorialSteps(q.tutorial_steps ?? []);
+    setEditIcon(q.icon);
     setEditImage(null);
     setError(null);
   }
@@ -158,6 +164,7 @@ export function QuestManager({
       if (editQuestType === "tutorial") {
         fd.set("tutorial_steps", JSON.stringify(editTutorialSteps.filter(s => s.trim())));
       }
+      if (editIcon) fd.set("icon", editIcon);
       if (editImage) fd.set("image", editImage);
 
       const result = await updateQuest(questId, fd, clubSlug);
@@ -194,6 +201,7 @@ export function QuestManager({
       if (newQuestType === "tutorial") {
         fd.set("tutorial_steps", JSON.stringify(newTutorialSteps.filter(s => s.trim())));
       }
+      if (newIcon) fd.set("icon", newIcon);
       if (newImage) fd.set("image", newImage);
 
       const result = await addQuest(clubId, fd, clubSlug);
@@ -211,6 +219,7 @@ export function QuestManager({
         setNewProofMode("none");
         setNewProofPlaceholder("");
         setNewTutorialSteps([]);
+        setNewIcon(null);
         setNewImage(null);
         setSuccessMsg(t("admin.questCreated", { title: createdTitle }));
         setShowForm(false);
@@ -366,13 +375,14 @@ export function QuestManager({
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questDescription")}</label>
-                      <input
-                        type="text"
+                      <textarea
+                        rows={3}
                         value={editDesc}
                         onChange={(e) => setEditDesc(e.target.value)}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition resize-none"
                       />
                     </div>
+                    <IconPicker value={editIcon} onChange={setEditIcon} />
                     <div className="grid grid-cols-[1fr_auto] gap-3">
                       <div>
                         <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questLink")}</label>
@@ -456,6 +466,11 @@ export function QuestManager({
                   </div>
                 ) : (
                   <div className="px-5 py-3 flex items-center gap-3">
+                    {q.icon && !q.image_url && (
+                      <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+                        <DynamicIcon name={q.icon} className="w-5 h-5 text-gray-500" />
+                      </div>
+                    )}
                     {q.image_url && (
                       <img src={q.image_url} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
                     )}
@@ -548,14 +563,15 @@ export function QuestManager({
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questDescOptional")}</label>
-            <input
-              type="text"
+            <textarea
+              rows={3}
               value={newDesc}
               onChange={(e) => setNewDesc(e.target.value)}
               placeholder={t("admin.questDescPlaceholder")}
-              className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+              className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition resize-none"
             />
           </div>
+          <IconPicker value={newIcon} onChange={setNewIcon} />
           <div className="grid grid-cols-[1fr_auto] gap-3 items-end">
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questLink")}</label>

@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { addService, updateService, deleteService } from "./actions";
+import { IconPicker } from "@/components/icon-picker";
+import { DynamicIcon } from "@/components/dynamic-icon";
 
 const TEMPLATES = [
   { title: "VIP Table", description: "Reserve a VIP table" },
@@ -15,6 +17,7 @@ interface Service {
   title: string;
   description: string | null;
   image_url: string | null;
+  icon: string | null;
   link: string | null;
   price: number | null;
   pending_orders: number;
@@ -38,6 +41,7 @@ export function ServiceManager({
   const [editPrice, setEditPrice] = useState("");
   const [editIsPublic, setEditIsPublic] = useState(false);
   const [editImage, setEditImage] = useState<File | null>(null);
+  const [editIcon, setEditIcon] = useState<string | null>(null);
 
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
@@ -45,6 +49,7 @@ export function ServiceManager({
   const [newPrice, setNewPrice] = useState("");
   const [newIsPublic, setNewIsPublic] = useState(false);
   const [newImage, setNewImage] = useState<File | null>(null);
+  const [newIcon, setNewIcon] = useState<string | null>(null);
 
   const [showForm, setShowForm] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -63,6 +68,7 @@ export function ServiceManager({
     setEditLink(s.link ?? "");
     setEditPrice(s.price != null ? String(s.price) : "");
     setEditIsPublic(s.is_public);
+    setEditIcon(s.icon);
     setEditImage(null);
     setError(null);
   }
@@ -81,6 +87,7 @@ export function ServiceManager({
       fd.set("link", editLink);
       fd.set("price", editPrice);
       fd.set("is_public", editIsPublic ? "1" : "0");
+      if (editIcon) fd.set("icon", editIcon);
       if (editImage) fd.set("image", editImage);
 
       const result = await updateService(serviceId, fd, clubSlug);
@@ -110,6 +117,7 @@ export function ServiceManager({
       fd.set("link", newLink);
       fd.set("price", newPrice);
       fd.set("is_public", newIsPublic ? "1" : "0");
+      if (newIcon) fd.set("icon", newIcon);
       if (newImage) fd.set("image", newImage);
 
       const result = await addService(clubId, fd, clubSlug);
@@ -122,6 +130,7 @@ export function ServiceManager({
         setNewLink("");
         setNewPrice("");
         setNewIsPublic(false);
+        setNewIcon(null);
         setNewImage(null);
         setSuccessMsg(`"${createdTitle}" created successfully`);
         setShowForm(false);
@@ -172,13 +181,14 @@ export function ServiceManager({
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-gray-500 mb-1">Description</label>
-                      <input
-                        type="text"
+                      <textarea
+                        rows={3}
                         value={editDesc}
                         onChange={(e) => setEditDesc(e.target.value)}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition resize-none"
                       />
                     </div>
+                    <IconPicker value={editIcon} onChange={setEditIcon} />
                     <div className="grid grid-cols-[1fr_auto] gap-3">
                       <div>
                         <label className="block text-xs font-medium text-gray-500 mb-1">Link (optional)</label>
@@ -239,6 +249,11 @@ export function ServiceManager({
                   </div>
                 ) : (
                   <div className="px-5 py-3 flex items-center gap-3">
+                    {s.icon && !s.image_url && (
+                      <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+                        <DynamicIcon name={s.icon} className="w-5 h-5 text-gray-500" />
+                      </div>
+                    )}
                     {s.image_url && (
                       <img src={s.image_url} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
                     )}
@@ -333,14 +348,15 @@ export function ServiceManager({
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Description (optional)</label>
-            <input
-              type="text"
+            <textarea
+              rows={3}
               value={newDesc}
               onChange={(e) => setNewDesc(e.target.value)}
               placeholder="Exclusive access to VIP area"
-              className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+              className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition resize-none"
             />
           </div>
+          <IconPicker value={newIcon} onChange={setNewIcon} />
           <div className="grid grid-cols-[1fr_auto_auto] gap-3 items-end">
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">Link (optional)</label>

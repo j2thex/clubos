@@ -132,6 +132,8 @@ export type Database = {
           membership_period_id: string | null;
           valid_till: string | null;
           referred_by: string | null;
+          is_premium_referrer: boolean;
+          referral_reward_spins: number;
           created_at: string;
         };
         Insert: {
@@ -146,6 +148,8 @@ export type Database = {
           membership_period_id?: string | null;
           valid_till?: string | null;
           referred_by?: string | null;
+          is_premium_referrer?: boolean;
+          referral_reward_spins?: number;
           created_at?: string;
         };
         Update: {
@@ -160,6 +164,8 @@ export type Database = {
           membership_period_id?: string | null;
           valid_till?: string | null;
           referred_by?: string | null;
+          is_premium_referrer?: boolean;
+          referral_reward_spins?: number;
           created_at?: string;
         };
         Relationships: [

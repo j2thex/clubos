@@ -110,6 +110,30 @@ export async function createMember(
     return { error: "Failed to create member" };
   }
 
+  // Auto-reward premium referrer
+  if (referredByCode) {
+    const { data: referrer } = await supabase
+      .from("members")
+      .select("id, spin_balance, is_premium_referrer, referral_reward_spins")
+      .eq("club_id", clubId)
+      .eq("member_code", referredByCode)
+      .single();
+
+    if (referrer?.is_premium_referrer && referrer.referral_reward_spins > 0) {
+      await supabase
+        .from("members")
+        .update({ spin_balance: referrer.spin_balance + referrer.referral_reward_spins })
+        .eq("id", referrer.id);
+
+      await logActivity({
+        clubId,
+        action: "referral_reward",
+        targetMemberCode: referredByCode,
+        details: `+${referrer.referral_reward_spins} spins for referring ${code}`,
+      });
+    }
+  }
+
   const staff = await getStaffFromCookie();
   const details = [
     validTill ? `Period till ${validTill}` : null,

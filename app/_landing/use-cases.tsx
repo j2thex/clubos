@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ScrollReveal } from "./scroll-reveal";
 import {
   SocialClubIcon,
@@ -11,11 +12,11 @@ const ICONS = [SocialClubIcon, CannabisClubIcon, BarsClubIcon, SportsClubIcon, C
 
 export function UseCases({ t }: { t: (key: string) => string }) {
   const cases = [
-    { title: t("landing.useCaseSocial"), desc: t("landing.useCaseSocialDesc") },
-    { title: t("landing.useCaseCannabis"), desc: t("landing.useCaseCannabisDesc") },
-    { title: t("landing.useCaseBars"), desc: t("landing.useCaseBarsDesc") },
-    { title: t("landing.useCaseSports"), desc: t("landing.useCaseSportsDesc") },
-    { title: t("landing.useCaseCoworking"), desc: t("landing.useCaseCoworkingDesc") },
+    { title: t("landing.useCaseSocial"), desc: t("landing.useCaseSocialDesc"), example: "/examples/bars" },
+    { title: t("landing.useCaseCannabis"), desc: t("landing.useCaseCannabisDesc"), example: "/examples/coffee-shops" },
+    { title: t("landing.useCaseBars"), desc: t("landing.useCaseBarsDesc"), example: "/examples/bars" },
+    { title: t("landing.useCaseSports"), desc: t("landing.useCaseSportsDesc"), example: "/examples/sports-clubs" },
+    { title: t("landing.useCaseCoworking"), desc: t("landing.useCaseCoworkingDesc"), example: "/examples/coworking-spaces" },
   ];
 
   return (
@@ -36,11 +37,12 @@ export function UseCases({ t }: { t: (key: string) => string }) {
             const Icon = ICONS[i];
             return (
               <ScrollReveal key={i} delay={i * 60}>
-                <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-5 hover:bg-white/[0.06] transition-colors duration-300 h-full">
+                <Link href={c.example} className="block rounded-2xl bg-white/[0.03] border border-white/[0.06] p-5 hover:bg-white/[0.06] transition-colors duration-300 h-full group/card">
                   <Icon />
                   <h3 className="font-medium text-sm">{c.title}</h3>
                   <p className="mt-2 text-xs font-light opacity-60 leading-relaxed">{c.desc}</p>
-                </div>
+                  <p className="mt-3 text-[10px] font-medium opacity-0 group-hover/card:opacity-60 transition-opacity">See example &rarr;</p>
+                </Link>
               </ScrollReveal>
             );
           })}
@@ -52,14 +54,16 @@ export function UseCases({ t }: { t: (key: string) => string }) {
             {cases.map((c, i) => {
               const Icon = ICONS[i];
               return (
-                <div
+                <Link
                   key={i}
+                  href={c.example}
                   className="snap-start shrink-0 w-[220px] rounded-2xl bg-white/[0.03] border border-white/[0.06] p-5"
                 >
                   <Icon />
                   <h3 className="font-medium text-sm">{c.title}</h3>
                   <p className="mt-2 text-xs font-light opacity-60 leading-relaxed">{c.desc}</p>
-                </div>
+                  <p className="mt-3 text-[10px] font-medium opacity-60">See example &rarr;</p>
+                </Link>
               );
             })}
           </div>
