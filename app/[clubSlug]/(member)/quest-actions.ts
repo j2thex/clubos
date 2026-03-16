@@ -56,7 +56,7 @@ export async function submitQuest(
     .eq("id", memberId)
     .single();
 
-  notifyStaff(
+  await notifyStaff(
     quest.club_id,
     `🎯 Quest validation needed\n<b>${quest.title}</b>\nMember: ${member?.member_code ?? "Unknown"}`,
   );

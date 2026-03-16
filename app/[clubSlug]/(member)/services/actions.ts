@@ -36,7 +36,7 @@ export async function requestService(
   ]);
 
   if (service) {
-    notifyStaff(
+    await notifyStaff(
       service.club_id,
       `🛎 Service request\n<b>${service.title}</b>\nMember: ${member?.member_code ?? "Unknown"}`,
     );

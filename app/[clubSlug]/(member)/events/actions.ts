@@ -37,7 +37,7 @@ export async function rsvpEvent(
     .eq("id", memberId)
     .single();
 
-  notifyStaff(
+  await notifyStaff(
     event.club_id,
     `📅 Event RSVP\n<b>${event.title}</b>\nMember: ${member?.member_code ?? "Unknown"}`,
   );
