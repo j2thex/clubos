@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { submitQuest } from "./quest-actions";
 import { useLanguage } from "@/lib/i18n/provider";
+import { DynamicIcon } from "@/components/dynamic-icon";
 
 interface Quest {
   id: string;
@@ -10,6 +11,7 @@ interface Quest {
   description: string | null;
   link: string | null;
   image_url: string | null;
+  icon: string | null;
   reward_spins: number;
   multi_use: boolean;
   quest_type: string | null;
@@ -71,6 +73,15 @@ export function QuestList({
     const qType = quest.quest_type ?? "default";
     const baseClass = `w-10 h-10 rounded-full flex items-center justify-center shrink-0`;
     const colorClass = done ? "club-tint-bg club-primary" : isPendingQuest ? "bg-yellow-50 text-yellow-500" : "bg-gray-100 text-gray-300";
+
+    // Use custom icon if set by admin
+    if (quest.icon) {
+      return (
+        <div className={`${baseClass} ${colorClass}`}>
+          <DynamicIcon name={quest.icon} className="w-5 h-5" />
+        </div>
+      );
+    }
 
     if (qType === "feedback") {
       return (
