@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
+import { LoginModeManager } from "../../login-mode-manager";
 import { BrandingManager } from "../../branding-manager";
 import { WheelManager } from "../../wheel-manager";
 import { RoleManager } from "../../role-manager";
@@ -15,7 +16,7 @@ export default async function SettingsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id")
+    .select("id, login_mode")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -51,6 +52,11 @@ export default async function SettingsPage({
 
   return (
     <div className="space-y-6">
+      <LoginModeManager
+        loginMode={club.login_mode ?? "code_only"}
+        clubId={club.id}
+        clubSlug={clubSlug}
+      />
       <BrandingManager
         branding={{
           logo_url: branding?.logo_url ?? null,

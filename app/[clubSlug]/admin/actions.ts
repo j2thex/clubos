@@ -10,6 +10,29 @@ export async function logoutOwner(clubSlug: string) {
   redirect(`/${clubSlug}/admin/login`);
 }
 
+export async function updateLoginMode(
+  clubId: string,
+  mode: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  if (mode !== "code_only" && mode !== "code_and_expiry") {
+    return { error: "Invalid login mode" };
+  }
+
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ login_mode: mode })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to update login mode" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/login`);
+  return { ok: true };
+}
+
 export async function setPremiumReferrer(
   memberId: string,
   isPremium: boolean,

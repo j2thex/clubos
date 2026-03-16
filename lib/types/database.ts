@@ -43,6 +43,7 @@ export type Database = {
           active: boolean;
           timezone: string;
           currency: string;
+          login_mode: string;
           created_at: string;
         };
         Insert: {
@@ -53,6 +54,7 @@ export type Database = {
           active?: boolean;
           timezone?: string;
           currency?: string;
+          login_mode?: string;
           created_at?: string;
         };
         Update: {
@@ -63,6 +65,7 @@ export type Database = {
           active?: boolean;
           timezone?: string;
           currency?: string;
+          login_mode?: string;
           created_at?: string;
         };
         Relationships: [

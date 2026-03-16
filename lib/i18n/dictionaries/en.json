@@ -58,6 +58,11 @@
   "login.passwordPlaceholder": "Minimum 8 characters",
   "login.membershipExpired": "Your membership expired on {date}. Contact your club to renew.",
   "login.membershipExpiredGeneric": "Your membership has expired. Contact your club to renew.",
+  "login.expiryCode": "Expiry date code",
+  "login.expiryCodeHint": "4 digits from your expiry date (MMDD)",
+  "login.expiryCodeRequired": "Please enter your 4-digit expiry code",
+  "login.noExpirySet": "No expiry date set for this account. Contact your club.",
+  "login.invalidExpiryCode": "Incorrect expiry code. Check your membership card.",
 
   "dashboard.remaining": "Remaining",
   "dashboard.spinsLabel": "spins",

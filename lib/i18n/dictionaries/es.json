@@ -58,6 +58,11 @@
   "login.passwordPlaceholder": "Mínimo 8 caracteres",
   "login.membershipExpired": "Tu membresía expiró el {date}. Contacta a tu club para renovar.",
   "login.membershipExpiredGeneric": "Tu membresía ha expirado. Contacta a tu club para renovar.",
+  "login.expiryCode": "Código de expiración",
+  "login.expiryCodeHint": "4 dígitos de tu fecha de expiración (MMDD)",
+  "login.expiryCodeRequired": "Ingresa tu código de expiración de 4 dígitos",
+  "login.noExpirySet": "No hay fecha de expiración configurada. Contacta a tu club.",
+  "login.invalidExpiryCode": "Código de expiración incorrecto. Revisa tu tarjeta de membresía.",
 
   "dashboard.remaining": "Restantes",
   "dashboard.spinsLabel": "tiradas",

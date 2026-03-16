@@ -16,7 +16,7 @@ export async function loginMember(clubSlug: string, locale: Locale, formData: Fo
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id")
+    .select("id, login_mode")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -32,6 +32,27 @@ export async function loginMember(clubSlug: string, locale: Locale, formData: Fo
 
   if (!member) return { error: "Invalid member code" };
   if (member.status !== "active") return { error: "Account is inactive" };
+
+  // Validate expiry code if club requires it
+  if (club.login_mode === "code_and_expiry") {
+    const expiryCode = (formData.get("expiryCode") as string)?.trim();
+
+    if (!expiryCode || expiryCode.length !== 4) {
+      return { error: t(locale, "login.expiryCodeRequired") };
+    }
+
+    if (!member.valid_till) {
+      return { error: t(locale, "login.noExpirySet") };
+    }
+
+    // Format valid_till as MMDD (e.g. "2027-12-27" → "1227")
+    const parts = member.valid_till.split("-"); // ["2027", "12", "27"]
+    const expectedCode = parts[1] + parts[2]; // "1227"
+
+    if (expiryCode !== expectedCode) {
+      return { error: t(locale, "login.invalidExpiryCode") };
+    }
+  }
 
   if (member.valid_till) {
     const expiry = new Date(member.valid_till + "T00:00:00");
