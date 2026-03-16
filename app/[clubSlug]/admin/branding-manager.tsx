@@ -13,6 +13,7 @@ interface BrandingData {
   social_whatsapp: string | null;
   social_telegram: string | null;
   social_google_maps: string | null;
+  social_website: string | null;
 }
 
 export function BrandingManager({
@@ -31,6 +32,7 @@ export function BrandingManager({
   const [socialWhatsapp, setSocialWhatsapp] = useState(branding.social_whatsapp ?? "");
   const [socialTelegram, setSocialTelegram] = useState(branding.social_telegram ?? "");
   const [socialGoogleMaps, setSocialGoogleMaps] = useState(branding.social_google_maps ?? "");
+  const [socialWebsite, setSocialWebsite] = useState(branding.social_website ?? "");
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -221,6 +223,17 @@ export function BrandingManager({
                   value={socialGoogleMaps}
                   onChange={(e) => setSocialGoogleMaps(e.target.value)}
                   placeholder="https://maps.google.com/..."
+                  className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-400 w-20 shrink-0">Website</span>
+                <input
+                  type="url"
+                  name="socialWebsite"
+                  value={socialWebsite}
+                  onChange={(e) => setSocialWebsite(e.target.value)}
+                  placeholder="https://yourclub.com"
                   className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
                 />
               </div>

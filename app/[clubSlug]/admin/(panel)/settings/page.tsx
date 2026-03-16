@@ -29,7 +29,7 @@ export default async function SettingsPage({
   const [{ data: branding }, { data: segments }, { data: roles }, { data: membershipPeriods }, { data: galleryImages }] = await Promise.all([
     supabase
       .from("club_branding")
-      .select("logo_url, cover_url, primary_color, secondary_color, hero_content, social_instagram, social_whatsapp, social_telegram, social_google_maps")
+      .select("logo_url, cover_url, primary_color, secondary_color, hero_content, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website")
       .eq("club_id", club.id)
       .single(),
     supabase
@@ -91,6 +91,7 @@ export default async function SettingsPage({
           social_whatsapp: branding?.social_whatsapp ?? null,
           social_telegram: branding?.social_telegram ?? null,
           social_google_maps: branding?.social_google_maps ?? null,
+          social_website: branding?.social_website ?? null,
         }}
         clubId={club.id}
         clubSlug={clubSlug}

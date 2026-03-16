@@ -38,7 +38,7 @@ export default async function PublicProfilePage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name, invite_only, club_branding(logo_url, cover_url, primary_color, secondary_color, social_instagram, social_whatsapp, social_telegram, social_google_maps)")
+    .select("id, name, invite_only, club_branding(logo_url, cover_url, primary_color, secondary_color, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website)")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -131,13 +131,14 @@ export default async function PublicProfilePage({
             />
           )}
           <h1 className="text-2xl font-bold text-white">{club.name}</h1>
-          {(branding?.social_instagram || branding?.social_whatsapp || branding?.social_telegram || branding?.social_google_maps) && (
+          {(branding?.social_instagram || branding?.social_whatsapp || branding?.social_telegram || branding?.social_google_maps || branding?.social_website) && (
             <div className="mt-4 flex justify-center">
               <SocialLinks
                 instagram={branding?.social_instagram}
                 whatsapp={branding?.social_whatsapp}
                 telegram={branding?.social_telegram}
                 googleMaps={branding?.social_google_maps}
+                website={branding?.social_website}
                 variant="light"
               />
             </div>

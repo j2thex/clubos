@@ -29,7 +29,7 @@ export default async function MemberDashboard({
       .single(),
     supabase
       .from("clubs")
-      .select("id, name, club_branding(logo_url, cover_url, hero_content, social_instagram, social_whatsapp, social_telegram, social_google_maps)")
+      .select("id, name, club_branding(logo_url, cover_url, hero_content, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website)")
       .eq("id", session.club_id)
       .single(),
     supabase
@@ -107,13 +107,14 @@ export default async function MemberDashboard({
           <h1 className="text-2xl font-bold text-white">
             {heroContent ? heroContent.replace("{name}", displayName) : `Welcome back, ${displayName}`}
           </h1>
-          {(branding?.social_instagram || branding?.social_whatsapp || branding?.social_telegram || branding?.social_google_maps) && (
+          {(branding?.social_instagram || branding?.social_whatsapp || branding?.social_telegram || branding?.social_google_maps || branding?.social_website) && (
             <div className="mt-4 flex justify-center">
               <SocialLinks
                 instagram={branding?.social_instagram}
                 whatsapp={branding?.social_whatsapp}
                 telegram={branding?.social_telegram}
                 googleMaps={branding?.social_google_maps}
+                website={branding?.social_website}
                 variant="light"
               />
             </div>

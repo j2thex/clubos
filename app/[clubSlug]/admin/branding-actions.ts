@@ -14,6 +14,7 @@ export async function updateClubBranding(formData: FormData) {
   const socialWhatsapp = (formData.get("socialWhatsapp") as string)?.trim() || null;
   const socialTelegram = (formData.get("socialTelegram") as string)?.trim() || null;
   const socialGoogleMaps = (formData.get("socialGoogleMaps") as string)?.trim() || null;
+  const socialWebsite = (formData.get("socialWebsite") as string)?.trim() || null;
   const logo = formData.get("logo") as File | null;
   const cover = formData.get("cover") as File | null;
 
@@ -30,6 +31,7 @@ export async function updateClubBranding(formData: FormData) {
     social_whatsapp: socialWhatsapp,
     social_telegram: socialTelegram,
     social_google_maps: socialGoogleMaps,
+    social_website: socialWebsite,
   };
 
   if (logo && logo.size > 0) {
