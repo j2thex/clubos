@@ -33,6 +33,57 @@ export async function updateLoginMode(
   return { ok: true };
 }
 
+export async function updateTelegramConfig(
+  clubId: string,
+  botToken: string,
+  chatId: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({
+      telegram_bot_token: botToken || null,
+      telegram_chat_id: chatId || null,
+    })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to save Telegram config" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
+export async function testTelegramNotification(
+  clubId: string,
+  _clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("telegram_bot_token, telegram_chat_id, name")
+    .eq("id", clubId)
+    .single();
+
+  if (!club?.telegram_bot_token || !club?.telegram_chat_id) {
+    return { error: "Save bot token and chat ID first" };
+  }
+
+  try {
+    const { sendTelegramMessage } = await import("@/lib/telegram");
+    await sendTelegramMessage(
+      club.telegram_bot_token,
+      club.telegram_chat_id,
+      `✅ <b>${club.name}</b> — Telegram notifications connected!`,
+    );
+    return { ok: true };
+  } catch {
+    return { error: "Failed to send test message. Check your bot token and chat ID." };
+  }
+}
+
 export async function setPremiumReferrer(
   memberId: string,
   isPremium: boolean,

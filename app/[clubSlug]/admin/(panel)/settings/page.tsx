@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { LoginModeManager } from "../../login-mode-manager";
+import { TelegramConfigManager } from "../../telegram-config-manager";
 import { BrandingManager } from "../../branding-manager";
 import { WheelManager } from "../../wheel-manager";
 import { RoleManager } from "../../role-manager";
@@ -16,7 +17,7 @@ export default async function SettingsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, login_mode")
+    .select("id, login_mode, telegram_bot_token, telegram_chat_id")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -54,6 +55,12 @@ export default async function SettingsPage({
     <div className="space-y-6">
       <LoginModeManager
         loginMode={club.login_mode ?? "code_only"}
+        clubId={club.id}
+        clubSlug={clubSlug}
+      />
+      <TelegramConfigManager
+        botToken={club.telegram_bot_token ?? null}
+        chatId={club.telegram_chat_id ?? null}
         clubId={club.id}
         clubSlug={clubSlug}
       />

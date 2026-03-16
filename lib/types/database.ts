@@ -44,6 +44,8 @@ export type Database = {
           timezone: string;
           currency: string;
           login_mode: string;
+          telegram_bot_token: string | null;
+          telegram_chat_id: string | null;
           created_at: string;
         };
         Insert: {
@@ -55,6 +57,8 @@ export type Database = {
           timezone?: string;
           currency?: string;
           login_mode?: string;
+          telegram_bot_token?: string | null;
+          telegram_chat_id?: string | null;
           created_at?: string;
         };
         Update: {
@@ -66,6 +70,8 @@ export type Database = {
           timezone?: string;
           currency?: string;
           login_mode?: string;
+          telegram_bot_token?: string | null;
+          telegram_chat_id?: string | null;
           created_at?: string;
         };
         Relationships: [

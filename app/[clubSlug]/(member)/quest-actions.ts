@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { notifyStaff } from "@/lib/staff-notify";
 
 export async function submitQuest(
   memberId: string,
@@ -14,7 +15,7 @@ export async function submitQuest(
   // Check quest exists and is active
   const { data: quest } = await supabase
     .from("quests")
-    .select("id, multi_use")
+    .select("id, multi_use, title, club_id")
     .eq("id", questId)
     .eq("active", true)
     .single();
@@ -47,6 +48,18 @@ export async function submitQuest(
   const { error } = await supabase.from("member_quests").insert(insertData);
 
   if (error) return { error: "Failed to submit quest" };
+
+  // Notify staff via Telegram
+  const { data: member } = await supabase
+    .from("members")
+    .select("member_code")
+    .eq("id", memberId)
+    .single();
+
+  notifyStaff(
+    quest.club_id,
+    `🎯 Quest validation needed\n<b>${quest.title}</b>\nMember: ${member?.member_code ?? "Unknown"}`,
+  );
 
   revalidatePath(`/${clubSlug}`);
   return { ok: true };
