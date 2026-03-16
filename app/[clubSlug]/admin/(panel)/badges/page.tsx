@@ -23,7 +23,7 @@ export default async function BadgesPage({
   const [{ data: badges }, { data: earnedCounts }] = await Promise.all([
     supabase
       .from("badges")
-      .select("id, name, description, icon, color, display_order")
+      .select("id, name, description, icon, image_url, color, display_order")
       .eq("club_id", club.id)
       .eq("active", true)
       .order("display_order", { ascending: true }),
@@ -43,6 +43,7 @@ export default async function BadgesPage({
     name: b.name,
     description: b.description,
     icon: b.icon ?? null,
+    image_url: b.image_url ?? null,
     color: b.color ?? "#6b7280",
     earnedCount: countMap.get(b.id) ?? 0,
   }));

@@ -59,7 +59,7 @@ export default async function ProfilePage({
       .single(),
     supabase
       .from("badges")
-      .select("id, name, description, icon, color, quests(title)")
+      .select("id, name, description, icon, image_url, color, quests(title)")
       .eq("club_id", session.club_id)
       .eq("active", true)
       .order("display_order", { ascending: true }),
@@ -164,6 +164,7 @@ export default async function ProfilePage({
                   name: b.name,
                   description: b.description,
                   icon: b.icon ?? null,
+                  imageUrl: b.image_url ?? null,
                   color: b.color ?? "#6b7280",
                   questTitle: quest?.title ?? null,
                 };

@@ -10,6 +10,7 @@ interface Badge {
   name: string;
   description: string | null;
   icon: string | null;
+  image_url: string | null;
   color: string;
   earnedCount: number;
 }
@@ -36,11 +37,13 @@ export function BadgeManager({
   const [editDesc, setEditDesc] = useState("");
   const [editIcon, setEditIcon] = useState<string | null>(null);
   const [editColor, setEditColor] = useState("#6b7280");
+  const [editImage, setEditImage] = useState<File | null>(null);
 
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [newIcon, setNewIcon] = useState<string | null>(null);
   const [newColor, setNewColor] = useState("#6b7280");
+  const [newImage, setNewImage] = useState<File | null>(null);
 
   const [showForm, setShowForm] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -60,6 +63,7 @@ export function BadgeManager({
     setEditDesc(b.description ?? "");
     setEditIcon(b.icon);
     setEditColor(b.color);
+    setEditImage(null);
     setError(null);
   }
 
@@ -76,6 +80,7 @@ export function BadgeManager({
       fd.set("description", editDesc);
       fd.set("color", editColor);
       if (editIcon) fd.set("icon", editIcon);
+      if (editImage) fd.set("image", editImage);
 
       const result = await updateBadge(badgeId, fd, clubSlug);
       if ("error" in result) {
@@ -103,6 +108,7 @@ export function BadgeManager({
       fd.set("description", newDesc);
       fd.set("color", newColor);
       if (newIcon) fd.set("icon", newIcon);
+      if (newImage) fd.set("image", newImage);
 
       const result = await addBadge(clubId, fd, clubSlug);
       if ("error" in result) {
@@ -113,6 +119,7 @@ export function BadgeManager({
         setNewDesc("");
         setNewIcon(null);
         setNewColor("#6b7280");
+        setNewImage(null);
         setSuccessMsg(`"${createdName}" created successfully`);
         setShowForm(false);
         setTimeout(() => setSuccessMsg(null), 4000);
@@ -171,6 +178,15 @@ export function BadgeManager({
                     </div>
                     <IconPicker value={editIcon} onChange={setEditIcon} />
                     <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Badge Image (optional, overrides icon)</label>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={(e) => setEditImage(e.target.files?.[0] ?? null)}
+                        className="w-full text-sm text-gray-500 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+                      />
+                    </div>
+                    <div>
                       <label className="block text-xs font-medium text-gray-500 mb-1">Color</label>
                       <div className="flex items-center gap-2">
                         <input
@@ -205,18 +221,22 @@ export function BadgeManager({
                   </div>
                 ) : (
                   <div className="px-5 py-3 flex items-center gap-3">
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
-                      style={{ backgroundColor: b.color + "20", color: b.color }}
-                    >
-                      {b.icon ? (
-                        <DynamicIcon name={b.icon} className="w-5 h-5" />
-                      ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                        </svg>
-                      )}
-                    </div>
+                    {b.image_url ? (
+                      <img src={b.image_url} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" />
+                    ) : (
+                      <div
+                        className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: b.color + "20", color: b.color }}
+                      >
+                        {b.icon ? (
+                          <DynamicIcon name={b.icon} className="w-5 h-5" />
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                          </svg>
+                        )}
+                      </div>
+                    )}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">{b.name}</p>
                       {b.description && (
@@ -303,6 +323,15 @@ export function BadgeManager({
                 />
               </div>
               <IconPicker value={newIcon} onChange={setNewIcon} />
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Badge Image (optional, overrides icon)</label>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={(e) => setNewImage(e.target.files?.[0] ?? null)}
+                  className="w-full text-sm text-gray-500 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+                />
+              </div>
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Color</label>
                 <div className="flex items-center gap-2">

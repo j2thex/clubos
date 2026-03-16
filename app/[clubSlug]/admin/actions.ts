@@ -899,10 +899,19 @@ export async function addBadge(
   const description = (formData.get("description") as string)?.trim() || null;
   const icon = (formData.get("icon") as string)?.trim() || null;
   const color = (formData.get("color") as string)?.trim() || "#6b7280";
+  const imageFile = formData.get("image") as File | null;
 
   if (!name) return { error: "Name is required" };
 
   const supabase = createAdminClient();
+
+  let imageUrl: string | null = null;
+  if (imageFile && imageFile.size > 0) {
+    const { uploadClubImage } = await import("@/lib/supabase/storage");
+    const result = await uploadClubImage(clubId, imageFile);
+    if ("error" in result) return { error: result.error };
+    imageUrl = result.url;
+  }
 
   const { data: existing } = await supabase
     .from("badges")
@@ -918,6 +927,7 @@ export async function addBadge(
     name,
     description,
     icon,
+    image_url: imageUrl,
     color,
     display_order: nextOrder,
   });
@@ -937,14 +947,35 @@ export async function updateBadge(
   const description = (formData.get("description") as string)?.trim() || null;
   const icon = (formData.get("icon") as string)?.trim() || null;
   const color = (formData.get("color") as string)?.trim() || "#6b7280";
+  const imageFile = formData.get("image") as File | null;
 
   if (!name) return { error: "Name is required" };
 
   const supabase = createAdminClient();
 
+  const updates: Record<string, unknown> = { name, description, icon, color };
+
+  if (imageFile && imageFile.size > 0) {
+    const { data: badge } = await supabase
+      .from("badges")
+      .select("image_url, club_id")
+      .eq("id", badgeId)
+      .single();
+
+    if (badge?.image_url) {
+      const { deleteClubImage } = await import("@/lib/supabase/storage");
+      await deleteClubImage(badge.image_url);
+    }
+
+    const { uploadClubImage } = await import("@/lib/supabase/storage");
+    const result = await uploadClubImage(badge?.club_id ?? "", imageFile);
+    if ("error" in result) return { error: result.error };
+    updates.image_url = result.url;
+  }
+
   const { error } = await supabase
     .from("badges")
-    .update({ name, description, icon, color })
+    .update(updates)
     .eq("id", badgeId);
 
   if (error) return { error: "Failed to update badge" };
