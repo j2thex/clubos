@@ -2,6 +2,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { SocialLinks } from "@/components/club/social-links";
+import { PhotoGallery } from "@/components/club/photo-gallery";
 
 export async function generateMetadata({
   params,
@@ -33,7 +35,7 @@ export default async function PublicProfilePage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name, club_branding(logo_url, cover_url, primary_color, secondary_color)")
+    .select("id, name, club_branding(logo_url, cover_url, primary_color, secondary_color, social_instagram, social_whatsapp, social_telegram, social_google_maps)")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -46,7 +48,7 @@ export default async function PublicProfilePage({
 
   const today = new Date().toISOString().split("T")[0];
 
-  const [{ data: events }, { data: quests }, { data: services }] =
+  const [{ data: events }, { data: quests }, { data: services }, { data: galleryImages }] =
     await Promise.all([
       supabase
         .from("events")
@@ -69,6 +71,11 @@ export default async function PublicProfilePage({
         .eq("club_id", club.id)
         .eq("active", true)
         .eq("is_public", true)
+        .order("display_order", { ascending: true }),
+      supabase
+        .from("club_gallery")
+        .select("id, image_url, caption")
+        .eq("club_id", club.id)
         .order("display_order", { ascending: true }),
     ]);
 
@@ -119,10 +126,32 @@ export default async function PublicProfilePage({
             />
           )}
           <h1 className="text-2xl font-bold text-white">{club.name}</h1>
+          {(branding?.social_instagram || branding?.social_whatsapp || branding?.social_telegram || branding?.social_google_maps) && (
+            <div className="mt-4 flex justify-center">
+              <SocialLinks
+                instagram={branding?.social_instagram}
+                whatsapp={branding?.social_whatsapp}
+                telegram={branding?.social_telegram}
+                googleMaps={branding?.social_google_maps}
+                variant="light"
+              />
+            </div>
+          )}
         </div>
       </div>
 
       <div className="max-w-lg mx-auto px-4 -mt-6 relative z-10 space-y-6 pb-12">
+        {/* Gallery */}
+        {galleryImages && galleryImages.length > 0 && (
+          <PhotoGallery
+            images={galleryImages.map((g) => ({
+              id: g.id,
+              image_url: g.image_url,
+              caption: g.caption,
+            }))}
+          />
+        )}
+
         {/* Member Login */}
         <div className="bg-white rounded-2xl shadow-lg p-5 text-center">
           <p className="text-sm text-gray-500 mb-3">Already a member?</p>

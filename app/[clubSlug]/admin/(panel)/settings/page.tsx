@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { LoginModeManager } from "../../login-mode-manager";
 import { TelegramConfigManager } from "../../telegram-config-manager";
 import { BrandingManager } from "../../branding-manager";
+import { GalleryManager } from "../../gallery-manager";
 import { WheelManager } from "../../wheel-manager";
 import { RoleManager } from "../../role-manager";
 import { MembershipPeriodManager } from "../../membership-period-manager";
@@ -24,10 +25,10 @@ export default async function SettingsPage({
 
   if (!club) notFound();
 
-  const [{ data: branding }, { data: segments }, { data: roles }, { data: membershipPeriods }] = await Promise.all([
+  const [{ data: branding }, { data: segments }, { data: roles }, { data: membershipPeriods }, { data: galleryImages }] = await Promise.all([
     supabase
       .from("club_branding")
-      .select("logo_url, cover_url, primary_color, secondary_color, hero_content")
+      .select("logo_url, cover_url, primary_color, secondary_color, hero_content, social_instagram, social_whatsapp, social_telegram, social_google_maps")
       .eq("club_id", club.id)
       .single(),
     supabase
@@ -48,6 +49,11 @@ export default async function SettingsPage({
       .select("id, name, duration_months, display_order")
       .eq("club_id", club.id)
       .eq("active", true)
+      .order("display_order", { ascending: true }),
+    supabase
+      .from("club_gallery")
+      .select("id, image_url, caption")
+      .eq("club_id", club.id)
       .order("display_order", { ascending: true }),
   ]);
 
@@ -71,7 +77,20 @@ export default async function SettingsPage({
           primary_color: branding?.primary_color ?? "#16a34a",
           secondary_color: branding?.secondary_color ?? "#052e16",
           hero_content: branding?.hero_content ?? null,
+          social_instagram: branding?.social_instagram ?? null,
+          social_whatsapp: branding?.social_whatsapp ?? null,
+          social_telegram: branding?.social_telegram ?? null,
+          social_google_maps: branding?.social_google_maps ?? null,
         }}
+        clubId={club.id}
+        clubSlug={clubSlug}
+      />
+      <GalleryManager
+        images={(galleryImages ?? []).map((g) => ({
+          id: g.id,
+          image_url: g.image_url,
+          caption: g.caption ?? null,
+        }))}
         clubId={club.id}
         clubSlug={clubSlug}
       />

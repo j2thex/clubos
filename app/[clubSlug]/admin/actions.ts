@@ -969,3 +969,68 @@ export async function deleteBadge(
   revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
 }
+
+// --- Gallery actions ---
+
+export async function addGalleryImage(
+  clubId: string,
+  formData: FormData,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const imageFile = formData.get("image") as File | null;
+  if (!imageFile || imageFile.size === 0) return { error: "No image provided" };
+
+  const { uploadClubImage } = await import("@/lib/supabase/storage");
+  const result = await uploadClubImage(clubId, imageFile);
+  if ("error" in result) return { error: result.error };
+
+  const supabase = createAdminClient();
+
+  const { data: existing } = await supabase
+    .from("club_gallery")
+    .select("display_order")
+    .eq("club_id", clubId)
+    .order("display_order", { ascending: false })
+    .limit(1);
+
+  const nextOrder = existing && existing.length > 0 ? existing[0].display_order + 1 : 0;
+
+  const { error } = await supabase.from("club_gallery").insert({
+    club_id: clubId,
+    image_url: result.url,
+    display_order: nextOrder,
+  });
+
+  if (error) return { error: "Failed to add image" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
+export async function deleteGalleryImage(
+  imageId: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  const { data: image } = await supabase
+    .from("club_gallery")
+    .select("image_url")
+    .eq("id", imageId)
+    .single();
+
+  if (image?.image_url) {
+    const { deleteClubImage } = await import("@/lib/supabase/storage");
+    await deleteClubImage(image.image_url);
+  }
+
+  const { error } = await supabase
+    .from("club_gallery")
+    .delete()
+    .eq("id", imageId);
+
+  if (error) return { error: "Failed to delete image" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}

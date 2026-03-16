@@ -10,6 +10,10 @@ export async function updateClubBranding(formData: FormData) {
   const primaryColor = (formData.get("primaryColor") as string) || "#16a34a";
   const secondaryColor = (formData.get("secondaryColor") as string) || "#052e16";
   const heroContent = (formData.get("heroContent") as string) || "";
+  const socialInstagram = (formData.get("socialInstagram") as string)?.trim() || null;
+  const socialWhatsapp = (formData.get("socialWhatsapp") as string)?.trim() || null;
+  const socialTelegram = (formData.get("socialTelegram") as string)?.trim() || null;
+  const socialGoogleMaps = (formData.get("socialGoogleMaps") as string)?.trim() || null;
   const logo = formData.get("logo") as File | null;
   const cover = formData.get("cover") as File | null;
 
@@ -18,10 +22,14 @@ export async function updateClubBranding(formData: FormData) {
   }
 
   const supabase = createAdminClient();
-  const updates: Record<string, string> = {
+  const updates: Record<string, string | null> = {
     primary_color: primaryColor,
     secondary_color: secondaryColor,
     hero_content: heroContent,
+    social_instagram: socialInstagram,
+    social_whatsapp: socialWhatsapp,
+    social_telegram: socialTelegram,
+    social_google_maps: socialGoogleMaps,
   };
 
   if (logo && logo.size > 0) {

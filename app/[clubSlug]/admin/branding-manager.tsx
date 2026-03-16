@@ -9,6 +9,10 @@ interface BrandingData {
   primary_color: string;
   secondary_color: string;
   hero_content: string | null;
+  social_instagram: string | null;
+  social_whatsapp: string | null;
+  social_telegram: string | null;
+  social_google_maps: string | null;
 }
 
 export function BrandingManager({
@@ -23,6 +27,10 @@ export function BrandingManager({
   const [primaryColor, setPrimaryColor] = useState(branding.primary_color);
   const [secondaryColor, setSecondaryColor] = useState(branding.secondary_color);
   const [heroContent, setHeroContent] = useState(branding.hero_content ?? "");
+  const [socialInstagram, setSocialInstagram] = useState(branding.social_instagram ?? "");
+  const [socialWhatsapp, setSocialWhatsapp] = useState(branding.social_whatsapp ?? "");
+  const [socialTelegram, setSocialTelegram] = useState(branding.social_telegram ?? "");
+  const [socialGoogleMaps, setSocialGoogleMaps] = useState(branding.social_google_maps ?? "");
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -166,6 +174,57 @@ export function BrandingManager({
             <p className="text-xs text-gray-400">
               Use {"{{name}}"} to insert the member&apos;s name
             </p>
+          </div>
+
+          {/* Social Links */}
+          <div className="px-5 py-4 space-y-3">
+            <label className="text-sm font-medium text-gray-700">Social Links</label>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-400 w-20 shrink-0">Instagram</span>
+                <input
+                  type="url"
+                  name="socialInstagram"
+                  value={socialInstagram}
+                  onChange={(e) => setSocialInstagram(e.target.value)}
+                  placeholder="https://instagram.com/yourclub"
+                  className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-400 w-20 shrink-0">WhatsApp</span>
+                <input
+                  type="text"
+                  name="socialWhatsapp"
+                  value={socialWhatsapp}
+                  onChange={(e) => setSocialWhatsapp(e.target.value)}
+                  placeholder="+34612345678"
+                  className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-400 w-20 shrink-0">Telegram</span>
+                <input
+                  type="url"
+                  name="socialTelegram"
+                  value={socialTelegram}
+                  onChange={(e) => setSocialTelegram(e.target.value)}
+                  placeholder="https://t.me/yourgroup"
+                  className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-400 w-20 shrink-0">Maps</span>
+                <input
+                  type="url"
+                  name="socialGoogleMaps"
+                  value={socialGoogleMaps}
+                  onChange={(e) => setSocialGoogleMaps(e.target.value)}
+                  placeholder="https://maps.google.com/..."
+                  className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Submit */}

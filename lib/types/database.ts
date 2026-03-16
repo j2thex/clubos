@@ -94,6 +94,10 @@ export type Database = {
           primary_color: string;
           secondary_color: string;
           hero_content: string | null;
+          social_instagram: string | null;
+          social_whatsapp: string | null;
+          social_telegram: string | null;
+          social_google_maps: string | null;
           created_at: string;
         };
         Insert: {
@@ -105,6 +109,10 @@ export type Database = {
           primary_color?: string;
           secondary_color?: string;
           hero_content?: string | null;
+          social_instagram?: string | null;
+          social_whatsapp?: string | null;
+          social_telegram?: string | null;
+          social_google_maps?: string | null;
           created_at?: string;
         };
         Update: {
@@ -116,6 +124,10 @@ export type Database = {
           primary_color?: string;
           secondary_color?: string;
           hero_content?: string | null;
+          social_instagram?: string | null;
+          social_whatsapp?: string | null;
+          social_telegram?: string | null;
+          social_google_maps?: string | null;
           created_at?: string;
         };
         Relationships: [
@@ -298,6 +310,41 @@ export type Database = {
             columns: ["member_id"];
             isOneToOne: false;
             referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      club_gallery: {
+        Row: {
+          id: string;
+          club_id: string;
+          image_url: string;
+          caption: string | null;
+          display_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          club_id: string;
+          image_url: string;
+          caption?: string | null;
+          display_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          club_id?: string;
+          image_url?: string;
+          caption?: string | null;
+          display_order?: number;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "club_gallery_club_id_fkey";
+            columns: ["club_id"];
+            isOneToOne: false;
+            referencedRelation: "clubs";
             referencedColumns: ["id"];
           },
         ];

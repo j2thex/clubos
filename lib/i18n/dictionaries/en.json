@@ -69,6 +69,7 @@
   "dashboard.completed": "Completed",
   "dashboard.level": "Level",
   "dashboard.quests": "Quests",
+  "dashboard.gallery": "Gallery",
 
   "quest.done": "Done",
   "quest.doneCount": "Done {count}x",

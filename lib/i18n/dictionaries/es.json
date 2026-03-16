@@ -69,6 +69,7 @@
   "dashboard.completed": "Completadas",
   "dashboard.level": "Nivel",
   "dashboard.quests": "Misiones",
+  "dashboard.gallery": "Galería",
 
   "quest.done": "Hecho",
   "quest.doneCount": "Hecho {count}x",
