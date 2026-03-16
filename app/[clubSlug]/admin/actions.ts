@@ -322,6 +322,7 @@ export async function addQuest(
   const proofPlaceholder = (formData.get("proof_placeholder") as string)?.trim() || null;
   const tutorialStepsRaw = formData.get("tutorial_steps") as string | null;
   const icon = (formData.get("icon") as string)?.trim() || null;
+  const badgeId = (formData.get("badge_id") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
 
   // Enforce type-specific defaults
@@ -357,6 +358,7 @@ export async function addQuest(
     description,
     link,
     icon,
+    badge_id: badgeId,
     reward_spins: rewardSpins,
     multi_use: effectiveMultiUse,
     is_public: isPublic,
@@ -391,6 +393,7 @@ export async function updateQuest(
   const proofPlaceholder = (formData.get("proof_placeholder") as string)?.trim() || null;
   const tutorialStepsRaw = formData.get("tutorial_steps") as string | null;
   const icon = (formData.get("icon") as string)?.trim() || null;
+  const badgeId = (formData.get("badge_id") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
 
   // Enforce type-specific defaults
@@ -408,6 +411,7 @@ export async function updateQuest(
     description,
     link,
     icon,
+    badge_id: badgeId,
     reward_spins: rewardSpins,
     multi_use: effectiveMultiUse,
     is_public: isPublic,
@@ -805,6 +809,88 @@ export async function deleteMembershipPeriod(
     .eq("id", periodId);
 
   if (error) return { error: "Failed to delete membership period" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
+// --- Badge actions ---
+
+export async function addBadge(
+  clubId: string,
+  formData: FormData,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const name = (formData.get("name") as string)?.trim();
+  const description = (formData.get("description") as string)?.trim() || null;
+  const icon = (formData.get("icon") as string)?.trim() || null;
+  const color = (formData.get("color") as string)?.trim() || "#6b7280";
+
+  if (!name) return { error: "Name is required" };
+
+  const supabase = createAdminClient();
+
+  const { data: existing } = await supabase
+    .from("badges")
+    .select("display_order")
+    .eq("club_id", clubId)
+    .order("display_order", { ascending: false })
+    .limit(1);
+
+  const nextOrder = existing && existing.length > 0 ? existing[0].display_order + 1 : 0;
+
+  const { error } = await supabase.from("badges").insert({
+    club_id: clubId,
+    name,
+    description,
+    icon,
+    color,
+    display_order: nextOrder,
+  });
+
+  if (error) return { error: "Failed to add badge" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
+export async function updateBadge(
+  badgeId: string,
+  formData: FormData,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const name = (formData.get("name") as string)?.trim();
+  const description = (formData.get("description") as string)?.trim() || null;
+  const icon = (formData.get("icon") as string)?.trim() || null;
+  const color = (formData.get("color") as string)?.trim() || "#6b7280";
+
+  if (!name) return { error: "Name is required" };
+
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("badges")
+    .update({ name, description, icon, color })
+    .eq("id", badgeId);
+
+  if (error) return { error: "Failed to update badge" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
+export async function deleteBadge(
+  badgeId: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("badges")
+    .delete()
+    .eq("id", badgeId);
+
+  if (error) return { error: "Failed to delete badge" };
 
   revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };

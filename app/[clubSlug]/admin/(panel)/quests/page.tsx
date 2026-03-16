@@ -23,11 +23,11 @@ export default async function QuestsPage({
   if (!club) notFound();
   const locale = await getServerLocale();
 
-  const [{ data: quests }, { data: questCompletions }] = await Promise.all([
+  const [{ data: quests }, { data: questCompletions }, { data: clubBadges }] = await Promise.all([
     supabase
       .from("quests")
       .select(
-        "id, title, description, link, image_url, icon, reward_spins, display_order, active, multi_use, is_public, quest_type, proof_mode, proof_placeholder, tutorial_steps"
+        "id, title, description, link, image_url, icon, badge_id, reward_spins, display_order, active, multi_use, is_public, quest_type, proof_mode, proof_placeholder, tutorial_steps"
       )
       .eq("club_id", club.id)
       .eq("active", true)
@@ -36,6 +36,12 @@ export default async function QuestsPage({
       .from("member_quests")
       .select("quest_id, quests!inner(club_id)")
       .eq("quests.club_id", club.id),
+    supabase
+      .from("badges")
+      .select("id, name, icon, color")
+      .eq("club_id", club.id)
+      .eq("active", true)
+      .order("display_order", { ascending: true }),
   ]);
 
   // Count completions per quest
@@ -63,6 +69,14 @@ export default async function QuestsPage({
     proof_mode: q.proof_mode ?? "none",
     proof_placeholder: q.proof_placeholder ?? null,
     tutorial_steps: q.tutorial_steps ?? null,
+    badge_id: q.badge_id ?? null,
+  }));
+
+  const badgeOptions = (clubBadges ?? []).map((b) => ({
+    id: b.id,
+    name: b.name,
+    icon: b.icon ?? null,
+    color: b.color ?? "#6b7280",
   }));
 
   return (
@@ -76,7 +90,7 @@ export default async function QuestsPage({
         </svg>
         {t(locale, "admin.backToContent")}
       </Link>
-      <QuestManager quests={questList} clubId={club.id} clubSlug={clubSlug} />
+      <QuestManager quests={questList} clubId={club.id} clubSlug={clubSlug} badges={badgeOptions} />
     </div>
   );
 }

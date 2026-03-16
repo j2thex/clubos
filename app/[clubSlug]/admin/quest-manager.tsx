@@ -22,6 +22,14 @@ interface Quest {
   proof_mode: string;
   proof_placeholder: string | null;
   tutorial_steps: string[] | null;
+  badge_id: string | null;
+}
+
+interface BadgeOption {
+  id: string;
+  name: string;
+  icon: string | null;
+  color: string;
 }
 
 const TEMPLATES = [
@@ -37,10 +45,12 @@ export function QuestManager({
   quests,
   clubId,
   clubSlug,
+  badges = [],
 }: {
   quests: Quest[];
   clubId: string;
   clubSlug: string;
+  badges?: BadgeOption[];
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -55,6 +65,7 @@ export function QuestManager({
   const [editProofPlaceholder, setEditProofPlaceholder] = useState("");
   const [editTutorialSteps, setEditTutorialSteps] = useState<string[]>([]);
   const [editIcon, setEditIcon] = useState<string | null>(null);
+  const [editBadgeId, setEditBadgeId] = useState("");
 
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
@@ -68,6 +79,7 @@ export function QuestManager({
   const [newProofPlaceholder, setNewProofPlaceholder] = useState("");
   const [newTutorialSteps, setNewTutorialSteps] = useState<string[]>([]);
   const [newIcon, setNewIcon] = useState<string | null>(null);
+  const [newBadgeId, setNewBadgeId] = useState("");
 
   const [showForm, setShowForm] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -139,6 +151,7 @@ export function QuestManager({
     setEditProofPlaceholder(q.proof_placeholder ?? "");
     setEditTutorialSteps(q.tutorial_steps ?? []);
     setEditIcon(q.icon);
+    setEditBadgeId(q.badge_id ?? "");
     setEditImage(null);
     setError(null);
   }
@@ -165,6 +178,7 @@ export function QuestManager({
         fd.set("tutorial_steps", JSON.stringify(editTutorialSteps.filter(s => s.trim())));
       }
       if (editIcon) fd.set("icon", editIcon);
+      fd.set("badge_id", editBadgeId);
       if (editImage) fd.set("image", editImage);
 
       const result = await updateQuest(questId, fd, clubSlug);
@@ -202,6 +216,7 @@ export function QuestManager({
         fd.set("tutorial_steps", JSON.stringify(newTutorialSteps.filter(s => s.trim())));
       }
       if (newIcon) fd.set("icon", newIcon);
+      fd.set("badge_id", newBadgeId);
       if (newImage) fd.set("image", newImage);
 
       const result = await addQuest(clubId, fd, clubSlug);
@@ -220,6 +235,7 @@ export function QuestManager({
         setNewProofPlaceholder("");
         setNewTutorialSteps([]);
         setNewIcon(null);
+        setNewBadgeId("");
         setNewImage(null);
         setSuccessMsg(t("admin.questCreated", { title: createdTitle }));
         setShowForm(false);
@@ -448,6 +464,21 @@ export function QuestManager({
                       </select>
                     </div>
                     {renderQuestTypeFields(editQuestType, editProofMode, setEditProofMode, editProofPlaceholder, setEditProofPlaceholder, editTutorialSteps, setEditTutorialSteps)}
+                    {badges.length > 0 && (
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Award Badge</label>
+                        <select
+                          value={editBadgeId}
+                          onChange={(e) => setEditBadgeId(e.target.value)}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                        >
+                          <option value="">No badge</option>
+                          {badges.map((b) => (
+                            <option key={b.id} value={b.id}>{b.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleSaveEdit(q.id)}
@@ -638,6 +669,21 @@ export function QuestManager({
             </select>
           </div>
           {renderQuestTypeFields(newQuestType, newProofMode, setNewProofMode, newProofPlaceholder, setNewProofPlaceholder, newTutorialSteps, setNewTutorialSteps)}
+          {badges.length > 0 && (
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Award Badge</label>
+              <select
+                value={newBadgeId}
+                onChange={(e) => setNewBadgeId(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+              >
+                <option value="">No badge</option>
+                {badges.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <button
             type="submit"
             disabled={isPending || !newTitle.trim()}

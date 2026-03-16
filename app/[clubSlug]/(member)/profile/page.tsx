@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logout } from "./actions";
 import { MemberQrCard } from "@/components/club/member-qr-card";
 import { AddToHomescreen } from "@/components/club/add-to-homescreen";
+import { BadgeCollection } from "../badge-collection";
 import { t, getDateLocale } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 import type { Locale } from "@/lib/i18n";
@@ -38,7 +39,7 @@ export default async function ProfilePage({
 
   const supabase = createAdminClient();
 
-  const [{ data: member }, { data: spins }, { data: branding }] = await Promise.all([
+  const [{ data: member }, { data: spins }, { data: branding }, { data: clubBadges }, { data: memberBadges }] = await Promise.all([
     supabase
       .from("members")
       .select("member_code, spin_balance, valid_till, created_at")
@@ -56,6 +57,16 @@ export default async function ProfilePage({
       .select("logo_url")
       .eq("club_id", session.club_id)
       .single(),
+    supabase
+      .from("badges")
+      .select("id, name, description, icon, color, quests(title)")
+      .eq("club_id", session.club_id)
+      .eq("active", true)
+      .order("display_order", { ascending: true }),
+    supabase
+      .from("member_badges")
+      .select("badge_id, earned_at")
+      .eq("member_id", session.member_id),
   ]);
 
   // Fetch referrals (members referred by this member's code)
@@ -138,6 +149,32 @@ export default async function ProfilePage({
             </div>
           </div>
         </div>
+
+        {/* Badges */}
+        {clubBadges && clubBadges.length > 0 && (
+          <div className="space-y-2">
+            <h2 className="text-sm font-semibold text-white/80 uppercase tracking-wide px-1">
+              Badges
+            </h2>
+            <BadgeCollection
+              allBadges={(clubBadges ?? []).map((b) => {
+                const quest = Array.isArray(b.quests) ? b.quests[0] : b.quests;
+                return {
+                  id: b.id,
+                  name: b.name,
+                  description: b.description,
+                  icon: b.icon ?? null,
+                  color: b.color ?? "#6b7280",
+                  questTitle: quest?.title ?? null,
+                };
+              })}
+              earnedBadges={(memberBadges ?? []).map((mb) => ({
+                badgeId: mb.badge_id,
+                earnedAt: mb.earned_at,
+              }))}
+            />
+          </div>
+        )}
 
         {/* Spin History */}
         <div className="space-y-2">

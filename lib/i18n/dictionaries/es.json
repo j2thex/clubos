@@ -170,6 +170,7 @@
   "admin.contentEvents": "Eventos",
   "admin.contentQuests": "Misiones",
   "admin.contentServices": "Servicios",
+  "admin.contentBadges": "Insignias",
   "admin.activeCount": "{count} activos",
   "admin.backToContent": "Contenido",
   "admin.referralsTitle": "Referidos",

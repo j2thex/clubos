@@ -170,6 +170,7 @@
   "admin.contentEvents": "Events",
   "admin.contentQuests": "Quests",
   "admin.contentServices": "Services",
+  "admin.contentBadges": "Badges",
   "admin.activeCount": "{count} active",
   "admin.backToContent": "Content",
   "admin.referralsTitle": "Referrals",

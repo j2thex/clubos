@@ -293,6 +293,89 @@ export type Database = {
           },
         ];
       };
+      badges: {
+        Row: {
+          id: string;
+          club_id: string;
+          name: string;
+          description: string | null;
+          icon: string | null;
+          color: string;
+          active: boolean;
+          display_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          club_id: string;
+          name: string;
+          description?: string | null;
+          icon?: string | null;
+          color?: string;
+          active?: boolean;
+          display_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          club_id?: string;
+          name?: string;
+          description?: string | null;
+          icon?: string | null;
+          color?: string;
+          active?: boolean;
+          display_order?: number;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "badges_club_id_fkey";
+            columns: ["club_id"];
+            isOneToOne: false;
+            referencedRelation: "clubs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      member_badges: {
+        Row: {
+          id: string;
+          member_id: string;
+          badge_id: string;
+          earned_at: string;
+          quest_id: string | null;
+        };
+        Insert: {
+          id?: string;
+          member_id: string;
+          badge_id: string;
+          earned_at?: string;
+          quest_id?: string | null;
+        };
+        Update: {
+          id?: string;
+          member_id?: string;
+          badge_id?: string;
+          earned_at?: string;
+          quest_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "member_badges_member_id_fkey";
+            columns: ["member_id"];
+            isOneToOne: false;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "member_badges_badge_id_fkey";
+            columns: ["badge_id"];
+            isOneToOne: false;
+            referencedRelation: "badges";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       wheel_configs: {
         Row: {
           id: string;
