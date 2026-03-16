@@ -1,12 +1,13 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { LoginModeManager } from "../../login-mode-manager";
-import { TelegramConfigManager } from "../../telegram-config-manager";
-import { BrandingManager } from "../../branding-manager";
-import { GalleryManager } from "../../gallery-manager";
-import { WheelManager } from "../../wheel-manager";
 import { RoleManager } from "../../role-manager";
 import { MembershipPeriodManager } from "../../membership-period-manager";
+import { BrandingManager } from "../../branding-manager";
+import { GalleryManager } from "../../gallery-manager";
+import { TelegramConfigManager } from "../../telegram-config-manager";
+import { WheelManager } from "../../wheel-manager";
+import { CollapsibleSection } from "@/components/collapsible-section";
 
 export default async function SettingsPage({
   params,
@@ -65,9 +66,17 @@ export default async function SettingsPage({
         clubId={club.id}
         clubSlug={clubSlug}
       />
-      <TelegramConfigManager
-        botToken={club.telegram_bot_token ?? null}
-        chatId={club.telegram_chat_id ?? null}
+      <RoleManager
+        roles={roles ?? []}
+        clubId={club.id}
+        clubSlug={clubSlug}
+      />
+      <MembershipPeriodManager
+        periods={(membershipPeriods ?? []).map((p) => ({
+          id: p.id,
+          name: p.name,
+          duration_months: p.duration_months,
+        }))}
         clubId={club.id}
         clubSlug={clubSlug}
       />
@@ -95,32 +104,28 @@ export default async function SettingsPage({
         clubId={club.id}
         clubSlug={clubSlug}
       />
-      <WheelManager
-        segments={(segments ?? []).map((s) => ({
-          id: s.id,
-          label: s.label,
-          color: s.color ?? "#16a34a",
-          label_color: s.label_color ?? "#ffffff",
-          probability: Number(s.probability),
-          display_order: s.display_order,
-        }))}
-        clubId={club.id}
-        clubSlug={clubSlug}
-      />
-      <RoleManager
-        roles={roles ?? []}
-        clubId={club.id}
-        clubSlug={clubSlug}
-      />
-      <MembershipPeriodManager
-        periods={(membershipPeriods ?? []).map((p) => ({
-          id: p.id,
-          name: p.name,
-          duration_months: p.duration_months,
-        }))}
-        clubId={club.id}
-        clubSlug={clubSlug}
-      />
+      <CollapsibleSection title="Telegram Notifications">
+        <TelegramConfigManager
+          botToken={club.telegram_bot_token ?? null}
+          chatId={club.telegram_chat_id ?? null}
+          clubId={club.id}
+          clubSlug={clubSlug}
+        />
+      </CollapsibleSection>
+      <CollapsibleSection title="Spin Wheel">
+        <WheelManager
+          segments={(segments ?? []).map((s) => ({
+            id: s.id,
+            label: s.label,
+            color: s.color ?? "#16a34a",
+            label_color: s.label_color ?? "#ffffff",
+            probability: Number(s.probability),
+            display_order: s.display_order,
+          }))}
+          clubId={club.id}
+          clubSlug={clubSlug}
+        />
+      </CollapsibleSection>
     </div>
   );
 }
