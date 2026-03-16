@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { addBadge, updateBadge, deleteBadge } from "./actions";
 import { IconPicker } from "@/components/icon-picker";
 import { DynamicIcon } from "@/components/dynamic-icon";
+import { useLanguage } from "@/lib/i18n/provider";
 
 interface Badge {
   id: string;
@@ -49,6 +50,7 @@ export function BadgeManager({
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const { t } = useLanguage();
 
   function applyTemplate(t: typeof TEMPLATES[number]) {
     setNewName(t.name);
@@ -120,7 +122,7 @@ export function BadgeManager({
         setNewIcon(null);
         setNewColor("#6b7280");
         setNewImage(null);
-        setSuccessMsg(`"${createdName}" created successfully`);
+        setSuccessMsg(`"${createdName}"`);
         setShowForm(false);
         setTimeout(() => setSuccessMsg(null), 4000);
       }
@@ -131,7 +133,7 @@ export function BadgeManager({
     <div className="space-y-2">
       <div className="flex items-center justify-between px-1">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
-          Badges ({badges.length})
+          {t("admin.badgesCount", { count: badges.length })}
         </h2>
       </div>
 
@@ -147,7 +149,7 @@ export function BadgeManager({
 
         <div className="px-5 py-2 bg-gray-50 border-b border-gray-100">
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-            Active Badges ({badges.length})
+            {t("admin.activeBadgesCount", { count: badges.length })}
           </p>
         </div>
 
@@ -159,7 +161,7 @@ export function BadgeManager({
                 {editingId === b.id ? (
                   <div className="px-5 py-3 space-y-3 bg-gray-50">
                     <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Name</label>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.badgeName")}</label>
                       <input
                         type="text"
                         value={editName}
@@ -168,7 +170,7 @@ export function BadgeManager({
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Description</label>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.badgeDesc")}</label>
                       <textarea
                         rows={2}
                         value={editDesc}
@@ -178,7 +180,7 @@ export function BadgeManager({
                     </div>
                     <IconPicker value={editIcon} onChange={setEditIcon} />
                     <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Badge Image (optional, overrides icon)</label>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.badgeImage")}</label>
                       <input
                         type="file"
                         accept="image/jpeg,image/png,image/webp"
@@ -187,7 +189,7 @@ export function BadgeManager({
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Color</label>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.badgeColor")}</label>
                       <div className="flex items-center gap-2">
                         <input
                           type="color"
@@ -209,13 +211,13 @@ export function BadgeManager({
                         disabled={isPending}
                         className="rounded-lg bg-gray-800 text-white px-4 py-1.5 text-xs font-semibold hover:bg-gray-700 disabled:opacity-50 transition-colors"
                       >
-                        Save
+                        {t("common.save")}
                       </button>
                       <button
                         onClick={cancelEdit}
                         className="rounded-lg border border-gray-300 px-4 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-100 transition-colors"
                       >
-                        Cancel
+                        {t("common.cancel")}
                       </button>
                     </div>
                   </div>
@@ -244,21 +246,21 @@ export function BadgeManager({
                       )}
                     </div>
                     <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
-                      {b.earnedCount} earned
+                      {t("admin.earned", { count: b.earnedCount })}
                     </span>
                     <div className="flex gap-2 shrink-0">
                       <button
                         onClick={() => startEdit(b)}
                         className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
                       >
-                        Edit
+                        {t("common.edit")}
                       </button>
                       <button
                         onClick={() => handleDelete(b.id)}
                         disabled={isPending}
                         className="text-xs text-red-500 hover:text-red-700 disabled:opacity-50 transition-colors"
                       >
-                        Remove
+                        {t("common.remove")}
                       </button>
                     </div>
                   </div>
@@ -273,7 +275,7 @@ export function BadgeManager({
           onClick={() => { setShowForm(!showForm); setSuccessMsg(null); }}
           className="w-full px-5 py-3 border-t border-gray-100 flex items-center justify-between text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
         >
-          <span>{showForm ? "Cancel" : "Add New Badge"}</span>
+          <span>{showForm ? t("common.cancel") : t("admin.addNewBadge")}</span>
           <svg className={`w-4 h-4 transition-transform ${showForm ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
@@ -284,7 +286,7 @@ export function BadgeManager({
           <div>
             {/* Templates */}
             <div className="px-5 py-4 border-t border-gray-100 bg-gray-50">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Quick Add</p>
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">{t("admin.quickAdd")}</p>
               <div className="flex flex-wrap gap-2">
                 {TEMPLATES.map((t) => (
                   <button
@@ -302,29 +304,29 @@ export function BadgeManager({
 
             <form onSubmit={handleAdd} className="px-5 py-4 border-t border-gray-100 space-y-3 bg-gray-50">
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Name</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.badgeName")}</label>
                 <input
                   type="text"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  placeholder="Badge name"
+                  placeholder={t("admin.badgeName")}
                   required
                   className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Description (optional)</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.badgeDesc")}</label>
                 <textarea
                   rows={2}
                   value={newDesc}
                   onChange={(e) => setNewDesc(e.target.value)}
-                  placeholder="How to earn this badge"
+                  placeholder={t("admin.badgeDesc")}
                   className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition resize-none"
                 />
               </div>
               <IconPicker value={newIcon} onChange={setNewIcon} />
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Badge Image (optional, overrides icon)</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.badgeImage")}</label>
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
@@ -333,7 +335,7 @@ export function BadgeManager({
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Color</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.badgeColor")}</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
@@ -361,7 +363,7 @@ export function BadgeManager({
                 disabled={isPending || !newName.trim()}
                 className="w-full rounded-lg bg-gray-800 text-white px-4 py-2 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                Add Badge
+                {t("admin.addBadge")}
               </button>
             </form>
           </div>

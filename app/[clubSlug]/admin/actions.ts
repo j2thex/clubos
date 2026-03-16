@@ -417,6 +417,8 @@ export async function addQuest(
   const icon = (formData.get("icon") as string)?.trim() || null;
   const badgeId = (formData.get("badge_id") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
+  const titleEs = (formData.get("title_es") as string)?.trim() || null;
+  const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
 
   // Enforce type-specific defaults
   const effectiveMultiUse = questType === "feedback" ? true : questType === "tutorial" ? false : multiUse;
@@ -461,6 +463,8 @@ export async function addQuest(
     image_url: imageUrl,
     display_order: nextOrder,
     tutorial_steps: tutorialSteps,
+    title_es: titleEs,
+    description_es: descriptionEs,
   });
 
   if (error) return { error: "Failed to add quest" };
@@ -488,6 +492,8 @@ export async function updateQuest(
   const icon = (formData.get("icon") as string)?.trim() || null;
   const badgeId = (formData.get("badge_id") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
+  const titleEs = (formData.get("title_es") as string)?.trim() || null;
+  const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
 
   // Enforce type-specific defaults
   const effectiveMultiUse = questType === "feedback" ? true : questType === "tutorial" ? false : multiUse;
@@ -512,6 +518,8 @@ export async function updateQuest(
     proof_mode: effectiveProofMode,
     proof_placeholder: proofPlaceholder,
     tutorial_steps: tutorialSteps,
+    title_es: titleEs,
+    description_es: descriptionEs,
   };
 
   if (imageFile && imageFile.size > 0) {
@@ -589,6 +597,8 @@ export async function addEvent(
   const isPublic = formData.get("is_public") === "1";
   const icon = (formData.get("icon") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
+  const titleEs = (formData.get("title_es") as string)?.trim() || null;
+  const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
 
   if (!title) return { error: "Title is required" };
   if (!date) return { error: "Date is required" };
@@ -616,6 +626,8 @@ export async function addEvent(
     link,
     reward_spins: rewardSpins,
     is_public: isPublic,
+    title_es: titleEs,
+    description_es: descriptionEs,
   });
 
   if (error) return { error: "Failed to add event" };
@@ -640,6 +652,8 @@ export async function updateEvent(
   const isPublic = formData.get("is_public") === "1";
   const icon = (formData.get("icon") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
+  const titleEs = (formData.get("title_es") as string)?.trim() || null;
+  const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
 
   if (!title) return { error: "Title is required" };
   if (!date) return { error: "Date is required" };
@@ -656,6 +670,8 @@ export async function updateEvent(
     link,
     reward_spins: rewardSpins,
     is_public: isPublic,
+    title_es: titleEs,
+    description_es: descriptionEs,
   };
 
   if (imageFile && imageFile.size > 0) {
@@ -731,6 +747,8 @@ export async function addService(
   const isPublic = formData.get("is_public") === "1";
   const icon = (formData.get("icon") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
+  const titleEs = (formData.get("title_es") as string)?.trim() || null;
+  const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
 
   if (!title) return { error: "Title is required" };
 
@@ -763,6 +781,8 @@ export async function addService(
     is_public: isPublic,
     image_url: imageUrl,
     display_order: nextOrder,
+    title_es: titleEs,
+    description_es: descriptionEs,
   });
 
   if (error) return { error: "Failed to add service" };
@@ -783,6 +803,8 @@ export async function updateService(
   const isPublic = formData.get("is_public") === "1";
   const icon = (formData.get("icon") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
+  const titleEs = (formData.get("title_es") as string)?.trim() || null;
+  const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
 
   if (!title) return { error: "Title is required" };
 
@@ -795,6 +817,8 @@ export async function updateService(
     icon,
     price: priceStr ? Number(priceStr) : null,
     is_public: isPublic,
+    title_es: titleEs,
+    description_es: descriptionEs,
   };
 
   if (imageFile && imageFile.size > 0) {

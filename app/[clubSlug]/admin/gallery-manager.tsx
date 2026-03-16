@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { addGalleryImage, deleteGalleryImage } from "./actions";
+import { useLanguage } from "@/lib/i18n/provider";
 
 interface GalleryImage {
   id: string;
@@ -20,6 +21,7 @@ export function GalleryManager({
 }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
@@ -53,7 +55,7 @@ export function GalleryManager({
   return (
     <div className="space-y-2">
       <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-1">
-        Photo Gallery
+        {t("admin.photoGallery")}
       </h2>
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
         <div className="px-5 py-4 space-y-3">
@@ -82,7 +84,7 @@ export function GalleryManager({
           )}
 
           {images.length === 0 && (
-            <p className="text-xs text-gray-400 text-center py-4">No photos yet</p>
+            <p className="text-xs text-gray-400 text-center py-4">{t("admin.noPhotos")}</p>
           )}
 
           {error && (
@@ -92,7 +94,7 @@ export function GalleryManager({
           {/* Upload */}
           <label className={`block w-full rounded-lg border-2 border-dashed border-gray-200 px-4 py-3 text-center cursor-pointer hover:border-gray-300 transition-colors ${isPending ? "opacity-50 pointer-events-none" : ""}`}>
             <span className="text-sm text-gray-500">
-              {isPending ? "Uploading..." : "Upload photos"}
+              {isPending ? t("admin.uploading") : t("admin.uploadPhotos")}
             </span>
             <input
               type="file"

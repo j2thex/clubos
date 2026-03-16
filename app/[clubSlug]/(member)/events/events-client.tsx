@@ -3,12 +3,14 @@
 import { useState, useTransition, useMemo } from "react";
 import { rsvpEvent, cancelRsvp } from "./actions";
 import { useLanguage } from "@/lib/i18n/provider";
-import { getDateLocale } from "@/lib/i18n";
+import { getDateLocale, localized } from "@/lib/i18n";
 
 interface Event {
   id: string;
   title: string;
   description: string | null;
+  title_es: string | null;
+  description_es: string | null;
   date: string;
   time: string | null;
   price: number | null;
@@ -202,7 +204,7 @@ export function EventsClient({
               <div className="p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900">{ev.title}</p>
+                    <p className="font-semibold text-gray-900">{localized(ev.title, ev.title_es, locale)}</p>
                     <p className="text-xs text-gray-500 mt-1">
                       {formatDate(ev.date)}
                       {ev.time && ` at ${formatTime(ev.time)}`}
@@ -321,7 +323,7 @@ export function EventsClient({
                       )}
                       <div className="flex-1 min-w-0">
                         <p className={`font-semibold text-sm truncate ${isPastDate ? "text-gray-600" : "text-gray-900"}`}>
-                          {ev.title}
+                          {localized(ev.title, ev.title_es, locale)}
                         </p>
                         <p className="text-xs text-gray-500">
                           {ev.time ? formatTime(ev.time) : t("events.allDay")}

@@ -5,6 +5,8 @@ import type { Metadata } from "next";
 import { SocialLinks } from "@/components/club/social-links";
 import { PhotoGallery } from "@/components/club/photo-gallery";
 import { InviteForm } from "./invite-form";
+import { localized } from "@/lib/i18n";
+import { getServerLocale } from "@/lib/i18n/server";
 
 export async function generateMetadata({
   params,
@@ -43,6 +45,8 @@ export default async function PublicProfilePage({
 
   if (!club) notFound();
 
+  const locale = await getServerLocale();
+
   const branding = Array.isArray(club.club_branding)
     ? club.club_branding[0]
     : club.club_branding;
@@ -53,7 +57,7 @@ export default async function PublicProfilePage({
     await Promise.all([
       supabase
         .from("events")
-        .select("id, title, description, date, time, price, image_url, link, reward_spins")
+        .select("id, title, description, title_es, description_es, date, time, price, image_url, link, reward_spins")
         .eq("club_id", club.id)
         .eq("active", true)
         .eq("is_public", true)
@@ -61,14 +65,14 @@ export default async function PublicProfilePage({
         .order("date", { ascending: true }),
       supabase
         .from("quests")
-        .select("id, title, description, image_url, link, reward_spins")
+        .select("id, title, description, title_es, description_es, image_url, link, reward_spins")
         .eq("club_id", club.id)
         .eq("active", true)
         .eq("is_public", true)
         .order("display_order", { ascending: true }),
       supabase
         .from("services")
-        .select("id, title, description, image_url, link, price")
+        .select("id, title, description, title_es, description_es, image_url, link, price")
         .eq("club_id", club.id)
         .eq("active", true)
         .eq("is_public", true)
@@ -185,13 +189,13 @@ export default async function PublicProfilePage({
                   <div className="p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-900">{ev.title}</p>
+                        <p className="font-semibold text-gray-900">{localized(ev.title, ev.title_es, locale)}</p>
                         <p className="text-xs text-gray-500 mt-1">
                           {formatDate(ev.date)}
                           {ev.time && ` at ${formatTime(ev.time)}`}
                         </p>
                         {ev.description && (
-                          <p className="text-xs text-gray-400 mt-1">{ev.description}</p>
+                          <p className="text-xs text-gray-400 mt-1">{localized(ev.description, ev.description_es, locale)}</p>
                         )}
                       </div>
                       <div className="text-right shrink-0">
@@ -250,9 +254,9 @@ export default async function PublicProfilePage({
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 text-sm">{q.title}</p>
+                      <p className="font-semibold text-gray-900 text-sm">{localized(q.title, q.title_es, locale)}</p>
                       {q.description && (
-                        <p className="text-xs text-gray-400">{q.description}</p>
+                        <p className="text-xs text-gray-400">{localized(q.description, q.description_es, locale)}</p>
                       )}
                       {q.link && (() => {
                         const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(q.link!);
@@ -306,9 +310,9 @@ export default async function PublicProfilePage({
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 text-sm">{s.title}</p>
+                      <p className="font-semibold text-gray-900 text-sm">{localized(s.title, s.title_es, locale)}</p>
                       {s.description && (
-                        <p className="text-xs text-gray-400">{s.description}</p>
+                        <p className="text-xs text-gray-400">{localized(s.description, s.description_es, locale)}</p>
                       )}
                       {s.link && (
                         <a

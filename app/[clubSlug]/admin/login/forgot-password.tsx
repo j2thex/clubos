@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { requestPasswordReset } from "./reset-actions";
+import { useLanguage } from "@/lib/i18n/provider";
 
 export function ForgotPassword({
   clubSlug,
@@ -12,6 +13,7 @@ export function ForgotPassword({
 }) {
   const [sent, setSent] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const { t } = useLanguage();
 
   function handleSubmit(formData: FormData) {
     const email = (formData.get("email") as string)?.trim();
@@ -33,29 +35,29 @@ export function ForgotPassword({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Reset password</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t("login.resetPassword")}</h1>
             <p className="text-sm text-gray-500 mt-1">
-              Enter your email and we&apos;ll send you a reset link
+              {t("login.resetSubtitle")}
             </p>
           </div>
 
           {sent ? (
             <div className="space-y-4">
               <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
-                If an account exists with that email, we&apos;ve sent a reset link. Check your inbox.
+                {t("login.resetEmailSent")}
               </div>
               <button
                 onClick={onBack}
                 className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
               >
-                Back to login
+                {t("login.backToLogin")}
               </button>
             </div>
           ) : (
             <form action={handleSubmit} className="space-y-5">
               <div>
                 <label htmlFor="resetEmail" className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Email address
+                  {t("login.emailAddress")}
                 </label>
                 <input
                   id="resetEmail"
@@ -73,7 +75,7 @@ export function ForgotPassword({
                 disabled={isPending}
                 className="w-full rounded-lg bg-gray-800 text-white px-4 py-2.5 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {isPending ? "Sending..." : "Send reset link"}
+                {isPending ? t("public.sending") : t("login.sendResetLink")}
               </button>
 
               <button
@@ -81,7 +83,7 @@ export function ForgotPassword({
                 onClick={onBack}
                 className="w-full text-sm text-gray-400 hover:text-gray-600 transition-colors"
               >
-                Back to login
+                {t("login.backToLogin")}
               </button>
             </form>
           )}

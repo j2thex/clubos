@@ -28,7 +28,7 @@ export default async function EventsPage({
       supabase
         .from("events")
         .select(
-          "id, title, description, date, time, price, image_url, icon, link, reward_spins, is_public"
+          "id, title, description, date, time, price, image_url, icon, link, reward_spins, is_public, title_es, description_es"
         )
         .eq("club_id", club.id)
         .eq("active", true)
@@ -67,6 +67,8 @@ export default async function EventsPage({
     rsvps: rsvpCounts.get(e.id) ?? 0,
     checkins: checkinCounts.get(e.id) ?? 0,
     is_public: e.is_public ?? false,
+    title_es: e.title_es ?? null,
+    description_es: e.description_es ?? null,
   }));
 
   return (

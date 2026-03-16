@@ -47,3 +47,15 @@ export function detectLocale(
 export function getDateLocale(locale: Locale): string {
   return locale === "es" ? "es-ES" : "en-US";
 }
+
+/**
+ * Pick the translated content field based on locale.
+ * Falls back to the default (EN) value when the ES translation is empty/null.
+ */
+export function localized(
+  en: string,
+  es: string | null | undefined,
+  locale: Locale,
+): string {
+  return locale === "es" && es ? es : en;
+}

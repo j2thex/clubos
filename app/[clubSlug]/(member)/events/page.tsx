@@ -22,7 +22,7 @@ export default async function EventsPage({
   const [{ data: events }, { data: rsvps }, { data: checkins }, { data: branding }] = await Promise.all([
     supabase
       .from("events")
-      .select("id, title, description, date, time, price, image_url, link, reward_spins")
+      .select("id, title, description, title_es, description_es, date, time, price, image_url, link, reward_spins")
       .eq("club_id", session.club_id)
       .eq("active", true)
       .order("date", { ascending: true }),
@@ -51,6 +51,8 @@ export default async function EventsPage({
     id: e.id,
     title: e.title,
     description: e.description,
+    title_es: e.title_es,
+    description_es: e.description_es,
     date: e.date,
     time: e.time,
     price: e.price != null ? Number(e.price) : null,

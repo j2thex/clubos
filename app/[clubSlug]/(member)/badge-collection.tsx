@@ -1,6 +1,7 @@
 "use client";
 
 import { DynamicIcon } from "@/components/dynamic-icon";
+import { useLanguage } from "@/lib/i18n/provider";
 
 interface BadgeInfo {
   id: string;
@@ -24,6 +25,7 @@ export function BadgeCollection({
   allBadges: BadgeInfo[];
   earnedBadges: EarnedBadge[];
 }) {
+  const { t } = useLanguage();
   const earnedSet = new Map(earnedBadges.map((e) => [e.badgeId, e.earnedAt]));
 
   const earned = allBadges.filter((b) => earnedSet.has(b.id));
@@ -97,7 +99,7 @@ export function BadgeCollection({
               <p className="mt-2 text-xs font-semibold text-gray-500 leading-tight">{badge.name}</p>
               {badge.questTitle && (
                 <p className="text-[10px] text-gray-400 mt-1 leading-tight">
-                  Complete &ldquo;{badge.questTitle}&rdquo;
+                  {t("profile.completeToUnlock", { title: badge.questTitle })}
                 </p>
               )}
             </div>

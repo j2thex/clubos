@@ -154,7 +154,7 @@ export default async function ProfilePage({
         {clubBadges && clubBadges.length > 0 && (
           <div className="space-y-2">
             <h2 className="text-sm font-semibold text-white/80 uppercase tracking-wide px-1">
-              Badges
+              {t(locale, "profile.badges")}
             </h2>
             <BadgeCollection
               allBadges={(clubBadges ?? []).map((b) => {

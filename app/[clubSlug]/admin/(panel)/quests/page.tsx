@@ -27,7 +27,7 @@ export default async function QuestsPage({
     supabase
       .from("quests")
       .select(
-        "id, title, description, link, image_url, icon, badge_id, reward_spins, display_order, active, multi_use, is_public, quest_type, proof_mode, proof_placeholder, tutorial_steps"
+        "id, title, description, link, image_url, icon, badge_id, reward_spins, display_order, active, multi_use, is_public, quest_type, proof_mode, proof_placeholder, tutorial_steps, title_es, description_es"
       )
       .eq("club_id", club.id)
       .eq("active", true)
@@ -70,6 +70,8 @@ export default async function QuestsPage({
     proof_placeholder: q.proof_placeholder ?? null,
     tutorial_steps: q.tutorial_steps ?? null,
     badge_id: q.badge_id ?? null,
+    title_es: q.title_es ?? null,
+    description_es: q.description_es ?? null,
   }));
 
   const badgeOptions = (clubBadges ?? []).map((b) => ({

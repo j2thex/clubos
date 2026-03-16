@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { updateLoginMode, updateInviteOnly } from "./actions";
+import { useLanguage } from "@/lib/i18n/provider";
 
 export function LoginModeManager({
   loginMode,
@@ -15,6 +16,7 @@ export function LoginModeManager({
   clubSlug: string;
 }) {
   const [isPending, startTransition] = useTransition();
+  const { t } = useLanguage();
 
   function handleChange(mode: string) {
     startTransition(async () => {
@@ -31,20 +33,20 @@ export function LoginModeManager({
   const options = [
     {
       value: "code_only",
-      label: "Member code only",
-      description: "Members log in with just their unique code",
+      label: t("admin.codeOnly"),
+      description: t("admin.codeOnlyDesc"),
     },
     {
       value: "code_and_expiry",
-      label: "Code + expiry date",
-      description: "Members also enter their 4-digit expiry date (MMDD) for extra security",
+      label: t("admin.codeAndExpiry"),
+      description: t("admin.codeAndExpiryDesc"),
     },
   ];
 
   return (
     <div className="space-y-2">
       <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-1">
-        Member Login
+        {t("admin.memberLogin")}
       </h2>
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden divide-y divide-gray-100">
         {options.map((opt) => (
@@ -76,8 +78,8 @@ export function LoginModeManager({
             className="mt-0.5 rounded border-gray-300 text-gray-800 focus:ring-gray-400"
           />
           <div>
-            <p className="text-sm font-medium text-gray-900">Invite only</p>
-            <p className="text-xs text-gray-400 mt-0.5">Public page shows &ldquo;Request an Invite&rdquo; form instead of member login</p>
+            <p className="text-sm font-medium text-gray-900">{t("admin.inviteOnly")}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{t("admin.inviteOnlyDesc")}</p>
           </div>
         </label>
       </div>

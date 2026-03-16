@@ -3,12 +3,15 @@
 import { useState, useTransition } from "react";
 import { submitQuest } from "./quest-actions";
 import { useLanguage } from "@/lib/i18n/provider";
+import { localized, type Locale } from "@/lib/i18n";
 import { DynamicIcon } from "@/components/dynamic-icon";
 
 interface Quest {
   id: string;
   title: string;
   description: string | null;
+  title_es: string | null;
+  description_es: string | null;
   link: string | null;
   image_url: string | null;
   icon: string | null;
@@ -26,12 +29,14 @@ export function QuestList({
   pendingQuestIds,
   memberId,
   clubSlug,
+  locale,
 }: {
   quests: Quest[];
   completionCounts: Record<string, number>;
   pendingQuestIds: string[];
   memberId: string;
   clubSlug: string;
+  locale: Locale;
 }) {
   const [isPending, startTransition] = useTransition();
   const [proofUrls, setProofUrls] = useState<Record<string, string>>({});
@@ -128,9 +133,9 @@ export function QuestList({
             <div className="flex items-center gap-4">
               {renderIcon(q, done, isPendingQuest)}
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-gray-900 text-sm">{q.title}</p>
+                <p className="font-semibold text-gray-900 text-sm">{localized(q.title, q.title_es, locale)}</p>
                 {q.description && (
-                  <p className="text-xs text-gray-400">{q.description}</p>
+                  <p className="text-xs text-gray-400">{localized(q.description, q.description_es, locale)}</p>
                 )}
                 {q.link && (() => {
                   const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(q.link!);

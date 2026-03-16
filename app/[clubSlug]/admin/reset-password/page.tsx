@@ -1,6 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ResetForm } from "./reset-form";
 import Link from "next/link";
+import { t } from "@/lib/i18n";
+import { getServerLocale } from "@/lib/i18n/server";
 
 export default async function ResetPasswordPage({
   params,
@@ -11,6 +13,7 @@ export default async function ResetPasswordPage({
 }) {
   const { clubSlug } = await params;
   const { token } = await searchParams;
+  const locale = await getServerLocale();
 
   if (!token) {
     return (
@@ -18,7 +21,7 @@ export default async function ResetPasswordPage({
         <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-8 text-center">
           <p className="text-sm text-red-600 mb-4">Invalid reset link.</p>
           <Link href={`/${clubSlug}/admin/login`} className="text-sm text-gray-500 hover:text-gray-700">
-            Back to login
+            {t(locale, "login.backToLogin")}
           </Link>
         </div>
       </div>
@@ -54,7 +57,7 @@ export default async function ResetPasswordPage({
             href={`/${clubSlug}/admin/login`}
             className="inline-block rounded-lg bg-gray-800 text-white px-6 py-2.5 text-sm font-semibold hover:bg-gray-700 transition-colors"
           >
-            Back to login
+            {t(locale, "login.backToLogin")}
           </Link>
         </div>
       </div>
@@ -71,9 +74,9 @@ export default async function ResetPasswordPage({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Set new password</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t(locale, "login.setNewPassword")}</h1>
             <p className="text-sm text-gray-500 mt-1">
-              Choose a new password for your admin account
+              {t(locale, "login.setNewPasswordSubtitle")}
             </p>
           </div>
 

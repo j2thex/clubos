@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { addQuest, updateQuest, deleteQuest } from "./actions";
 import { useLanguage } from "@/lib/i18n/provider";
 import { IconPicker } from "@/components/icon-picker";
+import { LanguageTabs } from "@/components/language-tabs";
 import { DynamicIcon } from "@/components/dynamic-icon";
 
 interface Quest {
@@ -13,6 +14,8 @@ interface Quest {
   link: string | null;
   image_url: string | null;
   icon: string | null;
+  title_es: string | null;
+  description_es: string | null;
   reward_spins: number;
   display_order: number;
   completions: number;
@@ -66,6 +69,9 @@ export function QuestManager({
   const [editTutorialSteps, setEditTutorialSteps] = useState<string[]>([]);
   const [editIcon, setEditIcon] = useState<string | null>(null);
   const [editBadgeId, setEditBadgeId] = useState("");
+  const [editLang, setEditLang] = useState<"en" | "es">("en");
+  const [editTitleEs, setEditTitleEs] = useState("");
+  const [editDescEs, setEditDescEs] = useState("");
 
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
@@ -80,6 +86,9 @@ export function QuestManager({
   const [newTutorialSteps, setNewTutorialSteps] = useState<string[]>([]);
   const [newIcon, setNewIcon] = useState<string | null>(null);
   const [newBadgeId, setNewBadgeId] = useState("");
+  const [newLang, setNewLang] = useState<"en" | "es">("en");
+  const [newTitleEs, setNewTitleEs] = useState("");
+  const [newDescEs, setNewDescEs] = useState("");
 
   const [showForm, setShowForm] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -152,6 +161,9 @@ export function QuestManager({
     setEditTutorialSteps(q.tutorial_steps ?? []);
     setEditIcon(q.icon);
     setEditBadgeId(q.badge_id ?? "");
+    setEditTitleEs(q.title_es ?? "");
+    setEditDescEs(q.description_es ?? "");
+    setEditLang("en");
     setEditImage(null);
     setError(null);
   }
@@ -179,6 +191,8 @@ export function QuestManager({
       }
       if (editIcon) fd.set("icon", editIcon);
       fd.set("badge_id", editBadgeId);
+      fd.set("title_es", editTitleEs);
+      fd.set("description_es", editDescEs);
       if (editImage) fd.set("image", editImage);
 
       const result = await updateQuest(questId, fd, clubSlug);
@@ -217,6 +231,8 @@ export function QuestManager({
       }
       if (newIcon) fd.set("icon", newIcon);
       fd.set("badge_id", newBadgeId);
+      fd.set("title_es", newTitleEs);
+      fd.set("description_es", newDescEs);
       if (newImage) fd.set("image", newImage);
 
       const result = await addQuest(clubId, fd, clubSlug);
@@ -237,6 +253,9 @@ export function QuestManager({
         setNewIcon(null);
         setNewBadgeId("");
         setNewImage(null);
+        setNewTitleEs("");
+        setNewDescEs("");
+        setNewLang("en");
         setSuccessMsg(t("admin.questCreated", { title: createdTitle }));
         setShowForm(false);
         setTimeout(() => setSuccessMsg(null), 4000);
@@ -380,24 +399,52 @@ export function QuestManager({
               <div key={q.id}>
                 {editingId === q.id ? (
                   <div className="px-5 py-3 space-y-3 bg-gray-50">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questTitle")}</label>
-                      <input
-                        type="text"
-                        value={editTitle}
-                        onChange={(e) => setEditTitle(e.target.value)}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questDescription")}</label>
-                      <textarea
-                        rows={3}
-                        value={editDesc}
-                        onChange={(e) => setEditDesc(e.target.value)}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition resize-none"
-                      />
-                    </div>
+                    <LanguageTabs value={editLang} onChange={setEditLang} />
+                    {editLang === "en" ? (
+                      <>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questTitle")}</label>
+                          <input
+                            type="text"
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questDescription")}</label>
+                          <textarea
+                            rows={3}
+                            value={editDesc}
+                            onChange={(e) => setEditDesc(e.target.value)}
+                            className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition resize-none"
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questTitle")} (ES)</label>
+                          <input
+                            type="text"
+                            value={editTitleEs}
+                            onChange={(e) => setEditTitleEs(e.target.value)}
+                            placeholder={editTitle || t("admin.questTitlePlaceholder")}
+                            className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questDescription")} (ES)</label>
+                          <textarea
+                            rows={3}
+                            value={editDescEs}
+                            onChange={(e) => setEditDescEs(e.target.value)}
+                            placeholder={editDesc || t("admin.questDescPlaceholder")}
+                            className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition resize-none"
+                          />
+                        </div>
+                      </>
+                    )}
                     <IconPicker value={editIcon} onChange={setEditIcon} />
                     <div className="grid grid-cols-[1fr_auto] gap-3">
                       <div>
@@ -581,27 +628,55 @@ export function QuestManager({
             </div>
           </div>
         <form onSubmit={handleAdd} className="px-5 py-4 border-t border-gray-100 space-y-3 bg-gray-50">
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questTitle")}</label>
-            <input
-              type="text"
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              placeholder={t("admin.questTitlePlaceholder")}
-              required
-              className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questDescOptional")}</label>
-            <textarea
-              rows={3}
-              value={newDesc}
-              onChange={(e) => setNewDesc(e.target.value)}
-              placeholder={t("admin.questDescPlaceholder")}
-              className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition resize-none"
-            />
-          </div>
+          <LanguageTabs value={newLang} onChange={setNewLang} />
+          {newLang === "en" ? (
+            <>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questTitle")}</label>
+                <input
+                  type="text"
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  placeholder={t("admin.questTitlePlaceholder")}
+                  required
+                  className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questDescOptional")}</label>
+                <textarea
+                  rows={3}
+                  value={newDesc}
+                  onChange={(e) => setNewDesc(e.target.value)}
+                  placeholder={t("admin.questDescPlaceholder")}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition resize-none"
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questTitle")} (ES)</label>
+                <input
+                  type="text"
+                  value={newTitleEs}
+                  onChange={(e) => setNewTitleEs(e.target.value)}
+                  placeholder={newTitle || t("admin.questTitlePlaceholder")}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questDescOptional")} (ES)</label>
+                <textarea
+                  rows={3}
+                  value={newDescEs}
+                  onChange={(e) => setNewDescEs(e.target.value)}
+                  placeholder={newDesc || t("admin.questDescPlaceholder")}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition resize-none"
+                />
+              </div>
+            </>
+          )}
           <IconPicker value={newIcon} onChange={setNewIcon} />
           <div className="grid grid-cols-[1fr_auto] gap-3 items-end">
             <div>

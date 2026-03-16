@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { requestInvite } from "./actions";
+import { useLanguage } from "@/lib/i18n/provider";
 
 export function InviteForm({ clubId, clubName }: { clubId: string; clubName: string }) {
   const [expanded, setExpanded] = useState(false);
@@ -11,6 +12,7 @@ export function InviteForm({ clubId, clubName }: { clubId: string; clubName: str
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const { t } = useLanguage();
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -34,20 +36,20 @@ export function InviteForm({ clubId, clubName }: { clubId: string; clubName: str
           </svg>
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-gray-900 text-sm">Get an Invite</p>
-          <p className="text-xs text-gray-400">Ask a member to invite you to the club</p>
+          <p className="font-semibold text-gray-900 text-sm">{t("public.getInvite")}</p>
+          <p className="text-xs text-gray-400">{t("public.getInviteDesc")}</p>
         </div>
         {!sent && !expanded && (
           <button
             onClick={() => setExpanded(true)}
             className="shrink-0 text-xs font-semibold club-btn rounded-full px-4 py-1.5"
           >
-            Request
+            {t("public.requestInvite")}
           </button>
         )}
         {sent && (
           <span className="shrink-0 text-xs font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">
-            Sent!
+            {t("public.inviteSent")}
           </span>
         )}
       </div>
@@ -61,7 +63,7 @@ export function InviteForm({ clubId, clubName }: { clubId: string; clubName: str
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Your name"
+            placeholder={t("public.yourName")}
             required
             className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
           />
@@ -69,14 +71,14 @@ export function InviteForm({ clubId, clubName }: { clubId: string; clubName: str
             type="text"
             value={contact}
             onChange={(e) => setContact(e.target.value)}
-            placeholder="Phone, email, or Instagram"
+            placeholder={t("public.contactPlaceholder")}
             required
             className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
           />
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Why do you want to join? (optional)"
+            placeholder={t("public.whyJoin")}
             rows={2}
             className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition resize-none"
           />
@@ -86,14 +88,14 @@ export function InviteForm({ clubId, clubName }: { clubId: string; clubName: str
               disabled={isPending}
               className="flex-1 rounded-lg club-btn py-2 text-sm font-semibold disabled:opacity-50"
             >
-              {isPending ? "Sending..." : "Send Request"}
+              {isPending ? t("public.sending") : t("public.sendRequest")}
             </button>
             <button
               type="button"
               onClick={() => setExpanded(false)}
               className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-500 hover:bg-gray-50 transition-colors"
             >
-              Cancel
+              {t("common.cancel")}
             </button>
           </div>
         </form>
