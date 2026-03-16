@@ -86,21 +86,19 @@ export default function ExamplesPage() {
       </div>
 
       {/* Bottom CTA */}
-      <div className="border-t border-white/[0.04] px-6 sm:px-10 py-16 sm:py-20">
-        <div className="max-w-2xl">
-          <h2 className="text-2xl sm:text-3xl font-extralight tracking-tight">
-            Ready to build yours?
-          </h2>
-          <p className="mt-3 text-sm opacity-50 font-light">
-            Set up your club portal in minutes. No credit card required.
-          </p>
-          <Link
-            href="/onboarding"
-            className="mt-6 inline-flex items-center justify-center rounded-full bg-primary px-8 py-4 text-sm font-medium uppercase tracking-widest text-primary-foreground transition-all hover:brightness-110 hover:scale-[1.02]"
-          >
-            Get started free
-          </Link>
-        </div>
+      <div className="border-t border-white/[0.04] px-6 sm:px-10 py-16 sm:py-20 text-center">
+        <h2 className="text-2xl sm:text-3xl font-extralight tracking-tight">
+          Ready to build yours?
+        </h2>
+        <p className="mt-3 text-sm opacity-50 font-light">
+          Set up your club portal in minutes. No credit card required.
+        </p>
+        <Link
+          href="/onboarding"
+          className="mt-6 inline-flex items-center justify-center rounded-full bg-primary px-8 py-4 text-sm font-medium uppercase tracking-widest text-primary-foreground transition-all hover:brightness-110 hover:scale-[1.02]"
+        >
+          Get started free
+        </Link>
       </div>
     </div>
   );
