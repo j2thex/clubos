@@ -59,7 +59,7 @@ export async function middleware(request: NextRequest) {
 
   // Admin routes — require owner token (except admin login)
   if (clubPath.startsWith("/admin")) {
-    if (clubPath === "/admin/login") {
+    if (clubPath === "/admin/login" || clubPath === "/admin/reset-password") {
       return applyLocale(request, NextResponse.next());
     }
 

@@ -3,6 +3,7 @@
 import { useParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { loginOwner } from "./actions";
+import { ForgotPassword } from "./forgot-password";
 import { useLanguage } from "@/lib/i18n/provider";
 
 export default function AdminLoginPage() {
@@ -10,8 +11,13 @@ export default function AdminLoginPage() {
   const clubSlug = params.clubSlug;
 
   const [error, setError] = useState<string | null>(null);
+  const [showForgot, setShowForgot] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { t } = useLanguage();
+
+  if (showForgot) {
+    return <ForgotPassword clubSlug={clubSlug} onBack={() => setShowForgot(false)} />;
+  }
 
   const boundLogin = loginOwner.bind(null, clubSlug);
 
@@ -101,6 +107,14 @@ export default function AdminLoginPage() {
               className="w-full rounded-lg bg-gray-800 text-white px-4 py-2.5 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isPending ? t("common.signingIn") : t("common.signIn")}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowForgot(true)}
+              className="w-full text-sm text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              Forgot password?
             </button>
           </form>
         </div>
