@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { requestInvite } from "./actions";
 
 export function InviteForm({ clubId, clubName }: { clubId: string; clubName: string }) {
+  const [expanded, setExpanded] = useState(false);
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [message, setMessage] = useState("");
@@ -24,65 +25,79 @@ export function InviteForm({ clubId, clubName }: { clubId: string; clubName: str
     });
   }
 
-  if (sent) {
-    return (
-      <div className="bg-white rounded-2xl shadow-lg p-6 text-center">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-green-50 mb-3">
-          <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+  return (
+    <div className="bg-white rounded-2xl shadow p-4">
+      <div className="flex items-center gap-4">
+        <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 club-tint-bg club-primary">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
           </svg>
         </div>
-        <h3 className="font-semibold text-gray-900">Request sent!</h3>
-        <p className="text-sm text-gray-500 mt-1">We&apos;ll be in touch soon.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="bg-white rounded-2xl shadow-lg p-5">
-      <h3 className="font-semibold text-gray-900 text-center">Request an Invite</h3>
-      <p className="text-xs text-gray-400 text-center mt-1 mb-4">
-        This is an invite-only club. Leave your details and we&apos;ll get back to you.
-      </p>
-
-      {error && (
-        <div className="mb-3 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
-          {error}
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-gray-900 text-sm">Get an Invite</p>
+          <p className="text-xs text-gray-400">Ask a member to invite you to the club</p>
         </div>
-      )}
+        {!sent && !expanded && (
+          <button
+            onClick={() => setExpanded(true)}
+            className="shrink-0 text-xs font-semibold club-btn rounded-full px-4 py-1.5"
+          >
+            Request
+          </button>
+        )}
+        {sent && (
+          <span className="shrink-0 text-xs font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">
+            Sent!
+          </span>
+        )}
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Your name"
-          required
-          className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
-        />
-        <input
-          type="text"
-          value={contact}
-          onChange={(e) => setContact(e.target.value)}
-          placeholder="Phone, email, or Instagram"
-          required
-          className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
-        />
-        <textarea
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Message (optional)"
-          rows={2}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition resize-none"
-        />
-        <button
-          type="submit"
-          disabled={isPending}
-          className="club-btn w-full rounded-lg px-4 py-2.5 text-sm font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isPending ? "Sending..." : "Request Invite"}
-        </button>
-      </form>
+      {expanded && !sent && (
+        <form onSubmit={handleSubmit} className="mt-3 space-y-2">
+          {error && (
+            <p className="text-xs text-red-600">{error}</p>
+          )}
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Your name"
+            required
+            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+          />
+          <input
+            type="text"
+            value={contact}
+            onChange={(e) => setContact(e.target.value)}
+            placeholder="Phone, email, or Instagram"
+            required
+            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+          />
+          <textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Why do you want to join? (optional)"
+            rows={2}
+            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition resize-none"
+          />
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              disabled={isPending}
+              className="flex-1 rounded-lg club-btn py-2 text-sm font-semibold disabled:opacity-50"
+            >
+              {isPending ? "Sending..." : "Send Request"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setExpanded(false)}
+              className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-500 hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
     </div>
   );
 }

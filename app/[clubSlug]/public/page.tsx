@@ -153,10 +153,8 @@ export default async function PublicProfilePage({
           />
         )}
 
-        {/* Member Login or Invite Request */}
-        {club.invite_only ? (
-          <InviteForm clubId={club.id} clubName={club.name} />
-        ) : (
+        {/* Member Login (hidden if invite-only — invite form shown in quests) */}
+        {!club.invite_only && (
           <div className="bg-white rounded-2xl shadow-lg p-5 text-center">
             <p className="text-sm text-gray-500 mb-3">Already a member?</p>
             <Link
@@ -229,13 +227,17 @@ export default async function PublicProfilePage({
         )}
 
         {/* Quests */}
-        {hasQuests && (
+        {(hasQuests || club.invite_only) && (
           <div>
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-2">
               Quests
             </h2>
             <div className="space-y-3">
-              {quests.map((q) => (
+              {/* Invite quest card */}
+              {club.invite_only && (
+                <InviteForm clubId={club.id} clubName={club.name} />
+              )}
+              {(quests ?? []).map((q) => (
                 <div key={q.id} className="bg-white rounded-2xl shadow p-4">
                   <div className="flex items-center gap-4">
                     {q.image_url ? (
