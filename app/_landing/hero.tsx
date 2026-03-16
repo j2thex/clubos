@@ -42,6 +42,12 @@ export function Hero({
             >
               {t("landing.heroPrimaryCta")}
             </Link>
+            <Link
+              href="/examples"
+              className="text-sm font-light opacity-60 hover:opacity-80 transition-opacity"
+            >
+              See examples →
+            </Link>
             <a
               href="#how-it-works"
               className="text-sm font-light opacity-60 hover:opacity-80 transition-opacity"

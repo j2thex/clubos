@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { LanguageSwitcher } from "@/lib/i18n/switcher";
 
 export function LandingFooter({ t }: { t: (key: string) => string }) {
@@ -8,7 +9,12 @@ export function LandingFooter({ t }: { t: (key: string) => string }) {
           <p className="text-xs font-mono opacity-50">{t("landing.brandName")}</p>
           <p className="text-[10px] opacity-40 mt-0.5">{t("landing.footerTagline")}</p>
         </div>
-        <LanguageSwitcher variant="dark" />
+        <div className="flex items-center gap-6">
+          <Link href="/examples" className="text-xs opacity-40 hover:opacity-70 transition-opacity">
+            Examples
+          </Link>
+          <LanguageSwitcher variant="dark" />
+        </div>
       </div>
     </footer>
   );

@@ -9,44 +9,97 @@ export const metadata: Metadata = {
 
 export default function ExamplesPage() {
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      {/* Header */}
-      <div className="px-6 pt-16 pb-12 text-center max-w-3xl mx-auto">
-        <Link href="/" className="text-sm text-white/50 hover:text-white/80 transition-colors">
-          &larr; Back to osocios.club
+    <div className="min-h-screen landing-dark">
+      {/* Nav */}
+      <div className="flex items-center justify-between px-6 sm:px-10 pt-6">
+        <Link href="/" className="text-xs font-mono tracking-widest uppercase opacity-60 hover:opacity-100 transition-opacity">
+          osocios.club
         </Link>
-        <h1 className="mt-6 text-3xl sm:text-4xl lg:text-5xl font-extralight tracking-tight">
+        <Link
+          href="/onboarding"
+          className="text-xs font-medium opacity-60 hover:opacity-100 transition-opacity"
+        >
+          Get started &rarr;
+        </Link>
+      </div>
+
+      {/* Hero */}
+      <div className="px-6 sm:px-10 pt-20 pb-16 sm:pt-28 sm:pb-20">
+        <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extralight tracking-tight max-w-4xl">
           See it in action
         </h1>
-        <p className="mt-4 text-sm text-white/60 max-w-md mx-auto">
+        <p className="mt-4 text-sm sm:text-base opacity-50 max-w-lg font-light leading-relaxed">
           Every business is different. Explore example portals for your industry and see how osocios.club adapts to your needs.
         </p>
       </div>
 
-      {/* Grid */}
-      <div className="px-6 pb-20 max-w-5xl mx-auto">
+      {/* Grid — full width */}
+      <div className="px-6 sm:px-10 pb-24">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {VERTICALS.map((v) => (
             <Link
               key={v.slug}
               href={`/examples/${v.slug}`}
-              className="group rounded-2xl border border-white/[0.06] bg-white/[0.03] p-6 hover:bg-white/[0.06] transition-all duration-300"
+              className="group relative rounded-2xl border border-white/[0.06] bg-white/[0.03] overflow-hidden hover:bg-white/[0.06] transition-all duration-300"
             >
+              {/* Color bar */}
               <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg font-bold mb-4"
-                style={{ backgroundColor: v.primaryColor }}
+                className="h-32 sm:h-40 w-full relative"
+                style={{ background: `linear-gradient(135deg, ${v.primaryColor}, ${v.secondaryColor})` }}
               >
-                {v.name.charAt(0)}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-5xl sm:text-6xl font-black text-white/20">
+                    {v.name.split(" ")[0]}
+                  </span>
+                </div>
               </div>
-              <h2 className="font-medium text-sm">{v.name}</h2>
-              <p className="mt-2 text-xs font-light text-white/50 leading-relaxed">
-                {v.tagline}
-              </p>
-              <p className="mt-3 text-xs font-medium group-hover:translate-x-1 transition-transform" style={{ color: v.primaryColor }}>
-                View example &rarr;
-              </p>
+
+              {/* Content */}
+              <div className="p-5">
+                <h2 className="font-semibold text-sm">{v.name}</h2>
+                <p className="mt-2 text-xs font-light text-white/50 leading-relaxed">
+                  {v.tagline}
+                </p>
+                <div className="mt-4 flex items-center justify-between">
+                  <div className="flex gap-1.5">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] text-white/40">
+                      {v.sampleEvents.length} events
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] text-white/40">
+                      {v.sampleServices.length} services
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] text-white/40">
+                      {v.sampleQuests.length} quests
+                    </span>
+                  </div>
+                  <span
+                    className="text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{ color: v.primaryColor }}
+                  >
+                    &rarr;
+                  </span>
+                </div>
+              </div>
             </Link>
           ))}
+        </div>
+      </div>
+
+      {/* Bottom CTA */}
+      <div className="border-t border-white/[0.04] px-6 sm:px-10 py-16 sm:py-20">
+        <div className="max-w-2xl">
+          <h2 className="text-2xl sm:text-3xl font-extralight tracking-tight">
+            Ready to build yours?
+          </h2>
+          <p className="mt-3 text-sm opacity-50 font-light">
+            Set up your club portal in minutes. No credit card required.
+          </p>
+          <Link
+            href="/onboarding"
+            className="mt-6 inline-flex items-center justify-center rounded-full bg-primary px-8 py-4 text-sm font-medium uppercase tracking-widest text-primary-foreground transition-all hover:brightness-110 hover:scale-[1.02]"
+          >
+            Get started free
+          </Link>
         </div>
       </div>
     </div>
