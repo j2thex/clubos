@@ -79,7 +79,7 @@ export function LoginForm({ loginMode }: { loginMode: string }) {
                 name="memberCode"
                 type="text"
                 required
-                maxLength={6}
+                maxLength={8}
                 autoCapitalize="characters"
                 autoComplete="off"
                 placeholder={t("login.memberCodePlaceholder")}

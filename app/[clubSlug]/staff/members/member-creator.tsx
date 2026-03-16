@@ -56,7 +56,7 @@ export function StaffMemberCreator({
                 value={memberCode}
                 onChange={(e) => setMemberCode(e.target.value.toUpperCase())}
                 placeholder="ABC12"
-                maxLength={6}
+                maxLength={8}
                 required
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono tracking-wide uppercase text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition"
               />
@@ -78,7 +78,7 @@ export function StaffMemberCreator({
               value={referredBy}
               onChange={(e) => setReferredBy(e.target.value.toUpperCase())}
               placeholder="Member code (optional)"
-              maxLength={6}
+              maxLength={8}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono tracking-wide uppercase text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition"
             />
           </div>
