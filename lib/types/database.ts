@@ -46,6 +46,8 @@ export type Database = {
           login_mode: string;
           telegram_bot_token: string | null;
           telegram_chat_id: string | null;
+          invite_only: boolean;
+          claimed: boolean;
           created_at: string;
         };
         Insert: {
@@ -59,6 +61,8 @@ export type Database = {
           login_mode?: string;
           telegram_bot_token?: string | null;
           telegram_chat_id?: string | null;
+          invite_only?: boolean;
+          claimed?: boolean;
           created_at?: string;
         };
         Update: {
@@ -72,6 +76,8 @@ export type Database = {
           login_mode?: string;
           telegram_bot_token?: string | null;
           telegram_chat_id?: string | null;
+          invite_only?: boolean;
+          claimed?: boolean;
           created_at?: string;
         };
         Relationships: [
@@ -310,6 +316,44 @@ export type Database = {
             columns: ["member_id"];
             isOneToOne: false;
             referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      invite_requests: {
+        Row: {
+          id: string;
+          club_id: string;
+          name: string;
+          contact: string;
+          message: string | null;
+          status: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          club_id: string;
+          name: string;
+          contact: string;
+          message?: string | null;
+          status?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          club_id?: string;
+          name?: string;
+          contact?: string;
+          message?: string | null;
+          status?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "invite_requests_club_id_fkey";
+            columns: ["club_id"];
+            isOneToOne: false;
+            referencedRelation: "clubs";
             referencedColumns: ["id"];
           },
         ];

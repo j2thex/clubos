@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { SocialLinks } from "@/components/club/social-links";
 import { PhotoGallery } from "@/components/club/photo-gallery";
+import { InviteForm } from "./invite-form";
 
 export async function generateMetadata({
   params,
@@ -35,7 +36,7 @@ export default async function PublicProfilePage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name, club_branding(logo_url, cover_url, primary_color, secondary_color, social_instagram, social_whatsapp, social_telegram, social_google_maps)")
+    .select("id, name, invite_only, club_branding(logo_url, cover_url, primary_color, secondary_color, social_instagram, social_whatsapp, social_telegram, social_google_maps)")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -152,16 +153,20 @@ export default async function PublicProfilePage({
           />
         )}
 
-        {/* Member Login */}
-        <div className="bg-white rounded-2xl shadow-lg p-5 text-center">
-          <p className="text-sm text-gray-500 mb-3">Already a member?</p>
-          <Link
-            href={`/${clubSlug}/login`}
-            className="inline-block w-full rounded-xl club-btn px-6 py-3 text-sm font-semibold text-white transition-colors"
-          >
-            Member Login
-          </Link>
-        </div>
+        {/* Member Login or Invite Request */}
+        {club.invite_only ? (
+          <InviteForm clubId={club.id} clubName={club.name} />
+        ) : (
+          <div className="bg-white rounded-2xl shadow-lg p-5 text-center">
+            <p className="text-sm text-gray-500 mb-3">Already a member?</p>
+            <Link
+              href={`/${clubSlug}/login`}
+              className="inline-block w-full rounded-xl club-btn px-6 py-3 text-sm font-semibold text-white transition-colors"
+            >
+              Member Login
+            </Link>
+          </div>
+        )}
 
         {/* Events */}
         {hasEvents && (

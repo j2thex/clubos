@@ -17,3 +17,15 @@ export async function notifyStaff(clubId: string, message: string) {
     // Fire-and-forget — never block the member action
   }
 }
+
+export async function notifyPlatform(message: string) {
+  try {
+    const token = process.env.PLATFORM_TELEGRAM_BOT_TOKEN;
+    const chatId = process.env.PLATFORM_TELEGRAM_CHAT_ID;
+    if (!token || !chatId) return;
+
+    await sendTelegramMessage(token, chatId, message);
+  } catch {
+    // Fire-and-forget
+  }
+}

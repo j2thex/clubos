@@ -18,7 +18,7 @@ export default async function SettingsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, login_mode, telegram_bot_token, telegram_chat_id")
+    .select("id, login_mode, invite_only, telegram_bot_token, telegram_chat_id")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -61,6 +61,7 @@ export default async function SettingsPage({
     <div className="space-y-6">
       <LoginModeManager
         loginMode={club.login_mode ?? "code_only"}
+        inviteOnly={club.invite_only ?? false}
         clubId={club.id}
         clubSlug={clubSlug}
       />

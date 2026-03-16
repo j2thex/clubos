@@ -33,6 +33,25 @@ export async function updateLoginMode(
   return { ok: true };
 }
 
+export async function updateInviteOnly(
+  clubId: string,
+  inviteOnly: boolean,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ invite_only: inviteOnly })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to update invite setting" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/public`);
+  return { ok: true };
+}
+
 export async function updateTelegramConfig(
   clubId: string,
   botToken: string,

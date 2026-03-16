@@ -1,14 +1,16 @@
 "use client";
 
 import { useTransition } from "react";
-import { updateLoginMode } from "./actions";
+import { updateLoginMode, updateInviteOnly } from "./actions";
 
 export function LoginModeManager({
   loginMode,
+  inviteOnly,
   clubId,
   clubSlug,
 }: {
   loginMode: string;
+  inviteOnly: boolean;
   clubId: string;
   clubSlug: string;
 }) {
@@ -17,6 +19,12 @@ export function LoginModeManager({
   function handleChange(mode: string) {
     startTransition(async () => {
       await updateLoginMode(clubId, mode, clubSlug);
+    });
+  }
+
+  function handleInviteToggle(checked: boolean) {
+    startTransition(async () => {
+      await updateInviteOnly(clubId, checked, clubSlug);
     });
   }
 
@@ -58,6 +66,20 @@ export function LoginModeManager({
             </div>
           </label>
         ))}
+        <label
+          className={`flex items-start gap-3 px-5 py-4 cursor-pointer hover:bg-gray-50 transition-colors ${isPending ? "opacity-50 pointer-events-none" : ""}`}
+        >
+          <input
+            type="checkbox"
+            checked={inviteOnly}
+            onChange={(e) => handleInviteToggle(e.target.checked)}
+            className="mt-0.5 rounded border-gray-300 text-gray-800 focus:ring-gray-400"
+          />
+          <div>
+            <p className="text-sm font-medium text-gray-900">Invite only</p>
+            <p className="text-xs text-gray-400 mt-0.5">Public page shows &ldquo;Request an Invite&rdquo; form instead of member login</p>
+          </div>
+        </label>
       </div>
     </div>
   );
