@@ -131,6 +131,11 @@ export function LoginForm({ loginMode }: { loginMode: string }) {
         <p className="text-center text-xs text-gray-400 mt-6">
           {t("login.contactAdminHelp")}
         </p>
+        <p className="text-center text-xs text-gray-300 mt-2">
+          <a href="/privacy" className="underline hover:text-gray-500 transition-colors">{t("legal.privacyPolicy")}</a>
+          {" · "}
+          <a href="/terms" className="underline hover:text-gray-500 transition-colors">{t("legal.termsOfUse")}</a>
+        </p>
       </div>
     </div>
   );

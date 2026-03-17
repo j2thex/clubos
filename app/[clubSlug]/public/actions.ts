@@ -20,6 +20,7 @@ export async function requestInvite(
     name: name.trim(),
     contact: contact.trim(),
     message: message?.trim() || null,
+    consent_given_at: new Date().toISOString(),
   });
 
   if (error) return { error: "Failed to submit request" };

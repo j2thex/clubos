@@ -341,9 +341,14 @@ export default async function PublicProfilePage({
         )}
 
         {/* Footer */}
-        <p className="text-center text-xs text-gray-300 pt-4">
-          © {new Date().getFullYear()} {club.name} · Powered by osocios
-        </p>
+        <div className="text-center text-xs text-gray-300 pt-4 space-y-1">
+          <p>© {new Date().getFullYear()} {club.name} · Powered by osocios</p>
+          <p>
+            <a href="/privacy" className="underline hover:text-gray-500 transition-colors">{localized("Privacy Policy", "Pol\u00edtica de Privacidad", locale)}</a>
+            {" · "}
+            <a href="/terms" className="underline hover:text-gray-500 transition-colors">{localized("Terms of Use", "Condiciones de Uso", locale)}</a>
+          </p>
+        </div>
       </div>
     </div>
   );

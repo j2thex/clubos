@@ -453,5 +453,11 @@
   "landing.directorySubtitle": "{count} clubs already building their community",
   "landing.directoryViewClub": "View public profile →",
 
-  "landing.footerTagline": "The operating system for private clubs"
+  "landing.footerTagline": "The operating system for private clubs",
+
+  "legal.privacyPolicy": "Privacy Policy",
+  "legal.termsOfUse": "Terms of Use",
+  "legal.consentPrefix": "I agree to the",
+  "legal.consentAnd": "and",
+  "legal.backToHome": "Back to home"
 }

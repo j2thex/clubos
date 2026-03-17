@@ -13,6 +13,12 @@ export function LandingFooter({ t }: { t: (key: string) => string }) {
           <Link href="/examples" className="text-xs opacity-40 hover:opacity-70 transition-opacity">
             Examples
           </Link>
+          <Link href="/privacy" className="text-xs opacity-40 hover:opacity-70 transition-opacity">
+            {t("legal.privacyPolicy")}
+          </Link>
+          <Link href="/terms" className="text-xs opacity-40 hover:opacity-70 transition-opacity">
+            {t("legal.termsOfUse")}
+          </Link>
           <LanguageSwitcher variant="dark" />
         </div>
       </div>

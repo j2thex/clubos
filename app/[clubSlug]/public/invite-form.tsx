@@ -10,6 +10,7 @@ export function InviteForm({ clubId, clubName }: { clubId: string; clubName: str
   const [contact, setContact] = useState("");
   const [message, setMessage] = useState("");
   const [sent, setSent] = useState(false);
+  const [consent, setConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const { t } = useLanguage();
@@ -82,10 +83,25 @@ export function InviteForm({ clubId, clubName }: { clubId: string; clubName: str
             rows={2}
             className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition resize-none"
           />
+          <label className="flex items-start gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
+              required
+              className="mt-0.5 rounded border-gray-300 text-gray-800 focus:ring-gray-400"
+            />
+            <span className="text-xs text-gray-500">
+              {t("legal.consentPrefix")}{" "}
+              <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline text-gray-700">{t("legal.privacyPolicy")}</a>
+              {" "}{t("legal.consentAnd")}{" "}
+              <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline text-gray-700">{t("legal.termsOfUse")}</a>
+            </span>
+          </label>
           <div className="flex gap-2">
             <button
               type="submit"
-              disabled={isPending}
+              disabled={isPending || !consent}
               className="flex-1 rounded-lg club-btn py-2 text-sm font-semibold disabled:opacity-50"
             >
               {isPending ? t("public.sending") : t("public.sendRequest")}
