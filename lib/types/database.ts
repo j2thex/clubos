@@ -43,6 +43,11 @@ export type Database = {
           active: boolean;
           timezone: string;
           currency: string;
+          login_mode: string;
+          telegram_bot_token: string | null;
+          telegram_chat_id: string | null;
+          invite_only: boolean;
+          claimed: boolean;
           created_at: string;
         };
         Insert: {
@@ -53,6 +58,11 @@ export type Database = {
           active?: boolean;
           timezone?: string;
           currency?: string;
+          login_mode?: string;
+          telegram_bot_token?: string | null;
+          telegram_chat_id?: string | null;
+          invite_only?: boolean;
+          claimed?: boolean;
           created_at?: string;
         };
         Update: {
@@ -63,6 +73,11 @@ export type Database = {
           active?: boolean;
           timezone?: string;
           currency?: string;
+          login_mode?: string;
+          telegram_bot_token?: string | null;
+          telegram_chat_id?: string | null;
+          invite_only?: boolean;
+          claimed?: boolean;
           created_at?: string;
         };
         Relationships: [
@@ -85,6 +100,10 @@ export type Database = {
           primary_color: string;
           secondary_color: string;
           hero_content: string | null;
+          social_instagram: string | null;
+          social_whatsapp: string | null;
+          social_telegram: string | null;
+          social_google_maps: string | null;
           created_at: string;
         };
         Insert: {
@@ -96,6 +115,10 @@ export type Database = {
           primary_color?: string;
           secondary_color?: string;
           hero_content?: string | null;
+          social_instagram?: string | null;
+          social_whatsapp?: string | null;
+          social_telegram?: string | null;
+          social_google_maps?: string | null;
           created_at?: string;
         };
         Update: {
@@ -107,6 +130,10 @@ export type Database = {
           primary_color?: string;
           secondary_color?: string;
           hero_content?: string | null;
+          social_instagram?: string | null;
+          social_whatsapp?: string | null;
+          social_telegram?: string | null;
+          social_google_maps?: string | null;
           created_at?: string;
         };
         Relationships: [
@@ -132,6 +159,8 @@ export type Database = {
           membership_period_id: string | null;
           valid_till: string | null;
           referred_by: string | null;
+          is_premium_referrer: boolean;
+          referral_reward_spins: number;
           created_at: string;
         };
         Insert: {
@@ -146,6 +175,8 @@ export type Database = {
           membership_period_id?: string | null;
           valid_till?: string | null;
           referred_by?: string | null;
+          is_premium_referrer?: boolean;
+          referral_reward_spins?: number;
           created_at?: string;
         };
         Update: {
@@ -160,6 +191,8 @@ export type Database = {
           membership_period_id?: string | null;
           valid_till?: string | null;
           referred_by?: string | null;
+          is_premium_referrer?: boolean;
+          referral_reward_spins?: number;
           created_at?: string;
         };
         Relationships: [
@@ -283,6 +316,165 @@ export type Database = {
             columns: ["member_id"];
             isOneToOne: false;
             referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      invite_requests: {
+        Row: {
+          id: string;
+          club_id: string;
+          name: string;
+          contact: string;
+          message: string | null;
+          status: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          club_id: string;
+          name: string;
+          contact: string;
+          message?: string | null;
+          status?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          club_id?: string;
+          name?: string;
+          contact?: string;
+          message?: string | null;
+          status?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "invite_requests_club_id_fkey";
+            columns: ["club_id"];
+            isOneToOne: false;
+            referencedRelation: "clubs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      club_gallery: {
+        Row: {
+          id: string;
+          club_id: string;
+          image_url: string;
+          caption: string | null;
+          display_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          club_id: string;
+          image_url: string;
+          caption?: string | null;
+          display_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          club_id?: string;
+          image_url?: string;
+          caption?: string | null;
+          display_order?: number;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "club_gallery_club_id_fkey";
+            columns: ["club_id"];
+            isOneToOne: false;
+            referencedRelation: "clubs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      badges: {
+        Row: {
+          id: string;
+          club_id: string;
+          name: string;
+          description: string | null;
+          icon: string | null;
+          image_url: string | null;
+          color: string;
+          active: boolean;
+          display_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          club_id: string;
+          name: string;
+          description?: string | null;
+          icon?: string | null;
+          image_url?: string | null;
+          color?: string;
+          active?: boolean;
+          display_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          club_id?: string;
+          name?: string;
+          description?: string | null;
+          icon?: string | null;
+          image_url?: string | null;
+          color?: string;
+          active?: boolean;
+          display_order?: number;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "badges_club_id_fkey";
+            columns: ["club_id"];
+            isOneToOne: false;
+            referencedRelation: "clubs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      member_badges: {
+        Row: {
+          id: string;
+          member_id: string;
+          badge_id: string;
+          earned_at: string;
+          quest_id: string | null;
+        };
+        Insert: {
+          id?: string;
+          member_id: string;
+          badge_id: string;
+          earned_at?: string;
+          quest_id?: string | null;
+        };
+        Update: {
+          id?: string;
+          member_id?: string;
+          badge_id?: string;
+          earned_at?: string;
+          quest_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "member_badges_member_id_fkey";
+            columns: ["member_id"];
+            isOneToOne: false;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "member_badges_badge_id_fkey";
+            columns: ["badge_id"];
+            isOneToOne: false;
+            referencedRelation: "badges";
             referencedColumns: ["id"];
           },
         ];

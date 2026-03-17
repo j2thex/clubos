@@ -67,46 +67,48 @@ export function StaffMemberRow({
                 {isExpired ? `Expired ${formatted}` : `Valid till ${formatted}`}
               </button>
               {editingDate && (
-                <div className="flex items-center gap-1 mt-0.5">
+                <div className="mt-2 space-y-2">
                   <input
                     type="date"
                     defaultValue={member.validTill}
                     onChange={(e) => setManualDate(e.target.value)}
                     disabled={isPending}
-                    className="rounded-lg border border-gray-300 px-2 py-1 text-xs text-gray-500 bg-white transition disabled:opacity-50"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 bg-white transition disabled:opacity-50"
                   />
-                  <button
-                    onClick={() => {
-                      if (!manualDate) return;
-                      startTransition(async () => {
-                        await setManualValidTill(member.id, manualDate, clubSlug);
-                        setManualDate("");
-                        setEditingDate(false);
-                      });
-                    }}
-                    disabled={isPending || !manualDate}
-                    className="text-[10px] font-medium text-blue-600 hover:text-blue-700 disabled:opacity-50 transition-colors"
-                  >
-                    Save
-                  </button>
-                  <button
-                    onClick={() => { setEditingDate(false); setManualDate(""); }}
-                    className="text-[10px] font-medium text-gray-400 hover:text-gray-500 transition-colors"
-                  >
-                    Cancel
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        if (!manualDate) return;
+                        startTransition(async () => {
+                          await setManualValidTill(member.id, manualDate, clubSlug);
+                          setManualDate("");
+                          setEditingDate(false);
+                        });
+                      }}
+                      disabled={isPending || !manualDate}
+                      className="flex-1 rounded-lg bg-blue-600 text-white text-xs font-semibold py-2 hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                    >
+                      {isPending ? "Saving..." : "Save"}
+                    </button>
+                    <button
+                      onClick={() => { setEditingDate(false); setManualDate(""); }}
+                      className="flex-1 rounded-lg border border-gray-300 text-xs font-semibold text-gray-600 py-2 hover:bg-gray-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
               )}
             </>
           );
         })() : (
-          <div className="flex items-center gap-1 mt-0.5">
+          <div className="mt-2 space-y-2">
             <input
               type="date"
               value={manualDate}
               onChange={(e) => setManualDate(e.target.value)}
               disabled={isPending}
-              className="rounded-lg border border-gray-300 px-2 py-1 text-xs text-gray-500 bg-white transition disabled:opacity-50"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 bg-white transition disabled:opacity-50"
             />
             {manualDate && (
               <button
@@ -117,9 +119,9 @@ export function StaffMemberRow({
                   });
                 }}
                 disabled={isPending}
-                className="text-[10px] font-medium text-blue-600 hover:text-blue-700 disabled:opacity-50 transition-colors"
+                className="w-full rounded-lg bg-blue-600 text-white text-xs font-semibold py-2 hover:bg-blue-700 disabled:opacity-50 transition-colors"
               >
-                Set
+                {isPending ? "Setting..." : "Set Expiration"}
               </button>
             )}
           </div>

@@ -22,10 +22,8 @@ export default async function AdminReferralsPage({
   if (!club) notFound();
   const locale = await getServerLocale();
 
-  // Get referrals from two sources:
-  // 1. Quest-based referrals (member_quests with referral_member_code)
-  // 2. Direct referrals (members.referred_by set during creation)
-  const [{ data: referralCompletions }, { data: directReferrals }] = await Promise.all([
+  // Get referrals from two sources + all members for premium referrer data
+  const [{ data: referralCompletions }, { data: directReferrals }, { data: allMembers }] = await Promise.all([
     supabase
       .from("member_quests")
       .select("member_id, referral_member_code, completed_at, quests!inner(quest_type, club_id)")
@@ -39,47 +37,58 @@ export default async function AdminReferralsPage({
       .select("member_code, full_name, referred_by, created_at")
       .eq("club_id", club.id)
       .not("referred_by", "is", null),
+    supabase
+      .from("members")
+      .select("id, member_code, full_name, is_premium_referrer, referral_reward_spins")
+      .eq("club_id", club.id)
+      .eq("status", "active"),
   ]);
+
+  // Build member lookup maps
+  const memberByCode = new Map(
+    (allMembers ?? []).map((m) => [m.member_code, m]),
+  );
+  const memberById = new Map(
+    (allMembers ?? []).map((m) => [m.id, m]),
+  );
 
   // Build referrer groups map
   const referrerGroups = new Map<string, {
     code: string;
     name: string | null;
+    memberId: string;
+    isPremiumReferrer: boolean;
+    referralRewardSpins: number;
     referrals: { code: string; name: string | null; date: string }[];
   }>();
 
-  // Track referred codes to deduplicate across sources
   const seenPairs = new Set<string>();
+
+  // Helper to get or create a referrer group
+  function getGroup(code: string) {
+    if (!referrerGroups.has(code)) {
+      const member = memberByCode.get(code);
+      referrerGroups.set(code, {
+        code,
+        name: member?.full_name ?? null,
+        memberId: member?.id ?? "",
+        isPremiumReferrer: member?.is_premium_referrer ?? false,
+        referralRewardSpins: member?.referral_reward_spins ?? 0,
+        referrals: [],
+      });
+    }
+    return referrerGroups.get(code)!;
+  }
 
   // Process direct referrals (members.referred_by)
   if (directReferrals && directReferrals.length > 0) {
-    // Look up referrer names
-    const referrerCodes = [...new Set(directReferrals.map((r) => r.referred_by!))];
-    const { data: referrerMembers } = await supabase
-      .from("members")
-      .select("member_code, full_name")
-      .eq("club_id", club.id)
-      .in("member_code", referrerCodes);
-
-    const referrerNameMap = new Map(
-      (referrerMembers ?? []).map((m) => [m.member_code, m.full_name]),
-    );
-
     for (const member of directReferrals) {
       const referrerCode = member.referred_by!;
       const pairKey = `${referrerCode}->${member.member_code}`;
       if (seenPairs.has(pairKey)) continue;
       seenPairs.add(pairKey);
 
-      if (!referrerGroups.has(referrerCode)) {
-        referrerGroups.set(referrerCode, {
-          code: referrerCode,
-          name: referrerNameMap.get(referrerCode) ?? null,
-          referrals: [],
-        });
-      }
-
-      referrerGroups.get(referrerCode)!.referrals.push({
+      getGroup(referrerCode).referrals.push({
         code: member.member_code,
         name: member.full_name,
         date: member.created_at,
@@ -89,78 +98,56 @@ export default async function AdminReferralsPage({
 
   // Process quest-based referrals
   if (referralCompletions && referralCompletions.length > 0) {
-    const memberIds = [...new Set(referralCompletions.map((r) => r.member_id))];
-    const { data: members } = await supabase
-      .from("members")
-      .select("id, member_code, full_name")
-      .in("id", memberIds);
-
-    const memberMap = new Map(
-      (members ?? []).map((m) => [m.id, { code: m.member_code, name: m.full_name }]),
-    );
-
-    const referredCodes = [...new Set(
-      referralCompletions.map((r) => r.referral_member_code).filter(Boolean) as string[],
-    )];
-    const { data: referredMembers } = await supabase
-      .from("members")
-      .select("member_code, full_name")
-      .eq("club_id", club.id)
-      .in("member_code", referredCodes.length > 0 ? referredCodes : ["__none__"]);
-
-    const referredMap = new Map(
-      (referredMembers ?? []).map((m) => [m.member_code, m.full_name]),
-    );
-
     for (const completion of referralCompletions) {
-      const referrer = memberMap.get(completion.member_id);
+      const referrer = memberById.get(completion.member_id);
       if (!referrer) continue;
 
       const referredCode = completion.referral_member_code!;
-      const pairKey = `${referrer.code}->${referredCode}`;
+      const pairKey = `${referrer.member_code}->${referredCode}`;
       if (seenPairs.has(pairKey)) continue;
       seenPairs.add(pairKey);
 
-      if (!referrerGroups.has(referrer.code)) {
-        referrerGroups.set(referrer.code, {
-          code: referrer.code,
-          name: referrer.name,
-          referrals: [],
-        });
-      }
-
-      referrerGroups.get(referrer.code)!.referrals.push({
+      const referredMember = memberByCode.get(referredCode);
+      getGroup(referrer.member_code).referrals.push({
         code: referredCode,
-        name: referredMap.get(referredCode) ?? null,
+        name: referredMember?.full_name ?? null,
         date: completion.completed_at,
       });
     }
   }
 
-  // Sort by referral count descending
-  const referrers = [...referrerGroups.values()].sort(
-    (a, b) => b.referrals.length - a.referrals.length,
-  );
+  // Also include premium referrers who have no referrals yet (so admin can see/manage them)
+  for (const member of allMembers ?? []) {
+    if (member.is_premium_referrer && !referrerGroups.has(member.member_code)) {
+      getGroup(member.member_code); // creates empty group
+    }
+  }
+
+  // Sort: premium referrers first, then by referral count descending
+  const referrers = [...referrerGroups.values()].sort((a, b) => {
+    if (a.isPremiumReferrer !== b.isPremiumReferrer) return a.isPremiumReferrer ? -1 : 1;
+    return b.referrals.length - a.referrals.length;
+  });
 
   const totalReferrals = referrers.reduce((sum, r) => sum + r.referrals.length, 0);
 
-  if (totalReferrals === 0) {
-    return (
-      <div className="space-y-2">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-1">
-          {t(locale, "admin.referralsTitle")}
-        </h2>
-        <ReferralTree referrers={[]} />
-      </div>
-    );
-  }
+  // Get all active members for the "make premium" dropdown
+  const memberOptions = (allMembers ?? [])
+    .filter((m) => !referrerGroups.has(m.member_code))
+    .map((m) => ({ id: m.id, code: m.member_code, name: m.full_name }));
 
   return (
     <div className="space-y-2">
       <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-1">
-        {t(locale, "admin.referralsCount", { count: totalReferrals })}
+        {totalReferrals === 0
+          ? t(locale, "admin.referralsTitle")
+          : t(locale, "admin.referralsCount", { count: totalReferrals })}
       </h2>
-      <ReferralTree referrers={referrers} />
+      <ReferralTree
+        referrers={referrers}
+        clubSlug={clubSlug}
+        memberOptions={memberOptions}
+      />
     </div>
   );
 }

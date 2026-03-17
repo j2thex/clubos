@@ -10,6 +10,123 @@ export async function logoutOwner(clubSlug: string) {
   redirect(`/${clubSlug}/admin/login`);
 }
 
+export async function updateLoginMode(
+  clubId: string,
+  mode: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  if (mode !== "code_only" && mode !== "code_and_expiry") {
+    return { error: "Invalid login mode" };
+  }
+
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ login_mode: mode })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to update login mode" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/login`);
+  return { ok: true };
+}
+
+export async function updateInviteOnly(
+  clubId: string,
+  inviteOnly: boolean,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ invite_only: inviteOnly })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to update invite setting" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/public`);
+  return { ok: true };
+}
+
+export async function updateTelegramConfig(
+  clubId: string,
+  botToken: string,
+  chatId: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({
+      telegram_bot_token: botToken || null,
+      telegram_chat_id: chatId || null,
+    })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to save Telegram config" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
+export async function testTelegramNotification(
+  clubId: string,
+  _clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("telegram_bot_token, telegram_chat_id, name")
+    .eq("id", clubId)
+    .single();
+
+  if (!club?.telegram_bot_token || !club?.telegram_chat_id) {
+    return { error: "Save bot token and chat ID first" };
+  }
+
+  try {
+    const { sendTelegramMessage } = await import("@/lib/telegram");
+    await sendTelegramMessage(
+      club.telegram_bot_token,
+      club.telegram_chat_id,
+      `✅ <b>${club.name}</b> — Telegram notifications connected!`,
+    );
+    return { ok: true };
+  } catch {
+    return { error: "Failed to send test message. Check your bot token and chat ID." };
+  }
+}
+
+export async function setPremiumReferrer(
+  memberId: string,
+  isPremium: boolean,
+  rewardSpins: number,
+  clubSlug: string,
+) {
+  const supabase = createAdminClient();
+
+  if (rewardSpins < 0) return { error: "Reward spins must be 0 or more" };
+
+  const { error } = await supabase
+    .from("members")
+    .update({
+      is_premium_referrer: isPremium,
+      referral_reward_spins: isPremium ? rewardSpins : 0,
+    })
+    .eq("id", memberId);
+
+  if (error) return { error: "Failed to update referrer status" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
 export async function createMember(
   clubId: string,
   memberCode: string,
@@ -17,8 +134,8 @@ export async function createMember(
 ) {
   const code = memberCode.trim().toUpperCase();
 
-  if (!code || code.length < 3 || code.length > 6) {
-    return { error: "Member code must be 3-6 characters" };
+  if (!code || code.length < 3 || code.length > 8) {
+    return { error: "Member code must be 3-8 characters" };
   }
   if (!/^[A-Z0-9]+$/.test(code)) {
     return { error: "Member code must be alphanumeric" };
@@ -69,8 +186,8 @@ export async function createStaffMember(
   const code = memberCode.trim().toUpperCase();
   const trimmedPin = pin.trim();
 
-  if (!code || code.length < 3 || code.length > 6) {
-    return { error: "Staff code must be 3-6 characters" };
+  if (!code || code.length < 3 || code.length > 8) {
+    return { error: "Staff code must be 3-8 characters" };
   }
   if (!/^[A-Z0-9]+$/.test(code)) {
     return { error: "Staff code must be alphanumeric" };
@@ -296,7 +413,17 @@ export async function addQuest(
   const questType = (formData.get("quest_type") as string) || "default";
   const proofMode = (formData.get("proof_mode") as string) || "none";
   const proofPlaceholder = (formData.get("proof_placeholder") as string)?.trim() || null;
+  const tutorialStepsRaw = formData.get("tutorial_steps") as string | null;
+  const icon = (formData.get("icon") as string)?.trim() || null;
+  const badgeId = (formData.get("badge_id") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
+  const titleEs = (formData.get("title_es") as string)?.trim() || null;
+  const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
+
+  // Enforce type-specific defaults
+  const effectiveMultiUse = questType === "feedback" ? true : questType === "tutorial" ? false : multiUse;
+  const effectiveProofMode = questType === "feedback" ? "required" : questType === "tutorial" ? "none" : proofMode;
+  const tutorialSteps = questType === "tutorial" && tutorialStepsRaw ? JSON.parse(tutorialStepsRaw) : null;
 
   if (!title) return { error: "Title is required" };
   if (rewardSpins < 0) return { error: "Reward cannot be negative" };
@@ -325,14 +452,19 @@ export async function addQuest(
     title,
     description,
     link,
+    icon,
+    badge_id: badgeId,
     reward_spins: rewardSpins,
-    multi_use: multiUse,
+    multi_use: effectiveMultiUse,
     is_public: isPublic,
     quest_type: questType,
-    proof_mode: proofMode,
+    proof_mode: effectiveProofMode,
     proof_placeholder: proofPlaceholder,
     image_url: imageUrl,
     display_order: nextOrder,
+    tutorial_steps: tutorialSteps,
+    title_es: titleEs,
+    description_es: descriptionEs,
   });
 
   if (error) return { error: "Failed to add quest" };
@@ -356,7 +488,17 @@ export async function updateQuest(
   const questType = (formData.get("quest_type") as string) || "default";
   const proofMode = (formData.get("proof_mode") as string) || "none";
   const proofPlaceholder = (formData.get("proof_placeholder") as string)?.trim() || null;
+  const tutorialStepsRaw = formData.get("tutorial_steps") as string | null;
+  const icon = (formData.get("icon") as string)?.trim() || null;
+  const badgeId = (formData.get("badge_id") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
+  const titleEs = (formData.get("title_es") as string)?.trim() || null;
+  const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
+
+  // Enforce type-specific defaults
+  const effectiveMultiUse = questType === "feedback" ? true : questType === "tutorial" ? false : multiUse;
+  const effectiveProofMode = questType === "feedback" ? "required" : questType === "tutorial" ? "none" : proofMode;
+  const tutorialSteps = questType === "tutorial" && tutorialStepsRaw ? JSON.parse(tutorialStepsRaw) : null;
 
   if (!title) return { error: "Title is required" };
   if (rewardSpins < 0) return { error: "Reward cannot be negative" };
@@ -367,12 +509,17 @@ export async function updateQuest(
     title,
     description,
     link,
+    icon,
+    badge_id: badgeId,
     reward_spins: rewardSpins,
-    multi_use: multiUse,
+    multi_use: effectiveMultiUse,
     is_public: isPublic,
     quest_type: questType,
-    proof_mode: proofMode,
+    proof_mode: effectiveProofMode,
     proof_placeholder: proofPlaceholder,
+    tutorial_steps: tutorialSteps,
+    title_es: titleEs,
+    description_es: descriptionEs,
   };
 
   if (imageFile && imageFile.size > 0) {
@@ -448,7 +595,10 @@ export async function addEvent(
   const rawSpins = formData.get("reward_spins");
   const rewardSpins = rawSpins !== null && rawSpins !== "" ? Number(rawSpins) : 1;
   const isPublic = formData.get("is_public") === "1";
+  const icon = (formData.get("icon") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
+  const titleEs = (formData.get("title_es") as string)?.trim() || null;
+  const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
 
   if (!title) return { error: "Title is required" };
   if (!date) return { error: "Date is required" };
@@ -472,9 +622,12 @@ export async function addEvent(
     time: time || null,
     price: priceStr ? Number(priceStr) : null,
     image_url: imageUrl,
+    icon,
     link,
     reward_spins: rewardSpins,
     is_public: isPublic,
+    title_es: titleEs,
+    description_es: descriptionEs,
   });
 
   if (error) return { error: "Failed to add event" };
@@ -497,7 +650,10 @@ export async function updateEvent(
   const rawSpins = formData.get("reward_spins");
   const rewardSpins = rawSpins !== null && rawSpins !== "" ? Number(rawSpins) : 1;
   const isPublic = formData.get("is_public") === "1";
+  const icon = (formData.get("icon") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
+  const titleEs = (formData.get("title_es") as string)?.trim() || null;
+  const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
 
   if (!title) return { error: "Title is required" };
   if (!date) return { error: "Date is required" };
@@ -510,9 +666,12 @@ export async function updateEvent(
     date,
     time: time || null,
     price: priceStr ? Number(priceStr) : null,
+    icon,
     link,
     reward_spins: rewardSpins,
     is_public: isPublic,
+    title_es: titleEs,
+    description_es: descriptionEs,
   };
 
   if (imageFile && imageFile.size > 0) {
@@ -586,7 +745,10 @@ export async function addService(
   const link = (formData.get("link") as string)?.trim() || null;
   const priceStr = (formData.get("price") as string)?.trim();
   const isPublic = formData.get("is_public") === "1";
+  const icon = (formData.get("icon") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
+  const titleEs = (formData.get("title_es") as string)?.trim() || null;
+  const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
 
   if (!title) return { error: "Title is required" };
 
@@ -614,10 +776,13 @@ export async function addService(
     title,
     description,
     link,
+    icon,
     price: priceStr ? Number(priceStr) : null,
     is_public: isPublic,
     image_url: imageUrl,
     display_order: nextOrder,
+    title_es: titleEs,
+    description_es: descriptionEs,
   });
 
   if (error) return { error: "Failed to add service" };
@@ -636,7 +801,10 @@ export async function updateService(
   const link = (formData.get("link") as string)?.trim() || null;
   const priceStr = (formData.get("price") as string)?.trim();
   const isPublic = formData.get("is_public") === "1";
+  const icon = (formData.get("icon") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
+  const titleEs = (formData.get("title_es") as string)?.trim() || null;
+  const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
 
   if (!title) return { error: "Title is required" };
 
@@ -646,8 +814,11 @@ export async function updateService(
     title,
     description,
     link,
+    icon,
     price: priceStr ? Number(priceStr) : null,
     is_public: isPublic,
+    title_es: titleEs,
+    description_es: descriptionEs,
   };
 
   if (imageFile && imageFile.size > 0) {
@@ -755,6 +926,184 @@ export async function deleteMembershipPeriod(
     .eq("id", periodId);
 
   if (error) return { error: "Failed to delete membership period" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
+// --- Badge actions ---
+
+export async function addBadge(
+  clubId: string,
+  formData: FormData,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const name = (formData.get("name") as string)?.trim();
+  const description = (formData.get("description") as string)?.trim() || null;
+  const icon = (formData.get("icon") as string)?.trim() || null;
+  const color = (formData.get("color") as string)?.trim() || "#6b7280";
+  const imageFile = formData.get("image") as File | null;
+
+  if (!name) return { error: "Name is required" };
+
+  const supabase = createAdminClient();
+
+  let imageUrl: string | null = null;
+  if (imageFile && imageFile.size > 0) {
+    const { uploadClubImage } = await import("@/lib/supabase/storage");
+    const result = await uploadClubImage(clubId, imageFile);
+    if ("error" in result) return { error: result.error };
+    imageUrl = result.url;
+  }
+
+  const { data: existing } = await supabase
+    .from("badges")
+    .select("display_order")
+    .eq("club_id", clubId)
+    .order("display_order", { ascending: false })
+    .limit(1);
+
+  const nextOrder = existing && existing.length > 0 ? existing[0].display_order + 1 : 0;
+
+  const { error } = await supabase.from("badges").insert({
+    club_id: clubId,
+    name,
+    description,
+    icon,
+    image_url: imageUrl,
+    color,
+    display_order: nextOrder,
+  });
+
+  if (error) return { error: "Failed to add badge" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
+export async function updateBadge(
+  badgeId: string,
+  formData: FormData,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const name = (formData.get("name") as string)?.trim();
+  const description = (formData.get("description") as string)?.trim() || null;
+  const icon = (formData.get("icon") as string)?.trim() || null;
+  const color = (formData.get("color") as string)?.trim() || "#6b7280";
+  const imageFile = formData.get("image") as File | null;
+
+  if (!name) return { error: "Name is required" };
+
+  const supabase = createAdminClient();
+
+  const updates: Record<string, unknown> = { name, description, icon, color };
+
+  if (imageFile && imageFile.size > 0) {
+    const { data: badge } = await supabase
+      .from("badges")
+      .select("image_url, club_id")
+      .eq("id", badgeId)
+      .single();
+
+    if (badge?.image_url) {
+      const { deleteClubImage } = await import("@/lib/supabase/storage");
+      await deleteClubImage(badge.image_url);
+    }
+
+    const { uploadClubImage } = await import("@/lib/supabase/storage");
+    const result = await uploadClubImage(badge?.club_id ?? "", imageFile);
+    if ("error" in result) return { error: result.error };
+    updates.image_url = result.url;
+  }
+
+  const { error } = await supabase
+    .from("badges")
+    .update(updates)
+    .eq("id", badgeId);
+
+  if (error) return { error: "Failed to update badge" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
+export async function deleteBadge(
+  badgeId: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("badges")
+    .delete()
+    .eq("id", badgeId);
+
+  if (error) return { error: "Failed to delete badge" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
+// --- Gallery actions ---
+
+export async function addGalleryImage(
+  clubId: string,
+  formData: FormData,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const imageFile = formData.get("image") as File | null;
+  if (!imageFile || imageFile.size === 0) return { error: "No image provided" };
+
+  const { uploadClubImage } = await import("@/lib/supabase/storage");
+  const result = await uploadClubImage(clubId, imageFile);
+  if ("error" in result) return { error: result.error };
+
+  const supabase = createAdminClient();
+
+  const { data: existing } = await supabase
+    .from("club_gallery")
+    .select("display_order")
+    .eq("club_id", clubId)
+    .order("display_order", { ascending: false })
+    .limit(1);
+
+  const nextOrder = existing && existing.length > 0 ? existing[0].display_order + 1 : 0;
+
+  const { error } = await supabase.from("club_gallery").insert({
+    club_id: clubId,
+    image_url: result.url,
+    display_order: nextOrder,
+  });
+
+  if (error) return { error: "Failed to add image" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
+export async function deleteGalleryImage(
+  imageId: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  const { data: image } = await supabase
+    .from("club_gallery")
+    .select("image_url")
+    .eq("id", imageId)
+    .single();
+
+  if (image?.image_url) {
+    const { deleteClubImage } = await import("@/lib/supabase/storage");
+    await deleteClubImage(image.image_url);
+  }
+
+  const { error } = await supabase
+    .from("club_gallery")
+    .delete()
+    .eq("id", imageId);
+
+  if (error) return { error: "Failed to delete image" };
 
   revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };

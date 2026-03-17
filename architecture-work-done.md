@@ -40,12 +40,138 @@
 - `setManualValidTill` now also clears `membership_period_id` (since it's a manual date) and logs as `validity_updated` (was `validity_set_manual`)
 - Updated parent page `staff/(console)/members/page.tsx` to remove `periodMap` and simplified props
 
-**How it works:** Staff members see one unified interaction for all date management. Tap the colored date text → inline date picker appears with Save/Cancel. For members without a date, a date input is always visible. All changes go through `setManualValidTill` which sets the date, clears any period association, and logs `validity_updated` to the activity log. The old `prolongateMembership` ("+Xmo") flow is completely removed.
+**How it works:** Staff members see one unified interaction for all date management. Tap the colored date text → inline date picker appears with Save/Cancel. For members without a date, a date input is always visible. All changes go through `setManualValidTill` which sets the date, clears any period association, and logs `validity_updated` to the activity log. The old `prolongateMembership` ("+Xmo") flow is completely removed. Save/Cancel buttons are full-width rounded buttons (not tiny text links) with loading state for mobile-friendly tapping.
 
 **Key files:**
 - `app/[clubSlug]/staff/members/member-row.tsx` — unified date picker UI, simplified props (no periods)
 - `app/[clubSlug]/staff/members/actions.ts` — `setManualValidTill` clears `membership_period_id`, logs `validity_updated`; `prolongateMembership` removed
 - `app/[clubSlug]/staff/(console)/members/page.tsx` — simplified props passed to `StaffMemberRow`
+
+## Premium Referrals
+
+**Request:** Admin can designate members as "premium referrers" with a configurable spin reward per referral.
+
+**Changes:**
+- Added `is_premium_referrer boolean` and `referral_reward_spins integer` columns to `members` table via migration `20260316000000_add_premium_referrals.sql`
+- Added `setPremiumReferrer` server action in admin actions
+- Rewrote `referral-tree.tsx` — each referrer row now has a "Premium referrer" checkbox and spin reward input; premium referrers show an amber "PREMIUM · X spins" badge
+- Added "Add Premium Referrer" button at top of referral tree to designate any member
+- Referrals page fetches all members' premium fields and builds member lookup maps
+- Auto-reward logic in `staff/members/actions.ts` — after inserting a new member with `referred_by`, checks if the referrer is premium and increments their `spin_balance`
+
+**How it works:** Admin goes to Referrals page, expands a referrer, toggles "Premium referrer" and sets reward spins. When staff creates a new member with that referrer's code in "Referred by", the referrer's spin_balance is automatically incremented by the configured amount. Activity logged as `referral_reward`.
+
+**Key files:**
+- `supabase/migrations/20260316000000_add_premium_referrals.sql` — adds 2 columns to members
+- `app/[clubSlug]/admin/referral-tree.tsx` — premium toggle UI, inline spin reward input
+- `app/[clubSlug]/admin/(panel)/referrals/page.tsx` — fetches premium data, builds member maps
+- `app/[clubSlug]/admin/actions.ts` — `setPremiumReferrer` action
+- `app/[clubSlug]/staff/members/actions.ts` — auto-reward logic in `createMember`
+
+## Homepage Examples
+
+**Request:** Generate showcase pages for 8 business verticals (sports clubs, coworking, coffee shops, tourist guides, Catalonia tours, bars, nightclubs, Barcelona events) so potential customers can see what their portal would look like.
+
+**Changes:**
+- Created `app/examples/verticals.ts` — static data for 8 verticals with sample events/services/quests, branding colors, taglines
+- Created `app/examples/page.tsx` — full-width dark grid of vertical cards with gradient hero bars, content badges, bottom CTA
+- Created `app/examples/example-portal.tsx` — simulated member portal component with branded hero, stats, quests/events/services sections, CTA banner
+- Created `app/examples/[vertical]/page.tsx` — detail page with `generateStaticParams`
+- Added "See examples →" link to landing hero and "Examples" link to footer
+- Use case cards on landing page now link to `/examples/[slug]`
+
+**How it works:** Examples live at `/examples` (outside the `(platform)` route group to avoid its `max-w-lg` layout constraint). Each vertical is a static data object defining name, colors, and sample content. The index page shows a full-width dark grid matching the landing page style. Clicking a card opens a simulated member portal with that vertical's branding. CTAs link to `/onboarding`.
+
+**Key files:**
+- `app/examples/verticals.ts` — 8 vertical definitions with sample data
+- `app/examples/page.tsx` — examples index (full-width dark layout)
+- `app/examples/example-portal.tsx` — simulated portal component
+- `app/examples/[vertical]/page.tsx` — detail page per vertical
+- `app/_landing/use-cases.tsx` — cards link to examples
+- `app/_landing/hero.tsx` — "See examples →" link
+- `app/_landing/landing-footer.tsx` — "Examples" link
+
+## Content Creation UX
+
+### Icon Picker & Textarea Descriptions
+
+**Request:** Improve admin UX for creating quests/events/services — add icon picker, upgrade description inputs to textareas.
+
+**Changes:**
+- Added `icon text` column to quests, events, and services tables via migration `20260316100000_add_icon_field.sql`
+- Created `lib/icons.ts` — curated list of ~60 lucide-react icons (social, food, entertainment, sports, rewards, etc.)
+- Created `components/icon-picker.tsx` — searchable expandable grid, returns icon name string
+- Created `components/dynamic-icon.tsx` — renders lucide icon by kebab-case name string (converts to PascalCase)
+- All 3 admin managers (`quest-manager.tsx`, `event-manager.tsx`, `service-manager.tsx`): description changed from `<input>` to `<textarea rows={3}>`, added `IconPicker` to create/edit forms, added `DynamicIcon` display in list rows (shows when icon set and no image)
+- All 6 CRUD server actions updated to read `icon` from FormData
+- All 3 admin pages updated to include `icon` in select queries and data mapping
+
+**How it works:** Admin clicks "Choose icon..." to open a searchable grid of 60+ icons. Selecting one stores the lucide icon name (e.g. "music", "beer") in the `icon` column. Icons render in list rows as a gray square with the icon inside (image takes priority over icon if both set). The `DynamicIcon` component converts kebab-case names to PascalCase and looks up the icon from the lucide-react module.
+
+**Key files:**
+- `supabase/migrations/20260316100000_add_icon_field.sql` — adds `icon text` to 3 tables
+- `lib/icons.ts` — `CONTENT_ICONS` array of curated icons
+- `components/icon-picker.tsx` — searchable icon picker component
+- `components/dynamic-icon.tsx` — renders icon by name string
+- `app/[clubSlug]/admin/quest-manager.tsx` — icon picker + textarea
+- `app/[clubSlug]/admin/event-manager.tsx` — icon picker + textarea
+- `app/[clubSlug]/admin/service-manager.tsx` — icon picker + textarea
+- `app/[clubSlug]/admin/actions.ts` — all CRUD actions handle `icon`
+
+## Member Badges
+
+**Request:** Members earn badges for completing quests. Admin creates badges and links them to quests. Auto-awarded on quest verification. One-time achievements.
+
+**Changes:**
+- Created `badges` table (id, club_id, name, description, icon, color, display_order) and `member_badges` table (member_id, badge_id, earned_at, quest_id, UNIQUE(member_id, badge_id)) via migration `20260316200000_add_badges.sql`
+- Added `badge_id uuid` FK to quests table (links quest → badge)
+- Created `badge-manager.tsx` — admin CRUD with icon picker, color picker, templates (First Visit, Social Butterfly, VIP Member, Event Regular, Top Referrer)
+- Created `admin/(panel)/badges/page.tsx` — server component with earned counts per badge
+- Added "Badges" card to content hub (`content/page.tsx`)
+- Quest manager: added "Award Badge" dropdown (select from club's badges) in create/edit forms
+- `addQuest`/`updateQuest` server actions now persist `badge_id`
+- Staff quest actions (`completeQuest`, `approveQuest`): after awarding spins, if quest has `badge_id`, upsert into `member_badges` with `ON CONFLICT DO NOTHING` (one-time only)
+- Created `badge-collection.tsx` — member-facing component showing earned badges (full color with date) and locked badges (grayed out with lock icon + "Complete [quest] to unlock")
+- Profile page fetches club badges + member badges, renders `BadgeCollection` above spin history
+
+**How it works:** Admin creates badges in Content → Badges with name, icon, color. Then links a badge to a quest via the "Award Badge" dropdown on the quest form. When staff verifies a quest completion (either direct or approve pending), the system checks if the quest has a `badge_id` and upserts into `member_badges`. The UNIQUE constraint ensures one badge per member. Members see their badges on Profile — earned ones in full color, locked ones grayed out with the quest name needed to unlock.
+
+**Key files:**
+- `supabase/migrations/20260316200000_add_badges.sql` — badges + member_badges tables, badge_id on quests
+- `app/[clubSlug]/admin/badge-manager.tsx` — admin CRUD with templates
+- `app/[clubSlug]/admin/(panel)/badges/page.tsx` — badges admin page
+- `app/[clubSlug]/admin/(panel)/content/page.tsx` — badges card in content hub
+- `app/[clubSlug]/admin/quest-manager.tsx` — "Award Badge" dropdown
+- `app/[clubSlug]/admin/actions.ts` — addBadge/updateBadge/deleteBadge + badge_id in quest actions
+- `app/[clubSlug]/staff/quest/actions.ts` — auto-award badge on verify
+- `app/[clubSlug]/(member)/badge-collection.tsx` — earned/locked badge display
+- `app/[clubSlug]/(member)/profile/page.tsx` — fetches and renders badges
+
+## Configurable Member Login Mode
+
+**Request:** Admin can choose login method for members: code only (current) or code + 4-digit expiry date (MMDD format) for extra security.
+
+**Changes:**
+- Added `login_mode text NOT NULL DEFAULT 'code_only'` to clubs table via migration `20260316300000_add_login_mode.sql`
+- Created `login-mode-manager.tsx` — radio toggle in admin settings (code_only / code_and_expiry)
+- Added `updateLoginMode` server action
+- Settings page fetches `login_mode` from clubs, renders `LoginModeManager` at top
+- Extracted login form into `login-form.tsx` client component that accepts `loginMode` prop
+- `login/page.tsx` converted to server component — fetches club's `login_mode`, passes to `LoginForm`
+- When `loginMode === "code_and_expiry"`: form shows second input (4-digit numeric, MMDD placeholder)
+- Login action: if `code_and_expiry` mode, parses member's `valid_till` as MMDD, compares with submitted code
+- Added 5 new i18n keys (EN/ES) for expiry code UI and error messages
+
+**How it works:** Admin goes to Settings → "Member Login" (first section), chooses between "Code only" (default) and "Code + expiry date". When code+expiry is enabled, the login form shows a second field where members enter the month+day of their expiry as 4 digits (e.g. "1227" for Dec 27). The server parses `valid_till` → MMDD and compares. Members without `valid_till` get a clear error. Switching back to "Code only" hides the field.
+
+**Key files:**
+- `supabase/migrations/20260316300000_add_login_mode.sql` — login_mode column on clubs
+- `app/[clubSlug]/admin/login-mode-manager.tsx` — radio toggle component
+- `app/[clubSlug]/admin/actions.ts` — `updateLoginMode` action
+- `app/[clubSlug]/admin/(panel)/settings/page.tsx` — fetches login_mode, renders manager
+- `app/[clubSlug]/(member)/login/login-form.tsx` — extracted client form with conditional expiry input
+- `app/[clubSlug]/(member)/login/page.tsx` — server component fetching login_mode
+- `app/[clubSlug]/(member)/login/actions.ts` — MMDD validation logic
 
 ## Role Visibility
 

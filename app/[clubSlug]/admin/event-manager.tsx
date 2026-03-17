@@ -2,6 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { addEvent, updateEvent, deleteEvent } from "./actions";
+import { IconPicker } from "@/components/icon-picker";
+import { DynamicIcon } from "@/components/dynamic-icon";
+import { LanguageTabs } from "@/components/language-tabs";
 
 const TEMPLATES = [
   { title: "Weekly Party", description: "Weekly club night", rewardSpins: 1 },
@@ -17,7 +20,10 @@ interface Event {
   date: string;
   time: string | null;
   price: number | null;
+  title_es: string | null;
+  description_es: string | null;
   image_url: string | null;
+  icon: string | null;
   link: string | null;
   reward_spins: number;
   rsvps: number;
@@ -44,6 +50,10 @@ export function EventManager({
   const [editReward, setEditReward] = useState("1");
   const [editIsPublic, setEditIsPublic] = useState(false);
   const [editImage, setEditImage] = useState<File | null>(null);
+  const [editIcon, setEditIcon] = useState<string | null>(null);
+  const [editLang, setEditLang] = useState<"en" | "es">("en");
+  const [editTitleEs, setEditTitleEs] = useState("");
+  const [editDescEs, setEditDescEs] = useState("");
 
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
@@ -54,6 +64,10 @@ export function EventManager({
   const [newReward, setNewReward] = useState("1");
   const [newIsPublic, setNewIsPublic] = useState(false);
   const [newImage, setNewImage] = useState<File | null>(null);
+  const [newIcon, setNewIcon] = useState<string | null>(null);
+  const [newLang, setNewLang] = useState<"en" | "es">("en");
+  const [newTitleEs, setNewTitleEs] = useState("");
+  const [newDescEs, setNewDescEs] = useState("");
 
   const [showForm, setShowForm] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -76,6 +90,10 @@ export function EventManager({
     setEditLink(ev.link ?? "");
     setEditReward(String(ev.reward_spins));
     setEditIsPublic(ev.is_public);
+    setEditIcon(ev.icon);
+    setEditTitleEs(ev.title_es ?? "");
+    setEditDescEs(ev.description_es ?? "");
+    setEditLang("en");
     setEditImage(null);
     setError(null);
   }
@@ -97,6 +115,9 @@ export function EventManager({
       fd.set("link", editLink);
       fd.set("reward_spins", editReward);
       fd.set("is_public", editIsPublic ? "1" : "0");
+      if (editIcon) fd.set("icon", editIcon);
+      fd.set("title_es", editTitleEs);
+      fd.set("description_es", editDescEs);
       if (editImage) fd.set("image", editImage);
 
       const result = await updateEvent(eventId, fd, clubSlug);
@@ -129,6 +150,9 @@ export function EventManager({
       fd.set("link", newLink);
       fd.set("reward_spins", newReward);
       fd.set("is_public", newIsPublic ? "1" : "0");
+      if (newIcon) fd.set("icon", newIcon);
+      fd.set("title_es", newTitleEs);
+      fd.set("description_es", newDescEs);
       if (newImage) fd.set("image", newImage);
 
       const result = await addEvent(clubId, fd, clubSlug);
@@ -144,7 +168,11 @@ export function EventManager({
         setNewLink("");
         setNewReward("1");
         setNewIsPublic(false);
+        setNewIcon(null);
         setNewImage(null);
+        setNewTitleEs("");
+        setNewDescEs("");
+        setNewLang("en");
         setSuccessMsg(`"${createdTitle}" created successfully`);
         setShowForm(false);
         setTimeout(() => setSuccessMsg(null), 4000);
@@ -190,24 +218,53 @@ export function EventManager({
               <div key={ev.id}>
                 {editingId === ev.id ? (
                   <div className="px-5 py-3 space-y-3 bg-gray-50">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Title</label>
-                      <input
-                        type="text"
-                        value={editTitle}
-                        onChange={(e) => setEditTitle(e.target.value)}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Description</label>
-                      <input
-                        type="text"
-                        value={editDesc}
-                        onChange={(e) => setEditDesc(e.target.value)}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
-                      />
-                    </div>
+                    <LanguageTabs value={editLang} onChange={setEditLang} />
+                    {editLang === "en" ? (
+                      <>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 mb-1">Title</label>
+                          <input
+                            type="text"
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 mb-1">Description</label>
+                          <textarea
+                            rows={3}
+                            value={editDesc}
+                            onChange={(e) => setEditDesc(e.target.value)}
+                            className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition resize-none"
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 mb-1">Title (ES)</label>
+                          <input
+                            type="text"
+                            value={editTitleEs}
+                            onChange={(e) => setEditTitleEs(e.target.value)}
+                            placeholder={editTitle || "Title"}
+                            className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 mb-1">Description (ES)</label>
+                          <textarea
+                            rows={3}
+                            value={editDescEs}
+                            onChange={(e) => setEditDescEs(e.target.value)}
+                            placeholder={editDesc || "Description"}
+                            className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition resize-none"
+                          />
+                        </div>
+                      </>
+                    )}
+                    <IconPicker value={editIcon} onChange={setEditIcon} />
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-medium text-gray-500 mb-1">Date</label>
@@ -299,6 +356,11 @@ export function EventManager({
                   </div>
                 ) : (
                   <div className="px-5 py-3 flex items-center gap-3">
+                    {ev.icon && !ev.image_url && (
+                      <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+                        <DynamicIcon name={ev.icon} className="w-5 h-5 text-gray-500" />
+                      </div>
+                    )}
                     {ev.image_url && (
                       <img
                         src={ev.image_url}
@@ -382,27 +444,56 @@ export function EventManager({
             </div>
           </div>
         <form onSubmit={handleAdd} className="px-5 py-4 border-t border-gray-100 space-y-3 bg-gray-50">
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Title</label>
-            <input
-              type="text"
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              placeholder="Friday Night Social"
-              required
-              className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Description (optional)</label>
-            <input
-              type="text"
-              value={newDesc}
-              onChange={(e) => setNewDesc(e.target.value)}
-              placeholder="Join us for an evening of fun"
-              className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
-            />
-          </div>
+          <LanguageTabs value={newLang} onChange={setNewLang} />
+          {newLang === "en" ? (
+            <>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Title</label>
+                <input
+                  type="text"
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  placeholder="Friday Night Social"
+                  required
+                  className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Description (optional)</label>
+                <textarea
+                  rows={3}
+                  value={newDesc}
+                  onChange={(e) => setNewDesc(e.target.value)}
+                  placeholder="Join us for an evening of fun"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition resize-none"
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Title (ES)</label>
+                <input
+                  type="text"
+                  value={newTitleEs}
+                  onChange={(e) => setNewTitleEs(e.target.value)}
+                  placeholder={newTitle || "Friday Night Social"}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Description (ES)</label>
+                <textarea
+                  rows={3}
+                  value={newDescEs}
+                  onChange={(e) => setNewDescEs(e.target.value)}
+                  placeholder={newDesc || "Join us for an evening of fun"}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition resize-none"
+                />
+              </div>
+            </>
+          )}
+          <IconPicker value={newIcon} onChange={setNewIcon} />
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">Date</label>

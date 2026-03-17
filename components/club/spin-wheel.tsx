@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect, useImperativeHandle, forwardRef } from "react";
+import confetti from "canvas-confetti";
 
 interface Segment {
   label: string;
@@ -35,6 +36,7 @@ export interface SpinWheelHandle {
 const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
   function SpinWheel({ segments, balance, onSpin, hideButton }, ref) {
     const [spinning, setSpinning] = useState(false);
+    const [fullscreen, setFullscreen] = useState(false);
     const [currentBalance, setCurrentBalance] = useState(balance);
     const [result, setResult] = useState<SpinResult["outcome"] | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -47,6 +49,7 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
 
     const containerRef = useRef<HTMLDivElement>(null);
     const wheelRef = useRef<import("spin-wheel").Wheel | null>(null);
+    const spinningRef = useRef(false);
 
     useEffect(() => {
       let mounted = true;
@@ -59,24 +62,44 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
         if (!mounted || !containerRef.current) return;
 
         const items = segments.map((seg) => ({
-          label: seg.label,
+          label: seg.label.toUpperCase(),
           backgroundColor: seg.color,
           labelColor: seg.labelColor ?? "#ffffff",
         }));
 
+        // Load SVG images as HTMLImageElements
+        const loadImage = (src: string): Promise<HTMLImageElement> =>
+          new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = src;
+          });
+
+        const [hubImg, overlayImg] = await Promise.all([
+          loadImage("/wheel/hub.svg"),
+          loadImage("/wheel/overlay.svg"),
+        ]);
+
+        if (!mounted || !containerRef.current) return;
+
         const wheel = new Wheel(containerRef.current, {
           items,
           isInteractive: false,
-          pointerAngle: 180,
-          itemLabelFontSizeMax: 36,
-          itemLabelRadius: 0.92,
-          itemLabelRadiusMax: 0.4,
-          itemLabelAlign: "right",
-          borderWidth: 3,
-          borderColor: "#065f46",
+          pointerAngle: 0,
+          radius: 0.84,
+          itemLabelRotation: 180,
+          itemLabelAlign: "left",
+          itemLabelFont: "Arial, Helvetica, sans-serif",
+          itemLabelFontSizeMax: 28,
+          itemLabelRadius: 0.93,
+          itemLabelRadiusMax: 0.35,
+          itemLabelBaselineOffset: -0.07,
           lineWidth: 1,
-          lineColor: "#065f46",
-          radius: 0.95,
+          lineColor: "#fff",
+          borderWidth: 0,
+          overlayImage: overlayImg,
+          image: hubImg,
         });
 
         wheelRef.current = wheel;
@@ -91,9 +114,25 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
       };
     }, [segments]);
 
+    const fireConfetti = useCallback(() => {
+      confetti({
+        particleCount: 120,
+        spread: 90,
+        origin: { y: 0.5 },
+        colors: ["#facc15", "#22c55e", "#3b82f6", "#ef4444", "#a855f7"],
+      });
+    }, []);
+
+    const dismissFullscreen = useCallback(() => {
+      setFullscreen(false);
+      setResult(null);
+    }, []);
+
     const animateSpin = useCallback((spinResult: SpinResult) => {
       if (!wheelRef.current) return;
 
+      spinningRef.current = true;
+      setFullscreen(true);
       setSpinning(true);
       setResult(null);
       setError(null);
@@ -102,20 +141,25 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
       wheelRef.current.spinToItem(spinResult.segmentIndex, duration, true, 2, 1);
 
       setTimeout(() => {
+        spinningRef.current = false;
         setResult(spinResult.outcome);
         setCurrentBalance(spinResult.newBalance);
         setSpinning(false);
+        if (spinResult.outcome.rewardType !== "nothing") {
+          fireConfetti();
+        }
       }, duration);
-    }, []);
+    }, [fireConfetti]);
 
     useImperativeHandle(ref, () => ({
       spin: animateSpin,
-      isSpinning: () => spinning,
-    }), [animateSpin, spinning]);
+      isSpinning: () => spinningRef.current,
+    }), [animateSpin]);
 
     const handleSpin = useCallback(async () => {
-      if (spinning || currentBalance <= 0 || !wheelRef.current || !onSpin) return;
+      if (spinningRef.current || currentBalance <= 0 || !wheelRef.current || !onSpin) return;
 
+      spinningRef.current = true;
       setSpinning(true);
       setResult(null);
       setError(null);
@@ -124,33 +168,33 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
 
       if ("error" in res) {
         setError(res.error);
+        spinningRef.current = false;
         setSpinning(false);
         return;
       }
 
       animateSpin(res as SpinResult);
-    }, [spinning, currentBalance, onSpin, animateSpin]);
+    }, [currentBalance, onSpin, animateSpin]);
 
     return (
       <div className="flex flex-col items-center gap-6">
-        {/* Wheel container */}
-        <div className="relative" style={{ width: 392, height: 392 }}>
-          <div ref={containerRef} className="w-full h-full" />
-
-          {/* Pointer triangle at bottom */}
+        {/* Dark backdrop when fullscreen */}
+        {fullscreen && (
           <div
-            className="absolute left-1/2 z-10"
-            style={{
-              bottom: -8,
-              transform: "translateX(-50%)",
-              width: 0,
-              height: 0,
-              borderLeft: "12px solid transparent",
-              borderRight: "12px solid transparent",
-              borderBottom: "22px solid #facc15",
-              filter: "drop-shadow(0 0 12px rgba(250, 204, 21, 0.9))",
-            }}
+            className="fixed inset-0 z-[9990] bg-black/85 transition-opacity"
+            onClick={!spinning && result ? dismissFullscreen : undefined}
           />
+        )}
+
+        {/* Wheel container — goes fullscreen when spinning */}
+        <div
+          className={
+            fullscreen
+              ? "fixed z-[9991] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[92vmin] h-[92vmin] max-w-[600px] max-h-[600px]"
+              : "relative w-full max-w-[480px] aspect-square mx-auto"
+          }
+        >
+          <div ref={containerRef} className="w-full h-full" />
 
           {/* Result overlay */}
           {result && !spinning && (
@@ -160,18 +204,28 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
                 top: "50%",
                 left: "50%",
                 transform: "translate(-50%, -50%)",
-                width: 168,
-                height: 168,
+                width: "40%",
+                height: "40%",
                 borderRadius: "50%",
                 backgroundColor: "rgba(0, 0, 0, 0.72)",
               }}
             >
-              <span className="text-center font-bold" style={{ color: "#facc15", fontSize: "0.95rem" }}>
+              <span className="text-center font-bold" style={{ color: "#facc15", fontSize: "1.3rem" }}>
                 {result.label}
               </span>
             </div>
           )}
         </div>
+
+        {/* Tap to close hint */}
+        {fullscreen && result && !spinning && (
+          <div
+            className="fixed z-[9992] bottom-8 left-0 right-0 text-center"
+            onClick={dismissFullscreen}
+          >
+            <p className="text-white/60 text-sm animate-pulse">Tap anywhere to close</p>
+          </div>
+        )}
 
         {/* Spin button — hidden when parent controls spinning */}
         {!hideButton && (

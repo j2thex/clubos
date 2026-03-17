@@ -2,6 +2,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { SocialLinks } from "@/components/club/social-links";
+import { PhotoGallery } from "@/components/club/photo-gallery";
+import { InviteForm } from "./invite-form";
+import { localized } from "@/lib/i18n";
+import { getServerLocale } from "@/lib/i18n/server";
 
 export async function generateMetadata({
   params,
@@ -33,12 +38,14 @@ export default async function PublicProfilePage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name, club_branding(logo_url, cover_url, primary_color, secondary_color)")
+    .select("id, name, invite_only, club_branding(logo_url, cover_url, primary_color, secondary_color, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website)")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
 
   if (!club) notFound();
+
+  const locale = await getServerLocale();
 
   const branding = Array.isArray(club.club_branding)
     ? club.club_branding[0]
@@ -46,11 +53,11 @@ export default async function PublicProfilePage({
 
   const today = new Date().toISOString().split("T")[0];
 
-  const [{ data: events }, { data: quests }, { data: services }] =
+  const [{ data: events }, { data: quests }, { data: services }, { data: galleryImages }] =
     await Promise.all([
       supabase
         .from("events")
-        .select("id, title, description, date, time, price, image_url, link, reward_spins")
+        .select("id, title, description, title_es, description_es, date, time, price, image_url, link, reward_spins")
         .eq("club_id", club.id)
         .eq("active", true)
         .eq("is_public", true)
@@ -58,17 +65,22 @@ export default async function PublicProfilePage({
         .order("date", { ascending: true }),
       supabase
         .from("quests")
-        .select("id, title, description, image_url, link, reward_spins")
+        .select("id, title, description, title_es, description_es, image_url, link, reward_spins")
         .eq("club_id", club.id)
         .eq("active", true)
         .eq("is_public", true)
         .order("display_order", { ascending: true }),
       supabase
         .from("services")
-        .select("id, title, description, image_url, link, price")
+        .select("id, title, description, title_es, description_es, image_url, link, price")
         .eq("club_id", club.id)
         .eq("active", true)
         .eq("is_public", true)
+        .order("display_order", { ascending: true }),
+      supabase
+        .from("club_gallery")
+        .select("id, image_url, caption")
+        .eq("club_id", club.id)
         .order("display_order", { ascending: true }),
     ]);
 
@@ -119,20 +131,45 @@ export default async function PublicProfilePage({
             />
           )}
           <h1 className="text-2xl font-bold text-white">{club.name}</h1>
+          {(branding?.social_instagram || branding?.social_whatsapp || branding?.social_telegram || branding?.social_google_maps || branding?.social_website) && (
+            <div className="mt-4 flex justify-center">
+              <SocialLinks
+                instagram={branding?.social_instagram}
+                whatsapp={branding?.social_whatsapp}
+                telegram={branding?.social_telegram}
+                googleMaps={branding?.social_google_maps}
+                website={branding?.social_website}
+                variant="light"
+              />
+            </div>
+          )}
         </div>
       </div>
 
       <div className="max-w-lg mx-auto px-4 -mt-6 relative z-10 space-y-6 pb-12">
-        {/* Member Login */}
-        <div className="bg-white rounded-2xl shadow-lg p-5 text-center">
-          <p className="text-sm text-gray-500 mb-3">Already a member?</p>
-          <Link
-            href={`/${clubSlug}/login`}
-            className="inline-block w-full rounded-xl club-btn px-6 py-3 text-sm font-semibold text-white transition-colors"
-          >
-            Member Login
-          </Link>
-        </div>
+        {/* Gallery */}
+        {galleryImages && galleryImages.length > 0 && (
+          <PhotoGallery
+            images={galleryImages.map((g) => ({
+              id: g.id,
+              image_url: g.image_url,
+              caption: g.caption,
+            }))}
+          />
+        )}
+
+        {/* Member Login (hidden if invite-only — invite form shown in quests) */}
+        {!club.invite_only && (
+          <div className="bg-white rounded-2xl shadow-lg p-5 text-center">
+            <p className="text-sm text-gray-500 mb-3">Already a member?</p>
+            <Link
+              href={`/${clubSlug}/login`}
+              className="inline-block w-full rounded-xl club-btn px-6 py-3 text-sm font-semibold text-white transition-colors"
+            >
+              Member Login
+            </Link>
+          </div>
+        )}
 
         {/* Events */}
         {hasEvents && (
@@ -153,13 +190,13 @@ export default async function PublicProfilePage({
                   <div className="p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-900">{ev.title}</p>
+                        <p className="font-semibold text-gray-900">{localized(ev.title, ev.title_es, locale)}</p>
                         <p className="text-xs text-gray-500 mt-1">
                           {formatDate(ev.date)}
                           {ev.time && ` at ${formatTime(ev.time)}`}
                         </p>
                         {ev.description && (
-                          <p className="text-xs text-gray-400 mt-1">{ev.description}</p>
+                          <p className="text-xs text-gray-400 mt-1">{localized(ev.description, ev.description_es, locale)}</p>
                         )}
                       </div>
                       <div className="text-right shrink-0">
@@ -195,13 +232,17 @@ export default async function PublicProfilePage({
         )}
 
         {/* Quests */}
-        {hasQuests && (
+        {(hasQuests || club.invite_only) && (
           <div>
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-2">
               Quests
             </h2>
             <div className="space-y-3">
-              {quests.map((q) => (
+              {/* Invite quest card */}
+              {club.invite_only && (
+                <InviteForm clubId={club.id} clubName={club.name} />
+              )}
+              {(quests ?? []).map((q) => (
                 <div key={q.id} className="bg-white rounded-2xl shadow p-4">
                   <div className="flex items-center gap-4">
                     {q.image_url ? (
@@ -214,9 +255,9 @@ export default async function PublicProfilePage({
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 text-sm">{q.title}</p>
+                      <p className="font-semibold text-gray-900 text-sm">{localized(q.title, q.title_es, locale)}</p>
                       {q.description && (
-                        <p className="text-xs text-gray-400">{q.description}</p>
+                        <p className="text-xs text-gray-400">{localized(q.description, q.description_es, locale)}</p>
                       )}
                       {q.link && (() => {
                         const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(q.link!);
@@ -270,9 +311,9 @@ export default async function PublicProfilePage({
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 text-sm">{s.title}</p>
+                      <p className="font-semibold text-gray-900 text-sm">{localized(s.title, s.title_es, locale)}</p>
                       {s.description && (
-                        <p className="text-xs text-gray-400">{s.description}</p>
+                        <p className="text-xs text-gray-400">{localized(s.description, s.description_es, locale)}</p>
                       )}
                       {s.link && (
                         <a

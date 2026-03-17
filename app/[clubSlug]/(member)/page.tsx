@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { getMemberFromCookie } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { QuestList } from "./quest-list";
+import { SocialLinks } from "@/components/club/social-links";
+import { PhotoGallery } from "@/components/club/photo-gallery";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 
@@ -19,7 +21,7 @@ export default async function MemberDashboard({
 
   const supabase = createAdminClient();
 
-  const [{ data: member }, { data: club }, { count: spinsDone }, { data: quests }, { data: completedQuests }] = await Promise.all([
+  const [{ data: member }, { data: club }, { count: spinsDone }, { data: quests }, { data: completedQuests }, { data: galleryImages }] = await Promise.all([
     supabase
       .from("members")
       .select("full_name, spin_balance, member_code")
@@ -27,7 +29,7 @@ export default async function MemberDashboard({
       .single(),
     supabase
       .from("clubs")
-      .select("id, name, club_branding(logo_url, cover_url, hero_content)")
+      .select("id, name, club_branding(logo_url, cover_url, hero_content, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website)")
       .eq("id", session.club_id)
       .single(),
     supabase
@@ -36,7 +38,7 @@ export default async function MemberDashboard({
       .eq("member_id", session.member_id),
     supabase
       .from("quests")
-      .select("id, title, description, link, image_url, reward_spins, multi_use, proof_mode, proof_placeholder")
+      .select("id, title, description, title_es, description_es, link, image_url, icon, reward_spins, multi_use, quest_type, proof_mode, proof_placeholder, tutorial_steps")
       .eq("club_id", session.club_id)
       .eq("active", true)
       .order("display_order", { ascending: true }),
@@ -44,6 +46,11 @@ export default async function MemberDashboard({
       .from("member_quests")
       .select("quest_id, status")
       .eq("member_id", session.member_id),
+    supabase
+      .from("club_gallery")
+      .select("id, image_url, caption")
+      .eq("club_id", session.club_id)
+      .order("display_order", { ascending: true }),
   ]);
 
   const locale = await getServerLocale();
@@ -100,6 +107,18 @@ export default async function MemberDashboard({
           <h1 className="text-2xl font-bold text-white">
             {heroContent ? heroContent.replace("{name}", displayName) : `Welcome back, ${displayName}`}
           </h1>
+          {(branding?.social_instagram || branding?.social_whatsapp || branding?.social_telegram || branding?.social_google_maps || branding?.social_website) && (
+            <div className="mt-4 flex justify-center">
+              <SocialLinks
+                instagram={branding?.social_instagram}
+                whatsapp={branding?.social_whatsapp}
+                telegram={branding?.social_telegram}
+                googleMaps={branding?.social_google_maps}
+                website={branding?.social_website}
+                variant="light"
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -141,6 +160,22 @@ export default async function MemberDashboard({
           </div>
         </div>
 
+        {/* Gallery */}
+        {galleryImages && galleryImages.length > 0 && (
+          <div className="space-y-2">
+            <h2 className="text-sm font-semibold text-white/80 uppercase tracking-wide px-1">
+              {t(locale, "dashboard.gallery")}
+            </h2>
+            <PhotoGallery
+              images={galleryImages.map((g) => ({
+                id: g.id,
+                image_url: g.image_url,
+                caption: g.caption,
+              }))}
+            />
+          </div>
+        )}
+
         {/* Quests */}
         {activeQuests.length > 0 && (
           <div className="space-y-2">
@@ -153,6 +188,7 @@ export default async function MemberDashboard({
               pendingQuestIds={pendingQuestIds}
               memberId={session.member_id}
               clubSlug={clubSlug}
+              locale={locale}
             />
           </div>
         )}

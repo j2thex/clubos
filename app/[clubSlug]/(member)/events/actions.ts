@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { notifyStaff } from "@/lib/staff-notify";
 
 export async function rsvpEvent(
   eventId: string,
@@ -13,7 +14,7 @@ export async function rsvpEvent(
   const today = new Date().toISOString().split("T")[0];
   const { data: event } = await supabase
     .from("events")
-    .select("id")
+    .select("id, title, club_id")
     .eq("id", eventId)
     .gte("date", today)
     .single();
@@ -28,6 +29,18 @@ export async function rsvpEvent(
     if (error.code === "23505") return { error: "Already signed up" };
     return { error: "Failed to sign up" };
   }
+
+  // Notify staff via Telegram
+  const { data: member } = await supabase
+    .from("members")
+    .select("member_code")
+    .eq("id", memberId)
+    .single();
+
+  await notifyStaff(
+    event.club_id,
+    `📅 Event RSVP\n<b>${event.title}</b>\nMember: ${member?.member_code ?? "Unknown"}`,
+  );
 
   revalidatePath("/");
   return { ok: true };

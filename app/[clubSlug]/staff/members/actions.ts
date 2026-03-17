@@ -49,8 +49,8 @@ export async function createMember(
   try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
   const code = memberCode.trim().toUpperCase();
 
-  if (!code || code.length < 3 || code.length > 6) {
-    return { error: "Member code must be 3-6 characters" };
+  if (!code || code.length < 3 || code.length > 8) {
+    return { error: "Member code must be 3-8 characters" };
   }
   if (!/^[A-Z0-9]+$/.test(code)) {
     return { error: "Member code must be alphanumeric" };
@@ -108,6 +108,30 @@ export async function createMember(
   if (error) {
     if (error.code === "23505") return { error: "Member code already exists" };
     return { error: "Failed to create member" };
+  }
+
+  // Auto-reward premium referrer
+  if (referredByCode) {
+    const { data: referrer } = await supabase
+      .from("members")
+      .select("id, spin_balance, is_premium_referrer, referral_reward_spins")
+      .eq("club_id", clubId)
+      .eq("member_code", referredByCode)
+      .single();
+
+    if (referrer?.is_premium_referrer && referrer.referral_reward_spins > 0) {
+      await supabase
+        .from("members")
+        .update({ spin_balance: referrer.spin_balance + referrer.referral_reward_spins })
+        .eq("id", referrer.id);
+
+      await logActivity({
+        clubId,
+        action: "referral_reward",
+        targetMemberCode: referredByCode,
+        details: `+${referrer.referral_reward_spins} spins for referring ${code}`,
+      });
+    }
   }
 
   const staff = await getStaffFromCookie();
@@ -234,8 +258,8 @@ export async function createStaffMember(
   const code = memberCode.trim().toUpperCase();
   const trimmedPin = pin.trim();
 
-  if (!code || code.length < 3 || code.length > 6) {
-    return { error: "Staff code must be 3-6 characters" };
+  if (!code || code.length < 3 || code.length > 8) {
+    return { error: "Staff code must be 3-8 characters" };
   }
   if (!/^[A-Z0-9]+$/.test(code)) {
     return { error: "Staff code must be alphanumeric" };

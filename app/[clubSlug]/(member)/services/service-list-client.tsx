@@ -3,11 +3,14 @@
 import { useTransition } from "react";
 import { requestService, cancelServiceRequest } from "./actions";
 import { useLanguage } from "@/lib/i18n/provider";
+import { localized } from "@/lib/i18n";
 
 interface ServiceItem {
   id: string;
   title: string;
   description: string | null;
+  title_es: string | null;
+  description_es: string | null;
   image_url: string | null;
   link: string | null;
   price: number | null;
@@ -25,7 +28,7 @@ export function ServiceListClient({
   clubSlug: string;
 }) {
   const [isPending, startTransition] = useTransition();
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
 
   function handleRequest(serviceId: string) {
     startTransition(async () => {
@@ -54,9 +57,9 @@ export function ServiceListClient({
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-gray-900 text-sm">{s.title}</p>
+              <p className="font-semibold text-gray-900 text-sm">{localized(s.title, s.title_es, locale)}</p>
               {s.description && (
-                <p className="text-xs text-gray-400">{s.description}</p>
+                <p className="text-xs text-gray-400">{localized(s.description, s.description_es, locale)}</p>
               )}
               {s.link && (
                 <a

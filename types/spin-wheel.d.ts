@@ -19,6 +19,9 @@ declare module "spin-wheel" {
     itemLabelRadius?: number;
     itemLabelRadiusMax?: number;
     itemLabelAlign?: string;
+    itemLabelRotation?: number;
+    itemLabelFont?: string;
+    itemLabelBaselineOffset?: number;
     borderWidth?: number;
     borderColor?: string;
     lineWidth?: number;
@@ -27,6 +30,8 @@ declare module "spin-wheel" {
     rotationResistance?: number;
     itemBackgroundColors?: string[];
     itemLabelColors?: string[];
+    overlayImage?: HTMLImageElement | null;
+    image?: HTMLImageElement | null;
   }
 
   export class Wheel {

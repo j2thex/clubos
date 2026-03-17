@@ -1,0 +1,2 @@
+-- This migration was applied directly on staging.
+-- Empty placeholder to keep local migration history in sync.

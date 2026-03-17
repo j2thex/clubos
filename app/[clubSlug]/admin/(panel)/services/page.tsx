@@ -26,7 +26,7 @@ export default async function ServicesPage({
   const [{ data: services }, { data: serviceOrders }] = await Promise.all([
     supabase
       .from("services")
-      .select("id, title, description, image_url, link, price, display_order, is_public")
+      .select("id, title, description, image_url, icon, link, price, display_order, is_public, title_es, description_es")
       .eq("club_id", club.id)
       .eq("active", true)
       .order("display_order", { ascending: true }),
@@ -55,11 +55,14 @@ export default async function ServicesPage({
     title: s.title,
     description: s.description,
     image_url: s.image_url,
+    icon: s.icon ?? null,
     link: s.link,
     price: s.price != null ? Number(s.price) : null,
     pending_orders: servicePendingCounts.get(s.id) ?? 0,
     fulfilled_orders: serviceFulfilledCounts.get(s.id) ?? 0,
     is_public: s.is_public ?? false,
+    title_es: s.title_es ?? null,
+    description_es: s.description_es ?? null,
   }));
 
   return (

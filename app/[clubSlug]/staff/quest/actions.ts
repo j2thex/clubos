@@ -88,7 +88,7 @@ export async function completeQuest(
   const supabase = createAdminClient();
   const { data: quest } = await supabase
     .from("quests")
-    .select("reward_spins, multi_use, title, club_id")
+    .select("reward_spins, multi_use, title, club_id, badge_id")
     .eq("id", questId)
     .single();
 
@@ -141,6 +141,16 @@ export async function completeQuest(
     .update({ spin_balance: newBalance })
     .eq("id", memberId);
 
+  // Award badge if quest has one (ON CONFLICT = one-time only)
+  if (quest.badge_id) {
+    await supabase
+      .from("member_badges")
+      .upsert(
+        { member_id: memberId, badge_id: quest.badge_id, quest_id: questId },
+        { onConflict: "member_id,badge_id", ignoreDuplicates: true },
+      );
+  }
+
   // Log activity
   const { data: targetMember } = await supabase
     .from("members")
@@ -182,7 +192,7 @@ export async function approveQuest(
   // Get reward amount
   const { data: quest } = await supabase
     .from("quests")
-    .select("reward_spins, title, club_id")
+    .select("reward_spins, title, club_id, badge_id")
     .eq("id", mq.quest_id)
     .single();
 
@@ -213,6 +223,16 @@ export async function approveQuest(
     .from("members")
     .update({ spin_balance: newBalance })
     .eq("id", mq.member_id);
+
+  // Award badge if quest has one (ON CONFLICT = one-time only)
+  if (quest.badge_id) {
+    await supabase
+      .from("member_badges")
+      .upsert(
+        { member_id: mq.member_id, badge_id: quest.badge_id, quest_id: mq.quest_id },
+        { onConflict: "member_id,badge_id", ignoreDuplicates: true },
+      );
+  }
 
   // Log activity
   const { data: targetMember } = await supabase
