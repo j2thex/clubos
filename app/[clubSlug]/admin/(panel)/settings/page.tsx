@@ -7,6 +7,7 @@ import { BrandingManager } from "../../branding-manager";
 import { GalleryManager } from "../../gallery-manager";
 import { TelegramConfigManager } from "../../telegram-config-manager";
 import { WheelManager } from "../../wheel-manager";
+import { NotificationLightManager } from "../../notification-light-manager";
 import { CollapsibleSection } from "@/components/collapsible-section";
 
 export default async function SettingsPage({
@@ -19,7 +20,7 @@ export default async function SettingsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, login_mode, invite_only, telegram_bot_token, telegram_chat_id")
+    .select("id, login_mode, invite_only, telegram_bot_token, telegram_chat_id, notification_secret")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -111,6 +112,13 @@ export default async function SettingsPage({
           chatId={club.telegram_chat_id ?? null}
           clubId={club.id}
           clubSlug={clubSlug}
+        />
+      </CollapsibleSection>
+      <CollapsibleSection title="Notification Light">
+        <NotificationLightManager
+          clubId={club.id}
+          clubSlug={clubSlug}
+          currentSecret={club.notification_secret ?? null}
         />
       </CollapsibleSection>
       <CollapsibleSection title="Spin Wheel">

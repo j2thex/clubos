@@ -1108,3 +1108,23 @@ export async function deleteGalleryImage(
   revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
 }
+
+// --- Notification light actions ---
+
+export async function updateNotificationSecret(
+  clubId: string,
+  secret: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ notification_secret: secret })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to update notification secret" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
