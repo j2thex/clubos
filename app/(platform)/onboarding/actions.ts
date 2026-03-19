@@ -4,7 +4,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { uploadClubImage } from "@/lib/supabase/storage";
 import { hashPassword, createOwnerToken, setOwnerCookie } from "@/lib/auth";
 import { generateSlug } from "@/lib/utils";
-import { extractPlaceId } from "@/lib/google-maps";
 import { redirect } from "next/navigation";
 
 export async function createOrgAndClub(formData: FormData) {
@@ -56,11 +55,9 @@ export async function createOrgAndClub(formData: FormData) {
 
   // Create default branding
   const googleMapsUrl = (formData.get("googleMapsUrl") as string)?.trim() || null;
-  const placeId = await extractPlaceId(googleMapsUrl ?? "");
   await supabase.from("club_branding").insert({
     club_id: club.id,
     social_google_maps: googleMapsUrl,
-    google_place_id: placeId,
   });
 
   // Create club owner account

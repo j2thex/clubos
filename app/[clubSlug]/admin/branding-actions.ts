@@ -2,7 +2,6 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { uploadClubImage } from "@/lib/supabase/storage";
-import { extractPlaceId } from "@/lib/google-maps";
 import { revalidatePath } from "next/cache";
 
 export async function updateClubBranding(formData: FormData) {
@@ -16,14 +15,13 @@ export async function updateClubBranding(formData: FormData) {
   const socialTelegram = (formData.get("socialTelegram") as string)?.trim() || null;
   const socialGoogleMaps = (formData.get("socialGoogleMaps") as string)?.trim() || null;
   const socialWebsite = (formData.get("socialWebsite") as string)?.trim() || null;
+  const googlePlaceId = (formData.get("googlePlaceId") as string)?.trim() || null;
   const logo = formData.get("logo") as File | null;
   const cover = formData.get("cover") as File | null;
 
   if (!clubId || !clubSlug) {
     return { error: "Missing club information" };
   }
-
-  const placeId = await extractPlaceId(socialGoogleMaps ?? "");
 
   const supabase = createAdminClient();
   const updates: Record<string, string | null> = {
@@ -35,7 +33,7 @@ export async function updateClubBranding(formData: FormData) {
     social_telegram: socialTelegram,
     social_google_maps: socialGoogleMaps,
     social_website: socialWebsite,
-    google_place_id: placeId,
+    google_place_id: googlePlaceId,
   };
 
   if (logo && logo.size > 0) {
