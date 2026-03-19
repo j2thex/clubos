@@ -126,7 +126,7 @@ export function OfferListClient({
                   </div>
                   {a.orderable && (
                     <div className="shrink-0 flex flex-col items-end gap-1">
-                      {a.price != null ? (
+                      {a.price != null && a.price > 0 ? (
                         <span className="text-sm font-bold text-gray-900">${a.price.toFixed(2)}</span>
                       ) : (
                         <span className="text-sm font-bold text-green-600">{t("common.free")}</span>

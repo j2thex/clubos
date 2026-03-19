@@ -33,6 +33,7 @@ interface ClubOffer {
   description_es: string | null;
   image_url: string | null;
   icon: string | null;
+  is_public: boolean;
 }
 
 export function OfferManager({
@@ -233,6 +234,7 @@ function OfferRow({
   const [localDescriptionEs, setLocalDescriptionEs] = useState(clubOffer?.description_es ?? "");
   const [localIcon, setLocalIcon] = useState<string | null>(clubOffer?.icon ?? null);
   const [localImage, setLocalImage] = useState<File | null>(null);
+  const [localIsPublic, setLocalIsPublic] = useState(clubOffer?.is_public ?? false);
   const [descLang, setDescLang] = useState<"en" | "es">("en");
 
   // Track whether options have been changed from server values
@@ -241,6 +243,7 @@ function OfferRow({
   const serverDescription = clubOffer?.description ?? "";
   const serverDescriptionEs = clubOffer?.description_es ?? "";
   const serverIcon = clubOffer?.icon ?? null;
+  const serverIsPublic = clubOffer?.is_public ?? false;
   const optionsDirty =
     isEnabled &&
     (localOrderable !== serverOrderable ||
@@ -248,6 +251,7 @@ function OfferRow({
       localDescription !== serverDescription ||
       localDescriptionEs !== serverDescriptionEs ||
       localIcon !== serverIcon ||
+      localIsPublic !== serverIsPublic ||
       localImage !== null);
 
   function handleSave() {
@@ -258,6 +262,7 @@ function OfferRow({
     fd.set("description", localDescription);
     fd.set("description_es", localDescriptionEs);
     fd.set("icon", localIcon ?? "");
+    fd.set("is_public", localIsPublic ? "1" : "0");
     if (localImage) fd.set("image", localImage);
     onUpdateOptions(clubOffer.id, fd);
     setLocalImage(null);
@@ -302,7 +307,7 @@ function OfferRow({
       {/* Expanded options when enabled */}
       {isEnabled && clubOffer && (
         <div className="mt-2 ml-11 space-y-3">
-          {/* Orderable + Price row */}
+          {/* Orderable + Public row */}
           <div className="flex items-center gap-3 flex-wrap">
             <label className="flex items-center gap-1.5 cursor-pointer">
               <input
@@ -312,6 +317,15 @@ function OfferRow({
                 className="rounded border-gray-300 text-gray-800 focus:ring-gray-400"
               />
               <span className="text-xs text-gray-600">Orderable</span>
+            </label>
+            <label className="flex items-center gap-1.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={localIsPublic}
+                onChange={(e) => setLocalIsPublic(e.target.checked)}
+                className="rounded border-gray-300 text-gray-800 focus:ring-gray-400"
+              />
+              <span className="text-xs text-gray-600">Show on public profile</span>
             </label>
 
             {localOrderable && (

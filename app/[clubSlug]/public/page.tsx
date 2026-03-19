@@ -74,9 +74,9 @@ export default async function PublicProfilePage({
         .order("display_order", { ascending: true }),
       supabase
         .from("club_offers")
-        .select("id, description, description_es, image_url, icon, offer_catalog(name, name_es, subtype, icon)")
+        .select("id, description, description_es, image_url, icon, is_public, offer_catalog(name, name_es, subtype, icon)")
         .eq("club_id", club.id)
-        .eq("enabled", true)
+        .eq("is_public", true)
         .order("created_at", { ascending: true }),
       supabase
         .from("club_gallery")
@@ -187,18 +187,16 @@ export default async function PublicProfilePage({
           />
         )}
 
-        {/* Member Login (hidden if invite-only — invite form shown in quests) */}
-        {!club.invite_only && (
-          <div className="bg-white rounded-2xl shadow-lg p-5 text-center">
-            <p className="text-sm text-gray-500 mb-3">Already a member?</p>
-            <Link
-              href={`/${clubSlug}/login`}
-              className="inline-block w-full rounded-xl club-btn px-6 py-3 text-sm font-semibold text-white transition-colors"
-            >
-              Member Login
-            </Link>
-          </div>
-        )}
+        {/* Member Login — always shown so existing members can log in */}
+        <div className="bg-white rounded-2xl shadow-lg p-5 text-center">
+          <p className="text-sm text-gray-500 mb-3">{localized("Already a member?", "¿Ya eres socio?", locale)}</p>
+          <Link
+            href={`/${clubSlug}/login`}
+            className="inline-block w-full rounded-xl club-btn px-6 py-3 text-sm font-semibold text-white transition-colors"
+          >
+            {localized("Member Login", "Acceso de Socio", locale)}
+          </Link>
+        </div>
 
         {/* Events */}
         {hasEvents && (

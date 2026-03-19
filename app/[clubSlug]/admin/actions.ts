@@ -1036,6 +1036,7 @@ export async function updateOfferOptions(
   const description = (formData.get("description") as string)?.trim() || null;
   const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
   const icon = (formData.get("icon") as string)?.trim() || null;
+  const isPublic = formData.get("is_public") === "1";
   const imageFile = formData.get("image") as File | null;
 
   const supabase = createAdminClient();
@@ -1046,6 +1047,7 @@ export async function updateOfferOptions(
     description,
     description_es: descriptionEs,
     icon,
+    is_public: isPublic,
   };
 
   if (imageFile && imageFile.size > 0) {
