@@ -14,6 +14,7 @@ interface BrandingData {
   social_telegram: string | null;
   social_google_maps: string | null;
   social_website: string | null;
+  google_place_id: string | null;
 }
 
 export function BrandingManager({
@@ -226,6 +227,17 @@ export function BrandingManager({
                   className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
                 />
               </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-400 w-20 shrink-0">Place ID</span>
+                <input
+                  type="text"
+                  name="googlePlaceId"
+                  defaultValue={branding.google_place_id ?? ""}
+                  placeholder="ChIJ..."
+                  className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                />
+              </div>
+              <p className="text-xs text-gray-400 pl-22">Find your Place ID at Google Business Profile. Used to create direct review quests.</p>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-400 w-20 shrink-0">Website</span>
                 <input

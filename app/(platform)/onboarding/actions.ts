@@ -54,7 +54,11 @@ export async function createOrgAndClub(formData: FormData) {
   }
 
   // Create default branding
-  await supabase.from("club_branding").insert({ club_id: club.id });
+  const googleMapsUrl = (formData.get("googleMapsUrl") as string)?.trim() || null;
+  await supabase.from("club_branding").insert({
+    club_id: club.id,
+    social_google_maps: googleMapsUrl,
+  });
 
   // Create club owner account
   const { data: owner, error: ownerError } = await supabase

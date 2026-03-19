@@ -83,3 +83,24 @@ export async function createUnclaimedClub(
   revalidatePath("/");
   return { ok: true, slug };
 }
+
+export async function approveCustomOffer(
+  offerId: string,
+  secret: string,
+): Promise<{ error: string } | { ok: true }> {
+  if (secret !== process.env.PLATFORM_ADMIN_SECRET) {
+    return { error: "Unauthorized" };
+  }
+
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("offer_catalog")
+    .update({ is_approved: true })
+    .eq("id", offerId);
+
+  if (error) return { error: "Failed to approve offer" };
+
+  revalidatePath("/platform-admin");
+  return { ok: true };
+}

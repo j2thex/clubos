@@ -97,6 +97,21 @@ export default function OnboardingPage() {
               </p>
             </div>
 
+            {/* Google Maps (optional) */}
+            <div className="space-y-2">
+              <Label htmlFor="googleMapsUrl" className="text-gray-800">
+                {t("onboarding.googleMapsLabel")}
+              </Label>
+              <Input
+                id="googleMapsUrl"
+                name="googleMapsUrl"
+                type="url"
+                placeholder={t("onboarding.googleMapsPlaceholder")}
+                className="focus-visible:border-green-500 focus-visible:ring-green-500/30"
+              />
+              <p className="text-xs text-gray-400">{t("onboarding.googleMapsHint")}</p>
+            </div>
+
             {/* Submit */}
             <Button
               type="submit"

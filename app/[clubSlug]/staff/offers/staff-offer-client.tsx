@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { fulfillOrder, addWalkinOrder } from "./actions";
+import { fulfillOfferOrder, addWalkinOfferOrder } from "./actions";
 import { useLanguage } from "@/lib/i18n/provider";
 
 interface Order {
@@ -12,22 +12,22 @@ interface Order {
   member_code: string;
   member_name: string;
   fulfilled_by_name: string | null;
-  service_title: string;
+  offer_title: string;
 }
 
-interface Service {
+interface Offer {
   id: string;
   title: string;
 }
 
-export function StaffServiceClient({
-  services,
+export function StaffOfferClient({
+  offers,
   initialOrders,
   clubId,
   clubSlug,
   staffMemberId,
 }: {
-  services: Service[];
+  offers: Offer[];
   initialOrders: Order[];
   clubId: string;
   clubSlug: string;
@@ -35,7 +35,7 @@ export function StaffServiceClient({
 }) {
   const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [memberCode, setMemberCode] = useState("");
-  const [walkinServiceId, setWalkinServiceId] = useState(services[0]?.id ?? "");
+  const [walkinOfferId, setWalkinOfferId] = useState(offers[0]?.id ?? "");
   const [isPending, startTransition] = useTransition();
   const { t } = useLanguage();
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +48,7 @@ export function StaffServiceClient({
     setError(null);
     setSuccess(null);
     startTransition(async () => {
-      const res = await fulfillOrder(orderId, staffMemberId, clubSlug);
+      const res = await fulfillOfferOrder(orderId, staffMemberId, clubSlug);
       if ("error" in res) {
         setError(res.error);
         return;
@@ -68,17 +68,17 @@ export function StaffServiceClient({
   function handleWalkin(e: React.FormEvent) {
     e.preventDefault();
     const code = memberCode.trim().toUpperCase();
-    if (!code || !walkinServiceId) return;
+    if (!code || !walkinOfferId) return;
 
     setError(null);
     setSuccess(null);
     startTransition(async () => {
-      const res = await addWalkinOrder(code, walkinServiceId, clubId, staffMemberId, clubSlug);
+      const res = await addWalkinOfferOrder(code, walkinOfferId, clubId, staffMemberId, clubSlug);
       if ("error" in res) {
         setError(res.error);
         return;
       }
-      const serviceName = services.find((s) => s.id === walkinServiceId)?.title ?? "";
+      const offerName = offers.find((a) => a.id === walkinOfferId)?.title ?? "";
       setOrders((prev) => [
         {
           id: crypto.randomUUID(),
@@ -88,7 +88,7 @@ export function StaffServiceClient({
           member_code: code,
           member_name: "",
           fulfilled_by_name: null,
-          service_title: serviceName,
+          offer_title: offerName,
         },
         ...prev,
       ]);
@@ -121,11 +121,11 @@ export function StaffServiceClient({
                 <div key={o.id} className="px-5 py-3 flex items-center justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-gray-900">
-                      {o.service_title}
+                      {o.offer_title}
                     </p>
                     <p className="text-xs text-gray-500 mt-0.5">
                       <span className="font-mono font-semibold">{o.member_code}</span>
-                      {o.member_name ? ` — ${o.member_name}` : ""}
+                      {o.member_name ? ` \u2014 ${o.member_name}` : ""}
                     </p>
                     <p className="text-[10px] text-gray-400 mt-0.5">{formatDate(o.created_at)}</p>
                   </div>
@@ -156,14 +156,14 @@ export function StaffServiceClient({
           <form onSubmit={handleWalkin} className="px-5 py-4">
             <div className="flex gap-3 items-end">
               <div className="flex-1">
-                <label className="block text-xs font-medium text-gray-500 mb-1">{t("staff.serviceLabel")}</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1">{t("staff.offerLabel")}</label>
                 <select
-                  value={walkinServiceId}
-                  onChange={(e) => setWalkinServiceId(e.target.value)}
+                  value={walkinOfferId}
+                  onChange={(e) => setWalkinOfferId(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition bg-white"
                 >
-                  {services.map((s) => (
-                    <option key={s.id} value={s.id}>{s.title}</option>
+                  {offers.map((a) => (
+                    <option key={a.id} value={a.id}>{a.title}</option>
                   ))}
                 </select>
               </div>
@@ -201,8 +201,8 @@ export function StaffServiceClient({
               <div key={o.id} className="px-5 py-2.5 flex items-center justify-between gap-2 opacity-60">
                 <div className="min-w-0">
                   <p className="text-xs text-gray-600">
-                    <span className="font-semibold text-gray-700">{o.service_title}</span>
-                    {" — "}
+                    <span className="font-semibold text-gray-700">{o.offer_title}</span>
+                    {" \u2014 "}
                     <span className="font-mono">{o.member_code}</span>
                     {o.member_name ? ` ${o.member_name}` : ""}
                   </p>

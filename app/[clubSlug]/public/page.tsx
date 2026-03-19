@@ -5,8 +5,11 @@ import type { Metadata } from "next";
 import { SocialLinks } from "@/components/club/social-links";
 import { PhotoGallery } from "@/components/club/photo-gallery";
 import { InviteForm } from "./invite-form";
+import { InviteSocialButtons } from "./invite-social-buttons";
+import { PublicLoginForm } from "./public-login-form";
 import { localized } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
+import { DynamicIcon } from "@/components/dynamic-icon";
 
 export async function generateMetadata({
   params,
@@ -38,7 +41,7 @@ export default async function PublicProfilePage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name, invite_only, club_branding(logo_url, cover_url, primary_color, secondary_color, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website)")
+    .select("id, name, invite_only, invite_mode, login_mode, club_branding(logo_url, cover_url, primary_color, secondary_color, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website)")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -53,7 +56,7 @@ export default async function PublicProfilePage({
 
   const today = new Date().toISOString().split("T")[0];
 
-  const [{ data: events }, { data: quests }, { data: services }, { data: galleryImages }] =
+  const [{ data: events }, { data: quests }, { data: offers }, { data: galleryImages }, { data: inviteButtons }] =
     await Promise.all([
       supabase
         .from("events")
@@ -71,22 +74,49 @@ export default async function PublicProfilePage({
         .eq("is_public", true)
         .order("display_order", { ascending: true }),
       supabase
-        .from("services")
-        .select("id, title, description, title_es, description_es, image_url, link, price")
+        .from("club_offers")
+        .select("id, description, description_es, image_url, icon, is_public, offer_catalog(name, name_es, subtype, icon)")
         .eq("club_id", club.id)
-        .eq("active", true)
         .eq("is_public", true)
-        .order("display_order", { ascending: true }),
+        .order("created_at", { ascending: true }),
       supabase
         .from("club_gallery")
         .select("id, image_url, caption")
+        .eq("club_id", club.id)
+        .order("display_order", { ascending: true }),
+      supabase
+        .from("club_invite_buttons")
+        .select("type, label, url, icon_url")
         .eq("club_id", club.id)
         .order("display_order", { ascending: true }),
     ]);
 
   const hasEvents = events && events.length > 0;
   const hasQuests = quests && quests.length > 0;
-  const hasServices = services && services.length > 0;
+  const hasOffers = offers && offers.length > 0;
+
+  // Group offers by subtype for display
+  const offersBySubtype: Record<string, { id: string; name: string; name_es: string | null; icon: string | null; club_icon: string | null; description: string | null; description_es: string | null; image_url: string | null }[]> = {};
+  if (hasOffers) {
+    for (const a of offers) {
+      const catalog = Array.isArray(a.offer_catalog) ? a.offer_catalog[0] : a.offer_catalog;
+      const subtype = catalog?.subtype ?? "other";
+      const name = catalog?.name ?? "";
+      const nameEs = catalog?.name_es ?? null;
+      const icon = catalog?.icon ?? null;
+      if (!offersBySubtype[subtype]) offersBySubtype[subtype] = [];
+      offersBySubtype[subtype].push({
+        id: a.id,
+        name,
+        name_es: nameEs,
+        icon,
+        club_icon: a.icon ?? null,
+        description: a.description ?? null,
+        description_es: a.description_es ?? null,
+        image_url: a.image_url ?? null,
+      });
+    }
+  }
 
   function formatDate(d: string) {
     return new Date(d + "T00:00:00").toLocaleDateString("en-US", {
@@ -158,18 +188,11 @@ export default async function PublicProfilePage({
           />
         )}
 
-        {/* Member Login (hidden if invite-only — invite form shown in quests) */}
-        {!club.invite_only && (
-          <div className="bg-white rounded-2xl shadow-lg p-5 text-center">
-            <p className="text-sm text-gray-500 mb-3">Already a member?</p>
-            <Link
-              href={`/${clubSlug}/login`}
-              className="inline-block w-full rounded-xl club-btn px-6 py-3 text-sm font-semibold text-white transition-colors"
-            >
-              Member Login
-            </Link>
-          </div>
-        )}
+        {/* Member Login — inline form */}
+        <div className="bg-white rounded-2xl shadow-lg p-5">
+          <p className="text-sm text-gray-500 mb-3 text-center">{localized("Already a member?", "¿Ya eres socio?", locale)}</p>
+          <PublicLoginForm loginMode={club.login_mode ?? "code_only"} clubSlug={clubSlug} />
+        </div>
 
         {/* Events */}
         {hasEvents && (
@@ -239,9 +262,16 @@ export default async function PublicProfilePage({
             </h2>
             <div className="space-y-3">
               {/* Invite quest card */}
-              {club.invite_only && (
+              {club.invite_only && (club.invite_mode === "social" && inviteButtons && inviteButtons.length > 0 ? (
+                <InviteSocialButtons buttons={inviteButtons.map((b) => ({
+                  type: b.type,
+                  label: b.label ?? null,
+                  url: b.url,
+                  icon_url: b.icon_url ?? null,
+                }))} />
+              ) : (
                 <InviteForm clubId={club.id} clubName={club.name} />
-              )}
+              ))}
               {(quests ?? []).map((q) => (
                 <div key={q.id} className="bg-white rounded-2xl shadow p-4">
                   <div className="flex items-center gap-4">
@@ -291,48 +321,45 @@ export default async function PublicProfilePage({
           </div>
         )}
 
-        {/* Services */}
-        {hasServices && (
+        {/* Offers */}
+        {hasOffers && (
           <div>
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-2">
-              Services
+              Offers
             </h2>
-            <div className="space-y-3">
-              {services.map((s) => (
-                <div key={s.id} className="bg-white rounded-2xl shadow p-4">
-                  <div className="flex items-center gap-4">
-                    {s.image_url ? (
-                      <img src={s.image_url} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-gray-100 text-gray-300">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                        </svg>
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 text-sm">{localized(s.title, s.title_es, locale)}</p>
-                      {s.description && (
-                        <p className="text-xs text-gray-400">{localized(s.description, s.description_es, locale)}</p>
-                      )}
-                      {s.link && (
-                        <a
-                          href={s.link.match(/^https?:\/\//) ? s.link : `https://${s.link}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-block mt-1 text-xs font-medium club-primary underline"
-                        >
-                          Learn more
-                        </a>
-                      )}
-                    </div>
-                    <div className="shrink-0">
-                      {s.price != null ? (
-                        <span className="text-sm font-bold text-gray-900">${Number(s.price).toFixed(2)}</span>
-                      ) : (
-                        <span className="text-sm font-bold text-green-600">Free</span>
-                      )}
-                    </div>
+            <div className="space-y-4">
+              {Object.entries(offersBySubtype).map(([subtype, items]) => (
+                <div key={subtype}>
+                  <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-wider px-1 mb-1.5">
+                    {subtype}
+                  </p>
+                  <div className="bg-white rounded-2xl shadow divide-y divide-gray-50">
+                    {items.map((item) => {
+                      const displayIcon = item.club_icon || item.icon;
+                      return (
+                        <div key={item.id} className="flex items-center gap-3 px-4 py-3">
+                          {item.image_url ? (
+                            <img
+                              src={item.image_url}
+                              alt=""
+                              className="w-8 h-8 rounded-full object-cover shrink-0"
+                            />
+                          ) : displayIcon ? (
+                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+                              <DynamicIcon name={displayIcon} className="w-4 h-4 text-gray-500" />
+                            </div>
+                          ) : (
+                            <span className="text-base shrink-0">+</span>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <span className="text-sm text-gray-900">{localized(item.name, item.name_es, locale)}</span>
+                            {(item.description || item.description_es) && (
+                              <p className="text-xs text-gray-400 mt-0.5">{localized(item.description ?? "", item.description_es, locale)}</p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               ))}
@@ -341,9 +368,14 @@ export default async function PublicProfilePage({
         )}
 
         {/* Footer */}
-        <p className="text-center text-xs text-gray-300 pt-4">
-          © {new Date().getFullYear()} {club.name} · Powered by osocios
-        </p>
+        <div className="text-center text-xs text-gray-300 pt-4 space-y-1">
+          <p>© {new Date().getFullYear()} {club.name} · Powered by osocios</p>
+          <p>
+            <a href="/privacy" className="underline hover:text-gray-500 transition-colors">{localized("Privacy Policy", "Pol\u00edtica de Privacidad", locale)}</a>
+            {" · "}
+            <a href="/terms" className="underline hover:text-gray-500 transition-colors">{localized("Terms of Use", "Condiciones de Uso", locale)}</a>
+          </p>
+        </div>
       </div>
     </div>
   );
