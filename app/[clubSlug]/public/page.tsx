@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { SocialLinks } from "@/components/club/social-links";
 import { PhotoGallery } from "@/components/club/photo-gallery";
 import { InviteForm } from "./invite-form";
+import { InviteSocialButtons } from "./invite-social-buttons";
 import { localized } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 
@@ -38,7 +39,7 @@ export default async function PublicProfilePage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name, invite_only, club_branding(logo_url, cover_url, primary_color, secondary_color, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website)")
+    .select("id, name, invite_only, invite_mode, club_branding(logo_url, cover_url, primary_color, secondary_color, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website)")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -53,7 +54,7 @@ export default async function PublicProfilePage({
 
   const today = new Date().toISOString().split("T")[0];
 
-  const [{ data: events }, { data: quests }, { data: offers }, { data: galleryImages }] =
+  const [{ data: events }, { data: quests }, { data: offers }, { data: galleryImages }, { data: inviteButtons }] =
     await Promise.all([
       supabase
         .from("events")
@@ -79,6 +80,11 @@ export default async function PublicProfilePage({
       supabase
         .from("club_gallery")
         .select("id, image_url, caption")
+        .eq("club_id", club.id)
+        .order("display_order", { ascending: true }),
+      supabase
+        .from("club_invite_buttons")
+        .select("type, label, url, icon_url")
         .eq("club_id", club.id)
         .order("display_order", { ascending: true }),
     ]);
@@ -251,9 +257,16 @@ export default async function PublicProfilePage({
             </h2>
             <div className="space-y-3">
               {/* Invite quest card */}
-              {club.invite_only && (
+              {club.invite_only && (club.invite_mode === "social" && inviteButtons && inviteButtons.length > 0 ? (
+                <InviteSocialButtons buttons={inviteButtons.map((b) => ({
+                  type: b.type,
+                  label: b.label ?? null,
+                  url: b.url,
+                  icon_url: b.icon_url ?? null,
+                }))} />
+              ) : (
                 <InviteForm clubId={club.id} clubName={club.name} />
-              )}
+              ))}
               {(quests ?? []).map((q) => (
                 <div key={q.id} className="bg-white rounded-2xl shadow p-4">
                   <div className="flex items-center gap-4">

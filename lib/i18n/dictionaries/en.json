@@ -316,6 +316,13 @@
   "admin.codeAndExpiryDesc": "Members also enter their 4-digit expiry date (DDMM) for extra security",
   "admin.inviteOnly": "Invite only",
   "admin.inviteOnlyDesc": "Public page shows \"Request an Invite\" form instead of member login",
+  "admin.inviteMode": "Invite method",
+  "admin.inviteModeForm": "Request form",
+  "admin.inviteModeFormDesc": "Visitors fill out a form to request an invite",
+  "admin.inviteModeSocial": "Social buttons",
+  "admin.inviteModeSocialDesc": "Show contact buttons on the public page",
+  "admin.inviteButtonsSave": "Save Buttons",
+  "admin.inviteButtonsAdd": "Add custom button",
 
   "public.getInvite": "Get an Invite",
   "public.getInviteDesc": "Ask a member to invite you to the club",
@@ -326,6 +333,8 @@
   "public.whyJoin": "Why do you want to join? (optional)",
   "public.sendRequest": "Send Request",
   "public.sending": "Sending...",
+  "public.joinClub": "Join our club",
+  "public.contactThrough": "Contact us through:",
 
   "profile.badges": "Badges",
   "profile.completeToUnlock": "Complete \"{title}\"",

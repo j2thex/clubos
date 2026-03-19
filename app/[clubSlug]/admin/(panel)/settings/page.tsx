@@ -20,14 +20,14 @@ export default async function SettingsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, login_mode, invite_only, telegram_bot_token, telegram_chat_id, notification_secret")
+    .select("id, login_mode, invite_only, invite_mode, telegram_bot_token, telegram_chat_id, notification_secret")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
 
   if (!club) notFound();
 
-  const [{ data: branding }, { data: segments }, { data: roles }, { data: membershipPeriods }, { data: galleryImages }] = await Promise.all([
+  const [{ data: branding }, { data: segments }, { data: roles }, { data: membershipPeriods }, { data: galleryImages }, { data: inviteButtons }] = await Promise.all([
     supabase
       .from("club_branding")
       .select("logo_url, cover_url, primary_color, secondary_color, hero_content, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website, google_place_id")
@@ -57,6 +57,11 @@ export default async function SettingsPage({
       .select("id, image_url, caption")
       .eq("club_id", club.id)
       .order("display_order", { ascending: true }),
+    supabase
+      .from("club_invite_buttons")
+      .select("id, type, label, url, icon_url, display_order")
+      .eq("club_id", club.id)
+      .order("display_order", { ascending: true }),
   ]);
 
   return (
@@ -64,6 +69,15 @@ export default async function SettingsPage({
       <LoginModeManager
         loginMode={club.login_mode ?? "code_only"}
         inviteOnly={club.invite_only ?? false}
+        inviteMode={club.invite_mode ?? "form"}
+        inviteButtons={(inviteButtons ?? []).map((b) => ({
+          id: b.id,
+          type: b.type,
+          label: b.label ?? null,
+          url: b.url,
+          icon_url: b.icon_url ?? null,
+          display_order: b.display_order,
+        }))}
         clubId={club.id}
         clubSlug={clubSlug}
       />

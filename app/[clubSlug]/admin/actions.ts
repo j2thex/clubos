@@ -1048,6 +1048,45 @@ export async function updateOfferOptions(
   return { ok: true };
 }
 
+export async function updateInviteMode(
+  clubId: string,
+  mode: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  if (mode !== "form" && mode !== "social") return { error: "Invalid mode" };
+  const supabase = createAdminClient();
+  const { error } = await supabase.from("clubs").update({ invite_mode: mode }).eq("id", clubId);
+  if (error) return { error: "Failed to update invite mode" };
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/public`);
+  return { ok: true };
+}
+
+export async function saveInviteButtons(
+  clubId: string,
+  buttons: { type: string; label: string | null; url: string }[],
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+  // Delete all existing buttons for this club
+  await supabase.from("club_invite_buttons").delete().eq("club_id", clubId);
+  // Insert new ones
+  if (buttons.length > 0) {
+    const rows = buttons.map((b, i) => ({
+      club_id: clubId,
+      type: b.type,
+      label: b.label || null,
+      url: b.url,
+      display_order: i,
+    }));
+    const { error } = await supabase.from("club_invite_buttons").insert(rows);
+    if (error) return { error: "Failed to save buttons" };
+  }
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/public`);
+  return { ok: true };
+}
+
 export async function addCustomOffer(
   clubId: string,
   name: string,
