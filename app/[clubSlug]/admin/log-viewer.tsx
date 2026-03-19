@@ -16,6 +16,7 @@ const ACTION_CONFIG: Record<string, { label: string; color: string }> = {
   membership_prolongated: { label: "Extended membership", color: "bg-blue-100 text-blue-700" },
   role_assigned: { label: "Assigned role", color: "bg-blue-100 text-blue-700" },
   spin_performed: { label: "Performed spin", color: "bg-purple-100 text-purple-700" },
+  member_spin: { label: "Member spin", color: "bg-purple-100 text-purple-700" },
   quest_validated: { label: "Validated quest", color: "bg-green-100 text-green-700" },
   quest_approved: { label: "Approved quest", color: "bg-green-100 text-green-700" },
   checkin: { label: "Checked in", color: "bg-green-100 text-green-700" },

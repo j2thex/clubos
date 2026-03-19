@@ -29,6 +29,37 @@ export async function lookupMember(memberCode: string, clubId: string): Promise<
   };
 }
 
+export async function fulfillSpinPrize(
+  spinId: string,
+  clubId: string,
+): Promise<{ error: string } | { success: true }> {
+  let staffSession: { member_id: string; club_id: string };
+  try { staffSession = await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
+
+  const supabase = createAdminClient();
+
+  const { data: spin } = await supabase
+    .from("spins")
+    .select("id, status, club_id")
+    .eq("id", spinId)
+    .eq("club_id", clubId)
+    .single();
+
+  if (!spin) return { error: "Spin not found" };
+  if (spin.status !== "pending") return { error: "Already fulfilled" };
+
+  await supabase
+    .from("spins")
+    .update({
+      status: "fulfilled",
+      fulfilled_by: staffSession.member_id,
+      fulfilled_at: new Date().toISOString(),
+    })
+    .eq("id", spinId);
+
+  return { success: true };
+}
+
 export async function performSpinForMember(memberCode: string, clubId: string): Promise<{ error: string } | { outcome: { label: string; rewardType: string; value: number; color: string }; newBalance: number; segmentIndex: number }> {
   let staffSession: { member_id: string; club_id: string };
   try { staffSession = await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }

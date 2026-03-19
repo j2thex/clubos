@@ -1,0 +1,151 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import dynamic from "next/dynamic";
+import { memberSpin } from "./actions";
+import { useLanguage } from "@/lib/i18n/provider";
+
+const SpinWheel = dynamic(() => import("@/components/club/spin-wheel"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full max-w-[480px] aspect-square mx-auto bg-gray-100 rounded-full animate-pulse" />
+  ),
+});
+
+interface SpinRecord {
+  id: string;
+  outcomeLabel: string;
+  outcomeValue: number;
+  createdAt: string;
+}
+
+interface Segment {
+  label: string;
+  color: string;
+  labelColor?: string;
+  probability: number;
+}
+
+export function MemberSpinClient({
+  clubSlug,
+  balance,
+  segments,
+  recentSpins: initialSpins,
+}: {
+  clubSlug: string;
+  balance: number;
+  segments: Segment[];
+  recentSpins: SpinRecord[];
+}) {
+  const { t } = useLanguage();
+  const [currentBalance, setCurrentBalance] = useState(balance);
+  const [recentSpins, setRecentSpins] = useState(initialSpins);
+  const [isPending, startTransition] = useTransition();
+
+  async function handleSpin() {
+    const res = await memberSpin(clubSlug);
+
+    if ("error" in res) {
+      return res;
+    }
+
+    setCurrentBalance(res.newBalance);
+
+    // Prepend new spin to history
+    setRecentSpins((prev) => [
+      {
+        id: crypto.randomUUID(),
+        outcomeLabel: res.outcome.label,
+        outcomeValue: res.outcome.value,
+        createdAt: new Date().toISOString(),
+      },
+      ...prev.slice(0, 9),
+    ]);
+
+    return res;
+  }
+
+  return (
+    <div className="min-h-screen club-page-bg">
+      {/* Header */}
+      <div className="club-hero px-6 pt-10 pb-12 text-center">
+        <h1 className="text-2xl font-bold text-white">{t("spin.title")}</h1>
+        <div className="mt-3 inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-5 py-2">
+          <span className="text-3xl font-bold text-white">{currentBalance}</span>
+          <span className="text-sm club-light-text">{t("spin.balance")}</span>
+        </div>
+      </div>
+
+      {/* Wheel */}
+      <div className="px-4 -mt-6 pb-20 max-w-md mx-auto space-y-4">
+        <div className="bg-white rounded-2xl shadow-lg p-2">
+          <SpinWheel
+            segments={segments}
+            balance={currentBalance}
+            onSpin={handleSpin}
+          />
+        </div>
+
+        {/* No spins message */}
+        {currentBalance <= 0 && (
+          <div className="bg-white rounded-2xl shadow p-4 text-center">
+            <p className="text-sm text-gray-500">{t("spin.earnMore")}</p>
+          </div>
+        )}
+
+        {/* Recent spins */}
+        {recentSpins.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-100">
+              <h2 className="text-sm font-semibold text-gray-700">{t("spin.recentSpins")}</h2>
+            </div>
+            <div className="divide-y divide-gray-50">
+              {recentSpins.map((spin) => {
+                const isWin = spin.outcomeValue > 0;
+                return (
+                  <div key={spin.id} className="px-4 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                          isWin ? "club-tint-bg club-primary" : "bg-gray-100 text-gray-400"
+                        }`}
+                      >
+                        {isWin ? (
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : (
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
+                          </svg>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{spin.outcomeLabel}</p>
+                        <p className="text-xs text-gray-400">
+                          {new Date(spin.createdAt).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <span
+                      className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                        isWin ? "club-tint-bg club-tint-text" : "bg-gray-100 text-gray-500"
+                      }`}
+                    >
+                      {isWin ? `+${spin.outcomeValue}` : t("common.noWin")}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
