@@ -55,6 +55,32 @@ function getButtonLabel(button: InviteButton) {
   }
 }
 
+function normalizeUrl(button: InviteButton): string {
+  const url = button.url.trim();
+  if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("mailto:")) {
+    return url;
+  }
+  // Auto-prefix based on type
+  switch (button.type) {
+    case "whatsapp":
+      return url.startsWith("+") || /^\d/.test(url)
+        ? `https://wa.me/${url.replace(/\D/g, "")}`
+        : `https://${url}`;
+    case "instagram":
+      return url.startsWith("@")
+        ? `https://instagram.com/${url.slice(1)}`
+        : `https://instagram.com/${url}`;
+    case "telegram":
+      return url.startsWith("@")
+        ? `https://t.me/${url.slice(1)}`
+        : `https://t.me/${url}`;
+    case "email":
+      return `mailto:${url}`;
+    default:
+      return `https://${url}`;
+  }
+}
+
 export function InviteSocialButtons({ buttons }: { buttons: InviteButton[] }) {
   const { t } = useLanguage();
 
@@ -78,7 +104,7 @@ export function InviteSocialButtons({ buttons }: { buttons: InviteButton[] }) {
           return (
             <a
               key={i}
-              href={button.url}
+              href={normalizeUrl(button)}
               target="_blank"
               rel="noopener noreferrer"
               className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${style.bg} ${style.text}`}
