@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { updateClubBranding } from "./branding-actions";
+import { getReviewUrl } from "@/lib/google-maps";
 
 interface BrandingData {
   logo_url: string | null;
@@ -234,14 +235,14 @@ export function BrandingManager({
                     <input
                       type="text"
                       readOnly
-                      value={`https://search.google.com/local/writereview?placeid=${branding.google_place_id}`}
+                      value={getReviewUrl(branding.google_place_id!)}
                       className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-500 focus:outline-none"
                     />
                     <button
                       type="button"
                       onClick={() => {
                         navigator.clipboard.writeText(
-                          `https://search.google.com/local/writereview?placeid=${branding.google_place_id}`
+                          getReviewUrl(branding.google_place_id!)
                         );
                       }}
                       className="shrink-0 rounded-md bg-gray-100 px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200 transition-colors"
