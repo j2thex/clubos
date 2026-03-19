@@ -4,6 +4,7 @@ import Link from "next/link";
 import { QuestManager } from "../../quest-manager";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
+import { getReviewUrl } from "@/lib/google-maps";
 
 export default async function QuestsPage({
   params,
@@ -23,7 +24,7 @@ export default async function QuestsPage({
   if (!club) notFound();
   const locale = await getServerLocale();
 
-  const [{ data: quests }, { data: questCompletions }, { data: clubBadges }] = await Promise.all([
+  const [{ data: quests }, { data: questCompletions }, { data: clubBadges }, { data: branding }] = await Promise.all([
     supabase
       .from("quests")
       .select(
@@ -42,6 +43,11 @@ export default async function QuestsPage({
       .eq("club_id", club.id)
       .eq("active", true)
       .order("display_order", { ascending: true }),
+    supabase
+      .from("club_branding")
+      .select("google_place_id")
+      .eq("club_id", club.id)
+      .single(),
   ]);
 
   // Count completions per quest
@@ -74,6 +80,8 @@ export default async function QuestsPage({
     description_es: q.description_es ?? null,
   }));
 
+  const googleReviewUrl = branding?.google_place_id ? getReviewUrl(branding.google_place_id) : null;
+
   const badgeOptions = (clubBadges ?? []).map((b) => ({
     id: b.id,
     name: b.name,
@@ -92,7 +100,7 @@ export default async function QuestsPage({
         </svg>
         {t(locale, "admin.backToContent")}
       </Link>
-      <QuestManager quests={questList} clubId={club.id} clubSlug={clubSlug} badges={badgeOptions} />
+      <QuestManager quests={questList} clubId={club.id} clubSlug={clubSlug} badges={badgeOptions} googleReviewUrl={googleReviewUrl} />
     </div>
   );
 }

@@ -14,6 +14,7 @@ interface BrandingData {
   social_telegram: string | null;
   social_google_maps: string | null;
   social_website: string | null;
+  google_place_id: string | null;
 }
 
 export function BrandingManager({
@@ -226,6 +227,31 @@ export function BrandingManager({
                   className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
                 />
               </div>
+              {branding.google_place_id && (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-400 w-20 shrink-0">Review Link</span>
+                    <input
+                      type="text"
+                      readOnly
+                      value={`https://search.google.com/local/writereview?placeid=${branding.google_place_id}`}
+                      className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-500 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(
+                          `https://search.google.com/local/writereview?placeid=${branding.google_place_id}`
+                        );
+                      }}
+                      className="shrink-0 rounded-md bg-gray-100 px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200 transition-colors"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                  <p className="text-xs text-green-600 pl-22">Members will be sent directly to your Google review page</p>
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-400 w-20 shrink-0">Website</span>
                 <input

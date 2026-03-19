@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { uploadClubImage } from "@/lib/supabase/storage";
+import { extractPlaceId } from "@/lib/google-maps";
 import { revalidatePath } from "next/cache";
 
 export async function updateClubBranding(formData: FormData) {
@@ -22,6 +23,8 @@ export async function updateClubBranding(formData: FormData) {
     return { error: "Missing club information" };
   }
 
+  const placeId = await extractPlaceId(socialGoogleMaps ?? "");
+
   const supabase = createAdminClient();
   const updates: Record<string, string | null> = {
     primary_color: primaryColor,
@@ -32,6 +35,7 @@ export async function updateClubBranding(formData: FormData) {
     social_telegram: socialTelegram,
     social_google_maps: socialGoogleMaps,
     social_website: socialWebsite,
+    google_place_id: placeId,
   };
 
   if (logo && logo.size > 0) {

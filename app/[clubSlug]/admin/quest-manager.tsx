@@ -49,11 +49,13 @@ export function QuestManager({
   clubId,
   clubSlug,
   badges = [],
+  googleReviewUrl,
 }: {
   quests: Quest[];
   clubId: string;
   clubSlug: string;
   badges?: BadgeOption[];
+  googleReviewUrl?: string | null;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -102,6 +104,10 @@ export function QuestManager({
     setNewLink(tmpl.link);
     setNewReward(String(tmpl.rewardSpins));
     setNewQuestType(tmpl.questType);
+    // Auto-fill Google Review link if available
+    if (tmpl.titleKey === "admin.quickGoogleReview" && googleReviewUrl) {
+      setNewLink(googleReviewUrl);
+    }
     if (tmpl.questType === "feedback") {
       setNewMultiUse(true);
       setNewProofMode("required");
