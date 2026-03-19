@@ -23,7 +23,7 @@ export default async function OffersPage({
   // Get club's enabled offers with catalog info
   const { data: offers } = await supabase
     .from("club_offers")
-    .select("id, offer_id, orderable, price, display_order, offer_catalog(id, name, name_es, subtype, icon)")
+    .select("id, offer_id, orderable, price, display_order, description, description_es, image_url, icon, offer_catalog(id, name, name_es, subtype, icon)")
     .eq("club_id", session.club_id)
     .order("display_order", { ascending: true });
 
@@ -42,6 +42,10 @@ export default async function OffersPage({
       name_es: catalog?.name_es ?? null,
       subtype: catalog?.subtype ?? "service",
       icon: catalog?.icon ?? null,
+      club_icon: a.icon ?? null,
+      description: a.description ?? null,
+      description_es: a.description_es ?? null,
+      image_url: a.image_url ?? null,
       orderable: a.orderable ?? false,
       price: a.price != null ? Number(a.price) : null,
       order: (orders ?? []).find((o) => o.club_offer_id === a.id) ?? null,

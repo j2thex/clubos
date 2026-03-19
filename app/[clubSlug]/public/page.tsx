@@ -8,6 +8,7 @@ import { InviteForm } from "./invite-form";
 import { InviteSocialButtons } from "./invite-social-buttons";
 import { localized } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
+import { DynamicIcon } from "@/components/dynamic-icon";
 
 export async function generateMetadata({
   params,
@@ -73,7 +74,7 @@ export default async function PublicProfilePage({
         .order("display_order", { ascending: true }),
       supabase
         .from("club_offers")
-        .select("id, offer_catalog(name, subtype, icon)")
+        .select("id, description, description_es, image_url, icon, offer_catalog(name, name_es, subtype, icon)")
         .eq("club_id", club.id)
         .eq("enabled", true)
         .order("created_at", { ascending: true }),
@@ -94,15 +95,25 @@ export default async function PublicProfilePage({
   const hasOffers = offers && offers.length > 0;
 
   // Group offers by subtype for display
-  const offersBySubtype: Record<string, { id: string; name: string; icon: string | null }[]> = {};
+  const offersBySubtype: Record<string, { id: string; name: string; name_es: string | null; icon: string | null; club_icon: string | null; description: string | null; description_es: string | null; image_url: string | null }[]> = {};
   if (hasOffers) {
     for (const a of offers) {
       const catalog = Array.isArray(a.offer_catalog) ? a.offer_catalog[0] : a.offer_catalog;
       const subtype = catalog?.subtype ?? "other";
       const name = catalog?.name ?? "";
+      const nameEs = catalog?.name_es ?? null;
       const icon = catalog?.icon ?? null;
       if (!offersBySubtype[subtype]) offersBySubtype[subtype] = [];
-      offersBySubtype[subtype].push({ id: a.id, name, icon });
+      offersBySubtype[subtype].push({
+        id: a.id,
+        name,
+        name_es: nameEs,
+        icon,
+        club_icon: a.icon ?? null,
+        description: a.description ?? null,
+        description_es: a.description_es ?? null,
+        image_url: a.image_url ?? null,
+      });
     }
   }
 
@@ -329,12 +340,32 @@ export default async function PublicProfilePage({
                     {subtype}
                   </p>
                   <div className="bg-white rounded-2xl shadow divide-y divide-gray-50">
-                    {items.map((item) => (
-                      <div key={item.id} className="flex items-center gap-3 px-4 py-3">
-                        <span className="text-base shrink-0">{item.icon ?? "+"}</span>
-                        <span className="text-sm text-gray-900">{item.name}</span>
-                      </div>
-                    ))}
+                    {items.map((item) => {
+                      const displayIcon = item.club_icon || item.icon;
+                      return (
+                        <div key={item.id} className="flex items-center gap-3 px-4 py-3">
+                          {item.image_url ? (
+                            <img
+                              src={item.image_url}
+                              alt=""
+                              className="w-8 h-8 rounded-full object-cover shrink-0"
+                            />
+                          ) : displayIcon ? (
+                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+                              <DynamicIcon name={displayIcon} className="w-4 h-4 text-gray-500" />
+                            </div>
+                          ) : (
+                            <span className="text-base shrink-0">+</span>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <span className="text-sm text-gray-900">{localized(item.name, item.name_es, locale)}</span>
+                            {(item.description || item.description_es) && (
+                              <p className="text-xs text-gray-400 mt-0.5">{localized(item.description ?? "", item.description_es, locale)}</p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               ))}

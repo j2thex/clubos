@@ -1028,18 +1028,43 @@ export async function toggleOffer(
 
 export async function updateOfferOptions(
   clubOfferId: string,
-  orderable: boolean,
-  price: string,
+  formData: FormData,
   clubSlug: string,
 ): Promise<{ error: string } | { ok: true }> {
+  const orderable = formData.get("orderable") === "1";
+  const price = (formData.get("price") as string)?.trim();
+  const description = (formData.get("description") as string)?.trim() || null;
+  const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
+  const icon = (formData.get("icon") as string)?.trim() || null;
+  const imageFile = formData.get("image") as File | null;
+
   const supabase = createAdminClient();
+
+  const updates: Record<string, unknown> = {
+    orderable,
+    price: orderable && price ? Number(price) : null,
+    description,
+    description_es: descriptionEs,
+    icon,
+  };
+
+  if (imageFile && imageFile.size > 0) {
+    const { data: co } = await supabase
+      .from("club_offers")
+      .select("club_id")
+      .eq("id", clubOfferId)
+      .single();
+    if (co) {
+      const { uploadClubImage } = await import("@/lib/supabase/storage");
+      const result = await uploadClubImage(co.club_id, imageFile);
+      if ("error" in result) return { error: result.error };
+      updates.image_url = result.url;
+    }
+  }
 
   const { error } = await supabase
     .from("club_offers")
-    .update({
-      orderable,
-      price: orderable && price ? Number(price) : null,
-    })
+    .update(updates)
     .eq("id", clubOfferId);
 
   if (error) return { error: "Failed to update offer options" };

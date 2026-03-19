@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react";
 import { toggleOffer, updateOfferOptions, addCustomOffer } from "./actions";
 import { DynamicIcon } from "@/components/dynamic-icon";
+import { IconPicker } from "@/components/icon-picker";
+import { LanguageTabs } from "@/components/language-tabs";
 
 const SUBTYPES = ["activity", "experience", "service", "product"] as const;
 type Subtype = (typeof SUBTYPES)[number];
@@ -27,6 +29,10 @@ interface ClubOffer {
   offer_id: string;
   orderable: boolean;
   price: number | null;
+  description: string | null;
+  description_es: string | null;
+  image_url: string | null;
+  icon: string | null;
 }
 
 export function OfferManager({
@@ -66,14 +72,10 @@ export function OfferManager({
     });
   }
 
-  function handleUpdateOptions(
-    clubOfferId: string,
-    orderable: boolean,
-    price: string,
-  ) {
+  function handleUpdateOptions(clubOfferId: string, formData: FormData) {
     setError(null);
     startTransition(async () => {
-      const result = await updateOfferOptions(clubOfferId, orderable, price, clubSlug);
+      const result = await updateOfferOptions(clubOfferId, formData, clubSlug);
       if ("error" in result) setError(result.error);
     });
   }
@@ -221,25 +223,53 @@ function OfferRow({
   isEnabled: boolean;
   isPending: boolean;
   onToggle: (offerId: string, enabled: boolean) => void;
-  onUpdateOptions: (clubOfferId: string, orderable: boolean, price: string) => void;
+  onUpdateOptions: (clubOfferId: string, formData: FormData) => void;
 }) {
   const [localOrderable, setLocalOrderable] = useState(clubOffer?.orderable ?? false);
   const [localPrice, setLocalPrice] = useState(
     clubOffer?.price != null ? String(clubOffer.price) : "",
   );
+  const [localDescription, setLocalDescription] = useState(clubOffer?.description ?? "");
+  const [localDescriptionEs, setLocalDescriptionEs] = useState(clubOffer?.description_es ?? "");
+  const [localIcon, setLocalIcon] = useState<string | null>(clubOffer?.icon ?? null);
+  const [localImage, setLocalImage] = useState<File | null>(null);
+  const [descLang, setDescLang] = useState<"en" | "es">("en");
 
   // Track whether options have been changed from server values
   const serverOrderable = clubOffer?.orderable ?? false;
   const serverPrice = clubOffer?.price != null ? String(clubOffer.price) : "";
-  const optionsDirty = isEnabled && (localOrderable !== serverOrderable || localPrice !== serverPrice);
+  const serverDescription = clubOffer?.description ?? "";
+  const serverDescriptionEs = clubOffer?.description_es ?? "";
+  const serverIcon = clubOffer?.icon ?? null;
+  const optionsDirty =
+    isEnabled &&
+    (localOrderable !== serverOrderable ||
+      localPrice !== serverPrice ||
+      localDescription !== serverDescription ||
+      localDescriptionEs !== serverDescriptionEs ||
+      localIcon !== serverIcon ||
+      localImage !== null);
+
+  function handleSave() {
+    if (!clubOffer) return;
+    const fd = new FormData();
+    fd.set("orderable", localOrderable ? "1" : "0");
+    fd.set("price", localPrice);
+    fd.set("description", localDescription);
+    fd.set("description_es", localDescriptionEs);
+    fd.set("icon", localIcon ?? "");
+    if (localImage) fd.set("image", localImage);
+    onUpdateOptions(clubOffer.id, fd);
+    setLocalImage(null);
+  }
 
   return (
     <div className="px-5 py-3">
       <div className="flex items-center gap-3">
         {/* Icon */}
         <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
-          {offer.icon ? (
-            <DynamicIcon name={offer.icon} className="w-4 h-4 text-gray-500" />
+          {(localIcon || offer.icon) ? (
+            <DynamicIcon name={localIcon || offer.icon!} className="w-4 h-4 text-gray-500" />
           ) : (
             <div className="w-4 h-4 rounded-full bg-gray-300" />
           )}
@@ -271,37 +301,89 @@ function OfferRow({
 
       {/* Expanded options when enabled */}
       {isEnabled && clubOffer && (
-        <div className="mt-2 ml-11 flex items-center gap-3 flex-wrap">
-          <label className="flex items-center gap-1.5 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={localOrderable}
-              onChange={(e) => setLocalOrderable(e.target.checked)}
-              className="rounded border-gray-300 text-gray-800 focus:ring-gray-400"
-            />
-            <span className="text-xs text-gray-600">Orderable</span>
-          </label>
-
-          {localOrderable && (
-            <div className="flex items-center gap-1.5">
-              <label className="text-xs text-gray-500">Price</label>
+        <div className="mt-2 ml-11 space-y-3">
+          {/* Orderable + Price row */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <label className="flex items-center gap-1.5 cursor-pointer">
               <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={localPrice}
-                onChange={(e) => setLocalPrice(e.target.value)}
-                placeholder="0.00"
-                className="w-20 rounded-lg border border-gray-300 px-2 py-1 text-xs text-gray-900 text-center placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                type="checkbox"
+                checked={localOrderable}
+                onChange={(e) => setLocalOrderable(e.target.checked)}
+                className="rounded border-gray-300 text-gray-800 focus:ring-gray-400"
+              />
+              <span className="text-xs text-gray-600">Orderable</span>
+            </label>
+
+            {localOrderable && (
+              <div className="flex items-center gap-1.5">
+                <label className="text-xs text-gray-500">Price</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={localPrice}
+                  onChange={(e) => setLocalPrice(e.target.value)}
+                  placeholder="0.00"
+                  className="w-20 rounded-lg border border-gray-300 px-2 py-1 text-xs text-gray-900 text-center placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Description with language tabs */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-medium text-gray-500">Description</label>
+              <LanguageTabs value={descLang} onChange={setDescLang} />
+            </div>
+            {descLang === "en" ? (
+              <textarea
+                rows={2}
+                value={localDescription}
+                onChange={(e) => setLocalDescription(e.target.value)}
+                placeholder="Short description (optional)"
+                className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition resize-none"
+              />
+            ) : (
+              <textarea
+                rows={2}
+                value={localDescriptionEs}
+                onChange={(e) => setLocalDescriptionEs(e.target.value)}
+                placeholder="Descripci\u00f3n breve (opcional)"
+                className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition resize-none"
+              />
+            )}
+          </div>
+
+          {/* Icon picker */}
+          <IconPicker value={localIcon} onChange={setLocalIcon} />
+
+          {/* Image upload */}
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Image</label>
+            <div className="flex items-center gap-2">
+              {(localImage || clubOffer.image_url) && (
+                <img
+                  src={localImage ? URL.createObjectURL(localImage) : clubOffer.image_url!}
+                  alt=""
+                  className="w-8 h-8 rounded-full object-cover shrink-0"
+                />
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setLocalImage(e.target.files?.[0] ?? null)}
+                className="text-xs text-gray-500 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
               />
             </div>
-          )}
+          </div>
 
+          {/* Save button */}
           {optionsDirty && (
             <button
               type="button"
               disabled={isPending}
-              onClick={() => onUpdateOptions(clubOffer.id, localOrderable, localPrice)}
+              onClick={handleSave}
               className="rounded-lg bg-gray-800 text-white px-3 py-1 text-xs font-semibold hover:bg-gray-700 disabled:opacity-50 transition-colors"
             >
               Save

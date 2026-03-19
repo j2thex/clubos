@@ -37,8 +37,7 @@ export default async function ContentPage({
       supabase
         .from("club_offers")
         .select("id", { count: "exact", head: true })
-        .eq("club_id", club.id)
-        .eq("enabled", true),
+        .eq("club_id", club.id),
       supabase
         .from("badges")
         .select("id", { count: "exact", head: true })

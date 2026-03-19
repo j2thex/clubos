@@ -31,7 +31,7 @@ export default async function OffersPage({
       .order("name", { ascending: true }),
     supabase
       .from("club_offers")
-      .select("id, offer_id, orderable, price")
+      .select("id, offer_id, orderable, price, description, description_es, image_url, icon")
       .eq("club_id", club.id),
   ]);
 
@@ -59,6 +59,10 @@ export default async function OffersPage({
           offer_id: ca.offer_id,
           orderable: ca.orderable ?? false,
           price: ca.price != null ? Number(ca.price) : null,
+          description: ca.description ?? null,
+          description_es: ca.description_es ?? null,
+          image_url: ca.image_url ?? null,
+          icon: ca.icon ?? null,
         }))}
         clubId={club.id}
         clubSlug={clubSlug}
