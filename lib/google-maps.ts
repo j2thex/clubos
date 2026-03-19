@@ -1,12 +1,12 @@
 /**
- * Extract a Google Place ID from various Google Maps URL formats
- * or accept a raw Place ID string (ChIJ...).
+ * Extract a Google Place ID from various Google Maps URL formats.
  *
  * Supported formats:
  * - Direct Place ID: "ChIJxxxxxxx"
- * - Full URL: "https://www.google.com/maps/place/...!1sChIJ..."
- * - Short link: "https://maps.app.goo.gl/xxx" (follows redirect)
- * - CID URL: not supported (CID ≠ Place ID, needs API to convert)
+ * - Hex Place ID: "0x12a4a2f979277f3d:0x286b3f84e2e7712d"
+ * - Full URL with ChIJ: "https://www.google.com/maps/place/...!1sChIJ..."
+ * - Full URL with hex: "https://www.google.com/maps/place/...!1s0x..."
+ * - Short link: "https://maps.app.goo.gl/xxx" (follows redirect server-side)
  */
 
 export async function extractPlaceId(
@@ -15,8 +15,13 @@ export async function extractPlaceId(
   const trimmed = input.trim();
   if (!trimmed) return null;
 
-  // Direct Place ID (starts with ChIJ, typically 27+ chars)
+  // Direct Place ID (ChIJ format)
   if (/^ChIJ[A-Za-z0-9_-]{20,}$/.test(trimmed)) {
+    return trimmed;
+  }
+
+  // Direct hex format (0x....:0x....)
+  if (/^0x[a-f0-9]+:0x[a-f0-9]+$/i.test(trimmed)) {
     return trimmed;
   }
 
@@ -29,8 +34,11 @@ export async function extractPlaceId(
   ) {
     try {
       const response = await fetch(url, {
-        method: "HEAD",
+        method: "GET",
         redirect: "follow",
+        headers: {
+          "User-Agent": "Mozilla/5.0 (compatible; bot)",
+        },
       });
       url = response.url;
     } catch {
@@ -38,26 +46,23 @@ export async function extractPlaceId(
     }
   }
 
-  // Extract Place ID from full Google Maps URL
-  // Pattern: "!1s" followed by the Place ID (ChIJ...)
-  const placeIdMatch = url.match(/!1s(ChIJ[A-Za-z0-9_-]+)/);
-  if (placeIdMatch) {
-    return placeIdMatch[1];
+  // Extract hex Place ID: "!1s0x..." pattern (most common in Google Maps URLs)
+  const hexMatch = url.match(/!1s(0x[a-f0-9]+:0x[a-f0-9]+)/i);
+  if (hexMatch) {
+    return hexMatch[1];
   }
 
-  // Pattern: /place/ URLs sometimes have place_id in query params
+  // Extract ChIJ Place ID: "!1sChIJ..." pattern
+  const chijMatch = url.match(/!1s(ChIJ[A-Za-z0-9_-]+)/);
+  if (chijMatch) {
+    return chijMatch[1];
+  }
+
+  // Query param: place_id=...
   const urlObj = safeParseUrl(url);
   if (urlObj) {
     const pid = urlObj.searchParams.get("place_id");
     if (pid) return pid;
-  }
-
-  // Pattern: ftid= parameter (another Google Maps format)
-  const ftidMatch = url.match(/ftid=(0x[a-f0-9]+:[a-f0-9]+)/);
-  if (ftidMatch) {
-    // ftid is not a Place ID but can be used in some contexts
-    // For now, return null — requires API to convert
-    return null;
   }
 
   return null;
@@ -65,6 +70,7 @@ export async function extractPlaceId(
 
 /**
  * Generate the direct Google review URL from a Place ID.
+ * Works with both ChIJ and hex formats.
  */
 export function getReviewUrl(placeId: string): string {
   return `https://search.google.com/local/writereview?placeid=${placeId}`;
