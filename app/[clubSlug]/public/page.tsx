@@ -53,7 +53,7 @@ export default async function PublicProfilePage({
 
   const today = new Date().toISOString().split("T")[0];
 
-  const [{ data: events }, { data: quests }, { data: services }, { data: galleryImages }] =
+  const [{ data: events }, { data: quests }, { data: amenities }, { data: galleryImages }] =
     await Promise.all([
       supabase
         .from("events")
@@ -71,12 +71,11 @@ export default async function PublicProfilePage({
         .eq("is_public", true)
         .order("display_order", { ascending: true }),
       supabase
-        .from("services")
-        .select("id, title, description, title_es, description_es, image_url, link, price")
+        .from("club_amenities")
+        .select("id, amenity_catalog(name, subtype, icon)")
         .eq("club_id", club.id)
-        .eq("active", true)
-        .eq("is_public", true)
-        .order("display_order", { ascending: true }),
+        .eq("enabled", true)
+        .order("created_at", { ascending: true }),
       supabase
         .from("club_gallery")
         .select("id, image_url, caption")
@@ -86,7 +85,20 @@ export default async function PublicProfilePage({
 
   const hasEvents = events && events.length > 0;
   const hasQuests = quests && quests.length > 0;
-  const hasServices = services && services.length > 0;
+  const hasAmenities = amenities && amenities.length > 0;
+
+  // Group amenities by subtype for display
+  const amenitiesBySubtype: Record<string, { id: string; name: string; icon: string | null }[]> = {};
+  if (hasAmenities) {
+    for (const a of amenities) {
+      const catalog = Array.isArray(a.amenity_catalog) ? a.amenity_catalog[0] : a.amenity_catalog;
+      const subtype = catalog?.subtype ?? "other";
+      const name = catalog?.name ?? "";
+      const icon = catalog?.icon ?? null;
+      if (!amenitiesBySubtype[subtype]) amenitiesBySubtype[subtype] = [];
+      amenitiesBySubtype[subtype].push({ id: a.id, name, icon });
+    }
+  }
 
   function formatDate(d: string) {
     return new Date(d + "T00:00:00").toLocaleDateString("en-US", {
@@ -291,48 +303,25 @@ export default async function PublicProfilePage({
           </div>
         )}
 
-        {/* Services */}
-        {hasServices && (
+        {/* Amenities */}
+        {hasAmenities && (
           <div>
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-2">
-              Services
+              Amenities
             </h2>
-            <div className="space-y-3">
-              {services.map((s) => (
-                <div key={s.id} className="bg-white rounded-2xl shadow p-4">
-                  <div className="flex items-center gap-4">
-                    {s.image_url ? (
-                      <img src={s.image_url} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-gray-100 text-gray-300">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                        </svg>
+            <div className="space-y-4">
+              {Object.entries(amenitiesBySubtype).map(([subtype, items]) => (
+                <div key={subtype}>
+                  <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-wider px-1 mb-1.5">
+                    {subtype}
+                  </p>
+                  <div className="bg-white rounded-2xl shadow divide-y divide-gray-50">
+                    {items.map((item) => (
+                      <div key={item.id} className="flex items-center gap-3 px-4 py-3">
+                        <span className="text-base shrink-0">{item.icon ?? "+"}</span>
+                        <span className="text-sm text-gray-900">{item.name}</span>
                       </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 text-sm">{localized(s.title, s.title_es, locale)}</p>
-                      {s.description && (
-                        <p className="text-xs text-gray-400">{localized(s.description, s.description_es, locale)}</p>
-                      )}
-                      {s.link && (
-                        <a
-                          href={s.link.match(/^https?:\/\//) ? s.link : `https://${s.link}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-block mt-1 text-xs font-medium club-primary underline"
-                        >
-                          Learn more
-                        </a>
-                      )}
-                    </div>
-                    <div className="shrink-0">
-                      {s.price != null ? (
-                        <span className="text-sm font-bold text-gray-900">${Number(s.price).toFixed(2)}</span>
-                      ) : (
-                        <span className="text-sm font-bold text-green-600">Free</span>
-                      )}
-                    </div>
+                    ))}
                   </div>
                 </div>
               ))}

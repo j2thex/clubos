@@ -733,151 +733,6 @@ export async function deleteEvent(
   return { ok: true };
 }
 
-// --- Service actions ---
-
-export async function addService(
-  clubId: string,
-  formData: FormData,
-  clubSlug: string,
-): Promise<{ error: string } | { ok: true }> {
-  const title = (formData.get("title") as string)?.trim();
-  const description = (formData.get("description") as string)?.trim() || null;
-  const link = (formData.get("link") as string)?.trim() || null;
-  const priceStr = (formData.get("price") as string)?.trim();
-  const isPublic = formData.get("is_public") === "1";
-  const icon = (formData.get("icon") as string)?.trim() || null;
-  const imageFile = formData.get("image") as File | null;
-  const titleEs = (formData.get("title_es") as string)?.trim() || null;
-  const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
-
-  if (!title) return { error: "Title is required" };
-
-  const supabase = createAdminClient();
-
-  const { data: existing } = await supabase
-    .from("services")
-    .select("display_order")
-    .eq("club_id", clubId)
-    .order("display_order", { ascending: false })
-    .limit(1);
-
-  const nextOrder = existing && existing.length > 0 ? existing[0].display_order + 1 : 0;
-
-  let imageUrl: string | null = null;
-  if (imageFile && imageFile.size > 0) {
-    const { uploadClubImage } = await import("@/lib/supabase/storage");
-    const result = await uploadClubImage(clubId, imageFile);
-    if ("error" in result) return { error: result.error };
-    imageUrl = result.url;
-  }
-
-  const { error } = await supabase.from("services").insert({
-    club_id: clubId,
-    title,
-    description,
-    link,
-    icon,
-    price: priceStr ? Number(priceStr) : null,
-    is_public: isPublic,
-    image_url: imageUrl,
-    display_order: nextOrder,
-    title_es: titleEs,
-    description_es: descriptionEs,
-  });
-
-  if (error) return { error: "Failed to add service" };
-
-  revalidatePath(`/${clubSlug}/admin`, "layout");
-  return { ok: true };
-}
-
-export async function updateService(
-  serviceId: string,
-  formData: FormData,
-  clubSlug: string,
-): Promise<{ error: string } | { ok: true }> {
-  const title = (formData.get("title") as string)?.trim();
-  const description = (formData.get("description") as string)?.trim() || null;
-  const link = (formData.get("link") as string)?.trim() || null;
-  const priceStr = (formData.get("price") as string)?.trim();
-  const isPublic = formData.get("is_public") === "1";
-  const icon = (formData.get("icon") as string)?.trim() || null;
-  const imageFile = formData.get("image") as File | null;
-  const titleEs = (formData.get("title_es") as string)?.trim() || null;
-  const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
-
-  if (!title) return { error: "Title is required" };
-
-  const supabase = createAdminClient();
-
-  const updates: Record<string, unknown> = {
-    title,
-    description,
-    link,
-    icon,
-    price: priceStr ? Number(priceStr) : null,
-    is_public: isPublic,
-    title_es: titleEs,
-    description_es: descriptionEs,
-  };
-
-  if (imageFile && imageFile.size > 0) {
-    const { data: svc } = await supabase
-      .from("services")
-      .select("image_url, club_id")
-      .eq("id", serviceId)
-      .single();
-
-    if (svc?.image_url) {
-      const { deleteClubImage } = await import("@/lib/supabase/storage");
-      await deleteClubImage(svc.image_url);
-    }
-
-    const { uploadClubImage } = await import("@/lib/supabase/storage");
-    const result = await uploadClubImage(svc?.club_id ?? "", imageFile);
-    if ("error" in result) return { error: result.error };
-    updates.image_url = result.url;
-  }
-
-  const { error } = await supabase
-    .from("services")
-    .update(updates)
-    .eq("id", serviceId);
-
-  if (error) return { error: "Failed to update service" };
-
-  revalidatePath(`/${clubSlug}/admin`, "layout");
-  return { ok: true };
-}
-
-export async function deleteService(
-  serviceId: string,
-  clubSlug: string,
-): Promise<{ error: string } | { ok: true }> {
-  const supabase = createAdminClient();
-
-  const { data: svc } = await supabase
-    .from("services")
-    .select("image_url")
-    .eq("id", serviceId)
-    .single();
-
-  if (svc?.image_url) {
-    const { deleteClubImage } = await import("@/lib/supabase/storage");
-    await deleteClubImage(svc.image_url);
-  }
-
-  const { error } = await supabase
-    .from("services")
-    .delete()
-    .eq("id", serviceId);
-
-  if (error) return { error: "Failed to delete service" };
-
-  revalidatePath(`/${clubSlug}/admin`, "layout");
-  return { ok: true };
-}
-
 // --- Membership period actions ---
 
 export async function addMembershipPeriod(
@@ -1124,6 +979,113 @@ export async function updateNotificationSecret(
     .eq("id", clubId);
 
   if (error) return { error: "Failed to update notification secret" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
+// --- Amenity actions ---
+
+export async function toggleAmenity(
+  clubId: string,
+  amenityId: string,
+  enabled: boolean,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  if (enabled) {
+    // Get next display_order
+    const { data: existing } = await supabase
+      .from("club_amenities")
+      .select("display_order")
+      .eq("club_id", clubId)
+      .order("display_order", { ascending: false })
+      .limit(1);
+    const nextOrder = existing && existing.length > 0 ? existing[0].display_order + 1 : 0;
+
+    const { error } = await supabase.from("club_amenities").insert({
+      club_id: clubId,
+      amenity_id: amenityId,
+      display_order: nextOrder,
+    });
+    if (error) {
+      if (error.code === "23505") return { ok: true }; // Already exists
+      return { error: "Failed to enable amenity" };
+    }
+  } else {
+    const { error } = await supabase
+      .from("club_amenities")
+      .delete()
+      .eq("club_id", clubId)
+      .eq("amenity_id", amenityId);
+    if (error) return { error: "Failed to disable amenity" };
+  }
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
+export async function updateAmenityOptions(
+  clubAmenityId: string,
+  orderable: boolean,
+  price: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("club_amenities")
+    .update({
+      orderable,
+      price: orderable && price ? Number(price) : null,
+    })
+    .eq("id", clubAmenityId);
+
+  if (error) return { error: "Failed to update amenity options" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
+export async function addCustomAmenity(
+  clubId: string,
+  name: string,
+  subtype: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  if (!name.trim()) return { error: "Name is required" };
+
+  const supabase = createAdminClient();
+
+  // Insert into catalog as unapproved custom entry
+  const { data: newAmenity, error: catalogError } = await supabase
+    .from("amenity_catalog")
+    .insert({
+      name: name.trim(),
+      subtype,
+      is_approved: false,
+      created_by_club_id: clubId,
+    })
+    .select("id")
+    .single();
+
+  if (catalogError) return { error: "Failed to add custom amenity" };
+
+  // Auto-enable it for this club
+  const { data: existing } = await supabase
+    .from("club_amenities")
+    .select("display_order")
+    .eq("club_id", clubId)
+    .order("display_order", { ascending: false })
+    .limit(1);
+  const nextOrder = existing && existing.length > 0 ? existing[0].display_order + 1 : 0;
+
+  await supabase.from("club_amenities").insert({
+    club_id: clubId,
+    amenity_id: newAmenity.id,
+    display_order: nextOrder,
+  });
 
   revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };

@@ -6,7 +6,7 @@ import { PlatformOverview } from "./_landing/platform-overview";
 import { FeatureGrid } from "./_landing/feature-grid";
 import { HowItWorks } from "./_landing/how-it-works";
 import { UseCases } from "./_landing/use-cases";
-import { ServiceFinder } from "./_landing/service-finder";
+import { AmenityFinder } from "./_landing/amenity-finder";
 import { MembershipExplorer } from "./_landing/membership-explorer";
 import { ClubDirectory } from "./_landing/club-directory";
 import { FinalCta } from "./_landing/final-cta";
@@ -56,25 +56,23 @@ async function getPublicClubs() {
   }
 }
 
-async function getPublicServices() {
+async function getPublicAmenities() {
   try {
     const supabase = createAdminClient();
     const { data } = await supabase
-      .from("services")
-      .select("id, title, description, price, image_url, clubs(name, slug, club_branding(logo_url, primary_color))")
-      .eq("active", true)
-      .eq("is_public", true)
-      .order("display_order", { ascending: true })
+      .from("club_amenities")
+      .select("id, amenity_catalog(name, subtype), clubs(name, slug, club_branding(logo_url, primary_color))")
+      .eq("enabled", true)
+      .order("created_at", { ascending: false })
       .limit(50);
-    return (data ?? []).map((s) => {
-      const club = Array.isArray(s.clubs) ? s.clubs[0] : s.clubs;
+    return (data ?? []).map((a) => {
+      const catalog = Array.isArray(a.amenity_catalog) ? a.amenity_catalog[0] : a.amenity_catalog;
+      const club = Array.isArray(a.clubs) ? a.clubs[0] : a.clubs;
       const branding = club ? (Array.isArray(club.club_branding) ? club.club_branding[0] : club.club_branding) : null;
       return {
-        id: s.id,
-        title: s.title,
-        description: s.description,
-        price: s.price,
-        image_url: s.image_url,
+        id: a.id,
+        name: catalog?.name ?? "",
+        subtype: catalog?.subtype ?? null,
         club_name: club?.name ?? "",
         club_slug: club?.slug ?? "",
         club_logo: branding?.logo_url ?? null,
@@ -117,10 +115,10 @@ async function getMembershipDeals() {
 
 export default async function Home() {
   const locale = await getServerLocale();
-  const [stats, clubs, services, deals] = await Promise.all([
+  const [stats, clubs, amenities, deals] = await Promise.all([
     getLandingStats(),
     getPublicClubs(),
-    getPublicServices(),
+    getPublicAmenities(),
     getMembershipDeals(),
   ]);
 
@@ -134,14 +132,13 @@ export default async function Home() {
       <FeatureGrid t={tr} />
       <HowItWorks t={tr} />
       <UseCases t={tr} />
-      <ServiceFinder
-        services={services}
+      <AmenityFinder
+        amenities={amenities}
         labels={{
-          title: tr("landing.serviceFinderTitle"),
-          subtitle: tr("landing.serviceFinderSubtitle"),
-          placeholder: tr("landing.serviceFinderPlaceholder"),
-          noResults: tr("landing.serviceFinderNoResults"),
-          free: tr("landing.serviceFree"),
+          title: tr("landing.amenityFinderTitle"),
+          subtitle: tr("landing.amenityFinderSubtitle"),
+          placeholder: tr("landing.amenityFinderPlaceholder"),
+          noResults: tr("landing.amenityFinderNoResults"),
           viewClub: tr("landing.directoryViewClub"),
         }}
       />
