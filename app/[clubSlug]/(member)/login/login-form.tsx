@@ -128,7 +128,14 @@ export function LoginForm({ loginMode }: { loginMode: string }) {
           </form>
         </div>
 
-        <p className="text-center text-xs text-gray-400 mt-6">
+        <a
+          href={`/${clubSlug}/public`}
+          className="mt-4 inline-flex items-center gap-2 w-full justify-center rounded-xl border-2 border-gray-200 px-6 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+        >
+          {t("login.visitClubPage")}
+        </a>
+
+        <p className="text-center text-xs text-gray-400 mt-4">
           {t("login.contactAdminHelp")}
         </p>
         <p className="text-center text-xs text-gray-300 mt-2">

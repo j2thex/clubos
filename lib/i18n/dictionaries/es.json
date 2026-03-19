@@ -48,6 +48,7 @@
   "login.memberSubtitle": "Introduce tu código de socio para acceder",
   "login.memberCodePlaceholder": "ABC123",
   "login.contactAdminHelp": "Contacta al administrador de tu club si necesitas ayuda para acceder.",
+  "login.visitClubPage": "Visitar Página del Club →",
   "login.staffTitle": "Acceso de staff",
   "login.staffSubtitle": "Introduce tu código de staff y PIN",
   "login.staffCodePlaceholder": "ABC123",

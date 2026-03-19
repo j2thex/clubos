@@ -48,6 +48,7 @@
   "login.memberSubtitle": "Enter your member code to sign in",
   "login.memberCodePlaceholder": "ABC123",
   "login.contactAdminHelp": "Contact your club administrator if you need help signing in.",
+  "login.visitClubPage": "Visit Club Page →",
   "login.staffTitle": "Staff Login",
   "login.staffSubtitle": "Enter your staff code and PIN",
   "login.staffCodePlaceholder": "ABC123",

@@ -6,6 +6,7 @@ import { SocialLinks } from "@/components/club/social-links";
 import { PhotoGallery } from "@/components/club/photo-gallery";
 import { InviteForm } from "./invite-form";
 import { InviteSocialButtons } from "./invite-social-buttons";
+import { PublicLoginForm } from "./public-login-form";
 import { localized } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 import { DynamicIcon } from "@/components/dynamic-icon";
@@ -40,7 +41,7 @@ export default async function PublicProfilePage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name, invite_only, invite_mode, club_branding(logo_url, cover_url, primary_color, secondary_color, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website)")
+    .select("id, name, invite_only, invite_mode, login_mode, club_branding(logo_url, cover_url, primary_color, secondary_color, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website)")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -187,15 +188,10 @@ export default async function PublicProfilePage({
           />
         )}
 
-        {/* Member Login — always shown so existing members can log in */}
-        <div className="bg-white rounded-2xl shadow-lg p-5 text-center">
-          <p className="text-sm text-gray-500 mb-3">{localized("Already a member?", "¿Ya eres socio?", locale)}</p>
-          <Link
-            href={`/${clubSlug}/login`}
-            className="inline-block w-full rounded-xl club-btn px-6 py-3 text-sm font-semibold text-white transition-colors"
-          >
-            {localized("Member Login", "Acceso de Socio", locale)}
-          </Link>
+        {/* Member Login — inline form */}
+        <div className="bg-white rounded-2xl shadow-lg p-5">
+          <p className="text-sm text-gray-500 mb-3 text-center">{localized("Already a member?", "¿Ya eres socio?", locale)}</p>
+          <PublicLoginForm loginMode={club.login_mode ?? "code_only"} clubSlug={clubSlug} />
         </div>
 
         {/* Events */}
