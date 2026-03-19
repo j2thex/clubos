@@ -60,7 +60,7 @@
   "login.membershipExpired": "Tu membresía expiró el {date}. Contacta a tu club para renovar.",
   "login.membershipExpiredGeneric": "Tu membresía ha expirado. Contacta a tu club para renovar.",
   "login.expiryCode": "Código de expiración",
-  "login.expiryCodeHint": "4 dígitos de tu fecha de expiración (MMDD)",
+  "login.expiryCodeHint": "4 dígitos de tu fecha de expiración (DDMM)",
   "login.expiryCodeRequired": "Ingresa tu código de expiración de 4 dígitos",
   "login.noExpirySet": "No hay fecha de expiración configurada. Contacta a tu club.",
   "login.invalidExpiryCode": "Código de expiración incorrecto. Revisa tu tarjeta de membresía.",
@@ -292,7 +292,7 @@
   "admin.codeOnly": "Solo código de socio",
   "admin.codeOnlyDesc": "Los socios acceden solo con su código único",
   "admin.codeAndExpiry": "Código + fecha de expiración",
-  "admin.codeAndExpiryDesc": "Los socios también ingresan su fecha de expiración de 4 dígitos (MMDD) para mayor seguridad",
+  "admin.codeAndExpiryDesc": "Los socios también ingresan su fecha de expiración de 4 dígitos (DDMM) para mayor seguridad",
   "admin.inviteOnly": "Solo con invitación",
   "admin.inviteOnlyDesc": "La página pública muestra un formulario de \"Solicitar invitación\" en vez del login de socios",
 

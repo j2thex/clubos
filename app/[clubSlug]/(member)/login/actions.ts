@@ -45,9 +45,9 @@ export async function loginMember(clubSlug: string, locale: Locale, formData: Fo
       return { error: t(locale, "login.noExpirySet") };
     }
 
-    // Format valid_till as MMDD (e.g. "2027-12-27" → "1227")
+    // Format valid_till as DDMM (e.g. "2027-12-27" → "2712")
     const parts = member.valid_till.split("-"); // ["2027", "12", "27"]
-    const expectedCode = parts[1] + parts[2]; // "1227"
+    const expectedCode = parts[2] + parts[1]; // "2712"
 
     if (expiryCode !== expectedCode) {
       return { error: t(locale, "login.invalidExpiryCode") };

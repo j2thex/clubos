@@ -60,7 +60,7 @@
   "login.membershipExpired": "Your membership expired on {date}. Contact your club to renew.",
   "login.membershipExpiredGeneric": "Your membership has expired. Contact your club to renew.",
   "login.expiryCode": "Expiry date code",
-  "login.expiryCodeHint": "4 digits from your expiry date (MMDD)",
+  "login.expiryCodeHint": "4 digits from your expiry date (DDMM)",
   "login.expiryCodeRequired": "Please enter your 4-digit expiry code",
   "login.noExpirySet": "No expiry date set for this account. Contact your club.",
   "login.invalidExpiryCode": "Incorrect expiry code. Check your membership card.",
@@ -292,7 +292,7 @@
   "admin.codeOnly": "Member code only",
   "admin.codeOnlyDesc": "Members log in with just their unique code",
   "admin.codeAndExpiry": "Code + expiry date",
-  "admin.codeAndExpiryDesc": "Members also enter their 4-digit expiry date (MMDD) for extra security",
+  "admin.codeAndExpiryDesc": "Members also enter their 4-digit expiry date (DDMM) for extra security",
   "admin.inviteOnly": "Invite only",
   "admin.inviteOnlyDesc": "Public page shows \"Request an Invite\" form instead of member login",
 

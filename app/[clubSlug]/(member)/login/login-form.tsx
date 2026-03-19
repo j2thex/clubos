@@ -106,7 +106,7 @@ export function LoginForm({ loginMode }: { loginMode: string }) {
                   maxLength={4}
                   inputMode="numeric"
                   autoComplete="off"
-                  placeholder="MMDD"
+                  placeholder="DDMM"
                   className="club-ring block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-lg font-mono tracking-widest placeholder:text-gray-400 placeholder:tracking-widest transition"
                   onChange={(e) => {
                     e.target.value = e.target.value.replace(/\D/g, "").slice(0, 4);
