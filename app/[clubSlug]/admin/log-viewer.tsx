@@ -21,6 +21,8 @@ const ACTION_CONFIG: Record<string, { label: string; color: string }> = {
   checkin: { label: "Checked in", color: "bg-green-100 text-green-700" },
   order_fulfilled: { label: "Fulfilled order", color: "bg-amber-100 text-amber-700" },
   walkin_order: { label: "Walk-in order", color: "bg-amber-100 text-amber-700" },
+  offer_order_fulfilled: { label: "Fulfilled order", color: "bg-amber-100 text-amber-700" },
+  offer_walkin_order: { label: "Walk-in order", color: "bg-amber-100 text-amber-700" },
 };
 
 function timeAgo(iso: string): string {
