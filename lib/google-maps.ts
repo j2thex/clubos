@@ -69,11 +69,52 @@ export async function extractPlaceId(
 }
 
 /**
+ * Convert a hex Place ID (0x...:0x...) to ChIJ format.
+ * Google's writereview endpoint only accepts ChIJ format.
+ *
+ * The hex values are two 64-bit LE integers, base64-encoded with "ChIJ" prefix.
+ */
+function hexToChIJ(hex: string): string | null {
+  const match = hex.match(/^0x([a-f0-9]+):0x([a-f0-9]+)$/i);
+  if (!match) return null;
+
+  try {
+    // Parse hex strings to BigInt, then to 8-byte little-endian arrays
+    // Convert hex strings to byte arrays (little-endian)
+    const buf = new Uint8Array(16);
+    const hexA = match[1].padStart(16, "0");
+    const hexB = match[2].padStart(16, "0");
+
+    // Parse hex to LE bytes
+    for (let i = 0; i < 8; i++) {
+      buf[i] = parseInt(hexA.slice(14 - i * 2, 16 - i * 2), 16);
+      buf[i + 8] = parseInt(hexB.slice(14 - i * 2, 16 - i * 2), 16);
+    }
+
+    // Base64 encode without padding
+    const b64 = btoa(String.fromCharCode(...buf)).replace(/=+$/, "");
+    return "ChIJ" + b64;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Ensure a Place ID is in ChIJ format (required by Google writereview).
+ * Converts hex format to ChIJ if needed.
+ */
+function toChIJFormat(placeId: string): string {
+  if (placeId.startsWith("ChIJ")) return placeId;
+  return hexToChIJ(placeId) ?? placeId;
+}
+
+/**
  * Generate the direct Google review URL from a Place ID.
- * Works with both ChIJ and hex formats.
+ * Automatically converts hex format to ChIJ format.
  */
 export function getReviewUrl(placeId: string): string {
-  return `https://search.google.com/local/writereview?placeid=${placeId}`;
+  const chij = toChIJFormat(placeId);
+  return `https://search.google.com/local/writereview?placeid=${chij}`;
 }
 
 function safeParseUrl(str: string): URL | null {
