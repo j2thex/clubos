@@ -53,7 +53,7 @@ export default async function PublicProfilePage({
 
   const today = new Date().toISOString().split("T")[0];
 
-  const [{ data: events }, { data: quests }, { data: amenities }, { data: galleryImages }] =
+  const [{ data: events }, { data: quests }, { data: offers }, { data: galleryImages }] =
     await Promise.all([
       supabase
         .from("events")
@@ -71,8 +71,8 @@ export default async function PublicProfilePage({
         .eq("is_public", true)
         .order("display_order", { ascending: true }),
       supabase
-        .from("club_amenities")
-        .select("id, amenity_catalog(name, subtype, icon)")
+        .from("club_offers")
+        .select("id, offer_catalog(name, subtype, icon)")
         .eq("club_id", club.id)
         .eq("enabled", true)
         .order("created_at", { ascending: true }),
@@ -85,18 +85,18 @@ export default async function PublicProfilePage({
 
   const hasEvents = events && events.length > 0;
   const hasQuests = quests && quests.length > 0;
-  const hasAmenities = amenities && amenities.length > 0;
+  const hasOffers = offers && offers.length > 0;
 
-  // Group amenities by subtype for display
-  const amenitiesBySubtype: Record<string, { id: string; name: string; icon: string | null }[]> = {};
-  if (hasAmenities) {
-    for (const a of amenities) {
-      const catalog = Array.isArray(a.amenity_catalog) ? a.amenity_catalog[0] : a.amenity_catalog;
+  // Group offers by subtype for display
+  const offersBySubtype: Record<string, { id: string; name: string; icon: string | null }[]> = {};
+  if (hasOffers) {
+    for (const a of offers) {
+      const catalog = Array.isArray(a.offer_catalog) ? a.offer_catalog[0] : a.offer_catalog;
       const subtype = catalog?.subtype ?? "other";
       const name = catalog?.name ?? "";
       const icon = catalog?.icon ?? null;
-      if (!amenitiesBySubtype[subtype]) amenitiesBySubtype[subtype] = [];
-      amenitiesBySubtype[subtype].push({ id: a.id, name, icon });
+      if (!offersBySubtype[subtype]) offersBySubtype[subtype] = [];
+      offersBySubtype[subtype].push({ id: a.id, name, icon });
     }
   }
 
@@ -303,14 +303,14 @@ export default async function PublicProfilePage({
           </div>
         )}
 
-        {/* Amenities */}
-        {hasAmenities && (
+        {/* Offers */}
+        {hasOffers && (
           <div>
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-2">
-              Amenities
+              Offers
             </h2>
             <div className="space-y-4">
-              {Object.entries(amenitiesBySubtype).map(([subtype, items]) => (
+              {Object.entries(offersBySubtype).map(([subtype, items]) => (
                 <div key={subtype}>
                   <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-wider px-1 mb-1.5">
                     {subtype}

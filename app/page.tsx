@@ -6,7 +6,7 @@ import { PlatformOverview } from "./_landing/platform-overview";
 import { FeatureGrid } from "./_landing/feature-grid";
 import { HowItWorks } from "./_landing/how-it-works";
 import { UseCases } from "./_landing/use-cases";
-import { AmenityFinder } from "./_landing/amenity-finder";
+import { OfferFinder } from "./_landing/offer-finder";
 import { MembershipExplorer } from "./_landing/membership-explorer";
 import { ClubDirectory } from "./_landing/club-directory";
 import { FinalCta } from "./_landing/final-cta";
@@ -56,17 +56,17 @@ async function getPublicClubs() {
   }
 }
 
-async function getPublicAmenities() {
+async function getPublicOffers() {
   try {
     const supabase = createAdminClient();
     const { data } = await supabase
-      .from("club_amenities")
-      .select("id, amenity_catalog(name, subtype), clubs(name, slug, club_branding(logo_url, primary_color))")
+      .from("club_offers")
+      .select("id, offer_catalog(name, subtype), clubs(name, slug, club_branding(logo_url, primary_color))")
       .eq("enabled", true)
       .order("created_at", { ascending: false })
       .limit(50);
     return (data ?? []).map((a) => {
-      const catalog = Array.isArray(a.amenity_catalog) ? a.amenity_catalog[0] : a.amenity_catalog;
+      const catalog = Array.isArray(a.offer_catalog) ? a.offer_catalog[0] : a.offer_catalog;
       const club = Array.isArray(a.clubs) ? a.clubs[0] : a.clubs;
       const branding = club ? (Array.isArray(club.club_branding) ? club.club_branding[0] : club.club_branding) : null;
       return {
@@ -115,10 +115,10 @@ async function getMembershipDeals() {
 
 export default async function Home() {
   const locale = await getServerLocale();
-  const [stats, clubs, amenities, deals] = await Promise.all([
+  const [stats, clubs, offers, deals] = await Promise.all([
     getLandingStats(),
     getPublicClubs(),
-    getPublicAmenities(),
+    getPublicOffers(),
     getMembershipDeals(),
   ]);
 
@@ -132,13 +132,13 @@ export default async function Home() {
       <FeatureGrid t={tr} />
       <HowItWorks t={tr} />
       <UseCases t={tr} />
-      <AmenityFinder
-        amenities={amenities}
+      <OfferFinder
+        offers={offers}
         labels={{
-          title: tr("landing.amenityFinderTitle"),
-          subtitle: tr("landing.amenityFinderSubtitle"),
-          placeholder: tr("landing.amenityFinderPlaceholder"),
-          noResults: tr("landing.amenityFinderNoResults"),
+          title: tr("landing.offerFinderTitle"),
+          subtitle: tr("landing.offerFinderSubtitle"),
+          placeholder: tr("landing.offerFinderPlaceholder"),
+          noResults: tr("landing.offerFinderNoResults"),
           viewClub: tr("landing.directoryViewClub"),
         }}
       />

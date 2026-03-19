@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { fulfillAmenityOrder, addWalkinAmenityOrder } from "./actions";
+import { fulfillOfferOrder, addWalkinOfferOrder } from "./actions";
 import { useLanguage } from "@/lib/i18n/provider";
 
 interface Order {
@@ -12,22 +12,22 @@ interface Order {
   member_code: string;
   member_name: string;
   fulfilled_by_name: string | null;
-  amenity_title: string;
+  offer_title: string;
 }
 
-interface Amenity {
+interface Offer {
   id: string;
   title: string;
 }
 
-export function StaffAmenityClient({
-  amenities,
+export function StaffOfferClient({
+  offers,
   initialOrders,
   clubId,
   clubSlug,
   staffMemberId,
 }: {
-  amenities: Amenity[];
+  offers: Offer[];
   initialOrders: Order[];
   clubId: string;
   clubSlug: string;
@@ -35,7 +35,7 @@ export function StaffAmenityClient({
 }) {
   const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [memberCode, setMemberCode] = useState("");
-  const [walkinAmenityId, setWalkinAmenityId] = useState(amenities[0]?.id ?? "");
+  const [walkinOfferId, setWalkinOfferId] = useState(offers[0]?.id ?? "");
   const [isPending, startTransition] = useTransition();
   const { t } = useLanguage();
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +48,7 @@ export function StaffAmenityClient({
     setError(null);
     setSuccess(null);
     startTransition(async () => {
-      const res = await fulfillAmenityOrder(orderId, staffMemberId, clubSlug);
+      const res = await fulfillOfferOrder(orderId, staffMemberId, clubSlug);
       if ("error" in res) {
         setError(res.error);
         return;
@@ -68,17 +68,17 @@ export function StaffAmenityClient({
   function handleWalkin(e: React.FormEvent) {
     e.preventDefault();
     const code = memberCode.trim().toUpperCase();
-    if (!code || !walkinAmenityId) return;
+    if (!code || !walkinOfferId) return;
 
     setError(null);
     setSuccess(null);
     startTransition(async () => {
-      const res = await addWalkinAmenityOrder(code, walkinAmenityId, clubId, staffMemberId, clubSlug);
+      const res = await addWalkinOfferOrder(code, walkinOfferId, clubId, staffMemberId, clubSlug);
       if ("error" in res) {
         setError(res.error);
         return;
       }
-      const amenityName = amenities.find((a) => a.id === walkinAmenityId)?.title ?? "";
+      const offerName = offers.find((a) => a.id === walkinOfferId)?.title ?? "";
       setOrders((prev) => [
         {
           id: crypto.randomUUID(),
@@ -88,7 +88,7 @@ export function StaffAmenityClient({
           member_code: code,
           member_name: "",
           fulfilled_by_name: null,
-          amenity_title: amenityName,
+          offer_title: offerName,
         },
         ...prev,
       ]);
@@ -121,7 +121,7 @@ export function StaffAmenityClient({
                 <div key={o.id} className="px-5 py-3 flex items-center justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-gray-900">
-                      {o.amenity_title}
+                      {o.offer_title}
                     </p>
                     <p className="text-xs text-gray-500 mt-0.5">
                       <span className="font-mono font-semibold">{o.member_code}</span>
@@ -156,13 +156,13 @@ export function StaffAmenityClient({
           <form onSubmit={handleWalkin} className="px-5 py-4">
             <div className="flex gap-3 items-end">
               <div className="flex-1">
-                <label className="block text-xs font-medium text-gray-500 mb-1">{t("staff.amenityLabel")}</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1">{t("staff.offerLabel")}</label>
                 <select
-                  value={walkinAmenityId}
-                  onChange={(e) => setWalkinAmenityId(e.target.value)}
+                  value={walkinOfferId}
+                  onChange={(e) => setWalkinOfferId(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition bg-white"
                 >
-                  {amenities.map((a) => (
+                  {offers.map((a) => (
                     <option key={a.id} value={a.id}>{a.title}</option>
                   ))}
                 </select>
@@ -201,7 +201,7 @@ export function StaffAmenityClient({
               <div key={o.id} className="px-5 py-2.5 flex items-center justify-between gap-2 opacity-60">
                 <div className="min-w-0">
                   <p className="text-xs text-gray-600">
-                    <span className="font-semibold text-gray-700">{o.amenity_title}</span>
+                    <span className="font-semibold text-gray-700">{o.offer_title}</span>
                     {" \u2014 "}
                     <span className="font-mono">{o.member_code}</span>
                     {o.member_name ? ` ${o.member_name}` : ""}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { toggleAmenity, updateAmenityOptions, addCustomAmenity } from "./actions";
+import { toggleOffer, updateOfferOptions, addCustomOffer } from "./actions";
 import { DynamicIcon } from "@/components/dynamic-icon";
 
 const SUBTYPES = ["activity", "experience", "service", "product"] as const;
@@ -14,7 +14,7 @@ const SUBTYPE_LABELS: Record<Subtype, string> = {
   product: "Product",
 };
 
-interface CatalogAmenity {
+interface CatalogOffer {
   id: string;
   name: string;
   name_es: string | null;
@@ -22,21 +22,21 @@ interface CatalogAmenity {
   icon: string | null;
 }
 
-interface ClubAmenity {
+interface ClubOffer {
   id: string;
-  amenity_id: string;
+  offer_id: string;
   orderable: boolean;
   price: number | null;
 }
 
-export function AmenityManager({
+export function OfferManager({
   catalog,
-  clubAmenities,
+  clubOffers,
   clubId,
   clubSlug,
 }: {
-  catalog: CatalogAmenity[];
-  clubAmenities: ClubAmenity[];
+  catalog: CatalogOffer[];
+  clubOffers: ClubOffer[];
   clubId: string;
   clubSlug: string;
 }) {
@@ -44,36 +44,36 @@ export function AmenityManager({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  // Custom amenity form state
+  // Custom offer form state
   const [customName, setCustomName] = useState("");
   const [showCustomForm, setShowCustomForm] = useState(false);
 
-  // Build a lookup of enabled amenities
-  const enabledMap = new Map<string, ClubAmenity>();
-  for (const ca of clubAmenities) {
-    enabledMap.set(ca.amenity_id, ca);
+  // Build a lookup of enabled offers
+  const enabledMap = new Map<string, ClubOffer>();
+  for (const ca of clubOffers) {
+    enabledMap.set(ca.offer_id, ca);
   }
 
-  const enabledCount = clubAmenities.length;
+  const enabledCount = clubOffers.length;
 
   const filteredCatalog = catalog.filter((a) => a.subtype === activeTab);
 
-  function handleToggle(amenityId: string, enabled: boolean) {
+  function handleToggle(offerId: string, enabled: boolean) {
     setError(null);
     startTransition(async () => {
-      const result = await toggleAmenity(clubId, amenityId, enabled, clubSlug);
+      const result = await toggleOffer(clubId, offerId, enabled, clubSlug);
       if ("error" in result) setError(result.error);
     });
   }
 
   function handleUpdateOptions(
-    clubAmenityId: string,
+    clubOfferId: string,
     orderable: boolean,
     price: string,
   ) {
     setError(null);
     startTransition(async () => {
-      const result = await updateAmenityOptions(clubAmenityId, orderable, price, clubSlug);
+      const result = await updateOfferOptions(clubOfferId, orderable, price, clubSlug);
       if ("error" in result) setError(result.error);
     });
   }
@@ -82,7 +82,7 @@ export function AmenityManager({
     e.preventDefault();
     setError(null);
     startTransition(async () => {
-      const result = await addCustomAmenity(clubId, customName, activeTab, clubSlug);
+      const result = await addCustomOffer(clubId, customName, activeTab, clubSlug);
       if ("error" in result) {
         setError(result.error);
       } else {
@@ -96,7 +96,7 @@ export function AmenityManager({
     <div className="space-y-2">
       <div className="flex items-center justify-between px-1">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
-          Amenities ({enabledCount})
+          Offers ({enabledCount})
         </h2>
       </div>
 
@@ -125,22 +125,22 @@ export function AmenityManager({
           </div>
         </div>
 
-        {/* Amenity list */}
+        {/* Offer list */}
         <div className="divide-y divide-gray-100">
           {filteredCatalog.length === 0 && (
             <div className="px-5 py-6 text-center text-sm text-gray-400">
-              No {SUBTYPE_LABELS[activeTab].toLowerCase()} amenities in the catalog yet.
+              No {SUBTYPE_LABELS[activeTab].toLowerCase()} offers in the catalog yet.
             </div>
           )}
-          {filteredCatalog.map((amenity) => {
-            const clubAmenity = enabledMap.get(amenity.id);
-            const isEnabled = !!clubAmenity;
+          {filteredCatalog.map((offer) => {
+            const clubOffer = enabledMap.get(offer.id);
+            const isEnabled = !!clubOffer;
 
             return (
-              <AmenityRow
-                key={amenity.id}
-                amenity={amenity}
-                clubAmenity={clubAmenity ?? null}
+              <OfferRow
+                key={offer.id}
+                offer={offer}
+                clubOffer={clubOffer ?? null}
                 isEnabled={isEnabled}
                 isPending={isPending}
                 onToggle={handleToggle}
@@ -205,32 +205,32 @@ export function AmenityManager({
 }
 
 /* ------------------------------------------------------------------ */
-/* Individual amenity row                                             */
+/* Individual offer row                                             */
 /* ------------------------------------------------------------------ */
 
-function AmenityRow({
-  amenity,
-  clubAmenity,
+function OfferRow({
+  offer,
+  clubOffer,
   isEnabled,
   isPending,
   onToggle,
   onUpdateOptions,
 }: {
-  amenity: CatalogAmenity;
-  clubAmenity: ClubAmenity | null;
+  offer: CatalogOffer;
+  clubOffer: ClubOffer | null;
   isEnabled: boolean;
   isPending: boolean;
-  onToggle: (amenityId: string, enabled: boolean) => void;
-  onUpdateOptions: (clubAmenityId: string, orderable: boolean, price: string) => void;
+  onToggle: (offerId: string, enabled: boolean) => void;
+  onUpdateOptions: (clubOfferId: string, orderable: boolean, price: string) => void;
 }) {
-  const [localOrderable, setLocalOrderable] = useState(clubAmenity?.orderable ?? false);
+  const [localOrderable, setLocalOrderable] = useState(clubOffer?.orderable ?? false);
   const [localPrice, setLocalPrice] = useState(
-    clubAmenity?.price != null ? String(clubAmenity.price) : "",
+    clubOffer?.price != null ? String(clubOffer.price) : "",
   );
 
   // Track whether options have been changed from server values
-  const serverOrderable = clubAmenity?.orderable ?? false;
-  const serverPrice = clubAmenity?.price != null ? String(clubAmenity.price) : "";
+  const serverOrderable = clubOffer?.orderable ?? false;
+  const serverPrice = clubOffer?.price != null ? String(clubOffer.price) : "";
   const optionsDirty = isEnabled && (localOrderable !== serverOrderable || localPrice !== serverPrice);
 
   return (
@@ -238,8 +238,8 @@ function AmenityRow({
       <div className="flex items-center gap-3">
         {/* Icon */}
         <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
-          {amenity.icon ? (
-            <DynamicIcon name={amenity.icon} className="w-4 h-4 text-gray-500" />
+          {offer.icon ? (
+            <DynamicIcon name={offer.icon} className="w-4 h-4 text-gray-500" />
           ) : (
             <div className="w-4 h-4 rounded-full bg-gray-300" />
           )}
@@ -247,7 +247,7 @@ function AmenityRow({
 
         {/* Name */}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-900 truncate">{amenity.name}</p>
+          <p className="text-sm font-medium text-gray-900 truncate">{offer.name}</p>
         </div>
 
         {/* Toggle switch */}
@@ -256,7 +256,7 @@ function AmenityRow({
           role="switch"
           aria-checked={isEnabled}
           disabled={isPending}
-          onClick={() => onToggle(amenity.id, !isEnabled)}
+          onClick={() => onToggle(offer.id, !isEnabled)}
           className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:opacity-50 ${
             isEnabled ? "bg-gray-800" : "bg-gray-200"
           }`}
@@ -270,7 +270,7 @@ function AmenityRow({
       </div>
 
       {/* Expanded options when enabled */}
-      {isEnabled && clubAmenity && (
+      {isEnabled && clubOffer && (
         <div className="mt-2 ml-11 flex items-center gap-3 flex-wrap">
           <label className="flex items-center gap-1.5 cursor-pointer">
             <input
@@ -301,7 +301,7 @@ function AmenityRow({
             <button
               type="button"
               disabled={isPending}
-              onClick={() => onUpdateOptions(clubAmenity.id, localOrderable, localPrice)}
+              onClick={() => onUpdateOptions(clubOffer.id, localOrderable, localPrice)}
               className="rounded-lg bg-gray-800 text-white px-3 py-1 text-xs font-semibold hover:bg-gray-700 disabled:opacity-50 transition-colors"
             >
               Save

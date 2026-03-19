@@ -1,12 +1,12 @@
 "use client";
 
 import { useTransition } from "react";
-import { requestAmenity, cancelAmenityRequest } from "./actions";
+import { requestOffer, cancelOfferRequest } from "./actions";
 import { useLanguage } from "@/lib/i18n/provider";
 import { localized } from "@/lib/i18n";
 import { DynamicIcon } from "@/components/dynamic-icon";
 
-interface AmenityItem {
+interface OfferItem {
   id: string;
   name: string;
   name_es: string | null;
@@ -14,7 +14,7 @@ interface AmenityItem {
   icon: string | null;
   orderable: boolean;
   price: number | null;
-  order: { id: string; club_amenity_id: string; status: string } | null;
+  order: { id: string; club_offer_id: string; status: string } | null;
 }
 
 const SUBTYPE_LABELS: Record<string, { en: string; es: string }> = {
@@ -24,9 +24,9 @@ const SUBTYPE_LABELS: Record<string, { en: string; es: string }> = {
   product: { en: "Products", es: "Productos" },
 };
 
-function groupBySubtype(amenities: AmenityItem[]) {
-  const groups: Record<string, AmenityItem[]> = {};
-  for (const a of amenities) {
+function groupBySubtype(offers: OfferItem[]) {
+  const groups: Record<string, OfferItem[]> = {};
+  for (const a of offers) {
     const key = a.subtype || "service";
     if (!groups[key]) groups[key] = [];
     groups[key].push(a);
@@ -34,31 +34,31 @@ function groupBySubtype(amenities: AmenityItem[]) {
   return groups;
 }
 
-export function AmenityListClient({
-  amenities,
+export function OfferListClient({
+  offers,
   memberId,
   clubSlug,
 }: {
-  amenities: AmenityItem[];
+  offers: OfferItem[];
   memberId: string;
   clubSlug: string;
 }) {
   const [isPending, startTransition] = useTransition();
   const { t, locale } = useLanguage();
 
-  function handleRequest(clubAmenityId: string) {
+  function handleRequest(clubOfferId: string) {
     startTransition(async () => {
-      await requestAmenity(clubAmenityId, memberId, clubSlug);
+      await requestOffer(clubOfferId, memberId, clubSlug);
     });
   }
 
   function handleCancel(orderId: string) {
     startTransition(async () => {
-      await cancelAmenityRequest(orderId, memberId, clubSlug);
+      await cancelOfferRequest(orderId, memberId, clubSlug);
     });
   }
 
-  if (amenities.length === 0) {
+  if (offers.length === 0) {
     return (
       <div className="bg-white rounded-2xl shadow-lg p-10 text-center">
         <div className="w-16 h-16 mx-auto mb-4 rounded-full club-tint-bg flex items-center justify-center">
@@ -66,13 +66,13 @@ export function AmenityListClient({
             <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
           </svg>
         </div>
-        <p className="text-gray-700 font-semibold text-lg">{t("amenities.noAmenities")}</p>
-        <p className="text-gray-400 text-sm mt-1">{t("amenities.availableSoon")}</p>
+        <p className="text-gray-700 font-semibold text-lg">{t("offers.noOffers")}</p>
+        <p className="text-gray-400 text-sm mt-1">{t("offers.availableSoon")}</p>
       </div>
     );
   }
 
-  const groups = groupBySubtype(amenities);
+  const groups = groupBySubtype(offers);
   const subtypeOrder = ["activity", "experience", "service", "product"];
   const sortedKeys = Object.keys(groups).sort(
     (a, b) => (subtypeOrder.indexOf(a) === -1 ? 99 : subtypeOrder.indexOf(a)) - (subtypeOrder.indexOf(b) === -1 ? 99 : subtypeOrder.indexOf(b)),
@@ -118,7 +118,7 @@ export function AmenityListClient({
                           disabled={isPending}
                           className="text-xs font-semibold px-3 py-1.5 rounded-full border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 disabled:opacity-50 transition-colors"
                         >
-                          {isPending ? "..." : t("amenities.requested")}
+                          {isPending ? "..." : t("offers.requested")}
                         </button>
                       ) : (
                         <button
@@ -126,7 +126,7 @@ export function AmenityListClient({
                           disabled={isPending}
                           className="text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50 transition-colors"
                         >
-                          {isPending ? "..." : t("amenities.request")}
+                          {isPending ? "..." : t("offers.request")}
                         </button>
                       )}
                     </div>

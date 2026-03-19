@@ -984,11 +984,11 @@ export async function updateNotificationSecret(
   return { ok: true };
 }
 
-// --- Amenity actions ---
+// --- Offer actions ---
 
-export async function toggleAmenity(
+export async function toggleOffer(
   clubId: string,
-  amenityId: string,
+  offerId: string,
   enabled: boolean,
   clubSlug: string,
 ): Promise<{ error: string } | { ok: true }> {
@@ -997,37 +997,37 @@ export async function toggleAmenity(
   if (enabled) {
     // Get next display_order
     const { data: existing } = await supabase
-      .from("club_amenities")
+      .from("club_offers")
       .select("display_order")
       .eq("club_id", clubId)
       .order("display_order", { ascending: false })
       .limit(1);
     const nextOrder = existing && existing.length > 0 ? existing[0].display_order + 1 : 0;
 
-    const { error } = await supabase.from("club_amenities").insert({
+    const { error } = await supabase.from("club_offers").insert({
       club_id: clubId,
-      amenity_id: amenityId,
+      offer_id: offerId,
       display_order: nextOrder,
     });
     if (error) {
       if (error.code === "23505") return { ok: true }; // Already exists
-      return { error: "Failed to enable amenity" };
+      return { error: "Failed to enable offer" };
     }
   } else {
     const { error } = await supabase
-      .from("club_amenities")
+      .from("club_offers")
       .delete()
       .eq("club_id", clubId)
-      .eq("amenity_id", amenityId);
-    if (error) return { error: "Failed to disable amenity" };
+      .eq("offer_id", offerId);
+    if (error) return { error: "Failed to disable offer" };
   }
 
   revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
 }
 
-export async function updateAmenityOptions(
-  clubAmenityId: string,
+export async function updateOfferOptions(
+  clubOfferId: string,
   orderable: boolean,
   price: string,
   clubSlug: string,
@@ -1035,20 +1035,20 @@ export async function updateAmenityOptions(
   const supabase = createAdminClient();
 
   const { error } = await supabase
-    .from("club_amenities")
+    .from("club_offers")
     .update({
       orderable,
       price: orderable && price ? Number(price) : null,
     })
-    .eq("id", clubAmenityId);
+    .eq("id", clubOfferId);
 
-  if (error) return { error: "Failed to update amenity options" };
+  if (error) return { error: "Failed to update offer options" };
 
   revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
 }
 
-export async function addCustomAmenity(
+export async function addCustomOffer(
   clubId: string,
   name: string,
   subtype: string,
@@ -1059,8 +1059,8 @@ export async function addCustomAmenity(
   const supabase = createAdminClient();
 
   // Insert into catalog as unapproved custom entry
-  const { data: newAmenity, error: catalogError } = await supabase
-    .from("amenity_catalog")
+  const { data: newOffer, error: catalogError } = await supabase
+    .from("offer_catalog")
     .insert({
       name: name.trim(),
       subtype,
@@ -1070,20 +1070,20 @@ export async function addCustomAmenity(
     .select("id")
     .single();
 
-  if (catalogError) return { error: "Failed to add custom amenity" };
+  if (catalogError) return { error: "Failed to add custom offer" };
 
   // Auto-enable it for this club
   const { data: existing } = await supabase
-    .from("club_amenities")
+    .from("club_offers")
     .select("display_order")
     .eq("club_id", clubId)
     .order("display_order", { ascending: false })
     .limit(1);
   const nextOrder = existing && existing.length > 0 ? existing[0].display_order + 1 : 0;
 
-  await supabase.from("club_amenities").insert({
+  await supabase.from("club_offers").insert({
     club_id: clubId,
-    amenity_id: newAmenity.id,
+    offer_id: newOffer.id,
     display_order: nextOrder,
   });
 

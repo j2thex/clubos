@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logActivity } from "@/lib/activity-log";
 import { requireActiveStaff } from "@/lib/auth";
 
-export async function fulfillAmenityOrder(
+export async function fulfillOfferOrder(
   orderId: string,
   staffMemberId: string,
   clubSlug: string,
@@ -15,13 +15,13 @@ export async function fulfillAmenityOrder(
 
   // Get order details for logging before updating
   const { data: order } = await supabase
-    .from("amenity_orders")
-    .select("member_id, club_amenity_id")
+    .from("offer_orders")
+    .select("member_id, club_offer_id")
     .eq("id", orderId)
     .single();
 
   const { error } = await supabase
-    .from("amenity_orders")
+    .from("offer_orders")
     .update({
       status: "fulfilled",
       fulfilled_by: staffMemberId,
@@ -33,35 +33,35 @@ export async function fulfillAmenityOrder(
   if (error) return { error: "Failed to fulfill order" };
 
   if (order) {
-    const [{ data: memberForLog }, { data: amenity }] = await Promise.all([
+    const [{ data: memberForLog }, { data: offer }] = await Promise.all([
       supabase.from("members").select("member_code, club_id").eq("id", order.member_id).single(),
       supabase
-        .from("club_amenities")
-        .select("amenity_catalog(name)")
-        .eq("id", order.club_amenity_id)
+        .from("club_offers")
+        .select("offer_catalog(name)")
+        .eq("id", order.club_offer_id)
         .single(),
     ]);
 
-    const catalogInfo = amenity
-      ? Array.isArray(amenity.amenity_catalog) ? amenity.amenity_catalog[0] : amenity.amenity_catalog
+    const catalogInfo = offer
+      ? Array.isArray(offer.offer_catalog) ? offer.offer_catalog[0] : offer.offer_catalog
       : null;
 
     await logActivity({
       clubId: memberForLog?.club_id ?? "",
       staffMemberId,
-      action: "amenity_order_fulfilled",
+      action: "offer_order_fulfilled",
       targetMemberCode: memberForLog?.member_code,
       details: catalogInfo?.name,
     });
   }
 
-  revalidatePath(`/${clubSlug}/staff/amenities`);
+  revalidatePath(`/${clubSlug}/staff/offers`);
   return { ok: true };
 }
 
-export async function addWalkinAmenityOrder(
+export async function addWalkinOfferOrder(
   memberCode: string,
-  clubAmenityId: string,
+  clubOfferId: string,
   clubId: string,
   staffMemberId: string,
   clubSlug: string,
@@ -83,8 +83,8 @@ export async function addWalkinAmenityOrder(
 
   if (!member) return { error: "Member not found" };
 
-  const { error } = await supabase.from("amenity_orders").insert({
-    club_amenity_id: clubAmenityId,
+  const { error } = await supabase.from("offer_orders").insert({
+    club_offer_id: clubOfferId,
     member_id: member.id,
     status: "fulfilled",
     fulfilled_by: staffMemberId,
@@ -93,24 +93,24 @@ export async function addWalkinAmenityOrder(
 
   if (error) return { error: "Failed to add order" };
 
-  const { data: amenity } = await supabase
-    .from("club_amenities")
-    .select("amenity_catalog(name)")
-    .eq("id", clubAmenityId)
+  const { data: offer } = await supabase
+    .from("club_offers")
+    .select("offer_catalog(name)")
+    .eq("id", clubOfferId)
     .single();
 
-  const catalogInfo = amenity
-    ? Array.isArray(amenity.amenity_catalog) ? amenity.amenity_catalog[0] : amenity.amenity_catalog
+  const catalogInfo = offer
+    ? Array.isArray(offer.offer_catalog) ? offer.offer_catalog[0] : offer.offer_catalog
     : null;
 
   await logActivity({
     clubId,
     staffMemberId,
-    action: "amenity_walkin_order",
+    action: "offer_walkin_order",
     targetMemberCode: code,
     details: catalogInfo?.name,
   });
 
-  revalidatePath(`/${clubSlug}/staff/amenities`);
+  revalidatePath(`/${clubSlug}/staff/offers`);
   return { ok: true };
 }

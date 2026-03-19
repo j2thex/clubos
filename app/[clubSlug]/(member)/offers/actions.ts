@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyStaff } from "@/lib/staff-notify";
 
-export async function requestAmenity(
-  clubAmenityId: string,
+export async function requestOffer(
+  clubOfferId: string,
   memberId: string,
   clubSlug: string,
 ): Promise<{ error: string } | { ok: true }> {
@@ -13,27 +13,27 @@ export async function requestAmenity(
 
   // Check if already has pending order
   const { data: existing } = await supabase
-    .from("amenity_orders")
+    .from("offer_orders")
     .select("id")
-    .eq("club_amenity_id", clubAmenityId)
+    .eq("club_offer_id", clubOfferId)
     .eq("member_id", memberId)
     .eq("status", "pending")
     .maybeSingle();
 
   if (existing) return { error: "Already requested" };
 
-  const { error } = await supabase.from("amenity_orders").insert({
-    club_amenity_id: clubAmenityId,
+  const { error } = await supabase.from("offer_orders").insert({
+    club_offer_id: clubOfferId,
     member_id: memberId,
   });
 
   if (error) return { error: "Failed to submit request" };
 
-  // Get amenity name and member code for notification
+  // Get offer name and member code for notification
   const { data: info } = await supabase
-    .from("club_amenities")
-    .select("amenity_catalog(name), clubs(id, name)")
-    .eq("id", clubAmenityId)
+    .from("club_offers")
+    .select("offer_catalog(name), clubs(id, name)")
+    .eq("id", clubOfferId)
     .single();
 
   const { data: member } = await supabase
@@ -43,18 +43,18 @@ export async function requestAmenity(
     .single();
 
   if (member && info) {
-    const catalogInfo = Array.isArray(info.amenity_catalog) ? info.amenity_catalog[0] : info.amenity_catalog;
+    const catalogInfo = Array.isArray(info.offer_catalog) ? info.offer_catalog[0] : info.offer_catalog;
     await notifyStaff(
       member.club_id,
-      `\u{1F6CE} Amenity request\n<b>${catalogInfo?.name ?? "Unknown"}</b>\nMember: ${member.member_code}`,
+      `\u{1F6CE} Offer request\n<b>${catalogInfo?.name ?? "Unknown"}</b>\nMember: ${member.member_code}`,
     );
   }
 
-  revalidatePath(`/${clubSlug}/amenities`);
+  revalidatePath(`/${clubSlug}/offers`);
   return { ok: true };
 }
 
-export async function cancelAmenityRequest(
+export async function cancelOfferRequest(
   orderId: string,
   memberId: string,
   clubSlug: string,
@@ -62,7 +62,7 @@ export async function cancelAmenityRequest(
   const supabase = createAdminClient();
 
   const { error } = await supabase
-    .from("amenity_orders")
+    .from("offer_orders")
     .delete()
     .eq("id", orderId)
     .eq("member_id", memberId)
@@ -70,6 +70,6 @@ export async function cancelAmenityRequest(
 
   if (error) return { error: "Failed to cancel request" };
 
-  revalidatePath(`/${clubSlug}/amenities`);
+  revalidatePath(`/${clubSlug}/offers`);
   return { ok: true };
 }

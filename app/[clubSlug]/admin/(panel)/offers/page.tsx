@@ -1,11 +1,11 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { AmenityManager } from "../../amenity-manager";
+import { OfferManager } from "../../offer-manager";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 
-export default async function AmenitiesPage({
+export default async function OffersPage({
   params,
 }: {
   params: Promise<{ clubSlug: string }>;
@@ -23,15 +23,15 @@ export default async function AmenitiesPage({
   if (!club) notFound();
   const locale = await getServerLocale();
 
-  // Fetch full catalog + club's enabled amenities
-  const [{ data: catalog }, { data: clubAmenities }] = await Promise.all([
+  // Fetch full catalog + club's enabled offers
+  const [{ data: catalog }, { data: clubOffers }] = await Promise.all([
     supabase
-      .from("amenity_catalog")
+      .from("offer_catalog")
       .select("id, name, name_es, subtype, icon")
       .order("name", { ascending: true }),
     supabase
-      .from("club_amenities")
-      .select("id, amenity_id, orderable, price")
+      .from("club_offers")
+      .select("id, offer_id, orderable, price")
       .eq("club_id", club.id),
   ]);
 
@@ -46,7 +46,7 @@ export default async function AmenitiesPage({
         </svg>
         {t(locale, "admin.backToContent")}
       </Link>
-      <AmenityManager
+      <OfferManager
         catalog={(catalog ?? []).map((a) => ({
           id: a.id,
           name: a.name,
@@ -54,9 +54,9 @@ export default async function AmenitiesPage({
           subtype: a.subtype,
           icon: a.icon ?? null,
         }))}
-        clubAmenities={(clubAmenities ?? []).map((ca) => ({
+        clubOffers={(clubOffers ?? []).map((ca) => ({
           id: ca.id,
-          amenity_id: ca.amenity_id,
+          offer_id: ca.offer_id,
           orderable: ca.orderable ?? false,
           price: ca.price != null ? Number(ca.price) : null,
         }))}

@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation";
 import { getMemberFromCookie } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { AmenityListClient } from "./amenity-list-client";
+import { OfferListClient } from "./offer-list-client";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 
-export default async function AmenitiesPage({
+export default async function OffersPage({
   params,
 }: {
   params: Promise<{ clubSlug: string }>;
@@ -20,22 +20,22 @@ export default async function AmenitiesPage({
   const supabase = createAdminClient();
   const locale = await getServerLocale();
 
-  // Get club's enabled amenities with catalog info
-  const { data: amenities } = await supabase
-    .from("club_amenities")
-    .select("id, amenity_id, orderable, price, display_order, amenity_catalog(id, name, name_es, subtype, icon)")
+  // Get club's enabled offers with catalog info
+  const { data: offers } = await supabase
+    .from("club_offers")
+    .select("id, offer_id, orderable, price, display_order, offer_catalog(id, name, name_es, subtype, icon)")
     .eq("club_id", session.club_id)
     .order("display_order", { ascending: true });
 
   // Get member's pending orders
   const { data: orders } = await supabase
-    .from("amenity_orders")
-    .select("id, club_amenity_id, status")
+    .from("offer_orders")
+    .select("id, club_offer_id, status")
     .eq("member_id", session.member_id)
     .eq("status", "pending");
 
-  const amenityList = (amenities ?? []).map((a) => {
-    const catalog = Array.isArray(a.amenity_catalog) ? a.amenity_catalog[0] : a.amenity_catalog;
+  const offerList = (offers ?? []).map((a) => {
+    const catalog = Array.isArray(a.offer_catalog) ? a.offer_catalog[0] : a.offer_catalog;
     return {
       id: a.id,
       name: catalog?.name ?? "",
@@ -44,15 +44,15 @@ export default async function AmenitiesPage({
       icon: catalog?.icon ?? null,
       orderable: a.orderable ?? false,
       price: a.price != null ? Number(a.price) : null,
-      order: (orders ?? []).find((o) => o.club_amenity_id === a.id) ?? null,
+      order: (orders ?? []).find((o) => o.club_offer_id === a.id) ?? null,
     };
   });
 
   return (
     <div className="min-h-screen club-page-bg">
       <div className="px-4 pt-6 pb-24 max-w-md mx-auto">
-        <h1 className="text-lg font-bold text-white mb-4">{t(locale, "nav.amenities")}</h1>
-        <AmenityListClient amenities={amenityList} memberId={session.member_id} clubSlug={clubSlug} />
+        <h1 className="text-lg font-bold text-white mb-4">{t(locale, "nav.offers")}</h1>
+        <OfferListClient offers={offerList} memberId={session.member_id} clubSlug={clubSlug} />
       </div>
     </div>
   );

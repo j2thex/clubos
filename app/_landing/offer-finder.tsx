@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 
-interface AmenityItem {
+interface OfferItem {
   id: string;
   name: string;
   subtype: string | null;
@@ -13,11 +13,11 @@ interface AmenityItem {
   club_color: string | null;
 }
 
-export function AmenityFinder({
-  amenities,
+export function OfferFinder({
+  offers,
   labels,
 }: {
-  amenities: AmenityItem[];
+  offers: OfferItem[];
   labels: {
     title: string;
     subtitle: string;
@@ -28,16 +28,16 @@ export function AmenityFinder({
 }) {
   const [query, setQuery] = useState("");
 
-  if (amenities.length === 0) return null;
+  if (offers.length === 0) return null;
 
   const filtered = query.trim()
-    ? amenities.filter(
+    ? offers.filter(
         (a) =>
           a.name.toLowerCase().includes(query.toLowerCase()) ||
           a.subtype?.toLowerCase().includes(query.toLowerCase()) ||
           a.club_name.toLowerCase().includes(query.toLowerCase()),
       )
-    : amenities;
+    : offers;
 
   return (
     <section className="landing-dark px-6 py-20 sm:py-28 border-t border-white/[0.04]">
