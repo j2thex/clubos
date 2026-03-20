@@ -36,7 +36,6 @@ export interface SpinWheelHandle {
 const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
   function SpinWheel({ segments, balance, onSpin, hideButton }, ref) {
     const [spinning, setSpinning] = useState(false);
-    const [fullscreen, setFullscreen] = useState(false);
     const [currentBalance, setCurrentBalance] = useState(balance);
     const [result, setResult] = useState<SpinResult["outcome"] | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -123,8 +122,7 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
       });
     }, []);
 
-    const dismissFullscreen = useCallback(() => {
-      setFullscreen(false);
+    const dismissResult = useCallback(() => {
       setResult(null);
     }, []);
 
@@ -132,7 +130,6 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
       if (!wheelRef.current) return;
 
       spinningRef.current = true;
-      setFullscreen(true);
       setSpinning(true);
       setResult(null);
       setError(null);
@@ -178,25 +175,11 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
 
     return (
       <div className="flex flex-col items-center gap-6">
-        {/* Dark backdrop when fullscreen */}
-        {fullscreen && (
-          <div
-            className="fixed inset-0 z-[9990] bg-black/85 transition-opacity"
-            onClick={!spinning && result ? dismissFullscreen : undefined}
-          />
-        )}
-
-        {/* Wheel container — goes fullscreen when spinning */}
-        <div
-          className={
-            fullscreen
-              ? "fixed z-[9991] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[92vmin] h-[92vmin] max-w-[600px] max-h-[600px]"
-              : "relative w-full max-w-[480px] aspect-square mx-auto"
-          }
-        >
+        {/* Wheel container */}
+        <div className="relative w-full max-w-[480px] aspect-square mx-auto" onClick={result && !spinning ? dismissResult : undefined}>
           <div ref={containerRef} className="w-full h-full" />
 
-          {/* Result overlay */}
+          {/* Result badge on hub */}
           {result && !spinning && (
             <div
               className="absolute z-20 flex items-center justify-center pointer-events-none"
@@ -216,16 +199,6 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
             </div>
           )}
         </div>
-
-        {/* Tap to close hint */}
-        {fullscreen && result && !spinning && (
-          <div
-            className="fixed z-[9992] bottom-8 left-0 right-0 text-center"
-            onClick={dismissFullscreen}
-          >
-            <p className="text-white/60 text-sm animate-pulse">Tap anywhere to close</p>
-          </div>
-        )}
 
         {/* Spin button — hidden when parent controls spinning */}
         {!hideButton && (
