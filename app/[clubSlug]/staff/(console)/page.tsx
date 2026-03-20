@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { StaffSpinClient } from "../spin/staff-spin-client";
+import { PendingPrizes } from "../spin/pending-prizes";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 
@@ -26,27 +27,59 @@ export default async function StaffSpinPage({
 
   const { data: segments } = await supabase
     .from("wheel_configs")
-    .select("label, color, label_color, probability")
+    .select("label, label_es, color, label_color, probability")
     .eq("club_id", club.id)
     .eq("active", true)
     .order("display_order", { ascending: true });
 
+  // Fetch pending prizes from member self-service spins
+  const { data: pendingPrizes } = await supabase
+    .from("spins")
+    .select("id, outcome_label, outcome_value, created_at, member_id, members!inner(member_code, full_name)")
+    .eq("club_id", club.id)
+    .eq("status", "pending")
+    .order("created_at", { ascending: false })
+    .limit(20);
+
   const locale = await getServerLocale();
 
-  return segments && segments.length > 0 ? (
-    <StaffSpinClient
-      clubId={club.id}
-      initialMemberCode={member}
-      segments={segments.map((s) => ({
-        label: s.label,
-        color: s.color ?? "#16a34a",
-        labelColor: s.label_color ?? "#ffffff",
-        probability: Number(s.probability),
-      }))}
-    />
-  ) : (
-    <div className="bg-white rounded-2xl shadow-lg p-8 text-center text-gray-400 text-sm">
-      {t(locale, "staff.wheelNotConfigured")}
+  return (
+    <div className="space-y-4">
+      {/* Pending prizes */}
+      {pendingPrizes && pendingPrizes.length > 0 && (
+        <PendingPrizes
+          clubId={club.id}
+          prizes={pendingPrizes.map((p) => {
+            const m = p.members as unknown as { member_code: string; full_name: string | null };
+            return {
+              id: p.id,
+              outcomeLabel: p.outcome_label,
+              outcomeValue: p.outcome_value,
+              createdAt: p.created_at,
+              memberCode: m.member_code,
+              memberName: m.full_name,
+            };
+          })}
+        />
+      )}
+
+      {/* Wheel */}
+      {segments && segments.length > 0 ? (
+        <StaffSpinClient
+          clubId={club.id}
+          initialMemberCode={member}
+          segments={segments.map((s) => ({
+            label: locale === "es" && s.label_es ? s.label_es : s.label,
+            color: s.color ?? "#16a34a",
+            labelColor: s.label_color ?? "#ffffff",
+            probability: Number(s.probability),
+          }))}
+        />
+      ) : (
+        <div className="bg-white rounded-2xl shadow-lg p-8 text-center text-gray-400 text-sm">
+          {t(locale, "staff.wheelNotConfigured")}
+        </div>
+      )}
     </div>
   );
 }

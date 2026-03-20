@@ -321,6 +321,7 @@ export async function addSegment(
   labelColor: string,
   probability: number,
   clubSlug: string,
+  labelEs?: string,
 ) {
   if (!label.trim()) return { error: "Label is required" };
   if (probability <= 0 || probability > 1) return { error: "Probability must be between 0 and 1" };
@@ -340,6 +341,7 @@ export async function addSegment(
   const { error } = await supabase.from("wheel_configs").insert({
     club_id: clubId,
     label: label.trim(),
+    label_es: labelEs?.trim() || null,
     reward_type: "prize",
     reward_value: 1,
     probability,
@@ -361,6 +363,7 @@ export async function updateSegment(
   labelColor: string,
   probability: number,
   clubSlug: string,
+  labelEs?: string,
 ) {
   if (!label.trim()) return { error: "Label is required" };
 
@@ -370,6 +373,7 @@ export async function updateSegment(
     .from("wheel_configs")
     .update({
       label: label.trim(),
+      label_es: labelEs?.trim() || null,
       color,
       label_color: labelColor,
       probability,

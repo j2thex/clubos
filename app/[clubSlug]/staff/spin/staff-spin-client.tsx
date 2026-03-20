@@ -49,7 +49,12 @@ export function StaffSpinClient({
 
       setActiveMemberCode(code);
       setMemberBalance(res.newBalance);
-      wheelRef.current?.spin(res);
+      // Use localized segment label for the result overlay
+      const localizedLabel = segments[res.segmentIndex]?.label ?? res.outcome.label;
+      wheelRef.current?.spin({
+        ...res,
+        outcome: { ...res.outcome, label: localizedLabel },
+      });
     });
   }
 

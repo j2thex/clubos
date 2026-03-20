@@ -138,6 +138,18 @@
   "offers.orderable": "Orderable",
   "offers.enabled": "Enabled",
 
+  "spin.title": "Spin the Wheel",
+  "spin.balance": "Spins Available",
+  "spin.noSpins": "No spins available",
+  "spin.earnMore": "Complete quests and attend events to earn spins!",
+  "spin.recentSpins": "Recent Spins",
+
+  "staff.pendingPrizes": "Pending Prizes ({count})",
+  "staff.noPendingPrizes": "No pending prizes",
+  "staff.fulfill": "Fulfill",
+  "staff.fulfilling": "...",
+  "staff.prizeFulfilled": "Prize fulfilled",
+
   "profile.title": "Your Profile",
   "profile.memberSince": "Member Since",
   "profile.validTill": "Valid Till",

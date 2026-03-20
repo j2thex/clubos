@@ -138,6 +138,18 @@
   "offers.orderable": "Ordenable",
   "offers.enabled": "Habilitado",
 
+  "spin.title": "Gira la Ruleta",
+  "spin.balance": "Tiradas Disponibles",
+  "spin.noSpins": "Sin tiradas disponibles",
+  "spin.earnMore": "¡Completa misiones y asiste a eventos para ganar tiradas!",
+  "spin.recentSpins": "Tiradas Recientes",
+
+  "staff.pendingPrizes": "Premios Pendientes ({count})",
+  "staff.noPendingPrizes": "No hay premios pendientes",
+  "staff.fulfill": "Entregar",
+  "staff.fulfilling": "...",
+  "staff.prizeFulfilled": "Premio entregado",
+
   "profile.title": "Tu perfil",
   "profile.memberSince": "Socio desde",
   "profile.validTill": "Válido hasta",
