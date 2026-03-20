@@ -6,6 +6,7 @@ import { addSegment, updateSegment, deleteSegment } from "./actions";
 interface Segment {
   id: string;
   label: string;
+  label_es: string | null;
   color: string;
   label_color: string;
   probability: number;
@@ -23,11 +24,13 @@ export function WheelManager({
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editLabel, setEditLabel] = useState("");
+  const [editLabelEs, setEditLabelEs] = useState("");
   const [editColor, setEditColor] = useState("#16a34a");
   const [editLabelColor, setEditLabelColor] = useState("#ffffff");
   const [editProb, setEditProb] = useState("10");
 
   const [newLabel, setNewLabel] = useState("");
+  const [newLabelEs, setNewLabelEs] = useState("");
   const [newColor, setNewColor] = useState("#16a34a");
   const [newLabelColor, setNewLabelColor] = useState("#ffffff");
   const [newProb, setNewProb] = useState("10");
@@ -38,6 +41,7 @@ export function WheelManager({
   function startEdit(seg: Segment) {
     setEditingId(seg.id);
     setEditLabel(seg.label);
+    setEditLabelEs(seg.label_es ?? "");
     setEditColor(seg.color);
     setEditLabelColor(seg.label_color);
     setEditProb(String(Math.round(seg.probability * 100)));
@@ -59,6 +63,7 @@ export function WheelManager({
         editLabelColor,
         Number(editProb) / 100,
         clubSlug,
+        editLabelEs,
       );
       if (result.error) {
         setError(result.error);
@@ -87,11 +92,13 @@ export function WheelManager({
         newLabelColor,
         Number(newProb) / 100,
         clubSlug,
+        newLabelEs,
       );
       if (result.error) {
         setError(result.error);
       } else {
         setNewLabel("");
+        setNewLabelEs("");
         setNewColor("#16a34a");
         setNewLabelColor("#ffffff");
         setNewProb("10");
@@ -123,7 +130,7 @@ export function WheelManager({
                   <div className="px-5 py-3 space-y-3 bg-gray-50">
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1">Label</label>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Label (EN)</label>
                         <input
                           type="text"
                           value={editLabel}
@@ -131,6 +138,18 @@ export function WheelManager({
                           className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
                         />
                       </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Label (ES)</label>
+                        <input
+                          type="text"
+                          value={editLabelEs}
+                          onChange={(e) => setEditLabelEs(e.target.value)}
+                          placeholder="Spanish"
+                          className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-medium text-gray-500 mb-1">Prob %</label>
                         <input
@@ -220,9 +239,9 @@ export function WheelManager({
         {/* Add new segment */}
         <form onSubmit={handleAdd} className="px-5 py-4 border-t border-gray-100 space-y-3">
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Add Segment</p>
-          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-3 items-end">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Label</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Label (EN)</label>
               <input
                 type="text"
                 value={newLabel}
@@ -232,6 +251,18 @@ export function WheelManager({
                 className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
               />
             </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Label (ES)</label>
+              <input
+                type="text"
+                value={newLabelEs}
+                onChange={(e) => setNewLabelEs(e.target.value)}
+                placeholder="Bebida Gratis"
+                className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-3 items-end">
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">%</label>
               <input

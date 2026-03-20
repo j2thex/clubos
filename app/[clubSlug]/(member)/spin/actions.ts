@@ -10,7 +10,7 @@ export async function memberSpin(
 ): Promise<
   | { error: string }
   | {
-      outcome: { label: string; rewardType: string; value: number; color: string };
+      outcome: { label: string; labelEs: string | null; rewardType: string; value: number; color: string };
       newBalance: number;
       segmentIndex: number;
     }
@@ -102,6 +102,7 @@ export async function memberSpin(
   return {
     outcome: {
       label: selected.label,
+      labelEs: selected.label_es ?? null,
       rewardType: selected.reward_type,
       value: selected.reward_value,
       color: selected.color,

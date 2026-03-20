@@ -36,7 +36,7 @@ export default async function SettingsPage({
     supabase
       .from("wheel_configs")
       .select(
-        "id, label, color, label_color, probability, display_order, active"
+        "id, label, label_es, color, label_color, probability, display_order, active"
       )
       .eq("club_id", club.id)
       .eq("active", true)
@@ -141,6 +141,7 @@ export default async function SettingsPage({
           segments={(segments ?? []).map((s) => ({
             id: s.id,
             label: s.label,
+            label_es: s.label_es ?? null,
             color: s.color ?? "#16a34a",
             label_color: s.label_color ?? "#ffffff",
             probability: Number(s.probability),

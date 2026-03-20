@@ -29,7 +29,7 @@ export default async function MemberSpinPage({
   // Fetch active wheel segments
   const { data: segments } = await supabase
     .from("wheel_configs")
-    .select("label, color, label_color, probability")
+    .select("label, label_es, color, label_color, probability")
     .eq("club_id", session.club_id)
     .eq("active", true)
     .order("display_order", { ascending: true });
@@ -65,7 +65,7 @@ export default async function MemberSpinPage({
       clubSlug={clubSlug}
       balance={member?.spin_balance ?? 0}
       segments={segments.map((s) => ({
-        label: s.label,
+        label: locale === "es" && s.label_es ? s.label_es : s.label,
         color: s.color ?? "#16a34a",
         labelColor: s.label_color ?? "#ffffff",
         probability: Number(s.probability),

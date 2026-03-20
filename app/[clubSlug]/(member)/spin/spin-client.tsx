@@ -49,20 +49,27 @@ export function MemberSpinClient({
       return res;
     }
 
+    // Use the localized segment label for display
+    const localizedLabel = segments[res.segmentIndex]?.label ?? res.outcome.label;
+
     setCurrentBalance(res.newBalance);
 
     // Prepend new spin to history
     setRecentSpins((prev) => [
       {
         id: crypto.randomUUID(),
-        outcomeLabel: res.outcome.label,
+        outcomeLabel: localizedLabel,
         outcomeValue: res.outcome.value,
         createdAt: new Date().toISOString(),
       },
       ...prev.slice(0, 9),
     ]);
 
-    return res;
+    // Return with localized label for the wheel result overlay
+    return {
+      ...res,
+      outcome: { ...res.outcome, label: localizedLabel },
+    };
   }
 
   return (
