@@ -83,6 +83,10 @@
   "quest.feedbackPlaceholder": "What would you like to suggest?",
   "quest.tutorialSteps": "Steps to complete",
 
+  "quests.inviteFriend": "Invite a Friend",
+  "quests.linkCopied": "Link copied!",
+  "quests.shareText": "Join me at {clubName}!",
+
   "events.title": "Events",
   "events.subtitle": "Upcoming club events",
   "events.viewList": "List",
@@ -355,6 +359,8 @@
   "public.whyJoin": "Why do you want to join? (optional)",
   "public.sendRequest": "Send Request",
   "public.sending": "Sending...",
+  "public.invitedByMember": "You were invited by a member!",
+  "public.mentionReferralCode": "Mention referral code {code} when you sign up!",
   "public.joinClub": "Join our club",
   "public.contactThrough": "Contact osocios to get your member ID:",
 

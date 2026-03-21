@@ -83,6 +83,10 @@
   "quest.feedbackPlaceholder": "¿Qué te gustaría sugerir?",
   "quest.tutorialSteps": "Pasos a completar",
 
+  "quests.inviteFriend": "Invitar a un amigo",
+  "quests.linkCopied": "¡Enlace copiado!",
+  "quests.shareText": "¡Únete a {clubName}!",
+
   "events.title": "Eventos",
   "events.subtitle": "Próximos eventos del club",
   "events.viewList": "Lista",
@@ -355,6 +359,8 @@
   "public.whyJoin": "¿Por qué quieres unirte? (opcional)",
   "public.sendRequest": "Enviar solicitud",
   "public.sending": "Enviando...",
+  "public.invitedByMember": "¡Un socio te ha invitado!",
+  "public.mentionReferralCode": "¡Menciona el código de referencia {code} al registrarte!",
   "public.joinClub": "Únete a nuestro club",
   "public.contactThrough": "Contacta osocios para obtener tu ID de socio:",
 
