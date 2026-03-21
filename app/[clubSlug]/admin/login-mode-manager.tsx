@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
-import { updateLoginMode, updateInviteOnly, updateInviteMode, saveInviteButtons } from "./actions";
+import { updateLoginMode, updateInviteOnly, updateInviteMode, saveInviteButtons, updateHideMemberLogin } from "./actions";
 import { useLanguage } from "@/lib/i18n/provider";
 
 interface InviteButton {
@@ -25,6 +25,7 @@ export function LoginModeManager({
   inviteOnly,
   inviteMode,
   inviteButtons,
+  hideMemberLogin,
   clubId,
   clubSlug,
 }: {
@@ -32,6 +33,7 @@ export function LoginModeManager({
   inviteOnly: boolean;
   inviteMode: string;
   inviteButtons: InviteButton[];
+  hideMemberLogin: boolean;
   clubId: string;
   clubSlug: string;
 }) {
@@ -85,6 +87,12 @@ export function LoginModeManager({
   function handleInviteToggle(checked: boolean) {
     startTransition(async () => {
       await updateInviteOnly(clubId, checked, clubSlug);
+    });
+  }
+
+  function handleHideLoginToggle(checked: boolean) {
+    startTransition(async () => {
+      await updateHideMemberLogin(clubId, checked, clubSlug);
     });
   }
 
@@ -203,6 +211,20 @@ export function LoginModeManager({
         {/* Invite Mode sub-section */}
         {inviteOnly && (
           <div className="bg-gray-50 px-5 py-4 ml-8 space-y-4">
+            <label
+              className={`flex items-start gap-3 cursor-pointer ${isPending ? "opacity-50 pointer-events-none" : ""}`}
+            >
+              <input
+                type="checkbox"
+                checked={hideMemberLogin}
+                onChange={(e) => handleHideLoginToggle(e.target.checked)}
+                className="mt-0.5 rounded border-gray-300 text-gray-800 focus:ring-gray-400"
+              />
+              <div>
+                <p className="text-sm font-medium text-gray-900">{t("admin.hideMemberLogin")}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{t("admin.hideMemberLoginDesc")}</p>
+              </div>
+            </label>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
               {t("admin.inviteMode")}
             </p>
