@@ -1098,6 +1098,40 @@ export async function updateOfferOptions(
   return { ok: true };
 }
 
+export async function archiveOffer(
+  clubOfferId: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("club_offers")
+    .update({ archived: true })
+    .eq("id", clubOfferId);
+  if (error) return { error: "Failed to archive offer" };
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/public`);
+  revalidatePath(`/${clubSlug}/offers`);
+  revalidatePath(`/${clubSlug}/staff`, "layout");
+  return { ok: true };
+}
+
+export async function restoreOffer(
+  clubOfferId: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("club_offers")
+    .update({ archived: false })
+    .eq("id", clubOfferId);
+  if (error) return { error: "Failed to restore offer" };
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/public`);
+  revalidatePath(`/${clubSlug}/offers`);
+  revalidatePath(`/${clubSlug}/staff`, "layout");
+  return { ok: true };
+}
+
 export async function updateInviteMode(
   clubId: string,
   mode: string,
