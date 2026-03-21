@@ -52,6 +52,25 @@ export async function updateInviteOnly(
   return { ok: true };
 }
 
+export async function updateHideMemberLogin(
+  clubId: string,
+  hide: boolean,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ hide_member_login: hide })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to update setting" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/public`);
+  return { ok: true };
+}
+
 export async function updateTelegramConfig(
   clubId: string,
   botToken: string,
