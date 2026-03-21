@@ -15,6 +15,8 @@ No new tables or columns needed — builds entirely on existing infrastructure.
 
 **File:** `app/[clubSlug]/(member)/quest-list.tsx`
 
+**New props required:** `QuestList` currently receives `memberId`, `clubSlug`, `locale`. Must add `memberCode: string` and `clubName: string` — both already available in the parent page component (`app/[clubSlug]/(member)/page.tsx`).
+
 When `quest_type === 'referral'`:
 - Replace "Mark Done" button with "Invite a Friend" button (club-primary styled)
 - On tap: use `navigator.share({ url, title, text })` with fallback to `navigator.clipboard.writeText(url)` + toast "Link copied!"
@@ -25,18 +27,32 @@ When `quest_type === 'referral'`:
 
 The quest card keeps its existing icon/title/description/link/reward display. Only the action button changes.
 
+**Security note:** Member codes are already semi-public (used in QR codes, printed on cards, shared verbally). Exposing them in a referral URL is acceptable and consistent with the existing auth model where member login is code-only.
+
 ---
 
 ## Public Page — `?ref=` param handling
 
 **File:** `app/[clubSlug]/public/page.tsx` + `app/[clubSlug]/public/invite-form.tsx`
 
-When `searchParams.ref` is present on the public page:
+The public page function signature must be updated to accept `searchParams`:
+```typescript
+export default async function PublicProfilePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ clubSlug: string }>;
+  searchParams: Promise<{ ref?: string }>;
+})
+```
+
+When `searchParams.ref` is present:
 
 ### Case 1: Club has invite form (invite_only + invite_mode === 'form')
 - Show banner above invite form: "You were invited by a member!" / "¡Un socio te ha invitado!"
-- Pass `referrerCode` prop to `InviteForm`
-- InviteForm includes the referrer code in the request message (appends "Referred by: {code}" to the message field or stores separately)
+- Pass `referrerCode` prop to `InviteForm` (optional prop: `referrerCode?: string`)
+- InviteForm appends "Referred by: {code}" to the message when submitting
+- The `requestInvite` action in `app/[clubSlug]/public/actions.ts` does not need changes — the referrer info flows through the existing `message` field
 
 ### Case 2: Club has NO invite form (not invite-only, or social mode)
 - Show a small banner in the content area: "Mention referral code **{ref}** when you sign up!" / "¡Menciona el código de referencia **{ref}** al registrarte!"
@@ -51,16 +67,19 @@ When `searchParams.ref` is present on the public page:
 
 **File:** `app/[clubSlug]/staff/members/actions.ts`
 
-In the existing `createMember()` function, after creating the member, if `referred_by` is set:
+In the existing `createMember()` function, after creating the member AND after the existing premium referral reward logic, if `referred_by` is set:
 
 1. Look up the referrer member by `member_code` in the same club
 2. Find all active quests with `quest_type = 'referral'` for that club
 3. For each referral quest:
-   - If `multi_use`: insert into `member_quests` with `status: 'verified'`, `referral_member_code: newMemberCode`, award spins
+   - If `multi_use`: insert into `member_quests` with `status: 'verified'`, `referral_member_code: newMemberCode`, `verified_by: staffMemberId` (the staff member creating the new member), award spins
    - If NOT `multi_use`: check if already completed — if not, insert and award spins
-4. Premium referral reward logic already exists here — this complements it (runs after it)
+4. **Spin awarding:** Use Postgres increment pattern (`spin_balance + N` in the update) rather than read-then-write, to avoid race conditions with the premium referral reward that may have just run
+5. **Badge awarding:** If the referral quest has a `badge_id`, also upsert into `member_badges` (same pattern as existing `completeQuest`)
+6. **Activity logging:** Log `quest_auto_completed` activity entry for each auto-completed quest
+7. **Revalidation:** Add `revalidatePath` for the member's dashboard after quest completion
 
-This means: admin creates a referral quest → member shares link → friend signs up → staff creates member with `referred_by` → referral quest auto-completes + spins awarded. No staff approval needed for the quest itself.
+**`referral_member_code` clarification:** This column stores the **new member's code** (the person who was referred), not the referrer's code. The referrer is identified by `member_quests.member_id`.
 
 ---
 
@@ -76,9 +95,10 @@ This means: admin creates a referral quest → member shares link → friend sig
 
 ## Files changed
 
-- `app/[clubSlug]/(member)/quest-list.tsx` — share button UI for referral quests
-- `app/[clubSlug]/public/page.tsx` — read `ref` search param, show contextual banner
-- `app/[clubSlug]/public/invite-form.tsx` — accept `referrerCode` prop, show invited banner
+- `app/[clubSlug]/(member)/quest-list.tsx` — share button UI for referral quests, new `memberCode` + `clubName` props
+- `app/[clubSlug]/(member)/page.tsx` — pass `memberCode` and `clubName` to QuestList
+- `app/[clubSlug]/public/page.tsx` — accept `searchParams`, read `ref`, show contextual banner
+- `app/[clubSlug]/public/invite-form.tsx` — accept optional `referrerCode` prop, append to message
 - `app/[clubSlug]/staff/members/actions.ts` — auto-complete referral quests in `createMember`
 - `lib/i18n/dictionaries/en.json` + `es.json` — new keys
 
@@ -100,10 +120,12 @@ Uses existing: `quests.quest_type: 'referral'`, `member_quests.referral_member_c
 8. **Auto-completion:** Staff creates new member with `referred_by` = referrer's code → referral quest auto-completes for the referrer, spins awarded
 9. **Multi-use:** If quest is multi_use, referrer can earn again for each new referral
 10. **Single-use:** If quest is NOT multi_use, second referral does not re-complete
-11. **Test in ES:** All new strings translate properly
+11. **Badge:** If referral quest has a badge_id, badge is awarded on auto-completion
+12. **Test in ES:** All new strings translate properly
 
 ## Out of Scope
 
 - Tracking click-through analytics on referral links
 - Referral-specific admin dashboard (existing referral tree page covers this)
 - Automatic member creation from referral links (staff always creates members manually)
+- Adding a dedicated `referred_by` column to `invite_requests` (referrer info flows through `message` field for now)
