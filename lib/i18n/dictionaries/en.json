@@ -338,6 +338,13 @@
   "admin.inviteButtonsAdd": "Add custom button",
   "admin.hideMemberLogin": "Hide member login from public page",
   "admin.hideMemberLoginDesc": "Members can still log in via the direct login URL",
+  "admin.editOffer": "Edit",
+  "admin.archiveOffer": "Archive",
+  "admin.restoreOffer": "Restore",
+  "admin.archivedTab": "Archived",
+  "admin.noArchivedOffers": "No archived offers",
+  "admin.collapseOffer": "Close",
+  "offers.public": "Public",
 
   "public.getInvite": "Get an Invite",
   "public.getInviteDesc": "Ask a member to invite you to the club",
