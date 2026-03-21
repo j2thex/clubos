@@ -341,30 +341,27 @@ export default async function PublicProfilePage({
                   <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-wider px-1 mb-1.5">
                     {subtype}
                   </p>
-                  <div className="bg-white rounded-2xl shadow divide-y divide-gray-50">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {items.map((item) => {
                       const displayIcon = item.club_icon || item.icon;
                       return (
-                        <div key={item.id} className="flex items-center gap-3 px-4 py-3">
+                        <div key={item.id} className="bg-white rounded-xl shadow p-3 flex flex-col items-center text-center">
                           {item.image_url ? (
                             <img
                               src={item.image_url}
                               alt=""
-                              className="w-8 h-8 rounded-full object-cover shrink-0"
+                              className="w-10 h-10 rounded-full object-cover mb-1.5"
                             />
                           ) : displayIcon ? (
-                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-                              <DynamicIcon name={displayIcon} className="w-4 h-4 text-gray-500" />
+                            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mb-1.5">
+                              <DynamicIcon name={displayIcon} className="w-5 h-5 text-gray-500" />
                             </div>
                           ) : (
-                            <span className="text-base shrink-0">+</span>
+                            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mb-1.5">
+                              <span className="text-gray-300 text-lg">+</span>
+                            </div>
                           )}
-                          <div className="flex-1 min-w-0">
-                            <span className="text-sm text-gray-900">{localized(item.name, item.name_es, locale)}</span>
-                            {(item.description || item.description_es) && (
-                              <p className="text-xs text-gray-400 mt-0.5">{localized(item.description ?? "", item.description_es, locale)}</p>
-                            )}
-                          </div>
+                          <span className="text-xs font-medium text-gray-900 leading-tight">{localized(item.name, item.name_es, locale)}</span>
                         </div>
                       );
                     })}
