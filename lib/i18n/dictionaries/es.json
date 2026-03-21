@@ -336,6 +336,8 @@
   "admin.inviteModeSocialDesc": "Mostrar botones de contacto en la página pública",
   "admin.inviteButtonsSave": "Guardar botones",
   "admin.inviteButtonsAdd": "Añadir botón personalizado",
+  "admin.hideMemberLogin": "Ocultar inicio de sesión en la página pública",
+  "admin.hideMemberLoginDesc": "Los socios aún pueden iniciar sesión con el enlace directo",
 
   "public.getInvite": "Solicitar invitación",
   "public.getInviteDesc": "Pide a un socio que te invite al club",

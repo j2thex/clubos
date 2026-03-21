@@ -336,6 +336,8 @@
   "admin.inviteModeSocialDesc": "Show contact buttons on the public page",
   "admin.inviteButtonsSave": "Save Buttons",
   "admin.inviteButtonsAdd": "Add custom button",
+  "admin.hideMemberLogin": "Hide member login from public page",
+  "admin.hideMemberLoginDesc": "Members can still log in via the direct login URL",
 
   "public.getInvite": "Get an Invite",
   "public.getInviteDesc": "Ask a member to invite you to the club",
