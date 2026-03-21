@@ -79,6 +79,7 @@ export default async function PublicProfilePage({
         .select("id, description, description_es, image_url, icon, is_public, offer_catalog(name, name_es, subtype, icon)")
         .eq("club_id", club.id)
         .eq("is_public", true)
+        .eq("archived", false)
         .order("created_at", { ascending: true }),
       supabase
         .from("club_gallery")

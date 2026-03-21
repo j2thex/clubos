@@ -29,6 +29,7 @@ export default async function StaffOffersPage({
     .select("id, orderable, offer_catalog(id, name, name_es)")
     .eq("club_id", club.id)
     .eq("orderable", true)
+    .eq("archived", false)
     .order("display_order", { ascending: true });
 
   const offerList = (offers ?? []).map((a) => {
