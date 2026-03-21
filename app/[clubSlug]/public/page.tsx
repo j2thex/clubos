@@ -10,6 +10,7 @@ import { PublicLoginForm } from "./public-login-form";
 import { localized } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 import { DynamicIcon } from "@/components/dynamic-icon";
+import { LanguageSwitcher } from "@/lib/i18n/switcher";
 
 export async function generateMetadata({
   params,
@@ -145,6 +146,10 @@ export default async function PublicProfilePage({
             : undefined
         }
       >
+        {/* Language Switcher */}
+        <div className="absolute top-3 right-3 z-20">
+          <LanguageSwitcher variant="light" />
+        </div>
         {branding?.cover_url && (
           <div className="absolute inset-0 bg-black/50" />
         )}
