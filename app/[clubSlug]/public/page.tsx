@@ -120,7 +120,7 @@ export default async function PublicProfilePage({
   }
 
   function formatDate(d: string) {
-    return new Date(d + "T00:00:00").toLocaleDateString("en-US", {
+    return new Date(d + "T00:00:00").toLocaleDateString(locale === "es" ? "es-ES" : "en-US", {
       weekday: "short",
       month: "short",
       day: "numeric",
@@ -205,7 +205,7 @@ export default async function PublicProfilePage({
         {hasEvents && (
           <div>
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-2">
-              Upcoming Events
+              {localized("Upcoming Events", "Próximos Eventos", locale)}
             </h2>
             <div className="space-y-3">
               {events.map((ev) => (
@@ -223,7 +223,7 @@ export default async function PublicProfilePage({
                         <p className="font-semibold text-gray-900">{localized(ev.title, ev.title_es, locale)}</p>
                         <p className="text-xs text-gray-500 mt-1">
                           {formatDate(ev.date)}
-                          {ev.time && ` at ${formatTime(ev.time)}`}
+                          {ev.time && ` ${localized("at", "a las", locale)} ${formatTime(ev.time)}`}
                         </p>
                         {ev.description && (
                           <p className="text-xs text-gray-400 mt-1">{localized(ev.description, ev.description_es, locale)}</p>
@@ -233,14 +233,14 @@ export default async function PublicProfilePage({
                         {ev.price != null ? (
                           <span className="text-sm font-bold text-gray-900">${Number(ev.price).toFixed(2)}</span>
                         ) : (
-                          <span className="text-sm font-bold text-green-600">Free</span>
+                          <span className="text-sm font-bold text-green-600">{localized("Free", "Gratis", locale)}</span>
                         )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 mt-3">
                       {ev.reward_spins > 0 && (
                         <span className="text-xs club-tint-text font-medium px-2 py-0.5 club-tint-bg rounded-full">
-                          +{ev.reward_spins} spin{ev.reward_spins === 1 ? "" : "s"}
+                          +{ev.reward_spins} {ev.reward_spins === 1 ? "spin" : "spins"}
                         </span>
                       )}
                       {ev.link && (
@@ -250,7 +250,7 @@ export default async function PublicProfilePage({
                           rel="noopener noreferrer"
                           className="text-xs font-medium club-primary underline"
                         >
-                          Learn more
+                          {localized("Learn more", "Más info", locale)}
                         </a>
                       )}
                     </div>
@@ -265,7 +265,7 @@ export default async function PublicProfilePage({
         {(hasQuests || club.invite_only) && (
           <div>
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-2">
-              Quests
+              {localized("Quests", "Misiones", locale)}
             </h2>
             <div className="space-y-3">
               {/* Invite quest card */}
@@ -332,7 +332,7 @@ export default async function PublicProfilePage({
         {hasOffers && (
           <div>
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-2">
-              Offers
+              {localized("Offers", "Ofertas", locale)}
             </h2>
             <div className="space-y-4">
               {Object.entries(offersBySubtype).map(([subtype, items]) => (
