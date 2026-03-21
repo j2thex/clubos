@@ -41,7 +41,7 @@ export default async function PublicProfilePage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name, invite_only, invite_mode, login_mode, club_branding(logo_url, cover_url, primary_color, secondary_color, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website)")
+    .select("id, name, invite_only, invite_mode, login_mode, hide_member_login, club_branding(logo_url, cover_url, primary_color, secondary_color, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website)")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -189,10 +189,12 @@ export default async function PublicProfilePage({
         )}
 
         {/* Member Login — inline form */}
-        <div className="bg-white rounded-2xl shadow-lg p-5">
-          <p className="text-sm text-gray-500 mb-3 text-center">{localized("Already a member?", "¿Ya eres socio?", locale)}</p>
-          <PublicLoginForm loginMode={club.login_mode ?? "code_only"} clubSlug={clubSlug} />
-        </div>
+        {!(club.invite_only && club.hide_member_login) && (
+          <div className="bg-white rounded-2xl shadow-lg p-5">
+            <p className="text-sm text-gray-500 mb-3 text-center">{localized("Already a member?", "¿Ya eres socio?", locale)}</p>
+            <PublicLoginForm loginMode={club.login_mode ?? "code_only"} clubSlug={clubSlug} />
+          </div>
+        )}
 
         {/* Events */}
         {hasEvents && (
