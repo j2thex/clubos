@@ -187,6 +187,8 @@ export default async function MemberDashboard({
               completionCounts={questCompletionCounts}
               pendingQuestIds={pendingQuestIds}
               memberId={session.member_id}
+              memberCode={member?.member_code ?? ""}
+              clubName={clubName}
               clubSlug={clubSlug}
               locale={locale}
             />

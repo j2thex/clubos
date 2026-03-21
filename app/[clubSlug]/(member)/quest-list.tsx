@@ -28,6 +28,8 @@ export function QuestList({
   completionCounts,
   pendingQuestIds,
   memberId,
+  memberCode,
+  clubName,
   clubSlug,
   locale,
 }: {
@@ -35,6 +37,8 @@ export function QuestList({
   completionCounts: Record<string, number>;
   pendingQuestIds: string[];
   memberId: string;
+  memberCode: string;
+  clubName: string;
   clubSlug: string;
   locale: Locale;
 }) {
@@ -43,6 +47,25 @@ export function QuestList({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const pendingSet = new Set(pendingQuestIds);
   const { t } = useLanguage();
+
+  const [copiedToast, setCopiedToast] = useState(false);
+
+  async function handleShare() {
+    const shareUrl = `${window.location.origin}/${clubSlug}/public?ref=${memberCode}`;
+    const shareText = t("quests.shareText", { clubName });
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ url: shareUrl, title: clubName, text: shareText });
+      } catch {
+        // User cancelled share dialog
+      }
+    } else {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopiedToast(true);
+      setTimeout(() => setCopiedToast(false), 2000);
+    }
+  }
 
   function handleMarkDone(quest: Quest) {
     const mode = quest.proof_mode ?? "none";
@@ -108,6 +131,16 @@ export function QuestList({
       );
     }
 
+    if (qType === "referral") {
+      return (
+        <div className={`${baseClass} ${colorClass}`}>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+          </svg>
+        </div>
+      );
+    }
+
     return (
       <div className={`${baseClass} ${colorClass}`}>
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -158,11 +191,13 @@ export function QuestList({
                 })()}
               </div>
               <div className="shrink-0 flex flex-col items-end gap-1">
-                {done && !isMultiUse ? (
+                {/* Completion badges */}
+                {done && !isMultiUse && qType !== "referral" && (
                   <span className="text-xs font-semibold px-2.5 py-1 rounded-full club-tint-bg club-tint-text">
                     {t("quest.done")}
                   </span>
-                ) : isPendingQuest ? (
+                )}
+                {isPendingQuest && (
                   <>
                     {isMultiUse && count > 0 && (
                       <span className="text-xs font-semibold px-2.5 py-1 rounded-full club-tint-bg club-tint-text">
@@ -173,7 +208,28 @@ export function QuestList({
                       {t("quest.pending")}
                     </span>
                   </>
-                ) : (
+                )}
+
+                {/* Referral quest — always show share button (unless pending) */}
+                {qType === "referral" && !isPendingQuest && (
+                  <>
+                    {count > 0 && (
+                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full club-tint-bg club-tint-text">
+                        {isMultiUse ? t("quest.doneCount", { count }) : t("quest.done")}
+                      </span>
+                    )}
+                    <button
+                      onClick={handleShare}
+                      disabled={isPending}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-full club-btn disabled:opacity-50 transition-colors"
+                    >
+                      {t("quests.inviteFriend")}
+                    </button>
+                  </>
+                )}
+
+                {/* Non-referral quests — mark done button */}
+                {qType !== "referral" && !isPendingQuest && !(done && !isMultiUse) && (
                   <>
                     {isMultiUse && count > 0 && (
                       <span className="text-xs font-semibold px-2.5 py-1 rounded-full club-tint-bg club-tint-text">
@@ -241,6 +297,13 @@ export function QuestList({
           </div>
         );
       })}
+
+      {/* Copied toast */}
+      {copiedToast && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-sm px-4 py-2 rounded-full shadow-lg z-50">
+          {t("quests.linkCopied")}
+        </div>
+      )}
     </div>
   );
 }

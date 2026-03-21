@@ -83,6 +83,10 @@
   "quest.feedbackPlaceholder": "¿Qué te gustaría sugerir?",
   "quest.tutorialSteps": "Pasos a completar",
 
+  "quests.inviteFriend": "Invitar a un amigo",
+  "quests.linkCopied": "¡Enlace copiado!",
+  "quests.shareText": "¡Únete a {clubName}!",
+
   "events.title": "Eventos",
   "events.subtitle": "Próximos eventos del club",
   "events.viewList": "Lista",
@@ -336,6 +340,15 @@
   "admin.inviteModeSocialDesc": "Mostrar botones de contacto en la página pública",
   "admin.inviteButtonsSave": "Guardar botones",
   "admin.inviteButtonsAdd": "Añadir botón personalizado",
+  "admin.hideMemberLogin": "Ocultar inicio de sesión en la página pública",
+  "admin.hideMemberLoginDesc": "Los socios aún pueden iniciar sesión con el enlace directo",
+  "admin.editOffer": "Editar",
+  "admin.archiveOffer": "Archivar",
+  "admin.restoreOffer": "Restaurar",
+  "admin.archivedTab": "Archivados",
+  "admin.noArchivedOffers": "No hay ofertas archivadas",
+  "admin.collapseOffer": "Cerrar",
+  "offers.public": "Público",
 
   "public.getInvite": "Solicitar invitación",
   "public.getInviteDesc": "Pide a un socio que te invite al club",
@@ -346,8 +359,10 @@
   "public.whyJoin": "¿Por qué quieres unirte? (opcional)",
   "public.sendRequest": "Enviar solicitud",
   "public.sending": "Enviando...",
+  "public.invitedByMember": "¡Un socio te ha invitado!",
+  "public.mentionReferralCode": "¡Menciona el código de referencia {code} al registrarte!",
   "public.joinClub": "Únete a nuestro club",
-  "public.contactThrough": "Contáctanos por:",
+  "public.contactThrough": "Contacta osocios para obtener tu ID de socio:",
 
   "profile.badges": "Insignias",
   "profile.completeToUnlock": "Completa \"{title}\"",

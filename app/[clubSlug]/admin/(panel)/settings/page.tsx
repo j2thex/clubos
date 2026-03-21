@@ -20,7 +20,7 @@ export default async function SettingsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, login_mode, invite_only, invite_mode, telegram_bot_token, telegram_chat_id, notification_secret")
+    .select("id, login_mode, invite_only, invite_mode, hide_member_login, telegram_bot_token, telegram_chat_id, notification_secret")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -70,6 +70,7 @@ export default async function SettingsPage({
         loginMode={club.login_mode ?? "code_only"}
         inviteOnly={club.invite_only ?? false}
         inviteMode={club.invite_mode ?? "form"}
+        hideMemberLogin={club.hide_member_login ?? false}
         inviteButtons={(inviteButtons ?? []).map((b) => ({
           id: b.id,
           type: b.type,

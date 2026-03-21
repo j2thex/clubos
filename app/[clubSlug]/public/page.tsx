@@ -10,6 +10,7 @@ import { PublicLoginForm } from "./public-login-form";
 import { localized } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 import { DynamicIcon } from "@/components/dynamic-icon";
+import { LanguageSwitcher } from "@/lib/i18n/switcher";
 
 export async function generateMetadata({
   params,
@@ -33,15 +34,18 @@ export async function generateMetadata({
 
 export default async function PublicProfilePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ clubSlug: string }>;
+  searchParams: Promise<{ ref?: string }>;
 }) {
   const { clubSlug } = await params;
+  const { ref: referrerCode } = await searchParams;
   const supabase = createAdminClient();
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name, invite_only, invite_mode, login_mode, club_branding(logo_url, cover_url, primary_color, secondary_color, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website)")
+    .select("id, name, invite_only, invite_mode, login_mode, hide_member_login, club_branding(logo_url, cover_url, primary_color, secondary_color, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website)")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -78,6 +82,7 @@ export default async function PublicProfilePage({
         .select("id, description, description_es, image_url, icon, is_public, offer_catalog(name, name_es, subtype, icon)")
         .eq("club_id", club.id)
         .eq("is_public", true)
+        .eq("archived", false)
         .order("created_at", { ascending: true }),
       supabase
         .from("club_gallery")
@@ -119,7 +124,7 @@ export default async function PublicProfilePage({
   }
 
   function formatDate(d: string) {
-    return new Date(d + "T00:00:00").toLocaleDateString("en-US", {
+    return new Date(d + "T00:00:00").toLocaleDateString(locale === "es" ? "es-ES" : "en-US", {
       weekday: "short",
       month: "short",
       day: "numeric",
@@ -145,6 +150,10 @@ export default async function PublicProfilePage({
             : undefined
         }
       >
+        {/* Language Switcher */}
+        <div className="absolute top-3 right-3 z-20">
+          <LanguageSwitcher variant="light" />
+        </div>
         {branding?.cover_url && (
           <div className="absolute inset-0 bg-black/50" />
         )}
@@ -188,17 +197,32 @@ export default async function PublicProfilePage({
           />
         )}
 
+        {/* Referral banner (non-invite-only clubs) */}
+        {referrerCode && !club.invite_only && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center">
+            <p className="text-sm font-medium text-amber-800">
+              {localized(
+                `Mention referral code ${referrerCode} when you sign up!`,
+                `¡Menciona el código de referencia ${referrerCode} al registrarte!`,
+                locale
+              )}
+            </p>
+          </div>
+        )}
+
         {/* Member Login — inline form */}
-        <div className="bg-white rounded-2xl shadow-lg p-5">
-          <p className="text-sm text-gray-500 mb-3 text-center">{localized("Already a member?", "¿Ya eres socio?", locale)}</p>
-          <PublicLoginForm loginMode={club.login_mode ?? "code_only"} clubSlug={clubSlug} />
-        </div>
+        {!(club.invite_only && club.hide_member_login) && (
+          <div className="bg-white rounded-2xl shadow-lg p-5">
+            <p className="text-sm text-gray-500 mb-3 text-center">{localized("Already a member?", "¿Ya eres socio?", locale)}</p>
+            <PublicLoginForm loginMode={club.login_mode ?? "code_only"} clubSlug={clubSlug} />
+          </div>
+        )}
 
         {/* Events */}
         {hasEvents && (
           <div>
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-2">
-              Upcoming Events
+              {localized("Upcoming Events", "Próximos Eventos", locale)}
             </h2>
             <div className="space-y-3">
               {events.map((ev) => (
@@ -216,7 +240,7 @@ export default async function PublicProfilePage({
                         <p className="font-semibold text-gray-900">{localized(ev.title, ev.title_es, locale)}</p>
                         <p className="text-xs text-gray-500 mt-1">
                           {formatDate(ev.date)}
-                          {ev.time && ` at ${formatTime(ev.time)}`}
+                          {ev.time && ` ${localized("at", "a las", locale)} ${formatTime(ev.time)}`}
                         </p>
                         {ev.description && (
                           <p className="text-xs text-gray-400 mt-1">{localized(ev.description, ev.description_es, locale)}</p>
@@ -226,14 +250,14 @@ export default async function PublicProfilePage({
                         {ev.price != null ? (
                           <span className="text-sm font-bold text-gray-900">${Number(ev.price).toFixed(2)}</span>
                         ) : (
-                          <span className="text-sm font-bold text-green-600">Free</span>
+                          <span className="text-sm font-bold text-green-600">{localized("Free", "Gratis", locale)}</span>
                         )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 mt-3">
                       {ev.reward_spins > 0 && (
                         <span className="text-xs club-tint-text font-medium px-2 py-0.5 club-tint-bg rounded-full">
-                          +{ev.reward_spins} spin{ev.reward_spins === 1 ? "" : "s"}
+                          +{ev.reward_spins} {ev.reward_spins === 1 ? "spin" : "spins"}
                         </span>
                       )}
                       {ev.link && (
@@ -243,7 +267,7 @@ export default async function PublicProfilePage({
                           rel="noopener noreferrer"
                           className="text-xs font-medium club-primary underline"
                         >
-                          Learn more
+                          {localized("Learn more", "Más info", locale)}
                         </a>
                       )}
                     </div>
@@ -258,7 +282,7 @@ export default async function PublicProfilePage({
         {(hasQuests || club.invite_only) && (
           <div>
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-2">
-              Quests
+              {localized("Quests", "Misiones", locale)}
             </h2>
             <div className="space-y-3">
               {/* Invite quest card */}
@@ -270,8 +294,20 @@ export default async function PublicProfilePage({
                   icon_url: b.icon_url ?? null,
                 }))} />
               ) : (
-                <InviteForm clubId={club.id} clubName={club.name} />
+                <InviteForm clubId={club.id} clubName={club.name} referrerCode={referrerCode} />
               ))}
+              {/* Referral banner for social-mode invite clubs */}
+              {club.invite_only && club.invite_mode === "social" && referrerCode && (
+                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center">
+                  <p className="text-sm font-medium text-amber-800">
+                    {localized(
+                      `Mention referral code ${referrerCode} when you sign up!`,
+                      `¡Menciona el código de referencia ${referrerCode} al registrarte!`,
+                      locale
+                    )}
+                  </p>
+                </div>
+              )}
               {(quests ?? []).map((q) => (
                 <div key={q.id} className="bg-white rounded-2xl shadow p-4">
                   <div className="flex items-center gap-4">
@@ -325,7 +361,7 @@ export default async function PublicProfilePage({
         {hasOffers && (
           <div>
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-2">
-              Offers
+              {localized("Offers", "Ofertas", locale)}
             </h2>
             <div className="space-y-4">
               {Object.entries(offersBySubtype).map(([subtype, items]) => (
@@ -333,30 +369,27 @@ export default async function PublicProfilePage({
                   <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-wider px-1 mb-1.5">
                     {subtype}
                   </p>
-                  <div className="bg-white rounded-2xl shadow divide-y divide-gray-50">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {items.map((item) => {
                       const displayIcon = item.club_icon || item.icon;
                       return (
-                        <div key={item.id} className="flex items-center gap-3 px-4 py-3">
+                        <div key={item.id} className="bg-white rounded-xl shadow p-3 flex flex-col items-center text-center">
                           {item.image_url ? (
                             <img
                               src={item.image_url}
                               alt=""
-                              className="w-8 h-8 rounded-full object-cover shrink-0"
+                              className="w-10 h-10 rounded-full object-cover mb-1.5"
                             />
                           ) : displayIcon ? (
-                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-                              <DynamicIcon name={displayIcon} className="w-4 h-4 text-gray-500" />
+                            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mb-1.5">
+                              <DynamicIcon name={displayIcon} className="w-5 h-5 text-gray-500" />
                             </div>
                           ) : (
-                            <span className="text-base shrink-0">+</span>
+                            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mb-1.5">
+                              <span className="text-gray-300 text-lg">+</span>
+                            </div>
                           )}
-                          <div className="flex-1 min-w-0">
-                            <span className="text-sm text-gray-900">{localized(item.name, item.name_es, locale)}</span>
-                            {(item.description || item.description_es) && (
-                              <p className="text-xs text-gray-400 mt-0.5">{localized(item.description ?? "", item.description_es, locale)}</p>
-                            )}
-                          </div>
+                          <span className="text-xs font-medium text-gray-900 leading-tight">{localized(item.name, item.name_es, locale)}</span>
                         </div>
                       );
                     })}

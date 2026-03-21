@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { requestInvite } from "./actions";
 import { useLanguage } from "@/lib/i18n/provider";
 
-export function InviteForm({ clubId, clubName }: { clubId: string; clubName: string }) {
+export function InviteForm({ clubId, clubName, referrerCode }: { clubId: string; clubName: string; referrerCode?: string }) {
   const [expanded, setExpanded] = useState(false);
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
@@ -18,8 +18,11 @@ export function InviteForm({ clubId, clubName }: { clubId: string; clubName: str
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    const fullMessage = referrerCode
+      ? `${message ? message + "\n" : ""}Referred by: ${referrerCode}`
+      : message || undefined;
     startTransition(async () => {
-      const result = await requestInvite(clubId, clubName, name, contact, message || undefined);
+      const result = await requestInvite(clubId, clubName, name, contact, fullMessage);
       if ("error" in result) {
         setError(result.error);
       } else {
@@ -30,6 +33,11 @@ export function InviteForm({ clubId, clubName }: { clubId: string; clubName: str
 
   return (
     <div className="bg-white rounded-2xl shadow p-4">
+      {referrerCode && (
+        <div className="bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 mb-3 text-center">
+          <p className="text-xs font-medium text-amber-700">{t("public.invitedByMember")}</p>
+        </div>
+      )}
       <div className="flex items-center gap-4">
         <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 club-tint-bg club-primary">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>

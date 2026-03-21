@@ -110,6 +110,8 @@ export async function createMember(
     return { error: "Failed to create member" };
   }
 
+  const staff = await getStaffFromCookie();
+
   // Auto-reward premium referrer
   if (referredByCode) {
     const { data: referrer } = await supabase
@@ -132,9 +134,78 @@ export async function createMember(
         details: `+${referrer.referral_reward_spins} spins for referring ${code}`,
       });
     }
+
+    // Auto-complete referral quests for the referrer
+    const { data: referralQuests } = await supabase
+      .from("quests")
+      .select("id, reward_spins, multi_use, badge_id")
+      .eq("club_id", clubId)
+      .eq("quest_type", "referral")
+      .eq("active", true);
+
+    if (referralQuests && referralQuests.length > 0) {
+      // Re-fetch referrer to get current spin_balance (may have been updated by premium reward above)
+      const { data: currentReferrer } = await supabase
+        .from("members")
+        .select("id, spin_balance")
+        .eq("club_id", clubId)
+        .eq("member_code", referredByCode)
+        .single();
+
+      if (currentReferrer) {
+        let totalSpinsToAdd = 0;
+
+        for (const quest of referralQuests) {
+          if (!quest.multi_use) {
+            // Check if already completed
+            const { count } = await supabase
+              .from("member_quests")
+              .select("*", { count: "exact", head: true })
+              .eq("member_id", currentReferrer.id)
+              .eq("quest_id", quest.id)
+              .eq("status", "verified");
+            if ((count ?? 0) > 0) continue; // Already completed single-use quest
+          }
+
+          // Insert quest completion
+          await supabase.from("member_quests").insert({
+            quest_id: quest.id,
+            member_id: currentReferrer.id,
+            status: "verified",
+            verified_by: staff?.member_id ?? null,
+            referral_member_code: code,
+          });
+
+          totalSpinsToAdd += quest.reward_spins;
+
+          // Award badge if quest has one
+          if (quest.badge_id) {
+            await supabase.from("member_badges").upsert(
+              { member_id: currentReferrer.id, badge_id: quest.badge_id, quest_id: quest.id },
+              { onConflict: "member_id,badge_id", ignoreDuplicates: true }
+            );
+          }
+
+          await logActivity({
+            clubId,
+            staffMemberId: staff?.member_id,
+            action: "quest_auto_completed",
+            targetMemberCode: referredByCode,
+            details: `Referral quest completed: referred ${code}, +${quest.reward_spins} spins`,
+          });
+        }
+
+        // Award all spins at once
+        if (totalSpinsToAdd > 0) {
+          await supabase
+            .from("members")
+            .update({ spin_balance: currentReferrer.spin_balance + totalSpinsToAdd })
+            .eq("id", currentReferrer.id);
+        }
+      }
+    }
   }
 
-  const staff = await getStaffFromCookie();
   const details = [
     validTill ? `Period till ${validTill}` : null,
     referredByCode ? `Referred by ${referredByCode}` : null,
@@ -149,6 +220,7 @@ export async function createMember(
   });
 
   revalidatePath(`/${clubSlug}/staff/members`);
+  revalidatePath(`/${clubSlug}`, "layout");
   return { ok: true };
 }
 

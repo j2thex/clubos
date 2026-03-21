@@ -52,6 +52,25 @@ export async function updateInviteOnly(
   return { ok: true };
 }
 
+export async function updateHideMemberLogin(
+  clubId: string,
+  hide: boolean,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ hide_member_login: hide })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to update setting" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/public`);
+  return { ok: true };
+}
+
 export async function updateTelegramConfig(
   clubId: string,
   botToken: string,
@@ -1076,6 +1095,40 @@ export async function updateOfferOptions(
   if (error) return { error: "Failed to update offer options" };
 
   revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
+export async function archiveOffer(
+  clubOfferId: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("club_offers")
+    .update({ archived: true })
+    .eq("id", clubOfferId);
+  if (error) return { error: "Failed to archive offer" };
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/public`);
+  revalidatePath(`/${clubSlug}/offers`);
+  revalidatePath(`/${clubSlug}/staff`, "layout");
+  return { ok: true };
+}
+
+export async function restoreOffer(
+  clubOfferId: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("club_offers")
+    .update({ archived: false })
+    .eq("id", clubOfferId);
+  if (error) return { error: "Failed to restore offer" };
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/public`);
+  revalidatePath(`/${clubSlug}/offers`);
+  revalidatePath(`/${clubSlug}/staff`, "layout");
   return { ok: true };
 }
 

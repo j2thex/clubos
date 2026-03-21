@@ -91,20 +91,39 @@ export function OfferListClient({
               ? (SUBTYPE_LABELS[subtype]?.es ?? subtype)
               : (SUBTYPE_LABELS[subtype]?.en ?? subtype)}
           </h2>
-          <div className="space-y-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {groups[subtype].map((a) => {
               const displayIcon = a.club_icon || a.icon;
               return (
-              <div key={a.id} className="bg-white rounded-2xl shadow p-4">
-                <div className="flex items-center gap-4">
+                <div
+                  key={a.id}
+                  className={`bg-white rounded-xl shadow p-3 flex flex-col items-center text-center relative ${
+                    a.orderable ? "cursor-pointer active:scale-95 transition-transform" : ""
+                  }`}
+                  onClick={() => {
+                    if (!a.orderable || isPending) return;
+                    if (a.order) {
+                      handleCancel(a.order.id);
+                    } else {
+                      handleRequest(a.id);
+                    }
+                  }}
+                >
+                  {/* Price badge */}
+                  {a.orderable && (
+                    <div className="absolute top-1.5 right-1.5">
+                      {a.price != null && a.price > 0 ? (
+                        <span className="text-[10px] font-bold bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded-full">${a.price.toFixed(2)}</span>
+                      ) : (
+                        <span className="text-[10px] font-bold bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">{t("common.free")}</span>
+                      )}
+                    </div>
+                  )}
+                  {/* Icon/Image */}
                   {a.image_url ? (
-                    <img
-                      src={a.image_url}
-                      alt=""
-                      className="w-10 h-10 rounded-full object-cover shrink-0"
-                    />
+                    <img src={a.image_url} alt="" className="w-10 h-10 rounded-full object-cover mb-1.5" />
                   ) : (
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-gray-100 text-gray-400">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center mb-1.5 bg-gray-100 text-gray-400">
                       {displayIcon ? (
                         <DynamicIcon name={displayIcon} className="w-5 h-5" />
                       ) : (
@@ -114,45 +133,18 @@ export function OfferListClient({
                       )}
                     </div>
                   )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 text-sm">
-                      {localized(a.name, a.name_es, locale)}
-                    </p>
-                    {(a.description || a.description_es) && (
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        {localized(a.description ?? "", a.description_es, locale)}
-                      </p>
-                    )}
-                  </div>
-                  {a.orderable && (
-                    <div className="shrink-0 flex flex-col items-end gap-1">
-                      {a.price != null && a.price > 0 ? (
-                        <span className="text-sm font-bold text-gray-900">${a.price.toFixed(2)}</span>
-                      ) : (
-                        <span className="text-sm font-bold text-green-600">{t("common.free")}</span>
-                      )}
-                      {a.order ? (
-                        <button
-                          onClick={() => handleCancel(a.order!.id)}
-                          disabled={isPending}
-                          className="text-xs font-semibold px-3 py-1.5 rounded-full border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 disabled:opacity-50 transition-colors"
-                        >
-                          {isPending ? "..." : t("offers.requested")}
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleRequest(a.id)}
-                          disabled={isPending}
-                          className="text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50 transition-colors"
-                        >
-                          {isPending ? "..." : t("offers.request")}
-                        </button>
-                      )}
-                    </div>
+                  {/* Name */}
+                  <span className="text-xs font-medium text-gray-900 leading-tight">
+                    {localized(a.name, a.name_es, locale)}
+                  </span>
+                  {/* Order status */}
+                  {a.orderable && a.order && (
+                    <span className="mt-1 text-[10px] font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                      {t("offers.requested")}
+                    </span>
                   )}
                 </div>
-              </div>
-            );
+              );
             })}
           </div>
         </div>

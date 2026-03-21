@@ -25,6 +25,7 @@ export default async function OffersPage({
     .from("club_offers")
     .select("id, offer_id, orderable, price, display_order, description, description_es, image_url, icon, offer_catalog(id, name, name_es, subtype, icon)")
     .eq("club_id", session.club_id)
+    .eq("archived", false)
     .order("display_order", { ascending: true });
 
   // Get member's pending orders

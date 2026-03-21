@@ -83,6 +83,10 @@
   "quest.feedbackPlaceholder": "What would you like to suggest?",
   "quest.tutorialSteps": "Steps to complete",
 
+  "quests.inviteFriend": "Invite a Friend",
+  "quests.linkCopied": "Link copied!",
+  "quests.shareText": "Join me at {clubName}!",
+
   "events.title": "Events",
   "events.subtitle": "Upcoming club events",
   "events.viewList": "List",
@@ -336,6 +340,15 @@
   "admin.inviteModeSocialDesc": "Show contact buttons on the public page",
   "admin.inviteButtonsSave": "Save Buttons",
   "admin.inviteButtonsAdd": "Add custom button",
+  "admin.hideMemberLogin": "Hide member login from public page",
+  "admin.hideMemberLoginDesc": "Members can still log in via the direct login URL",
+  "admin.editOffer": "Edit",
+  "admin.archiveOffer": "Archive",
+  "admin.restoreOffer": "Restore",
+  "admin.archivedTab": "Archived",
+  "admin.noArchivedOffers": "No archived offers",
+  "admin.collapseOffer": "Close",
+  "offers.public": "Public",
 
   "public.getInvite": "Get an Invite",
   "public.getInviteDesc": "Ask a member to invite you to the club",
@@ -346,8 +359,10 @@
   "public.whyJoin": "Why do you want to join? (optional)",
   "public.sendRequest": "Send Request",
   "public.sending": "Sending...",
+  "public.invitedByMember": "You were invited by a member!",
+  "public.mentionReferralCode": "Mention referral code {code} when you sign up!",
   "public.joinClub": "Join our club",
-  "public.contactThrough": "Contact us through:",
+  "public.contactThrough": "Contact osocios to get your member ID:",
 
   "profile.badges": "Badges",
   "profile.completeToUnlock": "Complete \"{title}\"",
