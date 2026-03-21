@@ -34,10 +34,13 @@ export async function generateMetadata({
 
 export default async function PublicProfilePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ clubSlug: string }>;
+  searchParams: Promise<{ ref?: string }>;
 }) {
   const { clubSlug } = await params;
+  const { ref: referrerCode } = await searchParams;
   const supabase = createAdminClient();
 
   const { data: club } = await supabase
@@ -194,6 +197,19 @@ export default async function PublicProfilePage({
           />
         )}
 
+        {/* Referral banner (non-invite-only clubs) */}
+        {referrerCode && !club.invite_only && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center">
+            <p className="text-sm font-medium text-amber-800">
+              {localized(
+                `Mention referral code ${referrerCode} when you sign up!`,
+                `¡Menciona el código de referencia ${referrerCode} al registrarte!`,
+                locale
+              )}
+            </p>
+          </div>
+        )}
+
         {/* Member Login — inline form */}
         {!(club.invite_only && club.hide_member_login) && (
           <div className="bg-white rounded-2xl shadow-lg p-5">
@@ -278,8 +294,20 @@ export default async function PublicProfilePage({
                   icon_url: b.icon_url ?? null,
                 }))} />
               ) : (
-                <InviteForm clubId={club.id} clubName={club.name} />
+                <InviteForm clubId={club.id} clubName={club.name} referrerCode={referrerCode} />
               ))}
+              {/* Referral banner for social-mode invite clubs */}
+              {club.invite_only && club.invite_mode === "social" && referrerCode && (
+                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center">
+                  <p className="text-sm font-medium text-amber-800">
+                    {localized(
+                      `Mention referral code ${referrerCode} when you sign up!`,
+                      `¡Menciona el código de referencia ${referrerCode} al registrarte!`,
+                      locale
+                    )}
+                  </p>
+                </div>
+              )}
               {(quests ?? []).map((q) => (
                 <div key={q.id} className="bg-white rounded-2xl shadow p-4">
                   <div className="flex items-center gap-4">
