@@ -771,6 +771,7 @@ export async function updateEvent(
   const imageFile = formData.get("image") as File | null;
   const titleEs = (formData.get("title_es") as string)?.trim() || null;
   const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
+  const scope = (formData.get("scope") as string) || "single";
 
   if (!title) return { error: "Title is required" };
   if (!date) return { error: "Date is required" };
@@ -791,6 +792,7 @@ export async function updateEvent(
     description_es: descriptionEs,
   };
 
+  let imageUrl: string | undefined;
   if (imageFile && imageFile.size > 0) {
     // Delete old image if exists
     const { data: existing } = await supabase
@@ -808,14 +810,56 @@ export async function updateEvent(
     const result = await uploadEventImage(existing?.club_id ?? "", imageFile);
     if ("error" in result) return { error: result.error };
     updates.image_url = result.url;
+    imageUrl = result.url;
   }
 
-  const { error } = await supabase
-    .from("events")
-    .update(updates)
-    .eq("id", eventId);
+  if (scope === "single") {
+    const { error } = await supabase
+      .from("events")
+      .update(updates)
+      .eq("id", eventId);
 
-  if (error) return { error: "Failed to update event" };
+    if (error) return { error: "Failed to update event" };
+  }
+
+  if (scope === "future") {
+    // Get this event's info to find siblings
+    const { data: thisEvent } = await supabase
+      .from("events")
+      .select("date, recurrence_parent_id")
+      .eq("id", eventId)
+      .single();
+
+    if (thisEvent) {
+      const parentId = thisEvent.recurrence_parent_id ?? eventId;
+      const today = new Date().toISOString().split("T")[0];
+      const fromDate = thisEvent.date > today ? thisEvent.date : today;
+
+      // Update all future siblings (and parent if applicable)
+      const updateData: Record<string, unknown> = {
+        title, description, time: time || null,
+        price: priceStr ? Number(priceStr) : null, link: link || null,
+        reward_spins: rewardSpins, is_public: isPublic,
+        icon: icon || null,
+        title_es: titleEs || null, description_es: descriptionEs || null,
+      };
+      if (imageUrl !== undefined) updateData.image_url = imageUrl;
+
+      // Update children of same parent
+      await supabase
+        .from("events")
+        .update(updateData)
+        .eq("recurrence_parent_id", parentId)
+        .gte("date", fromDate);
+
+      // Also update the parent itself if it's in the future
+      await supabase
+        .from("events")
+        .update(updateData)
+        .eq("id", parentId)
+        .gte("date", fromDate);
+    }
+  }
 
   revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
@@ -824,9 +868,44 @@ export async function updateEvent(
 export async function deleteEvent(
   eventId: string,
   clubSlug: string,
+  scope: string = "single",
 ): Promise<{ error: string } | { ok: true }> {
   const supabase = createAdminClient();
 
+  if (scope === "future") {
+    const { data: thisEvent } = await supabase
+      .from("events")
+      .select("date, recurrence_parent_id")
+      .eq("id", eventId)
+      .single();
+
+    if (thisEvent) {
+      const parentId = thisEvent.recurrence_parent_id ?? eventId;
+
+      // Delete all future siblings
+      await supabase
+        .from("events")
+        .delete()
+        .eq("recurrence_parent_id", parentId)
+        .gte("date", thisEvent.date);
+
+      // Delete the parent too if it's this event or a future one
+      const { data: parent } = await supabase
+        .from("events")
+        .select("date")
+        .eq("id", parentId)
+        .single();
+
+      if (parent && parent.date >= thisEvent.date) {
+        await supabase.from("events").delete().eq("id", parentId);
+      }
+    }
+
+    revalidatePath(`/${clubSlug}/admin`, "layout");
+    return { ok: true };
+  }
+
+  // Single delete (existing logic)
   // Delete image from storage if exists
   const { data: event } = await supabase
     .from("events")
