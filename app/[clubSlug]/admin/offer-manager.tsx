@@ -412,13 +412,23 @@ function OfferRow({
               ${clubOffer.price}
             </span>
           )}
-          <button
-            type="button"
-            onClick={() => onToggleExpand(offer.id)}
-            className="ml-auto text-xs font-semibold text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            Edit
-          </button>
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onArchive(clubOffer!.id)}
+              disabled={isPending}
+              className="text-[10px] font-medium text-gray-400 hover:text-red-500 disabled:opacity-50 transition-colors"
+            >
+              {t("admin.archiveOffer")}
+            </button>
+            <button
+              type="button"
+              onClick={() => onToggleExpand(offer.id)}
+              className="text-xs font-semibold text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              {t("admin.editOffer")}
+            </button>
+          </div>
         </div>
       )}
 
