@@ -82,6 +82,8 @@
   "quest.shareFeedback": "Compartir opinión",
   "quest.feedbackPlaceholder": "¿Qué te gustaría sugerir?",
   "quest.tutorialSteps": "Pasos a completar",
+  "quests.hideCompleted": "Ocultar completadas",
+  "quests.showCompleted": "Mostrar completadas",
 
   "quests.inviteFriend": "Invitar a un amigo",
   "quests.linkCopied": "¡Enlace copiado!",
