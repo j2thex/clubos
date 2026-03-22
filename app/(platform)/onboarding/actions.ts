@@ -26,11 +26,43 @@ export async function createOrgAndClub(formData: FormData) {
   }
 
   const supabase = createAdminClient();
+  const slug = generateSlug(clubName);
+
+  // Pre-validate: check for duplicate email before creating anything
+  const { count: emailCount } = await supabase
+    .from("club_owners")
+    .select("*", { count: "exact", head: true })
+    .ilike("email", email);
+
+  if ((emailCount ?? 0) > 0) {
+    return { error: "An account with this email already exists" };
+  }
+
+  // Pre-validate: check for duplicate club/org slug before creating anything
+  const { count: slugCount } = await supabase
+    .from("clubs")
+    .select("*", { count: "exact", head: true })
+    .eq("slug", slug);
+
+  if ((slugCount ?? 0) > 0) {
+    return { error: "A club with this name already exists. Please choose a different name." };
+  }
+
+  const { count: orgSlugCount } = await supabase
+    .from("organizations")
+    .select("*", { count: "exact", head: true })
+    .eq("slug", slug);
+
+  if ((orgSlugCount ?? 0) > 0) {
+    return { error: "A club with this name already exists. Please choose a different name." };
+  }
+
+  // All validation passed — now create entities
 
   // Create organization (auto-named after club)
   const { data: org, error: orgError } = await supabase
     .from("organizations")
-    .insert({ name: clubName, slug: generateSlug(clubName) })
+    .insert({ name: clubName, slug })
     .select()
     .single();
 
@@ -44,7 +76,7 @@ export async function createOrgAndClub(formData: FormData) {
     .insert({
       organization_id: org.id,
       name: clubName,
-      slug: generateSlug(clubName),
+      slug,
       timezone,
       currency,
       tags,
@@ -63,7 +95,7 @@ export async function createOrgAndClub(formData: FormData) {
     social_google_maps: googleMapsUrl,
   });
 
-  // Create club owner account
+  // Create club owner account (email uniqueness already validated above)
   const { data: owner, error: ownerError } = await supabase
     .from("club_owners")
     .insert({
@@ -74,9 +106,6 @@ export async function createOrgAndClub(formData: FormData) {
     .single();
 
   if (ownerError) {
-    if (ownerError.code === "23505") {
-      return { error: "An account with this email already exists" };
-    }
     return { error: "Failed to create owner account" };
   }
 
