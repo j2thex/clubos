@@ -316,6 +316,9 @@
   "admin.uploadPhotos": "Subir fotos",
   "admin.uploading": "Subiendo...",
 
+  "admin.clubTags": "Tipo de Club",
+  "admin.clubTagsDesc": "Selecciona etiquetas que describan tu club. Esto ayuda a los visitantes a entender lo que ofreces.",
+
   "admin.telegramTitle": "Notificaciones de staff (Telegram)",
   "admin.telegramDesc": "Conecta un bot de Telegram para notificar al staff sobre misiones pendientes, solicitudes de servicios y reservas.",
   "admin.telegramBotToken": "Token del bot",
@@ -380,6 +383,9 @@
   "login.setNewPasswordSubtitle": "Elige una nueva contraseña para tu cuenta de admin",
   "login.passwordsNoMatch": "Las contraseñas no coinciden",
   "login.updating": "Actualizando...",
+
+  "onboarding.tagsLabel": "¿Qué tipo de club es?",
+  "onboarding.tagsHint": "Selecciona todos los que apliquen, o agrega los tuyos",
 
   "onboarding.step1": "Paso 1 de 3",
   "onboarding.step2": "Paso 2 de 3",

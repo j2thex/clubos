@@ -71,6 +71,28 @@ export async function updateHideMemberLogin(
   return { ok: true };
 }
 
+export async function updateClubTags(
+  clubId: string,
+  tags: string[],
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  // Normalize tags: lowercase, trim, remove duplicates
+  const normalized = [...new Set(tags.map(t => t.trim().toLowerCase().replace(/\s+/g, "-")).filter(Boolean))];
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ tags: normalized })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to update tags" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/public`);
+  return { ok: true };
+}
+
 export async function updateTelegramConfig(
   clubId: string,
   botToken: string,

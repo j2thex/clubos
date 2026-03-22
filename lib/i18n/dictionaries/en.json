@@ -316,6 +316,9 @@
   "admin.uploadPhotos": "Upload photos",
   "admin.uploading": "Uploading...",
 
+  "admin.clubTags": "Club Type",
+  "admin.clubTagsDesc": "Select tags that describe your club. This helps visitors understand what you offer.",
+
   "admin.telegramTitle": "Staff Notifications (Telegram)",
   "admin.telegramDesc": "Connect a Telegram bot to notify staff about pending quests, service requests, and RSVPs.",
   "admin.telegramBotToken": "Bot Token",
@@ -380,6 +383,9 @@
   "login.setNewPasswordSubtitle": "Choose a new password for your admin account",
   "login.passwordsNoMatch": "Passwords don't match",
   "login.updating": "Updating...",
+
+  "onboarding.tagsLabel": "What type of club is this?",
+  "onboarding.tagsHint": "Select all that apply, or add your own",
 
   "onboarding.step1": "Step 1 of 3",
   "onboarding.step2": "Step 2 of 3",
