@@ -5,6 +5,7 @@ import { addEvent, updateEvent, deleteEvent } from "./actions";
 import { IconPicker } from "@/components/icon-picker";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { LanguageTabs } from "@/components/language-tabs";
+import { useLanguage } from "@/lib/i18n/provider";
 
 const TEMPLATES = [
   { title: "Weekly Party", description: "Weekly club night", rewardSpins: 1 },
@@ -29,6 +30,9 @@ interface Event {
   rsvps: number;
   checkins: number;
   is_public: boolean;
+  recurrence_rule: string | null;
+  recurrence_parent_id: string | null;
+  recurrence_end_date: string | null;
 }
 
 export function EventManager({
@@ -40,6 +44,7 @@ export function EventManager({
   clubId: string;
   clubSlug: string;
 }) {
+  const { t } = useLanguage();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDesc, setEditDesc] = useState("");
@@ -68,6 +73,11 @@ export function EventManager({
   const [newLang, setNewLang] = useState<"en" | "es">("en");
   const [newTitleEs, setNewTitleEs] = useState("");
   const [newDescEs, setNewDescEs] = useState("");
+  const [newRecurrence, setNewRecurrence] = useState<string>("");
+  const [newRecurrenceEnd, setNewRecurrenceEnd] = useState<string>("");
+
+  const [scopePrompt, setScopePrompt] = useState<{ type: "edit" | "delete"; eventId: string } | null>(null);
+  const [editScope, setEditScope] = useState<string>("single");
 
   const [showForm, setShowForm] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -119,20 +129,22 @@ export function EventManager({
       fd.set("title_es", editTitleEs);
       fd.set("description_es", editDescEs);
       if (editImage) fd.set("image", editImage);
+      fd.set("scope", editScope);
 
       const result = await updateEvent(eventId, fd, clubSlug);
       if ("error" in result) {
         setError(result.error);
       } else {
         setEditingId(null);
+        setEditScope("single");
       }
     });
   }
 
-  function handleDelete(eventId: string) {
+  function handleRemove(eventId: string, scope: string = "single") {
     setError(null);
     startTransition(async () => {
-      const result = await deleteEvent(eventId, clubSlug);
+      const result = await deleteEvent(eventId, clubSlug, scope);
       if ("error" in result) setError(result.error);
     });
   }
@@ -154,12 +166,15 @@ export function EventManager({
       fd.set("title_es", newTitleEs);
       fd.set("description_es", newDescEs);
       if (newImage) fd.set("image", newImage);
+      if (newRecurrence) fd.set("recurrence_rule", newRecurrence);
+      if (newRecurrenceEnd) fd.set("recurrence_end_date", newRecurrenceEnd);
 
       const result = await addEvent(clubId, fd, clubSlug);
       if ("error" in result) {
         setError(result.error);
       } else {
         const createdTitle = newTitle;
+        const createdCount = "count" in result ? result.count : undefined;
         setNewTitle("");
         setNewDesc("");
         setNewDate("");
@@ -173,7 +188,12 @@ export function EventManager({
         setNewTitleEs("");
         setNewDescEs("");
         setNewLang("en");
-        setSuccessMsg(`"${createdTitle}" created successfully`);
+        setNewRecurrence("");
+        setNewRecurrenceEnd("");
+        const msg = createdCount && createdCount > 1
+          ? t("events.occurrencesCreated", { count: String(createdCount) })
+          : `"${createdTitle}" created successfully`;
+        setSuccessMsg(msg);
         setShowForm(false);
         setTimeout(() => setSuccessMsg(null), 4000);
       }
@@ -374,6 +394,11 @@ export function EventManager({
                         {ev.is_public && (
                           <span className="text-[10px] font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full shrink-0">Public</span>
                         )}
+                        {(ev.recurrence_rule || ev.recurrence_parent_id) && (
+                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-purple-50 text-purple-600">
+                            {t("events.recurring")}
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                         <span className="text-xs text-gray-500">{formatDate(ev.date)}</span>
@@ -393,19 +418,76 @@ export function EventManager({
                     </div>
                     <div className="flex gap-2 shrink-0">
                       <button
-                        onClick={() => startEdit(ev)}
+                        onClick={() => {
+                          if (ev.recurrence_rule || ev.recurrence_parent_id) {
+                            setScopePrompt({ type: "edit", eventId: ev.id });
+                          } else {
+                            startEdit(ev);
+                          }
+                        }}
                         className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
                       >
                         Edit
                       </button>
                       <button
-                        onClick={() => handleDelete(ev.id)}
+                        onClick={() => {
+                          if (ev.recurrence_rule || ev.recurrence_parent_id) {
+                            setScopePrompt({ type: "delete", eventId: ev.id });
+                          } else {
+                            handleRemove(ev.id);
+                          }
+                        }}
                         disabled={isPending}
                         className="text-xs text-red-500 hover:text-red-700 disabled:opacity-50 transition-colors"
                       >
                         Remove
                       </button>
                     </div>
+                  </div>
+                )}
+                {/* Scope prompt for recurring events */}
+                {scopePrompt?.eventId === ev.id && (
+                  <div className="ml-11 mt-2 flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
+                    <p className="text-xs text-gray-500 mr-2">
+                      {scopePrompt.type === "edit" ? t("events.editScope") : t("events.deleteScope")}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (scopePrompt.type === "edit") {
+                          setEditScope("single");
+                          startEdit(ev);
+                        } else {
+                          handleRemove(ev.id, "single");
+                        }
+                        setScopePrompt(null);
+                      }}
+                      className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-100 transition-colors"
+                    >
+                      {t("events.thisOnly")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (scopePrompt.type === "edit") {
+                          setEditScope("future");
+                          startEdit(ev);
+                        } else {
+                          handleRemove(ev.id, "future");
+                        }
+                        setScopePrompt(null);
+                      }}
+                      className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-100 transition-colors"
+                    >
+                      {t("events.allFuture")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setScopePrompt(null)}
+                      className="text-xs text-gray-400 hover:text-gray-600 ml-1"
+                    >
+                      ✕
+                    </button>
                   </div>
                 )}
               </div>
@@ -516,6 +598,58 @@ export function EventManager({
               />
             </div>
           </div>
+          {/* Repeat */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">{t("events.repeat")}</label>
+            <select
+              value={newRecurrence}
+              onChange={(e) => setNewRecurrence(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+            >
+              <option value="">{t("events.noRepeat")}</option>
+              <option value="weekly">{t("events.weekly")}</option>
+              <option value="biweekly">{t("events.biweekly")}</option>
+              <option value="monthly">{t("events.monthly")}</option>
+            </select>
+            {newRecurrence && (
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-500 shrink-0">{t("events.until")}</label>
+                <input
+                  type="date"
+                  name="recurrence_end_date"
+                  value={newRecurrenceEnd}
+                  onChange={(e) => setNewRecurrenceEnd(e.target.value)}
+                  required
+                  min={newDate}
+                  className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                />
+              </div>
+            )}
+            {newRecurrence && newRecurrenceEnd && newDate && (
+              <p className="text-xs text-gray-400">
+                {(() => {
+                  const start = new Date(newDate + "T00:00:00");
+                  const end = new Date(newRecurrenceEnd + "T00:00:00");
+                  let count = 0;
+                  let cur = new Date(start);
+                  while (count < 52) {
+                    if (newRecurrence === "weekly") cur.setDate(cur.getDate() + 7);
+                    else if (newRecurrence === "biweekly") cur.setDate(cur.getDate() + 14);
+                    else if (newRecurrence === "monthly") {
+                      const day = start.getDate();
+                      cur.setMonth(cur.getMonth() + 1);
+                      const last = new Date(cur.getFullYear(), cur.getMonth() + 1, 0).getDate();
+                      cur.setDate(Math.min(day, last));
+                    }
+                    if (cur > end) break;
+                    count++;
+                  }
+                  return t("events.occurrencesCreated", { count: String(count + 1) });
+                })()}
+              </p>
+            )}
+          </div>
+          {newRecurrence && <input type="hidden" name="recurrence_rule" value={newRecurrence} />}
           <div className="grid grid-cols-[1fr_auto_auto] gap-3 items-end">
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">Price (optional, leave empty = free)</label>
