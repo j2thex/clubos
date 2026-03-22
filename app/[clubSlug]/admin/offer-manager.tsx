@@ -114,7 +114,7 @@ export function OfferManager({
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
         {/* Subtype tabs */}
         <div className="px-5 py-3 border-b border-gray-100">
-          <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5 w-fit">
+          <div className="flex flex-wrap gap-1 bg-gray-100 rounded-lg p-0.5">
             {SUBTYPES.map((st) => (
               <button
                 key={st}
