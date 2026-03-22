@@ -1,0 +1,20 @@
+name: Telegram Deploy Notification
+on:
+  push:
+    branches: [develop, main]
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Telegram notification
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          format: markdown
+          message: |
+            *${{ github.ref_name == 'main' && '🚀 Production' || '🧪 Staging' }} Deploy*
+
+            ${{ github.event.head_commit.message }}
+
+            by ${{ github.actor }}
