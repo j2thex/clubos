@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { addQuest, updateQuest, deleteQuest } from "./actions";
 import { useLanguage } from "@/lib/i18n/provider";
+import { t as translate } from "@/lib/i18n";
 import { IconPicker } from "@/components/icon-picker";
 import { LanguageTabs } from "@/components/language-tabs";
 import { DynamicIcon } from "@/components/dynamic-icon";
@@ -36,12 +37,27 @@ interface BadgeOption {
 }
 
 const TEMPLATES = [
-  { titleKey: "admin.quickFollowInstagram", descKey: "admin.quickFollowInstagramDesc", link: "", rewardSpins: 1, questType: "default" },
-  { titleKey: "admin.quickFollowTiktok", descKey: "admin.quickFollowTiktokDesc", link: "", rewardSpins: 1, questType: "default" },
-  { titleKey: "admin.quickGoogleReview", descKey: "admin.quickGoogleReviewDesc", link: "", rewardSpins: 2, questType: "default" },
-  { titleKey: "admin.quickReferFriend", descKey: "admin.quickReferFriendDesc", link: "", rewardSpins: 2, questType: "referral" },
-  { titleKey: "admin.quickFeedback", descKey: "admin.quickFeedbackDesc", link: "", rewardSpins: 1, questType: "feedback" },
-  { titleKey: "admin.quickTutorial", descKey: "admin.quickTutorialDesc", link: "", rewardSpins: 1, questType: "tutorial" },
+  { titleKey: "admin.quickFollowInstagram", descKey: "admin.quickFollowInstagramDesc", link: "", rewardSpins: 1, questType: "default", icon: "instagram", proofMode: "none" },
+  { titleKey: "admin.quickFollowTiktok", descKey: "admin.quickFollowTiktokDesc", link: "", rewardSpins: 1, questType: "default", icon: "tiktok", proofMode: "none" },
+  { titleKey: "admin.quickFollowYoutube", descKey: "admin.quickFollowYoutubeDesc", link: "", rewardSpins: 1, questType: "default", icon: "youtube", proofMode: "none" },
+  { titleKey: "admin.quickJoinWhatsapp", descKey: "admin.quickJoinWhatsappDesc", link: "", rewardSpins: 1, questType: "default", icon: "message-circle", proofMode: "none" },
+  { titleKey: "admin.quickGoogleReview", descKey: "admin.quickGoogleReviewDesc", link: "", rewardSpins: 2, questType: "default", icon: "google-maps", proofMode: "none" },
+  { titleKey: "admin.quickPostPhoto", descKey: "admin.quickPostPhotoDesc", link: "", rewardSpins: 1, questType: "default", icon: "camera", proofMode: "optional" },
+  { titleKey: "admin.quickAttendEvent", descKey: "admin.quickAttendEventDesc", link: "", rewardSpins: 1, questType: "default", icon: "calendar", proofMode: "none" },
+  { titleKey: "admin.quickCheckIn", descKey: "admin.quickCheckInDesc", link: "", rewardSpins: 1, questType: "default", icon: "map-pin", proofMode: "none" },
+  { titleKey: "admin.quickVisitWebsite", descKey: "admin.quickVisitWebsiteDesc", link: "", rewardSpins: 1, questType: "default", icon: "globe", proofMode: "none" },
+  { titleKey: "admin.quickReferFriend", descKey: "admin.quickReferFriendDesc", link: "", rewardSpins: 2, questType: "referral", icon: "user-plus", proofMode: "none" },
+  { titleKey: "admin.quickFeedback", descKey: "admin.quickFeedbackDesc", link: "", rewardSpins: 1, questType: "feedback", icon: "message-circle", proofMode: "required" },
+  { titleKey: "admin.quickTutorial", descKey: "admin.quickTutorialDesc", link: "", rewardSpins: 1, questType: "tutorial", icon: "book-open", proofMode: "none" },
+];
+
+// Templates that get bulk-created with "Add All Common"
+const COMMON_TEMPLATE_KEYS = [
+  "admin.quickFollowInstagram",
+  "admin.quickFollowTiktok",
+  "admin.quickGoogleReview",
+  "admin.quickReferFriend",
+  "admin.quickFeedback",
 ];
 
 export function QuestManager({
@@ -99,28 +115,34 @@ export function QuestManager({
   const { t } = useLanguage();
 
   function applyTemplate(tmpl: typeof TEMPLATES[number]) {
-    setNewTitle(t(tmpl.titleKey));
-    setNewDesc(t(tmpl.descKey));
+    // Auto-fill both languages from dictionaries
+    setNewTitle(translate("en", tmpl.titleKey));
+    setNewDesc(translate("en", tmpl.descKey));
+    setNewTitleEs(translate("es", tmpl.titleKey));
+    setNewDescEs(translate("es", tmpl.descKey));
     setNewLink(tmpl.link);
     setNewReward(String(tmpl.rewardSpins));
     setNewQuestType(tmpl.questType);
+    setNewIcon(tmpl.icon);
+    setNewProofMode(tmpl.proofMode);
     // Auto-fill Google Review link if available
     if (tmpl.titleKey === "admin.quickGoogleReview" && googleReviewUrl) {
       setNewLink(googleReviewUrl);
     }
     if (tmpl.questType === "feedback") {
       setNewMultiUse(true);
-      setNewProofMode("required");
       setNewProofPlaceholder("");
       setNewTutorialSteps([]);
     } else if (tmpl.questType === "tutorial") {
       setNewMultiUse(false);
-      setNewProofMode("none");
       setNewTutorialSteps([""]);
       setNewProofPlaceholder("");
     } else {
+      setNewMultiUse(false);
       setNewTutorialSteps([]);
+      setNewProofPlaceholder("");
     }
+    setShowForm(true);
   }
 
   function handleNewQuestTypeChange(type: string) {
@@ -266,6 +288,45 @@ export function QuestManager({
         setShowForm(false);
         setTimeout(() => setSuccessMsg(null), 4000);
       }
+    });
+  }
+
+  function handleAddAllCommon() {
+    setError(null);
+    startTransition(async () => {
+      const commonTemplates = TEMPLATES.filter(tmpl => COMMON_TEMPLATE_KEYS.includes(tmpl.titleKey));
+      const existingTitles = new Set(quests.map(q => q.title.toLowerCase()));
+      const toCreate = commonTemplates.filter(tmpl => !existingTitles.has(translate("en", tmpl.titleKey).toLowerCase()));
+
+      if (toCreate.length === 0) {
+        setSuccessMsg(t("admin.questCreated", { title: "All common quests already exist" }));
+        setTimeout(() => setSuccessMsg(null), 4000);
+        return;
+      }
+
+      for (const tmpl of toCreate) {
+        const fd = new FormData();
+        fd.set("title", translate("en", tmpl.titleKey));
+        fd.set("description", translate("en", tmpl.descKey));
+        fd.set("title_es", translate("es", tmpl.titleKey));
+        fd.set("description_es", translate("es", tmpl.descKey));
+        fd.set("link", tmpl.titleKey === "admin.quickGoogleReview" && googleReviewUrl ? googleReviewUrl : tmpl.link);
+        fd.set("reward_spins", String(tmpl.rewardSpins));
+        fd.set("quest_type", tmpl.questType);
+        fd.set("proof_mode", tmpl.proofMode);
+        fd.set("multi_use", tmpl.questType === "feedback" ? "1" : "0");
+        fd.set("is_public", "0");
+        fd.set("icon", tmpl.icon);
+        fd.set("badge_id", "");
+        fd.set("proof_placeholder", "");
+        const result = await addQuest(clubId, fd, clubSlug);
+        if ("error" in result) {
+          setError(result.error);
+          return;
+        }
+      }
+      setSuccessMsg(t("admin.questCreated", { title: `${toCreate.length} quests` }));
+      setTimeout(() => setSuccessMsg(null), 4000);
     });
   }
 
@@ -619,15 +680,26 @@ export function QuestManager({
         <div>
           {/* Templates */}
           <div className="px-5 py-4 border-t border-gray-100 bg-gray-50">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">{t("admin.quickAdd")}</p>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{t("admin.quickAdd")}</p>
+              <button
+                type="button"
+                onClick={handleAddAllCommon}
+                disabled={isPending}
+                className="text-xs px-3 py-1.5 rounded-lg bg-gray-800 text-white hover:bg-gray-700 transition-colors disabled:opacity-50"
+              >
+                {t("admin.addAllCommon")}
+              </button>
+            </div>
             <div className="flex flex-wrap gap-2">
               {TEMPLATES.map((tmpl) => (
                 <button
                   key={tmpl.titleKey}
                   type="button"
                   onClick={() => applyTemplate(tmpl)}
-                  className="text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors"
+                  className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 hover:bg-white hover:border-gray-300 transition-colors"
                 >
+                  <DynamicIcon name={tmpl.icon} size={14} />
                   {t(tmpl.titleKey)}
                 </button>
               ))}
