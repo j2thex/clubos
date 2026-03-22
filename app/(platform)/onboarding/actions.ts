@@ -12,6 +12,8 @@ export async function createOrgAndClub(formData: FormData) {
   const password = formData.get("password") as string;
   const timezone = (formData.get("timezone") as string) || "UTC";
   const currency = (formData.get("currency") as string) || "EUR";
+  const tagsJson = formData.get("tags") as string;
+  const tags: string[] = tagsJson ? JSON.parse(tagsJson) : [];
 
   if (!clubName) {
     return { error: "Club name is required" };
@@ -45,6 +47,7 @@ export async function createOrgAndClub(formData: FormData) {
       slug: generateSlug(clubName),
       timezone,
       currency,
+      tags,
     })
     .select()
     .single();
@@ -141,6 +144,14 @@ export async function updateBranding(formData: FormData) {
 export async function seedClubDefaults(clubId: string) {
   const supabase = createAdminClient();
 
+  // Read club tags for offer suggestions
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("tags")
+    .eq("id", clubId)
+    .single();
+  const tags: string[] = club?.tags ?? [];
+
   // Upsert is idempotent — safe on page refresh and concurrent requests.
   // Unique constraints: wheel_configs(club_id, display_order), membership_periods(club_id, name)
 
@@ -163,4 +174,52 @@ export async function seedClubDefaults(clubId: string) {
     active: true,
   }, { onConflict: "club_id,name", ignoreDuplicates: true });
 
+  // Auto-enable tag-suggested offers
+  if (tags.length > 0) {
+    const { TAG_OFFER_SUGGESTIONS } = await import("@/lib/tags");
+
+    // Collect all suggested offer names from selected tags
+    const suggestedNames = new Set<string>();
+    for (const tag of tags) {
+      const names = TAG_OFFER_SUGGESTIONS[tag];
+      if (names) {
+        for (const name of names) suggestedNames.add(name);
+      }
+    }
+
+    if (suggestedNames.size > 0) {
+      // Look up offer catalog IDs by name
+      const { data: catalogOffers } = await supabase
+        .from("offer_catalog")
+        .select("id, name")
+        .in("name", Array.from(suggestedNames));
+
+      if (catalogOffers && catalogOffers.length > 0) {
+        // Get current max display_order
+        const { data: existingOffers } = await supabase
+          .from("club_offers")
+          .select("offer_id")
+          .eq("club_id", clubId);
+
+        const existingIds = new Set((existingOffers ?? []).map(o => o.offer_id));
+        let displayOrder = (existingOffers ?? []).length;
+
+        const toInsert = catalogOffers
+          .filter(o => !existingIds.has(o.id))
+          .map(o => ({
+            club_id: clubId,
+            offer_id: o.id,
+            is_public: true,
+            orderable: false,
+            display_order: displayOrder++,
+          }));
+
+        if (toInsert.length > 0) {
+          await supabase
+            .from("club_offers")
+            .upsert(toInsert, { onConflict: "club_id,offer_id", ignoreDuplicates: true });
+        }
+      }
+    }
+  }
 }
