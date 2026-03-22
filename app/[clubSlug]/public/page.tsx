@@ -7,6 +7,7 @@ import { PhotoGallery } from "@/components/club/photo-gallery";
 import { InviteForm } from "./invite-form";
 import { InviteSocialButtons } from "./invite-social-buttons";
 import { PublicLoginForm } from "./public-login-form";
+import { getTagLabel } from "@/lib/tags";
 import { localized } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 import { DynamicIcon } from "@/components/dynamic-icon";
@@ -45,7 +46,7 @@ export default async function PublicProfilePage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name, invite_only, invite_mode, login_mode, hide_member_login, club_branding(logo_url, cover_url, primary_color, secondary_color, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website)")
+    .select("id, name, invite_only, invite_mode, login_mode, hide_member_login, tags, club_branding(logo_url, cover_url, primary_color, secondary_color, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website)")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -170,6 +171,15 @@ export default async function PublicProfilePage({
             />
           )}
           <h1 className="text-2xl font-bold text-white">{club.name}</h1>
+          {club.tags && club.tags.length > 0 && (
+            <div className="mt-2 flex flex-wrap justify-center gap-1.5">
+              {club.tags.map((tag: string) => (
+                <span key={tag} className="px-2.5 py-0.5 text-xs font-medium rounded-full bg-white/20 text-white/90">
+                  {getTagLabel(tag, locale)}
+                </span>
+              ))}
+            </div>
+          )}
           {(branding?.social_instagram || branding?.social_whatsapp || branding?.social_telegram || branding?.social_google_maps || branding?.social_website) && (
             <div className="mt-4 flex justify-center">
               <SocialLinks
