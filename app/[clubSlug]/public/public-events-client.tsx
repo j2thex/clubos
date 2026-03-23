@@ -20,13 +20,13 @@ interface PublicEvent {
 
 export function PublicEventsClient({ events }: { events: PublicEvent[] }) {
   const { t, locale } = useLanguage();
-  const [view, setView] = useState<"list" | "calendar">("list");
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [view, setView] = useState<"list" | "calendar">("calendar");
 
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-
   const upcomingEvents = useMemo(() => events.filter((e) => e.date >= todayStr), [events, todayStr]);
+  const initialDate = upcomingEvents[0]?.date ?? null;
+  const [selectedDate, setSelectedDate] = useState<string | null>(initialDate);
 
   function formatDate(d: string) {
     return new Date(d + "T00:00:00").toLocaleDateString(getDateLocale(locale), {
