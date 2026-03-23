@@ -2,6 +2,7 @@
 export const CONTENT_ICONS = [
   // Social & Marketing
   { name: "instagram", label: "Instagram" },
+  { name: "tiktok", label: "TikTok" },
   { name: "youtube", label: "YouTube" },
   { name: "twitter", label: "Twitter" },
   { name: "facebook", label: "Facebook" },
@@ -46,6 +47,7 @@ export const CONTENT_ICONS = [
   { name: "plane", label: "Travel" },
   { name: "tent", label: "Camping" },
   { name: "building-2", label: "Building" },
+  { name: "globe", label: "Globe" },
   { name: "home", label: "Home" },
 
   // Rewards & Tokens
@@ -65,6 +67,7 @@ export const CONTENT_ICONS = [
   { name: "calendar", label: "Calendar" },
   { name: "clock", label: "Clock" },
   { name: "tag", label: "Tag" },
+  { name: "book-open", label: "Book" },
   { name: "bookmark", label: "Bookmark" },
   { name: "lock", label: "Lock" },
   { name: "key", label: "Key" },

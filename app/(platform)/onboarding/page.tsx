@@ -1,11 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { createOrgAndClub } from "./actions";
+import { TagPicker } from "@/components/tag-picker";
 import { useLanguage } from "@/lib/i18n/provider";
 
 function formAction(_prev: { error: string } | undefined, formData: FormData) {
@@ -14,7 +15,8 @@ function formAction(_prev: { error: string } | undefined, formData: FormData) {
 
 export default function OnboardingPage() {
   const [state, dispatch, isPending] = useActionState(formAction, undefined);
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const detectedTimezone = typeof window !== "undefined"
     ? Intl.DateTimeFormat().resolvedOptions().timeZone
     : "UTC";
@@ -61,6 +63,15 @@ export default function OnboardingPage() {
                 required
                 className="focus-visible:border-green-500 focus-visible:ring-green-500/30"
               />
+            </div>
+
+            {/* Club Type Tags */}
+            <div className="space-y-2">
+              <Label className="text-gray-800">
+                {t("onboarding.tagsLabel")}
+              </Label>
+              <TagPicker value={selectedTags} onChange={setSelectedTags} locale={locale} />
+              <p className="text-xs text-gray-400">{t("onboarding.tagsHint")}</p>
             </div>
 
             {/* Owner Email */}

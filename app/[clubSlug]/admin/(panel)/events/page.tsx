@@ -28,7 +28,7 @@ export default async function EventsPage({
       supabase
         .from("events")
         .select(
-          "id, title, description, date, time, price, image_url, icon, link, reward_spins, is_public, title_es, description_es"
+          "id, title, description, date, time, price, image_url, icon, link, reward_spins, is_public, title_es, description_es, recurrence_rule, recurrence_parent_id, recurrence_end_date"
         )
         .eq("club_id", club.id)
         .eq("active", true)
@@ -69,6 +69,9 @@ export default async function EventsPage({
     is_public: e.is_public ?? false,
     title_es: e.title_es ?? null,
     description_es: e.description_es ?? null,
+    recurrence_rule: e.recurrence_rule ?? null,
+    recurrence_parent_id: e.recurrence_parent_id ?? null,
+    recurrence_end_date: e.recurrence_end_date ?? null,
   }));
 
   return (

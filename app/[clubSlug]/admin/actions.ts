@@ -71,6 +71,28 @@ export async function updateHideMemberLogin(
   return { ok: true };
 }
 
+export async function updateClubTags(
+  clubId: string,
+  tags: string[],
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  // Normalize tags: lowercase, trim, remove duplicates
+  const normalized = [...new Set(tags.map(t => t.trim().toLowerCase().replace(/\s+/g, "-")).filter(Boolean))];
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ tags: normalized })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to update tags" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/public`);
+  return { ok: true };
+}
+
 export async function updateTelegramConfig(
   clubId: string,
   botToken: string,
@@ -604,11 +626,38 @@ export async function deleteQuest(
 
 // --- Event actions ---
 
+function generateOccurrenceDates(startDate: string, rule: string, endDate: string): string[] {
+  const dates: string[] = [];
+  const start = new Date(startDate + "T00:00:00");
+  const end = new Date(endDate + "T00:00:00");
+  let current = new Date(start);
+
+  // Skip the first occurrence (that's the parent)
+  while (dates.length < 52) {
+    if (rule === "weekly") {
+      current.setDate(current.getDate() + 7);
+    } else if (rule === "biweekly") {
+      current.setDate(current.getDate() + 14);
+    } else if (rule === "monthly") {
+      const day = start.getDate();
+      current.setMonth(current.getMonth() + 1);
+      // Clamp to last day of month (handles Jan 31 → Feb 28)
+      const lastDay = new Date(current.getFullYear(), current.getMonth() + 1, 0).getDate();
+      current.setDate(Math.min(day, lastDay));
+    } else {
+      break;
+    }
+    if (current > end) break;
+    dates.push(current.toISOString().split("T")[0]);
+  }
+  return dates;
+}
+
 export async function addEvent(
   clubId: string,
   formData: FormData,
   clubSlug: string,
-): Promise<{ error: string } | { ok: true }> {
+): Promise<{ error: string } | { ok: true; count?: number }> {
   const title = (formData.get("title") as string)?.trim();
   const description = (formData.get("description") as string)?.trim() || null;
   const date = formData.get("date") as string;
@@ -622,12 +671,16 @@ export async function addEvent(
   const imageFile = formData.get("image") as File | null;
   const titleEs = (formData.get("title_es") as string)?.trim() || null;
   const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
+  const recurrenceRule = (formData.get("recurrence_rule") as string) || null;
+  const recurrenceEndDate = (formData.get("recurrence_end_date") as string) || null;
 
   if (!title) return { error: "Title is required" };
   if (!date) return { error: "Date is required" };
   if (rewardSpins < 0) return { error: "Reward cannot be negative" };
 
   const supabase = createAdminClient();
+
+  const price = priceStr ? Number(priceStr) : null;
 
   let imageUrl: string | null = null;
   if (imageFile && imageFile.size > 0) {
@@ -637,26 +690,67 @@ export async function addEvent(
     imageUrl = result.url;
   }
 
-  const { error } = await supabase.from("events").insert({
-    club_id: clubId,
-    title,
-    description,
-    date,
-    time: time || null,
-    price: priceStr ? Number(priceStr) : null,
-    image_url: imageUrl,
-    icon,
-    link,
-    reward_spins: rewardSpins,
-    is_public: isPublic,
-    title_es: titleEs,
-    description_es: descriptionEs,
-  });
+  if (recurrenceRule && recurrenceEndDate) {
+    const { data: parentEvent, error } = await supabase
+      .from("events")
+      .insert({
+        club_id: clubId,
+        title, description, date, time: time || null,
+        price: price || null, image_url: imageUrl,
+        link: link || null, reward_spins: rewardSpins,
+        is_public: isPublic, icon: icon || null,
+        title_es: titleEs || null, description_es: descriptionEs || null,
+        recurrence_rule: recurrenceRule,
+        recurrence_end_date: recurrenceEndDate,
+      })
+      .select("id")
+      .single();
 
-  if (error) return { error: "Failed to add event" };
+    if (error || !parentEvent) {
+      return { error: "Failed to create event" };
+    }
 
-  revalidatePath(`/${clubSlug}/admin`, "layout");
-  return { ok: true };
+    const occurrenceDates = generateOccurrenceDates(date, recurrenceRule, recurrenceEndDate);
+
+    if (occurrenceDates.length > 0) {
+      const children = occurrenceDates.map(d => ({
+        club_id: clubId,
+        title, description, date: d, time: time || null,
+        price: price || null, image_url: imageUrl,
+        link: link || null, reward_spins: rewardSpins,
+        is_public: isPublic, icon: icon || null,
+        title_es: titleEs || null, description_es: descriptionEs || null,
+        recurrence_parent_id: parentEvent.id,
+      }));
+
+      await supabase.from("events").insert(children);
+    }
+
+    revalidatePath(`/${clubSlug}/admin`, "layout");
+    return { ok: true, count: occurrenceDates.length + 1 };
+  } else {
+    // Existing non-recurring insert
+    const { error } = await supabase.from("events").insert({
+      club_id: clubId,
+      title,
+      description,
+      date,
+      time: time || null,
+      price: price || null,
+      image_url: imageUrl,
+      link: link || null,
+      reward_spins: rewardSpins,
+      is_public: isPublic,
+      icon: icon || null,
+      title_es: titleEs || null,
+      description_es: descriptionEs || null,
+    });
+
+    if (error) return { error: "Failed to add event" };
+
+    revalidatePath(`/${clubSlug}/admin`, "layout");
+    return { ok: true };
+  }
 }
 
 export async function updateEvent(
@@ -677,6 +771,7 @@ export async function updateEvent(
   const imageFile = formData.get("image") as File | null;
   const titleEs = (formData.get("title_es") as string)?.trim() || null;
   const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
+  const scope = (formData.get("scope") as string) || "single";
 
   if (!title) return { error: "Title is required" };
   if (!date) return { error: "Date is required" };
@@ -697,6 +792,7 @@ export async function updateEvent(
     description_es: descriptionEs,
   };
 
+  let imageUrl: string | undefined;
   if (imageFile && imageFile.size > 0) {
     // Delete old image if exists
     const { data: existing } = await supabase
@@ -714,14 +810,56 @@ export async function updateEvent(
     const result = await uploadEventImage(existing?.club_id ?? "", imageFile);
     if ("error" in result) return { error: result.error };
     updates.image_url = result.url;
+    imageUrl = result.url;
   }
 
-  const { error } = await supabase
-    .from("events")
-    .update(updates)
-    .eq("id", eventId);
+  if (scope === "single") {
+    const { error } = await supabase
+      .from("events")
+      .update(updates)
+      .eq("id", eventId);
 
-  if (error) return { error: "Failed to update event" };
+    if (error) return { error: "Failed to update event" };
+  }
+
+  if (scope === "future") {
+    // Get this event's info to find siblings
+    const { data: thisEvent } = await supabase
+      .from("events")
+      .select("date, recurrence_parent_id")
+      .eq("id", eventId)
+      .single();
+
+    if (thisEvent) {
+      const parentId = thisEvent.recurrence_parent_id ?? eventId;
+      const today = new Date().toISOString().split("T")[0];
+      const fromDate = thisEvent.date > today ? thisEvent.date : today;
+
+      // Update all future siblings (and parent if applicable)
+      const updateData: Record<string, unknown> = {
+        title, description, time: time || null,
+        price: priceStr ? Number(priceStr) : null, link: link || null,
+        reward_spins: rewardSpins, is_public: isPublic,
+        icon: icon || null,
+        title_es: titleEs || null, description_es: descriptionEs || null,
+      };
+      if (imageUrl !== undefined) updateData.image_url = imageUrl;
+
+      // Update children of same parent
+      await supabase
+        .from("events")
+        .update(updateData)
+        .eq("recurrence_parent_id", parentId)
+        .gte("date", fromDate);
+
+      // Also update the parent itself if it's in the future
+      await supabase
+        .from("events")
+        .update(updateData)
+        .eq("id", parentId)
+        .gte("date", fromDate);
+    }
+  }
 
   revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
@@ -730,9 +868,44 @@ export async function updateEvent(
 export async function deleteEvent(
   eventId: string,
   clubSlug: string,
+  scope: string = "single",
 ): Promise<{ error: string } | { ok: true }> {
   const supabase = createAdminClient();
 
+  if (scope === "future") {
+    const { data: thisEvent } = await supabase
+      .from("events")
+      .select("date, recurrence_parent_id")
+      .eq("id", eventId)
+      .single();
+
+    if (thisEvent) {
+      const parentId = thisEvent.recurrence_parent_id ?? eventId;
+
+      // Delete all future siblings
+      await supabase
+        .from("events")
+        .delete()
+        .eq("recurrence_parent_id", parentId)
+        .gte("date", thisEvent.date);
+
+      // Delete the parent too if it's this event or a future one
+      const { data: parent } = await supabase
+        .from("events")
+        .select("date")
+        .eq("id", parentId)
+        .single();
+
+      if (parent && parent.date >= thisEvent.date) {
+        await supabase.from("events").delete().eq("id", parentId);
+      }
+    }
+
+    revalidatePath(`/${clubSlug}/admin`, "layout");
+    return { ok: true };
+  }
+
+  // Single delete (existing logic)
   // Delete image from storage if exists
   const { data: event } = await supabase
     .from("events")

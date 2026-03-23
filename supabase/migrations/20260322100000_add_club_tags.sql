@@ -1,0 +1,2 @@
+ALTER TABLE clubs ADD COLUMN IF NOT EXISTS tags text[] NOT NULL DEFAULT '{}';
+CREATE INDEX IF NOT EXISTS idx_clubs_tags ON clubs USING GIN (tags);

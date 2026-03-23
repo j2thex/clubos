@@ -7,10 +7,12 @@ import { PhotoGallery } from "@/components/club/photo-gallery";
 import { InviteForm } from "./invite-form";
 import { InviteSocialButtons } from "./invite-social-buttons";
 import { PublicLoginForm } from "./public-login-form";
+import { getTagLabel } from "@/lib/tags";
 import { localized } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { LanguageSwitcher } from "@/lib/i18n/switcher";
+import { PublicEventsClient } from "./public-events-client";
 
 export async function generateMetadata({
   params,
@@ -45,7 +47,7 @@ export default async function PublicProfilePage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name, invite_only, invite_mode, login_mode, hide_member_login, club_branding(logo_url, cover_url, primary_color, secondary_color, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website)")
+    .select("id, name, invite_only, invite_mode, login_mode, hide_member_login, tags, club_branding(logo_url, cover_url, primary_color, secondary_color, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website)")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -58,8 +60,6 @@ export default async function PublicProfilePage({
     ? club.club_branding[0]
     : club.club_branding;
 
-  const today = new Date().toISOString().split("T")[0];
-
   const [{ data: events }, { data: quests }, { data: offers }, { data: galleryImages }, { data: inviteButtons }] =
     await Promise.all([
       supabase
@@ -68,7 +68,6 @@ export default async function PublicProfilePage({
         .eq("club_id", club.id)
         .eq("active", true)
         .eq("is_public", true)
-        .gte("date", today)
         .order("date", { ascending: true }),
       supabase
         .from("quests")
@@ -123,22 +122,6 @@ export default async function PublicProfilePage({
     }
   }
 
-  function formatDate(d: string) {
-    return new Date(d + "T00:00:00").toLocaleDateString(locale === "es" ? "es-ES" : "en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-    });
-  }
-
-  function formatTime(t: string) {
-    const [h, m] = t.split(":");
-    const hour = parseInt(h);
-    const ampm = hour >= 12 ? "PM" : "AM";
-    const h12 = hour % 12 || 12;
-    return `${h12}:${m} ${ampm}`;
-  }
-
   return (
     <div className="min-h-screen club-page-bg">
       {/* Hero */}
@@ -170,6 +153,15 @@ export default async function PublicProfilePage({
             />
           )}
           <h1 className="text-2xl font-bold text-white">{club.name}</h1>
+          {club.tags && club.tags.length > 0 && (
+            <div className="mt-2 flex flex-wrap justify-center gap-1.5">
+              {club.tags.map((tag: string) => (
+                <span key={tag} className="px-2.5 py-0.5 text-xs font-medium rounded-full bg-white/20 text-white/90">
+                  {getTagLabel(tag, locale)}
+                </span>
+              ))}
+            </div>
+          )}
           {(branding?.social_instagram || branding?.social_whatsapp || branding?.social_telegram || branding?.social_google_maps || branding?.social_website) && (
             <div className="mt-4 flex justify-center">
               <SocialLinks
@@ -215,66 +207,6 @@ export default async function PublicProfilePage({
           <div className="bg-white rounded-2xl shadow-lg p-5">
             <p className="text-sm text-gray-500 mb-3 text-center">{localized("Already a member?", "¿Ya eres socio?", locale)}</p>
             <PublicLoginForm loginMode={club.login_mode ?? "code_only"} clubSlug={clubSlug} />
-          </div>
-        )}
-
-        {/* Events */}
-        {hasEvents && (
-          <div>
-            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-2">
-              {localized("Upcoming Events", "Próximos Eventos", locale)}
-            </h2>
-            <div className="space-y-3">
-              {events.map((ev) => (
-                <div key={ev.id} className="bg-white rounded-2xl shadow overflow-hidden">
-                  {ev.image_url && (
-                    <img
-                      src={ev.image_url}
-                      alt=""
-                      className="w-full h-36 object-cover"
-                    />
-                  )}
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-900">{localized(ev.title, ev.title_es, locale)}</p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {formatDate(ev.date)}
-                          {ev.time && ` ${localized("at", "a las", locale)} ${formatTime(ev.time)}`}
-                        </p>
-                        {ev.description && (
-                          <p className="text-xs text-gray-400 mt-1">{localized(ev.description, ev.description_es, locale)}</p>
-                        )}
-                      </div>
-                      <div className="text-right shrink-0">
-                        {ev.price != null ? (
-                          <span className="text-sm font-bold text-gray-900">${Number(ev.price).toFixed(2)}</span>
-                        ) : (
-                          <span className="text-sm font-bold text-green-600">{localized("Free", "Gratis", locale)}</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 mt-3">
-                      {ev.reward_spins > 0 && (
-                        <span className="text-xs club-tint-text font-medium px-2 py-0.5 club-tint-bg rounded-full">
-                          +{ev.reward_spins} {ev.reward_spins === 1 ? "spin" : "spins"}
-                        </span>
-                      )}
-                      {ev.link && (
-                        <a
-                          href={ev.link.match(/^https?:\/\//) ? ev.link : `https://${ev.link}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs font-medium club-primary underline"
-                        >
-                          {localized("Learn more", "Más info", locale)}
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         )}
 
@@ -354,6 +286,30 @@ export default async function PublicProfilePage({
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Events */}
+        {hasEvents && (
+          <div>
+            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-2">
+              {localized("Upcoming Events", "Próximos Eventos", locale)}
+            </h2>
+            <PublicEventsClient
+              events={(events ?? []).map((ev) => ({
+                id: ev.id,
+                title: ev.title,
+                description: ev.description,
+                title_es: ev.title_es,
+                description_es: ev.description_es,
+                date: ev.date,
+                time: ev.time,
+                price: ev.price != null ? Number(ev.price) : null,
+                image_url: ev.image_url,
+                link: ev.link,
+                reward_spins: ev.reward_spins,
+              }))}
+            />
           </div>
         )}
 

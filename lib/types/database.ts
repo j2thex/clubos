@@ -48,6 +48,7 @@ export type Database = {
           telegram_chat_id: string | null;
           invite_only: boolean;
           hide_member_login: boolean;
+          tags: string[];
           claimed: boolean;
           created_at: string;
         };
@@ -64,6 +65,7 @@ export type Database = {
           telegram_chat_id?: string | null;
           invite_only?: boolean;
           hide_member_login?: boolean;
+          tags?: string[];
           claimed?: boolean;
           created_at?: string;
         };
@@ -80,6 +82,7 @@ export type Database = {
           telegram_chat_id?: string | null;
           invite_only?: boolean;
           hide_member_login?: boolean;
+          tags?: string[];
           claimed?: boolean;
           created_at?: string;
         };
