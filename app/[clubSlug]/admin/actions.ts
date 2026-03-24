@@ -460,7 +460,7 @@ export async function addQuest(
   const proofPlaceholder = (formData.get("proof_placeholder") as string)?.trim() || null;
   const tutorialStepsRaw = formData.get("tutorial_steps") as string | null;
   const icon = (formData.get("icon") as string)?.trim() || null;
-  const badgeId = (formData.get("badge_id") as string)?.trim() || null;
+  const awardBadge = formData.get("award_badge") === "1";
   const imageFile = formData.get("image") as File | null;
   const titleEs = (formData.get("title_es") as string)?.trim() || null;
   const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
@@ -492,13 +492,13 @@ export async function addQuest(
     imageUrl = result.url;
   }
 
-  const { error } = await supabase.from("quests").insert({
+  const { data: quest, error } = await supabase.from("quests").insert({
     club_id: clubId,
     title,
     description,
     link,
     icon,
-    badge_id: badgeId,
+    badge_id: null,
     reward_spins: rewardSpins,
     multi_use: effectiveMultiUse,
     is_public: isPublic,
@@ -510,9 +510,22 @@ export async function addQuest(
     tutorial_steps: tutorialSteps,
     title_es: titleEs,
     description_es: descriptionEs,
-  });
+  }).select("id").single();
 
   if (error) return { error: "Failed to add quest" };
+
+  // Auto-create badge if requested
+  if (awardBadge && quest) {
+    const { data: badge } = await supabase
+      .from("badges")
+      .insert({ club_id: clubId, name: title, icon: icon || null, color: "#6b7280" })
+      .select("id")
+      .single();
+
+    if (badge) {
+      await supabase.from("quests").update({ badge_id: badge.id }).eq("id", quest.id);
+    }
+  }
 
   revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
@@ -535,7 +548,7 @@ export async function updateQuest(
   const proofPlaceholder = (formData.get("proof_placeholder") as string)?.trim() || null;
   const tutorialStepsRaw = formData.get("tutorial_steps") as string | null;
   const icon = (formData.get("icon") as string)?.trim() || null;
-  const badgeId = (formData.get("badge_id") as string)?.trim() || null;
+  const awardBadge = formData.get("award_badge") === "1";
   const imageFile = formData.get("image") as File | null;
   const titleEs = (formData.get("title_es") as string)?.trim() || null;
   const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
@@ -549,6 +562,27 @@ export async function updateQuest(
   if (rewardSpins < 0) return { error: "Reward cannot be negative" };
 
   const supabase = createAdminClient();
+
+  // Get current quest to check existing badge_id and club_id
+  const { data: currentQuest } = await supabase
+    .from("quests")
+    .select("badge_id, club_id, image_url")
+    .eq("id", questId)
+    .single();
+
+  // Determine badge_id based on toggle
+  let badgeId: string | null = currentQuest?.badge_id ?? null;
+  if (awardBadge && !badgeId) {
+    // Create a new badge
+    const { data: badge } = await supabase
+      .from("badges")
+      .insert({ club_id: currentQuest?.club_id ?? "", name: title, icon: icon || null, color: "#6b7280" })
+      .select("id")
+      .single();
+    if (badge) badgeId = badge.id;
+  } else if (!awardBadge) {
+    badgeId = null;
+  }
 
   const updates: Record<string, unknown> = {
     title,
@@ -568,19 +602,13 @@ export async function updateQuest(
   };
 
   if (imageFile && imageFile.size > 0) {
-    const { data: quest } = await supabase
-      .from("quests")
-      .select("image_url, club_id")
-      .eq("id", questId)
-      .single();
-
-    if (quest?.image_url) {
+    if (currentQuest?.image_url) {
       const { deleteClubImage } = await import("@/lib/supabase/storage");
-      await deleteClubImage(quest.image_url);
+      await deleteClubImage(currentQuest.image_url);
     }
 
     const { uploadClubImage } = await import("@/lib/supabase/storage");
-    const result = await uploadClubImage(quest?.club_id ?? "", imageFile);
+    const result = await uploadClubImage(currentQuest?.club_id ?? "", imageFile);
     if ("error" in result) return { error: result.error };
     updates.image_url = result.url;
   }

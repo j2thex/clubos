@@ -29,25 +29,18 @@ interface Quest {
   badge_id: string | null;
 }
 
-interface BadgeOption {
-  id: string;
-  name: string;
-  icon: string | null;
-  color: string;
-}
-
 const TEMPLATES = [
   { titleKey: "admin.quickFollowInstagram", descKey: "admin.quickFollowInstagramDesc", link: "", rewardSpins: 1, questType: "default", icon: "instagram", proofMode: "none" },
-  { titleKey: "admin.quickFollowTiktok", descKey: "admin.quickFollowTiktokDesc", link: "", rewardSpins: 1, questType: "default", icon: "tiktok", proofMode: "none" },
+  { titleKey: "admin.quickFollowTiktok", descKey: "admin.quickFollowTiktokDesc", link: "", rewardSpins: 1, questType: "default", icon: "music-2", proofMode: "none" },
   { titleKey: "admin.quickFollowYoutube", descKey: "admin.quickFollowYoutubeDesc", link: "", rewardSpins: 1, questType: "default", icon: "youtube", proofMode: "none" },
   { titleKey: "admin.quickJoinWhatsapp", descKey: "admin.quickJoinWhatsappDesc", link: "", rewardSpins: 1, questType: "default", icon: "message-circle", proofMode: "none" },
-  { titleKey: "admin.quickGoogleReview", descKey: "admin.quickGoogleReviewDesc", link: "", rewardSpins: 2, questType: "default", icon: "google-maps", proofMode: "none" },
+  { titleKey: "admin.quickGoogleReview", descKey: "admin.quickGoogleReviewDesc", link: "", rewardSpins: 2, questType: "default", icon: "star", proofMode: "none" },
   { titleKey: "admin.quickPostPhoto", descKey: "admin.quickPostPhotoDesc", link: "", rewardSpins: 1, questType: "default", icon: "camera", proofMode: "optional" },
-  { titleKey: "admin.quickAttendEvent", descKey: "admin.quickAttendEventDesc", link: "", rewardSpins: 1, questType: "default", icon: "calendar", proofMode: "none" },
+  { titleKey: "admin.quickAttendEvent", descKey: "admin.quickAttendEventDesc", link: "", rewardSpins: 1, questType: "default", icon: "calendar-check", proofMode: "none" },
   { titleKey: "admin.quickCheckIn", descKey: "admin.quickCheckInDesc", link: "", rewardSpins: 1, questType: "default", icon: "map-pin", proofMode: "none" },
   { titleKey: "admin.quickVisitWebsite", descKey: "admin.quickVisitWebsiteDesc", link: "", rewardSpins: 1, questType: "default", icon: "globe", proofMode: "none" },
   { titleKey: "admin.quickReferFriend", descKey: "admin.quickReferFriendDesc", link: "", rewardSpins: 2, questType: "referral", icon: "user-plus", proofMode: "none" },
-  { titleKey: "admin.quickFeedback", descKey: "admin.quickFeedbackDesc", link: "", rewardSpins: 1, questType: "feedback", icon: "message-circle", proofMode: "required" },
+  { titleKey: "admin.quickFeedback", descKey: "admin.quickFeedbackDesc", link: "", rewardSpins: 1, questType: "feedback", icon: "message-square", proofMode: "required" },
   { titleKey: "admin.quickTutorial", descKey: "admin.quickTutorialDesc", link: "", rewardSpins: 1, questType: "tutorial", icon: "book-open", proofMode: "none" },
 ];
 
@@ -64,13 +57,11 @@ export function QuestManager({
   quests,
   clubId,
   clubSlug,
-  badges = [],
   googleReviewUrl,
 }: {
   quests: Quest[];
   clubId: string;
   clubSlug: string;
-  badges?: BadgeOption[];
   googleReviewUrl?: string | null;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -86,7 +77,7 @@ export function QuestManager({
   const [editProofPlaceholder, setEditProofPlaceholder] = useState("");
   const [editTutorialSteps, setEditTutorialSteps] = useState<string[]>([]);
   const [editIcon, setEditIcon] = useState<string | null>(null);
-  const [editBadgeId, setEditBadgeId] = useState("");
+  const [editAwardBadge, setEditAwardBadge] = useState(false);
   const [editLang, setEditLang] = useState<"en" | "es">("en");
   const [editTitleEs, setEditTitleEs] = useState("");
   const [editDescEs, setEditDescEs] = useState("");
@@ -103,7 +94,7 @@ export function QuestManager({
   const [newProofPlaceholder, setNewProofPlaceholder] = useState("");
   const [newTutorialSteps, setNewTutorialSteps] = useState<string[]>([]);
   const [newIcon, setNewIcon] = useState<string | null>(null);
-  const [newBadgeId, setNewBadgeId] = useState("");
+  const [newAwardBadge, setNewAwardBadge] = useState(false);
   const [newLang, setNewLang] = useState<"en" | "es">("en");
   const [newTitleEs, setNewTitleEs] = useState("");
   const [newDescEs, setNewDescEs] = useState("");
@@ -188,7 +179,7 @@ export function QuestManager({
     setEditProofPlaceholder(q.proof_placeholder ?? "");
     setEditTutorialSteps(q.tutorial_steps ?? []);
     setEditIcon(q.icon);
-    setEditBadgeId(q.badge_id ?? "");
+    setEditAwardBadge(q.badge_id != null);
     setEditTitleEs(q.title_es ?? "");
     setEditDescEs(q.description_es ?? "");
     setEditLang("en");
@@ -218,7 +209,7 @@ export function QuestManager({
         fd.set("tutorial_steps", JSON.stringify(editTutorialSteps.filter(s => s.trim())));
       }
       if (editIcon) fd.set("icon", editIcon);
-      fd.set("badge_id", editBadgeId);
+      fd.set("award_badge", editAwardBadge ? "1" : "0");
       fd.set("title_es", editTitleEs);
       fd.set("description_es", editDescEs);
       if (editImage) fd.set("image", editImage);
@@ -258,7 +249,7 @@ export function QuestManager({
         fd.set("tutorial_steps", JSON.stringify(newTutorialSteps.filter(s => s.trim())));
       }
       if (newIcon) fd.set("icon", newIcon);
-      fd.set("badge_id", newBadgeId);
+      fd.set("award_badge", newAwardBadge ? "1" : "0");
       fd.set("title_es", newTitleEs);
       fd.set("description_es", newDescEs);
       if (newImage) fd.set("image", newImage);
@@ -279,7 +270,7 @@ export function QuestManager({
         setNewProofPlaceholder("");
         setNewTutorialSteps([]);
         setNewIcon(null);
-        setNewBadgeId("");
+        setNewAwardBadge(false);
         setNewImage(null);
         setNewTitleEs("");
         setNewDescEs("");
@@ -317,7 +308,7 @@ export function QuestManager({
         fd.set("multi_use", tmpl.questType === "feedback" ? "1" : "0");
         fd.set("is_public", "0");
         fd.set("icon", tmpl.icon);
-        fd.set("badge_id", "");
+        fd.set("award_badge", "0");
         fd.set("proof_placeholder", "");
         const result = await addQuest(clubId, fd, clubSlug);
         if ("error" in result) {
@@ -578,21 +569,15 @@ export function QuestManager({
                       </select>
                     </div>
                     {renderQuestTypeFields(editQuestType, editProofMode, setEditProofMode, editProofPlaceholder, setEditProofPlaceholder, editTutorialSteps, setEditTutorialSteps)}
-                    {badges.length > 0 && (
-                      <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1">Award Badge</label>
-                        <select
-                          value={editBadgeId}
-                          onChange={(e) => setEditBadgeId(e.target.value)}
-                          className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
-                        >
-                          <option value="">No badge</option>
-                          {badges.map((b) => (
-                            <option key={b.id} value={b.id}>{b.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={editAwardBadge}
+                        onChange={(e) => setEditAwardBadge(e.target.checked)}
+                        className="rounded border-gray-300 text-gray-800 focus:ring-gray-400"
+                      />
+                      <span className="text-xs text-gray-600">Award badge on completion</span>
+                    </label>
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleSaveEdit(q.id)}
@@ -822,21 +807,15 @@ export function QuestManager({
             </select>
           </div>
           {renderQuestTypeFields(newQuestType, newProofMode, setNewProofMode, newProofPlaceholder, setNewProofPlaceholder, newTutorialSteps, setNewTutorialSteps)}
-          {badges.length > 0 && (
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Award Badge</label>
-              <select
-                value={newBadgeId}
-                onChange={(e) => setNewBadgeId(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
-              >
-                <option value="">No badge</option>
-                {badges.map((b) => (
-                  <option key={b.id} value={b.id}>{b.name}</option>
-                ))}
-              </select>
-            </div>
-          )}
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={newAwardBadge}
+              onChange={(e) => setNewAwardBadge(e.target.checked)}
+              className="rounded border-gray-300 text-gray-800 focus:ring-gray-400"
+            />
+            <span className="text-xs text-gray-600">Award badge on completion</span>
+          </label>
           <button
             type="submit"
             disabled={isPending || !newTitle.trim()}
