@@ -104,3 +104,35 @@ export async function approveCustomOffer(
   revalidatePath("/platform-admin");
   return { ok: true };
 }
+
+export async function approveClub(
+  clubId: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ approved: true, active: true })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to approve club" };
+
+  revalidatePath("/platform-admin");
+  return { ok: true };
+}
+
+export async function rejectClub(
+  clubId: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ approved: false })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to reject club" };
+
+  revalidatePath("/platform-admin");
+  return { ok: true };
+}

@@ -21,7 +21,7 @@ async function getClubs(): Promise<DiscoverClub[]> {
     const { data } = await supabase
       .from("clubs")
       .select("id, name, slug, latitude, longitude, address, city, country, tags, club_branding(logo_url, primary_color)")
-      .eq("active", true)
+      .eq("active", true).eq("approved", true)
       .order("created_at", { ascending: false });
 
     return (data ?? []).map((c) => {
@@ -52,7 +52,7 @@ async function getEvents(): Promise<DiscoverEvent[]> {
     const { data } = await supabase
       .from("events")
       .select("id, title, title_es, description, description_es, date, time, price, image_url, icon, location_name, latitude, longitude, clubs(name, slug, latitude, longitude, club_branding(logo_url, primary_color))")
-      .eq("active", true)
+      .eq("active", true).eq("approved", true)
       .eq("is_public", true)
       .gte("date", today)
       .order("date", { ascending: true })

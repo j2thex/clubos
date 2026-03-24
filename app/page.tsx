@@ -18,7 +18,7 @@ async function getLandingStats() {
   try {
     const supabase = createAdminClient();
     const [clubsResult, membersResult, eventsResult] = await Promise.all([
-      supabase.from("clubs").select("id", { count: "exact", head: true }).eq("active", true),
+      supabase.from("clubs").select("id", { count: "exact", head: true }).eq("active", true).eq("approved", true),
       supabase.from("members").select("id", { count: "exact", head: true }).eq("status", "active"),
       supabase.from("events").select("id", { count: "exact", head: true }),
     ]);
@@ -38,7 +38,7 @@ async function getPublicClubs() {
     const { data } = await supabase
       .from("clubs")
       .select("name, slug, club_branding(logo_url, cover_url, primary_color)")
-      .eq("active", true)
+      .eq("active", true).eq("approved", true)
       .order("created_at", { ascending: false })
       .limit(20);
     return (data ?? []).map((c) => {
@@ -90,7 +90,7 @@ async function getMembershipDeals() {
     const { data } = await supabase
       .from("membership_periods")
       .select("id, name, duration_months, price, clubs(name, slug, club_branding(logo_url, primary_color))")
-      .eq("active", true)
+      .eq("active", true).eq("approved", true)
       .not("price", "is", null)
       .order("price", { ascending: true })
       .limit(30);
