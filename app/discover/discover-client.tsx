@@ -196,7 +196,7 @@ export function DiscoverClient({
 
         {/* Filter tabs overlay at bottom of map */}
         <div className="absolute bottom-3 left-3 right-3 z-10">
-          <div className="bg-[oklch(0.06_0.02_150)]/85 backdrop-blur-md rounded-xl">
+          <div className="bg-black/70 backdrop-blur-lg rounded-xl border border-white/[0.08]">
             <FilterTabs activeTab={activeTab} onChange={setActiveTab} counts={counts} />
           </div>
         </div>

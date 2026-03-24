@@ -78,7 +78,7 @@ function ClusterMarker({ count, onClick }: { count: number; onClick: () => void 
   const size = count < 10 ? 36 : count < 50 ? 42 : 50;
   return (
     <button onClick={onClick} className="transition-transform hover:scale-110">
-      <div className="rounded-full bg-primary/80 border-2 border-primary/40 shadow-lg flex items-center justify-center text-white font-bold" style={{ width: size, height: size, fontSize: size < 40 ? 12 : 14 }}>
+      <div className="rounded-full bg-emerald-500 border-2 border-emerald-400/50 shadow-lg shadow-emerald-500/20 flex items-center justify-center text-white font-bold" style={{ width: size, height: size, fontSize: size < 40 ? 12 : 14 }}>
         {count}
       </div>
     </button>
