@@ -23,6 +23,62 @@ interface Quest {
   tutorial_steps: string[] | null;
 }
 
+function TutorialSteps({ questId, steps }: { questId: string; steps: string[] }) {
+  const [checked, setChecked] = useState<Set<number>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const stored = localStorage.getItem(`quest-steps-${questId}`);
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  function toggle(index: number) {
+    setChecked((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      try { localStorage.setItem(`quest-steps-${questId}`, JSON.stringify([...next])); } catch {}
+      return next;
+    });
+  }
+
+  const done = checked.size;
+  const total = steps.length;
+
+  return (
+    <div className="pl-14 space-y-1.5">
+      <div className="flex items-center gap-2">
+        <p className="text-xs font-medium text-gray-500">{done}/{total} steps</p>
+        {done === total && <span className="text-[10px] text-green-600 font-medium">✓ All done</span>}
+      </div>
+      <div className="space-y-1">
+        {steps.map((step, i) => (
+          <button
+            key={i}
+            onClick={() => toggle(i)}
+            className="flex items-start gap-2 w-full text-left group"
+          >
+            <div className={`mt-0.5 w-4 h-4 rounded border shrink-0 flex items-center justify-center transition-colors ${
+              checked.has(i) ? "bg-green-500 border-green-500 text-white" : "border-gray-300 group-hover:border-gray-400"
+            }`}>
+              {checked.has(i) && (
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </div>
+            <span className={`text-xs transition-colors ${checked.has(i) ? "text-gray-300 line-through" : "text-gray-500"}`}>
+              {step}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function QuestList({
   quests,
   completionCounts,
@@ -294,17 +350,7 @@ export function QuestList({
 
             {/* Tutorial steps display */}
             {isTutorial && q.tutorial_steps && q.tutorial_steps.length > 0 && (
-              <div className="pl-14">
-                <p className="text-xs font-medium text-gray-500 mb-1">{t("quest.tutorialSteps")}</p>
-                <ol className="space-y-0.5">
-                  {q.tutorial_steps.map((step, i) => (
-                    <li key={i} className="text-xs text-gray-400 flex gap-1.5">
-                      <span className="text-gray-300 shrink-0">{i + 1}.</span>
-                      <span>{step}</span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
+              <TutorialSteps questId={q.id} steps={q.tutorial_steps} />
             )}
 
             {/* Feedback textarea or proof input */}

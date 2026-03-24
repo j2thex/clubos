@@ -16,6 +16,7 @@ interface ClubInfo {
   spins: number;
   events: number;
   offers: number;
+  ownerEmail: string | null;
 }
 
 interface Stats {
@@ -212,6 +213,7 @@ export function PlatformAdminClient({
               <thead>
                 <tr className="text-white/40 text-xs uppercase tracking-wide">
                   <th className="text-left px-5 py-2">Club</th>
+                  <th className="text-left px-3 py-2">Owner</th>
                   <th className="text-right px-3 py-2">Members</th>
                   <th className="text-right px-3 py-2">Spins</th>
                   <th className="text-right px-3 py-2">Events</th>
@@ -237,6 +239,13 @@ export function PlatformAdminClient({
                           <p className="text-xs text-white/30 font-mono">{c.slug}</p>
                         </div>
                       </div>
+                    </td>
+                    <td className="px-3 py-3">
+                      {c.ownerEmail ? (
+                        <span className="text-xs text-gray-500 font-mono truncate block max-w-[180px]">{c.ownerEmail}</span>
+                      ) : (
+                        <span className="text-xs text-white/20">—</span>
+                      )}
                     </td>
                     <td className="text-right px-3 py-3 font-mono text-white/70">{c.members}</td>
                     <td className="text-right px-3 py-3 font-mono text-white/70">{c.spins}</td>

@@ -59,7 +59,7 @@ export default async function PlatformAdminPage({
     // All clubs with branding
     supabase
       .from("clubs")
-      .select("id, name, slug, active, claimed, invite_only, created_at, club_branding(logo_url, primary_color)")
+      .select("id, name, slug, active, claimed, invite_only, created_at, club_branding(logo_url, primary_color), club_owner_clubs(club_owners(email))")
       .eq("active", true)
       .order("created_at", { ascending: false }),
     // Recent activity
@@ -128,6 +128,22 @@ export default async function PlatformAdminPage({
 
   const clubList = (allClubs ?? []).map((c) => {
     const branding = Array.isArray(c.club_branding) ? c.club_branding[0] : c.club_branding;
+    // Extract owner email from nested join: club_owner_clubs -> club_owners
+    let ownerEmail: string | null = null;
+    const ownerClubs = c.club_owner_clubs;
+    if (ownerClubs) {
+      const entries = Array.isArray(ownerClubs) ? ownerClubs : [ownerClubs];
+      for (const entry of entries) {
+        const owner = entry.club_owners;
+        if (owner) {
+          const ownerObj = Array.isArray(owner) ? owner[0] : owner;
+          if (ownerObj?.email) {
+            ownerEmail = ownerObj.email;
+            break;
+          }
+        }
+      }
+    }
     return {
       id: c.id,
       name: c.name,
@@ -141,6 +157,7 @@ export default async function PlatformAdminPage({
       spins: clubSpinCounts.get(c.id) ?? 0,
       events: clubEventCounts.get(c.id) ?? 0,
       offers: clubOfferCounts.get(c.id) ?? 0,
+      ownerEmail,
     };
   });
 

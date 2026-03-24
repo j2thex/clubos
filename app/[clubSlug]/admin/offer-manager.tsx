@@ -114,7 +114,7 @@ export function OfferManager({
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
         {/* Subtype tabs */}
         <div className="px-5 py-3 border-b border-gray-100">
-          <div className="flex flex-wrap gap-1 bg-gray-100 rounded-lg p-0.5">
+          <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5 overflow-x-auto">
             {SUBTYPES.map((st) => (
               <button
                 key={st}
@@ -125,7 +125,7 @@ export function OfferManager({
                   setError(null);
                   setExpandedOfferId(null);
                 }}
-                className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+                className={`shrink-0 px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
                   activeTab === st
                     ? "bg-white text-gray-900 shadow-sm"
                     : "text-gray-500 hover:text-gray-700"
@@ -143,7 +143,7 @@ export function OfferManager({
                   setError(null);
                   setExpandedOfferId(null);
                 }}
-                className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+                className={`shrink-0 px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
                   isArchivedTab
                     ? "bg-white text-gray-900 shadow-sm"
                     : "text-gray-500 hover:text-gray-700"
