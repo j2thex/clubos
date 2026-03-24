@@ -1,5 +1,7 @@
 "use client";
 
+import { useState, useMemo } from "react";
+
 interface LogEntry {
   id: string;
   action: string;
@@ -15,16 +17,29 @@ const ACTION_CONFIG: Record<string, { label: string; color: string }> = {
   membership_assigned: { label: "Assigned membership", color: "bg-blue-100 text-blue-700" },
   membership_prolongated: { label: "Extended membership", color: "bg-blue-100 text-blue-700" },
   role_assigned: { label: "Assigned role", color: "bg-blue-100 text-blue-700" },
+  validity_updated: { label: "Updated validity", color: "bg-blue-100 text-blue-700" },
+  referral_reward: { label: "Referral reward", color: "bg-blue-100 text-blue-700" },
+  quest_auto_completed: { label: "Auto-completed", color: "bg-blue-100 text-blue-700" },
   spin_performed: { label: "Performed spin", color: "bg-purple-100 text-purple-700" },
   member_spin: { label: "Member spin", color: "bg-purple-100 text-purple-700" },
   quest_validated: { label: "Validated quest", color: "bg-green-100 text-green-700" },
   quest_approved: { label: "Approved quest", color: "bg-green-100 text-green-700" },
-  checkin: { label: "Checked in", color: "bg-green-100 text-green-700" },
+  quest_declined: { label: "Declined quest", color: "bg-red-100 text-red-700" },
+  checkin: { label: "Checked in", color: "bg-emerald-100 text-emerald-700" },
   order_fulfilled: { label: "Fulfilled order", color: "bg-amber-100 text-amber-700" },
   walkin_order: { label: "Walk-in order", color: "bg-amber-100 text-amber-700" },
   offer_order_fulfilled: { label: "Fulfilled order", color: "bg-amber-100 text-amber-700" },
   offer_walkin_order: { label: "Walk-in order", color: "bg-amber-100 text-amber-700" },
 };
+
+const CATEGORIES: { key: string; label: string; actions: string[]; color: string }[] = [
+  { key: "all", label: "All", actions: [], color: "bg-gray-100 text-gray-700" },
+  { key: "members", label: "Members", actions: ["member_created", "role_assigned", "membership_assigned", "membership_prolongated", "validity_updated", "referral_reward", "quest_auto_completed"], color: "bg-blue-100 text-blue-700" },
+  { key: "spins", label: "Spins", actions: ["member_spin", "spin_performed"], color: "bg-purple-100 text-purple-700" },
+  { key: "quests", label: "Quests", actions: ["quest_validated", "quest_approved", "quest_declined"], color: "bg-green-100 text-green-700" },
+  { key: "orders", label: "Orders", actions: ["offer_order_fulfilled", "offer_walkin_order", "order_fulfilled", "walkin_order"], color: "bg-amber-100 text-amber-700" },
+  { key: "events", label: "Events", actions: ["checkin"], color: "bg-emerald-100 text-emerald-700" },
+];
 
 function timeAgo(iso: string): string {
   const now = Date.now();
@@ -48,6 +63,24 @@ function timeAgo(iso: string): string {
 }
 
 export function LogViewer({ logs }: { logs: LogEntry[] }) {
+  const [activeCategory, setActiveCategory] = useState("all");
+
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: logs.length };
+    for (const cat of CATEGORIES) {
+      if (cat.key === "all") continue;
+      counts[cat.key] = logs.filter((l) => cat.actions.includes(l.action)).length;
+    }
+    return counts;
+  }, [logs]);
+
+  const filteredLogs = useMemo(() => {
+    if (activeCategory === "all") return logs;
+    const cat = CATEGORIES.find((c) => c.key === activeCategory);
+    if (!cat) return logs;
+    return logs.filter((l) => cat.actions.includes(l.action));
+  }, [logs, activeCategory]);
+
   if (logs.length === 0) {
     return (
       <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
@@ -57,39 +90,73 @@ export function LogViewer({ logs }: { logs: LogEntry[] }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg overflow-hidden divide-y divide-gray-100">
-      {logs.map((log) => {
-        const config = ACTION_CONFIG[log.action] ?? {
-          label: log.action,
-          color: "bg-gray-100 text-gray-700",
-        };
+    <div className="space-y-3">
+      {/* Category filter pills */}
+      <div className="flex gap-1.5 overflow-x-auto pb-1">
+        {CATEGORIES.map((cat) => {
+          const count = categoryCounts[cat.key] ?? 0;
+          const isActive = activeCategory === cat.key;
+          if (cat.key !== "all" && count === 0) return null;
+          return (
+            <button
+              key={cat.key}
+              onClick={() => setActiveCategory(cat.key)}
+              className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                isActive ? cat.color : "bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              }`}
+            >
+              {cat.label}
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                isActive ? "bg-white/40" : "bg-gray-200/60 text-gray-400"
+              }`}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
 
-        return (
-          <div key={log.id} className="px-4 py-3 flex items-start gap-3">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${config.color}`}>
-                  {config.label}
-                </span>
-                {log.target_member_code && (
-                  <span className="text-xs font-mono font-semibold text-gray-900">
-                    {log.target_member_code}
-                  </span>
-                )}
-              </div>
-              {log.details && (
-                <p className="text-xs text-gray-500 mt-1 truncate">{log.details}</p>
-              )}
-              <p className="text-[10px] text-gray-400 mt-1">
-                {log.staff_name ?? log.staff_code ?? "System"}
-              </p>
-            </div>
-            <span className="text-[10px] text-gray-400 whitespace-nowrap mt-0.5">
-              {timeAgo(log.created_at)}
-            </span>
+      {/* Log entries */}
+      <div className="bg-white rounded-2xl shadow-lg overflow-hidden divide-y divide-gray-100">
+        {filteredLogs.length === 0 ? (
+          <div className="px-4 py-8 text-center">
+            <p className="text-gray-400 text-sm">No entries in this category</p>
           </div>
-        );
-      })}
+        ) : (
+          filteredLogs.map((log) => {
+            const config = ACTION_CONFIG[log.action] ?? {
+              label: log.action,
+              color: "bg-gray-100 text-gray-700",
+            };
+
+            return (
+              <div key={log.id} className="px-4 py-3 flex items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${config.color}`}>
+                      {config.label}
+                    </span>
+                    {log.target_member_code && (
+                      <span className="text-xs font-mono font-semibold text-gray-900">
+                        {log.target_member_code}
+                      </span>
+                    )}
+                  </div>
+                  {log.details && (
+                    <p className="text-xs text-gray-500 mt-1 truncate">{log.details}</p>
+                  )}
+                  <p className="text-[10px] text-gray-400 mt-1">
+                    {log.staff_name ?? log.staff_code ?? "System"}
+                  </p>
+                </div>
+                <span className="text-[10px] text-gray-400 whitespace-nowrap mt-0.5">
+                  {timeAgo(log.created_at)}
+                </span>
+              </div>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 }
