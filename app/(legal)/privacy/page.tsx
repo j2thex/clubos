@@ -22,7 +22,7 @@ function PrivacyEN() {
 
       <h2>1. Data Controller</h2>
       <p>
-        osocios.club (&quot;we&quot;, &quot;us&quot;, &quot;the Platform&quot;) is operated by [Company Name], with
+        osocios.club (&quot;we&quot;, &quot;us&quot;, &quot;the Platform&quot;) is operated by Osocios S.R.L, with
         registered address in Barcelona, Spain. For privacy inquiries, contact us at{" "}
         <a href="mailto:privacy@osocios.club">privacy@osocios.club</a>.
       </p>
@@ -143,7 +143,7 @@ function PrivacyES() {
 
       <h2>1. Responsable del Tratamiento</h2>
       <p>
-        osocios.club (&quot;nosotros&quot;, &quot;la Plataforma&quot;) es operado por [Company Name], con
+        osocios.club (&quot;nosotros&quot;, &quot;la Plataforma&quot;) es operado por Osocios S.R.L, con
         domicilio social en Barcelona, Espa&ntilde;a. Para consultas de privacidad, cont&aacute;ctenos en{" "}
         <a href="mailto:privacy@osocios.club">privacy@osocios.club</a>.
       </p>
