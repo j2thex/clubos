@@ -13,6 +13,9 @@ Multi-tenant club operating system (SaaS) branded as **osocios.club**. White-lab
 - **Hosting**: Vercel
 - **Package manager**: pnpm
 - **Mutations**: Server Actions (not API routes)
+- **Email**: Resend
+- **UI libs**: sonner (toasts), lucide-react (icons), canvas-confetti, qrcode.react, spin-wheel
+- **Forms**: react-hook-form + zod
 
 ## Project Structure
 
@@ -22,7 +25,12 @@ app/
   [clubSlug]/         # Multi-tenant root
     (member)/         # Member portal — club-branded, bottom nav
     staff/            # Staff console — gray theme, bottom nav
-    admin/            # Admin panel — gray theme, no nav
+    admin/            # Admin panel — gray theme, owner-auth required
+    public/           # Public club profile (no auth)
+  (legal)/            # Privacy policy, terms of service
+  api/                # API routes (notification webhooks)
+  examples/           # Vertical showcase pages (sports, coworking, etc.)
+  platform-admin/     # Platform-level admin (cross-club)
   _landing/           # Landing page components
   layout.tsx          # Root layout
   page.tsx            # Landing page
@@ -33,19 +41,28 @@ app/
 - **Path-based multi-tenancy**: everything scoped by `[clubSlug]` dynamic route
 - **RLS on all tables**: every query scoped by `club_id`
 - **No club-specific logic in core code** — everything configurable at club level
-- **Three portals**: member (branded), staff (gray), admin (gray, public)
-- **Middleware** handles auth: member cookie for member routes, staff cookie for staff routes, admin is public
+- **Three portals**: member (branded), staff (gray), admin (gray, owner-auth)
+- **Middleware** handles auth: member cookie for member routes, staff cookie for staff routes, owner cookie for admin routes
 
 ## Auth Model
 
 - **Members**: `member_code` only → JWT cookie `clubos-member-token` (7-day)
 - **Staff**: `member_code` + 4-digit PIN → JWT cookie `clubos-staff-token` (12h)
-- **Admin**: no auth (public)
+- **Admin (Owner)**: email + password → JWT cookie `clubos-owner-token` (uses `club_owners` table)
+- **Locale**: `clubos-lang` cookie (auto-detected English/Spanish)
 - Members table has `is_staff boolean`, `pin_hash` nullable
 
 ## Database
 
-Tables: `organizations`, `clubs`, `club_branding`, `members`, `member_roles`, `spins`, `wheel_configs`
+### Tables (grouped by domain)
+
+**Core**: `organizations`, `clubs`, `club_branding`, `club_gallery`, `club_invite_buttons`, `club_tags`
+**Members**: `members`, `member_roles`, `member_badges`, `badges`, `membership_periods`, `invite_requests`
+**Auth**: `club_owners`, `club_owner_clubs`, `password_reset_tokens`
+**Gamification**: `spins`, `wheel_configs`, `quests`, `member_quests`
+**Events**: `events`, `event_rsvps`, `event_checkins`
+**Services/Offers**: `services`, `service_orders`, `offer_catalog`, `club_offers`, `offer_orders`
+**System**: `activity_log`
 
 ### Supabase Projects
 

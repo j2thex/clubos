@@ -23,7 +23,7 @@ function TermsEN() {
       <h2>1. About the Service</h2>
       <p>
         osocios.club (&quot;the Platform&quot;) is a multi-tenant club management platform operated by
-        [Company Name], Barcelona, Spain. The Platform provides tools for clubs to manage memberships,
+        Osocios S.R.L, Barcelona, Spain. The Platform provides tools for clubs to manage memberships,
         events, quests, rewards, and communications with their members.
       </p>
 
@@ -56,7 +56,7 @@ function TermsEN() {
 
       <h2>5. Content Ownership</h2>
       <ul>
-        <li>The Platform (code, design, branding) is owned by [Company Name].</li>
+        <li>The Platform (code, design, branding) is owned by Osocios S.R.L.</li>
         <li>Content created by club owners (events, quests, images, branding) remains the property of the respective club.</li>
         <li>By uploading content, you grant us a license to host and display it as part of the Platform&apos;s functionality.</li>
       </ul>
@@ -77,7 +77,7 @@ function TermsEN() {
 
       <h2>8. Limitation of Liability</h2>
       <p>
-        To the maximum extent permitted by law, [Company Name] shall not be liable for any indirect,
+        To the maximum extent permitted by law, Osocios S.R.L shall not be liable for any indirect,
         incidental, special, consequential, or punitive damages resulting from your use of or inability
         to use the Platform. Our total liability shall not exceed the amount paid by you (if any) in
         the 12 months preceding the claim.
@@ -121,7 +121,7 @@ function TermsES() {
       <h2>1. Sobre el Servicio</h2>
       <p>
         osocios.club (&quot;la Plataforma&quot;) es una plataforma de gesti&oacute;n de clubes multi-tenant operada por
-        [Company Name], Barcelona, Espa&ntilde;a. La Plataforma proporciona herramientas para que los clubes gestionen
+        Osocios S.R.L, Barcelona, Espa&ntilde;a. La Plataforma proporciona herramientas para que los clubes gestionen
         membres&iacute;as, eventos, misiones, recompensas y comunicaciones con sus miembros.
       </p>
 
@@ -154,7 +154,7 @@ function TermsES() {
 
       <h2>5. Propiedad del Contenido</h2>
       <ul>
-        <li>La Plataforma (c&oacute;digo, dise&ntilde;o, marca) es propiedad de [Company Name].</li>
+        <li>La Plataforma (c&oacute;digo, dise&ntilde;o, marca) es propiedad de Osocios S.R.L.</li>
         <li>El contenido creado por los propietarios de clubes (eventos, misiones, im&aacute;genes, marca) sigue siendo propiedad del club respectivo.</li>
         <li>Al subir contenido, nos otorgas una licencia para alojarlo y mostrarlo como parte de la funcionalidad de la Plataforma.</li>
       </ul>
@@ -176,7 +176,7 @@ function TermsES() {
 
       <h2>8. Limitaci&oacute;n de Responsabilidad</h2>
       <p>
-        En la m&aacute;xima medida permitida por la ley, [Company Name] no ser&aacute; responsable de ning&uacute;n da&ntilde;o indirecto,
+        En la m&aacute;xima medida permitida por la ley, Osocios S.R.L no ser&aacute; responsable de ning&uacute;n da&ntilde;o indirecto,
         incidental, especial, consecuente o punitivo derivado de tu uso o imposibilidad de uso de la Plataforma.
         Nuestra responsabilidad total no exceder&aacute; la cantidad pagada por ti (si corresponde) en los 12 meses
         anteriores a la reclamaci&oacute;n.

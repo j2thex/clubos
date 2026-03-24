@@ -460,7 +460,7 @@ export async function addQuest(
   const proofPlaceholder = (formData.get("proof_placeholder") as string)?.trim() || null;
   const tutorialStepsRaw = formData.get("tutorial_steps") as string | null;
   const icon = (formData.get("icon") as string)?.trim() || null;
-  const badgeId = (formData.get("badge_id") as string)?.trim() || null;
+  const awardBadge = formData.get("award_badge") === "1";
   const imageFile = formData.get("image") as File | null;
   const titleEs = (formData.get("title_es") as string)?.trim() || null;
   const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
@@ -492,13 +492,13 @@ export async function addQuest(
     imageUrl = result.url;
   }
 
-  const { error } = await supabase.from("quests").insert({
+  const { data: quest, error } = await supabase.from("quests").insert({
     club_id: clubId,
     title,
     description,
     link,
     icon,
-    badge_id: badgeId,
+    badge_id: null,
     reward_spins: rewardSpins,
     multi_use: effectiveMultiUse,
     is_public: isPublic,
@@ -510,9 +510,22 @@ export async function addQuest(
     tutorial_steps: tutorialSteps,
     title_es: titleEs,
     description_es: descriptionEs,
-  });
+  }).select("id").single();
 
   if (error) return { error: "Failed to add quest" };
+
+  // Auto-create badge if requested
+  if (awardBadge && quest) {
+    const { data: badge } = await supabase
+      .from("badges")
+      .insert({ club_id: clubId, name: title, icon: icon || null, color: "#6b7280" })
+      .select("id")
+      .single();
+
+    if (badge) {
+      await supabase.from("quests").update({ badge_id: badge.id }).eq("id", quest.id);
+    }
+  }
 
   revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
@@ -535,7 +548,7 @@ export async function updateQuest(
   const proofPlaceholder = (formData.get("proof_placeholder") as string)?.trim() || null;
   const tutorialStepsRaw = formData.get("tutorial_steps") as string | null;
   const icon = (formData.get("icon") as string)?.trim() || null;
-  const badgeId = (formData.get("badge_id") as string)?.trim() || null;
+  const awardBadge = formData.get("award_badge") === "1";
   const imageFile = formData.get("image") as File | null;
   const titleEs = (formData.get("title_es") as string)?.trim() || null;
   const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
@@ -549,6 +562,27 @@ export async function updateQuest(
   if (rewardSpins < 0) return { error: "Reward cannot be negative" };
 
   const supabase = createAdminClient();
+
+  // Get current quest to check existing badge_id and club_id
+  const { data: currentQuest } = await supabase
+    .from("quests")
+    .select("badge_id, club_id, image_url")
+    .eq("id", questId)
+    .single();
+
+  // Determine badge_id based on toggle
+  let badgeId: string | null = currentQuest?.badge_id ?? null;
+  if (awardBadge && !badgeId) {
+    // Create a new badge
+    const { data: badge } = await supabase
+      .from("badges")
+      .insert({ club_id: currentQuest?.club_id ?? "", name: title, icon: icon || null, color: "#6b7280" })
+      .select("id")
+      .single();
+    if (badge) badgeId = badge.id;
+  } else if (!awardBadge) {
+    badgeId = null;
+  }
 
   const updates: Record<string, unknown> = {
     title,
@@ -568,19 +602,13 @@ export async function updateQuest(
   };
 
   if (imageFile && imageFile.size > 0) {
-    const { data: quest } = await supabase
-      .from("quests")
-      .select("image_url, club_id")
-      .eq("id", questId)
-      .single();
-
-    if (quest?.image_url) {
+    if (currentQuest?.image_url) {
       const { deleteClubImage } = await import("@/lib/supabase/storage");
-      await deleteClubImage(quest.image_url);
+      await deleteClubImage(currentQuest.image_url);
     }
 
     const { uploadClubImage } = await import("@/lib/supabase/storage");
-    const result = await uploadClubImage(quest?.club_id ?? "", imageFile);
+    const result = await uploadClubImage(currentQuest?.club_id ?? "", imageFile);
     if ("error" in result) return { error: result.error };
     updates.image_url = result.url;
   }
@@ -673,6 +701,11 @@ export async function addEvent(
   const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
   const recurrenceRule = (formData.get("recurrence_rule") as string) || null;
   const recurrenceEndDate = (formData.get("recurrence_end_date") as string) || null;
+  const locationName = (formData.get("location_name") as string)?.trim() || null;
+  const latStr = formData.get("latitude") as string;
+  const lngStr = formData.get("longitude") as string;
+  const latitude = latStr ? parseFloat(latStr) : null;
+  const longitude = lngStr ? parseFloat(lngStr) : null;
 
   if (!title) return { error: "Title is required" };
   if (!date) return { error: "Date is required" };
@@ -702,6 +735,7 @@ export async function addEvent(
         title_es: titleEs || null, description_es: descriptionEs || null,
         recurrence_rule: recurrenceRule,
         recurrence_end_date: recurrenceEndDate,
+        location_name: locationName, latitude, longitude,
       })
       .select("id")
       .single();
@@ -721,6 +755,7 @@ export async function addEvent(
         is_public: isPublic, icon: icon || null,
         title_es: titleEs || null, description_es: descriptionEs || null,
         recurrence_parent_id: parentEvent.id,
+        location_name: locationName, latitude, longitude,
       }));
 
       await supabase.from("events").insert(children);
@@ -744,6 +779,9 @@ export async function addEvent(
       icon: icon || null,
       title_es: titleEs || null,
       description_es: descriptionEs || null,
+      location_name: locationName,
+      latitude,
+      longitude,
     });
 
     if (error) return { error: "Failed to add event" };
@@ -772,6 +810,11 @@ export async function updateEvent(
   const titleEs = (formData.get("title_es") as string)?.trim() || null;
   const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
   const scope = (formData.get("scope") as string) || "single";
+  const locationName = (formData.get("location_name") as string)?.trim() || null;
+  const latStr = formData.get("latitude") as string;
+  const lngStr = formData.get("longitude") as string;
+  const latitude = latStr ? parseFloat(latStr) : null;
+  const longitude = lngStr ? parseFloat(lngStr) : null;
 
   if (!title) return { error: "Title is required" };
   if (!date) return { error: "Date is required" };
@@ -790,6 +833,9 @@ export async function updateEvent(
     is_public: isPublic,
     title_es: titleEs,
     description_es: descriptionEs,
+    location_name: locationName,
+    latitude,
+    longitude,
   };
 
   let imageUrl: string | undefined;
@@ -842,6 +888,7 @@ export async function updateEvent(
         reward_spins: rewardSpins, is_public: isPublic,
         icon: icon || null,
         title_es: titleEs || null, description_es: descriptionEs || null,
+        location_name: locationName, latitude, longitude,
       };
       if (imageUrl !== undefined) updateData.image_url = imageUrl;
 
@@ -1272,15 +1319,28 @@ export async function updateOfferOptions(
 }
 
 export async function archiveOffer(
-  clubOfferId: string,
+  id: string,
   clubSlug: string,
+  clubId?: string,
 ): Promise<{ error: string } | { ok: true }> {
   const supabase = createAdminClient();
-  const { error } = await supabase
-    .from("club_offers")
-    .update({ archived: true })
-    .eq("id", clubOfferId);
-  if (error) return { error: "Failed to archive offer" };
+
+  if (clubId) {
+    // No existing club_offers record — create one with archived: true
+    // id is the catalog offer_id in this case
+    const { error } = await supabase
+      .from("club_offers")
+      .insert({ club_id: clubId, offer_id: id, archived: true });
+    if (error) return { error: "Failed to archive offer" };
+  } else {
+    // Existing club_offers record — update it
+    const { error } = await supabase
+      .from("club_offers")
+      .update({ archived: true })
+      .eq("id", id);
+    if (error) return { error: "Failed to archive offer" };
+  }
+
   revalidatePath(`/${clubSlug}/admin`, "layout");
   revalidatePath(`/${clubSlug}/public`);
   revalidatePath(`/${clubSlug}/offers`);

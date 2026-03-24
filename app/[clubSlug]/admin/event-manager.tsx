@@ -33,6 +33,9 @@ interface Event {
   recurrence_rule: string | null;
   recurrence_parent_id: string | null;
   recurrence_end_date: string | null;
+  location_name: string | null;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export function EventManager({
@@ -59,6 +62,9 @@ export function EventManager({
   const [editLang, setEditLang] = useState<"en" | "es">("en");
   const [editTitleEs, setEditTitleEs] = useState("");
   const [editDescEs, setEditDescEs] = useState("");
+  const [editLocationName, setEditLocationName] = useState("");
+  const [editLat, setEditLat] = useState<number | null>(null);
+  const [editLng, setEditLng] = useState<number | null>(null);
 
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
@@ -75,6 +81,9 @@ export function EventManager({
   const [newDescEs, setNewDescEs] = useState("");
   const [newRecurrence, setNewRecurrence] = useState<string>("");
   const [newRecurrenceEnd, setNewRecurrenceEnd] = useState<string>("");
+  const [newLocationName, setNewLocationName] = useState("");
+  const [newLat, setNewLat] = useState<number | null>(null);
+  const [newLng, setNewLng] = useState<number | null>(null);
 
   const [scopePrompt, setScopePrompt] = useState<{ type: "edit" | "delete"; eventId: string } | null>(null);
   const [editScope, setEditScope] = useState<string>("single");
@@ -103,6 +112,9 @@ export function EventManager({
     setEditIcon(ev.icon);
     setEditTitleEs(ev.title_es ?? "");
     setEditDescEs(ev.description_es ?? "");
+    setEditLocationName(ev.location_name ?? "");
+    setEditLat(ev.latitude);
+    setEditLng(ev.longitude);
     setEditLang("en");
     setEditImage(null);
     setError(null);
@@ -129,6 +141,9 @@ export function EventManager({
       fd.set("title_es", editTitleEs);
       fd.set("description_es", editDescEs);
       if (editImage) fd.set("image", editImage);
+      fd.set("location_name", editLocationName);
+      if (editLat != null) fd.set("latitude", String(editLat));
+      if (editLng != null) fd.set("longitude", String(editLng));
       fd.set("scope", editScope);
 
       const result = await updateEvent(eventId, fd, clubSlug);
@@ -166,6 +181,9 @@ export function EventManager({
       fd.set("title_es", newTitleEs);
       fd.set("description_es", newDescEs);
       if (newImage) fd.set("image", newImage);
+      fd.set("location_name", newLocationName);
+      if (newLat != null) fd.set("latitude", String(newLat));
+      if (newLng != null) fd.set("longitude", String(newLng));
       if (newRecurrence) fd.set("recurrence_rule", newRecurrence);
       if (newRecurrenceEnd) fd.set("recurrence_end_date", newRecurrenceEnd);
 
@@ -190,6 +208,9 @@ export function EventManager({
         setNewLang("en");
         setNewRecurrence("");
         setNewRecurrenceEnd("");
+        setNewLocationName("");
+        setNewLat(null);
+        setNewLng(null);
         const msg = createdCount && createdCount > 1
           ? t("events.occurrencesCreated", { count: String(createdCount) })
           : `"${createdTitle}" created successfully`;
@@ -339,6 +360,39 @@ export function EventManager({
                         placeholder="https://..."
                         className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
                       />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Location (optional)</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={editLocationName}
+                          onChange={(e) => setEditLocationName(e.target.value)}
+                          placeholder="Venue name or address"
+                          className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                        />
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (!editLocationName.trim()) return;
+                            const { findCoordinates } = await import("./location-actions");
+                            const result = await findCoordinates(editLocationName);
+                            if ("error" in result) {
+                              setError(result.error);
+                            } else {
+                              setEditLat(result.lat);
+                              setEditLng(result.lng);
+                            }
+                          }}
+                          disabled={!editLocationName.trim()}
+                          className="rounded-lg border border-gray-300 px-2 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-100 disabled:opacity-50 transition-colors shrink-0"
+                        >
+                          📍
+                        </button>
+                      </div>
+                      {editLat != null && editLng != null && (
+                        <p className="text-[10px] text-green-600 mt-1">✓ {editLat.toFixed(4)}, {editLng.toFixed(4)}</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-gray-500 mb-1">Image (optional)</label>
@@ -685,6 +739,39 @@ export function EventManager({
               placeholder="https://..."
               className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
             />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Location (optional)</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newLocationName}
+                onChange={(e) => setNewLocationName(e.target.value)}
+                placeholder="Venue name or address"
+                className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+              />
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!newLocationName.trim()) return;
+                  const { findCoordinates } = await import("./location-actions");
+                  const result = await findCoordinates(newLocationName);
+                  if ("error" in result) {
+                    setError(result.error);
+                  } else {
+                    setNewLat(result.lat);
+                    setNewLng(result.lng);
+                  }
+                }}
+                disabled={!newLocationName.trim()}
+                className="rounded-lg border border-gray-300 px-2 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-100 disabled:opacity-50 transition-colors shrink-0"
+              >
+                📍
+              </button>
+            </div>
+            {newLat != null && newLng != null && (
+              <p className="text-[10px] text-green-600 mt-1">✓ {newLat.toFixed(4)}, {newLng.toFixed(4)}</p>
+            )}
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Image (optional)</label>

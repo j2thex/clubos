@@ -582,5 +582,31 @@
   "legal.termsOfUse": "Condiciones de Uso",
   "legal.consentPrefix": "Acepto la",
   "legal.consentAnd": "y las",
-  "legal.backToHome": "Volver al inicio"
+  "legal.backToHome": "Volver al inicio",
+
+  "discover.title": "Descubrir",
+  "discover.subtitle": "Encuentra clubs, eventos y servicios cerca de ti",
+  "discover.clubs": "Clubs",
+  "discover.events": "Eventos",
+  "discover.offers": "Ofertas",
+  "discover.searchPlaceholder": "Buscar ciudad o dirección...",
+  "discover.nearMe": "Cerca de mí",
+  "discover.noResults": "Sin resultados",
+  "discover.noLocation": "Sin mapa",
+  "discover.allDates": "Todas las fechas",
+  "discover.today": "Hoy",
+  "discover.thisWeek": "Esta semana",
+  "discover.thisMonth": "Este mes",
+  "discover.directions": "Cómo llegar",
+  "discover.viewClub": "Ver club",
+  "discover.offers_count": "{count} ofertas",
+
+  "admin.location": "Ubicación",
+  "admin.locationAddress": "Dirección",
+  "admin.locationCity": "Ciudad",
+  "admin.locationCountry": "País",
+  "admin.findCoordinates": "Buscar coordenadas",
+  "admin.locationSaved": "Ubicación guardada",
+  "admin.locationName": "Ubicación (opcional)",
+  "admin.locationPlaceholder": "Nombre del lugar o dirección"
 }

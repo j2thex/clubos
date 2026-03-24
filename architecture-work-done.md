@@ -369,6 +369,100 @@ Quest links (URLs/emails) remain visible after a quest is marked done. Previousl
 - `supabase/migrations/20260313000000_create_storage_buckets.sql` — bucket creation + policies
 - `lib/supabase/storage.ts` — upload/delete functions using admin client
 
+## Public Page Enhancements
+
+### Language Switcher on Public Page
+
+**Request:** Add EN/ES language toggle to the public club page — it was the only page missing one.
+
+**Changes:** Imported `LanguageSwitcher` from `lib/i18n/switcher.tsx` into `app/[clubSlug]/public/page.tsx`. Placed it inside the hero `div` with absolute positioning (`absolute top-3 right-3 z-20`) using `variant="light"` for visibility over the dark hero background. `LanguageProvider` was already in the root layout, so no wrapping needed.
+
+**How it works:** The EN/ES toggle floats in the top-right corner of the hero image on every public club page. Clicking it writes the `clubos-lang` cookie and triggers `router.refresh()`, re-rendering all server-rendered content in the selected language.
+
+**Key files:**
+- `app/[clubSlug]/public/page.tsx` — switcher placement inside hero div
+
+### Public Page Full Localization
+
+**Request:** All hardcoded English strings on the public page needed to be localized — they were left in English even after adding the language switcher.
+
+**Changes:** Replaced 7 hardcoded English strings with `localized()` calls: "Upcoming Events"→"Próximos Eventos", "Quests"→"Misiones", "Offers"→"Ofertas", "Free"→"Gratis", "Learn more"→"Más info", "at"→"a las". Updated `formatDate()` to use locale-aware formatting (`es-ES` vs `en-US`).
+
+**How it works:** All section headers, labels, and date formatting on the public page now respect the user's language setting. Uses inline `localized(en, es, locale)` calls rather than dictionary keys since these are page-specific strings.
+
+**Key files:**
+- `app/[clubSlug]/public/page.tsx` — all section headers and labels localized
+
+### Hide Member Login on Invite-Only Clubs
+
+**Request:** Admin toggle to hide the member login form from the public page when a club is invite-only.
+
+**Changes:** Added `hide_member_login boolean DEFAULT false` column to `clubs` table. Created `updateHideMemberLogin` server action. Added sub-checkbox in `LoginModeManager` (only visible when invite-only is checked): "Hide member login from public page". Public page wraps login form in `{!(club.invite_only && club.hide_member_login) && (...)}`. Added `hide_member_login` to settings page query, admin component props, and public page query.
+
+**How it works:** When admin enables invite-only AND checks "Hide member login", the login form disappears from the public page. The direct login URL (`/[clubSlug]/login`) still works — this only affects the public page. When invite-only is unchecked, the hide setting is preserved in DB but has no effect (both flags required). Added i18n keys for EN/ES.
+
+**Key files:**
+- `supabase/migrations/20260321100000_add_hide_member_login.sql` — new column
+- `lib/types/database.ts` — `hide_member_login` in Row/Insert/Update types
+- `app/[clubSlug]/admin/login-mode-manager.tsx` — sub-checkbox UI + handler
+- `app/[clubSlug]/admin/actions.ts` — `updateHideMemberLogin` action
+- `app/[clubSlug]/admin/(panel)/settings/page.tsx` — query + prop passing
+- `app/[clubSlug]/public/page.tsx` — conditional rendering of login form
+
+### Contact Text Update (osocios branding)
+
+**Request:** Change invite-only public page text from "Contact us through:" to reference osocios as the platform that handles member onboarding.
+
+**Changes:** Updated `public.contactThrough` i18n key in both dictionaries. EN: "Contact osocios to get your member ID:", ES: "Contacta osocios para obtener tu ID de socio:".
+
+**How it works:** On invite-only clubs using social buttons mode, the text now directs users to contact osocios (the platform) rather than vaguely saying "contact us". This supports the monetization model where osocios handles member acquisition.
+
+**Key files:**
+- `lib/i18n/dictionaries/en.json` — `public.contactThrough` key
+- `lib/i18n/dictionaries/es.json` — same key in Spanish
+
+## Offers System
+
+### Offers Tile Grid View (Public + Member Pages)
+
+**Request:** Replace the vertical list layout for offers with a compact tile/icon grid on both public and member pages.
+
+**Changes:** Replaced the `divide-y` list layout in the public page offers section with a responsive `grid grid-cols-2 sm:grid-cols-3 gap-2` tile grid. Each tile: centered icon/image (w-10 h-10 rounded-full), name below, compact `rounded-xl shadow` card. Same grid applied to member page `offer-list-client.tsx` but with interactive features: price badge (absolute top-right), tap-to-request/cancel (onClick handler on the tile div), and "Requested" status pill.
+
+**How it works:** Offers display as app-icon-style tiles in a 2-3 column responsive grid, grouped by subtype with localized headers. On the member page, orderable tiles are tappable — clicking triggers request/cancel. Price shows as a small badge in the top-right corner. Non-orderable tiles have no click handler. Descriptions are omitted from tile view for compactness.
+
+**Key files:**
+- `app/[clubSlug]/public/page.tsx` — tile grid in offers section
+- `app/[clubSlug]/(member)/offers/offer-list-client.tsx` — interactive tile grid with request/cancel
+
+### Admin Offers Collapse/Expand (Accordion)
+
+**Request:** Admin offers page shows all enabled offers fully expanded with all config fields — overwhelming with many offers. Collapse by default, expand on "Edit".
+
+**Changes:** Refactored `OfferManager` component with `expandedOfferId` state for accordion behavior. `OfferRow` now has two states: collapsed (icon + name + toggle + status badges + Edit button) and expanded (full config form). Clicking Edit expands that offer and collapses any other. Save collapses back to preview. Added `isExpanded`, `onToggleExpand`, `onArchive`, and `t` props to `OfferRow`.
+
+**How it works:** All enabled offers show collapsed by default — compact row with icon, name, and small status badges ("Orderable", "Public", price). Clicking "Edit" expands to the full config form (descriptions, icon picker, image upload, etc.). Only one offer can be expanded at a time (accordion). After saving, the offer auto-collapses.
+
+**Key files:**
+- `app/[clubSlug]/admin/offer-manager.tsx` — `OfferManager` + `OfferRow` with accordion state
+
+### Admin Offers Archive
+
+**Request:** Admin needs a way to soft-hide offers without permanently deleting them (toggle-off does a hard delete). Add archive/restore with a dedicated tab.
+
+**Changes:** Added `archived boolean DEFAULT false` to `club_offers`. Created `archiveOffer` and `restoreOffer` server actions. Added "Archived" tab to `OfferManager` (appears when archived offers exist, shows count). Archive button in expanded edit view (red/destructive styling). Restore button on archived tab rows. All listing queries (member, public, staff) filter `.eq("archived", false)`.
+
+**How it works:** Two paths to remove offers: toggle-off (hard DELETE, loses all config) vs archive (sets `archived=true`, preserves config). Archived offers disappear from member, public, and staff views but remain in admin under the "Archived" tab with a Restore button. Existing pending orders for archived offers can still be fulfilled by staff — archiving only affects browse/listing views.
+
+**Key files:**
+- `supabase/migrations/20260321200000_add_offer_archived.sql` — archived column
+- `app/[clubSlug]/admin/offer-manager.tsx` — archived tab UI, archive/restore buttons
+- `app/[clubSlug]/admin/actions.ts` — `archiveOffer`, `restoreOffer` actions
+- `app/[clubSlug]/admin/(panel)/offers/page.tsx` — passes `archived` to component
+- `app/[clubSlug]/(member)/offers/page.tsx` — filters archived
+- `app/[clubSlug]/public/page.tsx` — filters archived
+- `app/[clubSlug]/staff/(console)/offers/page.tsx` — filters archived
+
 ## i18n — Spanish Language Support
 
 ### Custom i18n System

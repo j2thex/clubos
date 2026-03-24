@@ -582,5 +582,31 @@
   "legal.termsOfUse": "Terms of Use",
   "legal.consentPrefix": "I agree to the",
   "legal.consentAnd": "and",
-  "legal.backToHome": "Back to home"
+  "legal.backToHome": "Back to home",
+
+  "discover.title": "Discover",
+  "discover.subtitle": "Find clubs, events, and services near you",
+  "discover.clubs": "Clubs",
+  "discover.events": "Events",
+  "discover.offers": "Offers",
+  "discover.searchPlaceholder": "Search a city or address...",
+  "discover.nearMe": "Near me",
+  "discover.noResults": "No results found",
+  "discover.noLocation": "No map",
+  "discover.allDates": "All dates",
+  "discover.today": "Today",
+  "discover.thisWeek": "This week",
+  "discover.thisMonth": "This month",
+  "discover.directions": "Directions",
+  "discover.viewClub": "View club",
+  "discover.offers_count": "{count} offers",
+
+  "admin.location": "Location",
+  "admin.locationAddress": "Address",
+  "admin.locationCity": "City",
+  "admin.locationCountry": "Country",
+  "admin.findCoordinates": "Find Coordinates",
+  "admin.locationSaved": "Location saved",
+  "admin.locationName": "Location (optional)",
+  "admin.locationPlaceholder": "Venue name or address"
 }

@@ -24,7 +24,7 @@ export default async function QuestsPage({
   if (!club) notFound();
   const locale = await getServerLocale();
 
-  const [{ data: quests }, { data: questCompletions }, { data: clubBadges }, { data: branding }] = await Promise.all([
+  const [{ data: quests }, { data: questCompletions }, { data: branding }] = await Promise.all([
     supabase
       .from("quests")
       .select(
@@ -37,12 +37,6 @@ export default async function QuestsPage({
       .from("member_quests")
       .select("quest_id, quests!inner(club_id)")
       .eq("quests.club_id", club.id),
-    supabase
-      .from("badges")
-      .select("id, name, icon, color")
-      .eq("club_id", club.id)
-      .eq("active", true)
-      .order("display_order", { ascending: true }),
     supabase
       .from("club_branding")
       .select("google_place_id")
@@ -82,13 +76,6 @@ export default async function QuestsPage({
 
   const googleReviewUrl = branding?.google_place_id ? getReviewUrl(branding.google_place_id) : null;
 
-  const badgeOptions = (clubBadges ?? []).map((b) => ({
-    id: b.id,
-    name: b.name,
-    icon: b.icon ?? null,
-    color: b.color ?? "#6b7280",
-  }));
-
   return (
     <div className="space-y-4">
       <Link
@@ -100,7 +87,7 @@ export default async function QuestsPage({
         </svg>
         {t(locale, "admin.backToContent")}
       </Link>
-      <QuestManager quests={questList} clubId={club.id} clubSlug={clubSlug} badges={badgeOptions} googleReviewUrl={googleReviewUrl} />
+      <QuestManager quests={questList} clubId={club.id} clubSlug={clubSlug} googleReviewUrl={googleReviewUrl} />
     </div>
   );
 }
