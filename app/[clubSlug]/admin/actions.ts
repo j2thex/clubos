@@ -673,6 +673,11 @@ export async function addEvent(
   const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
   const recurrenceRule = (formData.get("recurrence_rule") as string) || null;
   const recurrenceEndDate = (formData.get("recurrence_end_date") as string) || null;
+  const locationName = (formData.get("location_name") as string)?.trim() || null;
+  const latStr = formData.get("latitude") as string;
+  const lngStr = formData.get("longitude") as string;
+  const latitude = latStr ? parseFloat(latStr) : null;
+  const longitude = lngStr ? parseFloat(lngStr) : null;
 
   if (!title) return { error: "Title is required" };
   if (!date) return { error: "Date is required" };
@@ -702,6 +707,7 @@ export async function addEvent(
         title_es: titleEs || null, description_es: descriptionEs || null,
         recurrence_rule: recurrenceRule,
         recurrence_end_date: recurrenceEndDate,
+        location_name: locationName, latitude, longitude,
       })
       .select("id")
       .single();
@@ -721,6 +727,7 @@ export async function addEvent(
         is_public: isPublic, icon: icon || null,
         title_es: titleEs || null, description_es: descriptionEs || null,
         recurrence_parent_id: parentEvent.id,
+        location_name: locationName, latitude, longitude,
       }));
 
       await supabase.from("events").insert(children);
@@ -744,6 +751,9 @@ export async function addEvent(
       icon: icon || null,
       title_es: titleEs || null,
       description_es: descriptionEs || null,
+      location_name: locationName,
+      latitude,
+      longitude,
     });
 
     if (error) return { error: "Failed to add event" };
@@ -772,6 +782,11 @@ export async function updateEvent(
   const titleEs = (formData.get("title_es") as string)?.trim() || null;
   const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
   const scope = (formData.get("scope") as string) || "single";
+  const locationName = (formData.get("location_name") as string)?.trim() || null;
+  const latStr = formData.get("latitude") as string;
+  const lngStr = formData.get("longitude") as string;
+  const latitude = latStr ? parseFloat(latStr) : null;
+  const longitude = lngStr ? parseFloat(lngStr) : null;
 
   if (!title) return { error: "Title is required" };
   if (!date) return { error: "Date is required" };
@@ -790,6 +805,9 @@ export async function updateEvent(
     is_public: isPublic,
     title_es: titleEs,
     description_es: descriptionEs,
+    location_name: locationName,
+    latitude,
+    longitude,
   };
 
   let imageUrl: string | undefined;
@@ -842,6 +860,7 @@ export async function updateEvent(
         reward_spins: rewardSpins, is_public: isPublic,
         icon: icon || null,
         title_es: titleEs || null, description_es: descriptionEs || null,
+        location_name: locationName, latitude, longitude,
       };
       if (imageUrl !== undefined) updateData.image_url = imageUrl;
 

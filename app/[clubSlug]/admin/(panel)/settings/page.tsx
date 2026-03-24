@@ -9,6 +9,7 @@ import { TelegramConfigManager } from "../../telegram-config-manager";
 import { WheelManager } from "../../wheel-manager";
 import { NotificationLightManager } from "../../notification-light-manager";
 import { TagManager } from "../../tag-manager";
+import { LocationManager } from "../../location-manager";
 import { CollapsibleSection } from "@/components/collapsible-section";
 
 export default async function SettingsPage({
@@ -21,7 +22,7 @@ export default async function SettingsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, login_mode, invite_only, invite_mode, hide_member_login, tags, telegram_bot_token, telegram_chat_id, notification_secret")
+    .select("id, login_mode, invite_only, invite_mode, hide_member_login, tags, telegram_bot_token, telegram_chat_id, notification_secret, latitude, longitude, address, city, country")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -69,6 +70,17 @@ export default async function SettingsPage({
     <div className="space-y-6">
       <TagManager
         tags={club.tags ?? []}
+        clubId={club.id}
+        clubSlug={clubSlug}
+      />
+      <LocationManager
+        location={{
+          address: club.address ?? null,
+          city: club.city ?? null,
+          country: club.country ?? null,
+          latitude: club.latitude ?? null,
+          longitude: club.longitude ?? null,
+        }}
         clubId={club.id}
         clubSlug={clubSlug}
       />
