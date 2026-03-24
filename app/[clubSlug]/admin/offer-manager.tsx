@@ -71,7 +71,8 @@ export function OfferManager({
   const archivedOffers = clubOffers.filter(co => co.archived);
   const isArchivedTab = activeTab === "archived";
 
-  const filteredCatalog = isArchivedTab ? [] : catalog.filter((a) => a.subtype === activeTab);
+  const archivedOfferIds = new Set(clubOffers.filter(co => co.archived).map(co => co.offer_id));
+  const filteredCatalog = isArchivedTab ? [] : catalog.filter((a) => a.subtype === activeTab && !archivedOfferIds.has(a.id));
 
   function handleToggle(offerId: string, enabled: boolean) {
     setError(null);
@@ -217,9 +218,13 @@ export function OfferManager({
                   onToggle={handleToggle}
                   onUpdateOptions={handleUpdateOptions}
                   onToggleExpand={(id) => setExpandedOfferId(id === expandedOfferId ? null : id)}
-                  onArchive={(clubOfferId) => {
+                  onArchive={(id) => {
                     startTransition(async () => {
-                      const result = await archiveOffer(clubOfferId, clubSlug);
+                      // id could be a clubOffer.id (enabled) or catalog offer.id (not enabled)
+                      const clubOffer = activeEnabledMap.get(offer.id);
+                      const result = clubOffer
+                        ? await archiveOffer(clubOffer.id, clubSlug)
+                        : await archiveOffer(offer.id, clubSlug, clubId);
                       if ("error" in result) setError(result.error);
                       setExpandedOfferId(null);
                     });
@@ -311,7 +316,7 @@ function OfferRow({
   onToggle: (offerId: string, enabled: boolean) => void;
   onUpdateOptions: (clubOfferId: string, formData: FormData) => void;
   onToggleExpand: (offerId: string) => void;
-  onArchive: (clubOfferId: string) => void;
+  onArchive: (id: string) => void;
   t: (key: string) => string;
 }) {
   const [localOrderable, setLocalOrderable] = useState(clubOffer?.orderable ?? false);
@@ -393,6 +398,20 @@ function OfferRow({
           />
         </button>
       </div>
+
+      {/* Archive button for non-enabled offers */}
+      {!isEnabled && (
+        <div className="mt-1 ml-11">
+          <button
+            type="button"
+            onClick={() => onArchive(offer.id)}
+            disabled={isPending}
+            className="text-[10px] font-medium text-gray-300 hover:text-red-400 disabled:opacity-50 transition-colors"
+          >
+            {t("admin.archiveOffer")}
+          </button>
+        </div>
+      )}
 
       {/* Collapsed state: status badges + Edit button */}
       {isEnabled && clubOffer && !isExpanded && (

@@ -1319,15 +1319,28 @@ export async function updateOfferOptions(
 }
 
 export async function archiveOffer(
-  clubOfferId: string,
+  id: string,
   clubSlug: string,
+  clubId?: string,
 ): Promise<{ error: string } | { ok: true }> {
   const supabase = createAdminClient();
-  const { error } = await supabase
-    .from("club_offers")
-    .update({ archived: true })
-    .eq("id", clubOfferId);
-  if (error) return { error: "Failed to archive offer" };
+
+  if (clubId) {
+    // No existing club_offers record — create one with archived: true
+    // id is the catalog offer_id in this case
+    const { error } = await supabase
+      .from("club_offers")
+      .insert({ club_id: clubId, offer_id: id, archived: true });
+    if (error) return { error: "Failed to archive offer" };
+  } else {
+    // Existing club_offers record — update it
+    const { error } = await supabase
+      .from("club_offers")
+      .update({ archived: true })
+      .eq("id", id);
+    if (error) return { error: "Failed to archive offer" };
+  }
+
   revalidatePath(`/${clubSlug}/admin`, "layout");
   revalidatePath(`/${clubSlug}/public`);
   revalidatePath(`/${clubSlug}/offers`);
