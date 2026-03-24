@@ -111,7 +111,7 @@ function ReferralShare({ clubSlug, memberCode, clubName }: { clubSlug: string; m
       </div>
 
       {/* Social share buttons */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {/* WhatsApp */}
         <a
           href={whatsappUrl}
