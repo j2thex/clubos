@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { createUnclaimedClub, approveCustomOffer } from "./actions";
+import { createUnclaimedClub, approveCustomOffer, approveClub, rejectClub } from "./actions";
 
 interface ClubInfo {
   id: string;
   name: string;
   slug: string;
+  approved: boolean;
   claimed: boolean;
   inviteOnly: boolean;
   logoUrl: string | null;
@@ -219,6 +220,7 @@ export function PlatformAdminClient({
                   <th className="text-right px-3 py-2">Events</th>
                   <th className="text-right px-3 py-2">Offers</th>
                   <th className="text-right px-3 py-2">Status</th>
+                  <th className="text-right px-3 py-2">Actions</th>
                   <th className="text-right px-5 py-2">Created</th>
                 </tr>
               </thead>
@@ -253,9 +255,38 @@ export function PlatformAdminClient({
                     <td className="text-right px-3 py-3 font-mono text-white/70">{c.offers}</td>
                     <td className="text-right px-3 py-3">
                       <div className="flex gap-1 justify-end">
-                        {!c.claimed && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-500/20 text-gray-400">unclaimed</span>}
+                        {!c.approved ? (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300">Pending</span>
+                        ) : c.approved && !c.claimed ? (
+                          <>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-300">Live</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-500/20 text-gray-400">unclaimed</span>
+                          </>
+                        ) : (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-300">Live</span>
+                        )}
                         {c.inviteOnly && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300">invite-only</span>}
-                        {c.claimed && !c.inviteOnly && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-300">active</span>}
+                      </div>
+                    </td>
+                    <td className="text-right px-3 py-3">
+                      <div className="flex gap-1 justify-end">
+                        {!c.approved ? (
+                          <button
+                            onClick={() => startTransition(async () => { await approveClub(c.id); })}
+                            disabled={isPending}
+                            className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-500/20 text-green-300 hover:bg-green-500/30 disabled:opacity-50 transition-colors"
+                          >
+                            Approve
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => startTransition(async () => { await rejectClub(c.id); })}
+                            disabled={isPending}
+                            className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-500/20 text-gray-400 hover:bg-gray-500/30 disabled:opacity-50 transition-colors"
+                          >
+                            Take Offline
+                          </button>
+                        )}
                       </div>
                     </td>
                     <td className="text-right px-5 py-3 text-xs text-white/30">{timeAgo(c.createdAt)}</td>

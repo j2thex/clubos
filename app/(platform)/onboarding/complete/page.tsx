@@ -69,6 +69,11 @@ export default async function CompletePage({
           <CardDescription className="text-gray-600">
             {t(locale, "onboarding.completeDesc")}
           </CardDescription>
+          <div className="mt-3 rounded-lg bg-yellow-50 border border-yellow-200 px-4 py-3">
+            <p className="text-xs text-yellow-700 font-medium">
+              Your club is pending approval. You can start configuring your admin panel while our team reviews it. You&apos;ll receive an email once approved.
+            </p>
+          </div>
         </CardHeader>
         <CardContent className="space-y-5">
           {/* Next steps */}

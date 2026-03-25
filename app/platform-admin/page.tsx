@@ -49,7 +49,7 @@ export default async function PlatformAdminPage({
     { data: eventsByClub },
     { data: offersByClub },
   ] = await Promise.all([
-    supabase.from("clubs").select("*", { count: "exact", head: true }).eq("active", true),
+    supabase.from("clubs").select("*", { count: "exact", head: true }),
     supabase.from("members").select("*", { count: "exact", head: true }),
     supabase.from("spins").select("*", { count: "exact", head: true }),
     supabase.from("member_quests").select("*", { count: "exact", head: true }),
@@ -59,8 +59,7 @@ export default async function PlatformAdminPage({
     // All clubs with branding
     supabase
       .from("clubs")
-      .select("id, name, slug, active, claimed, invite_only, created_at, club_branding(logo_url, primary_color), club_owner_clubs(club_owners(email))")
-      .eq("active", true)
+      .select("id, name, slug, active, approved, claimed, invite_only, created_at, club_branding(logo_url, primary_color), club_owner_clubs(club_owners(email))")
       .order("created_at", { ascending: false }),
     // Recent activity
     supabase
@@ -148,6 +147,7 @@ export default async function PlatformAdminPage({
       id: c.id,
       name: c.name,
       slug: c.slug,
+      approved: c.approved ?? true,
       claimed: c.claimed,
       inviteOnly: c.invite_only,
       logoUrl: branding?.logo_url ?? null,

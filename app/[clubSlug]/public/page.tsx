@@ -47,12 +47,17 @@ export default async function PublicProfilePage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name, invite_only, invite_mode, login_mode, hide_member_login, tags, club_branding(logo_url, cover_url, primary_color, secondary_color, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website)")
+    .select("id, name, approved, invite_only, invite_mode, login_mode, hide_member_login, tags, club_branding(logo_url, cover_url, primary_color, secondary_color, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website)")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
 
   if (!club) notFound();
+
+  if (!club.approved) {
+    const { PendingApproval } = await import("@/components/pending-approval");
+    return <PendingApproval clubName={club.name} clubSlug={clubSlug} />;
+  }
 
   const locale = await getServerLocale();
 
