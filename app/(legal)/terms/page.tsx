@@ -2,7 +2,13 @@ import { getServerLocale } from "@/lib/i18n/server";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Terms of Use | osocios.club",
+  title: "Terms of Use",
+  description:
+    "Terms of use for osocios.club — rules and conditions for using the platform. Governed by Spanish law, Barcelona courts.",
+  alternates: {
+    canonical: "/terms",
+    languages: { en: "/terms", es: "/terms", "x-default": "/terms" },
+  },
 };
 
 export default async function TermsOfUsePage() {

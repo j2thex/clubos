@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { getServerLocale } from "@/lib/i18n/server";
 import { LanguageProvider } from "@/lib/i18n/provider";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -20,10 +22,41 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://osocios.club";
+
 export const metadata: Metadata = {
-  title: "osocios.club",
-  description: "A white-label operating system for private clubs",
-  icons: { icon: "/favicon-member.svg" },
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "osocios.club — The operating system for private clubs",
+    template: "%s | osocios.club",
+  },
+  description:
+    "White-label membership platform for private clubs. Manage members, gamify engagement with rewards and quests, run events, and operate daily — all under your brand.",
+  keywords: [
+    "club management",
+    "membership platform",
+    "private clubs",
+    "white-label",
+    "member engagement",
+    "loyalty rewards",
+    "event management",
+    "club software",
+  ],
+  openGraph: {
+    type: "website",
+    siteName: "osocios.club",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
+  icons: {
+    icon: [
+      { url: "/icon.ico", sizes: "48x32x16" },
+      { url: "/favicon-member.svg", type: "image/svg+xml" },
+    ],
+    apple: "/apple-icon.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -50,6 +83,8 @@ export default async function RootLayout({
           )}
           {children}
         </LanguageProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

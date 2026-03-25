@@ -7,12 +7,22 @@ import Link from "next/link";
 import { DiscoverClient } from "./discover-client";
 import type { DiscoverClub, DiscoverEvent, DiscoverOffer } from "./lib/types";
 import type { Metadata } from "next";
+import { getItemListJsonLd } from "@/lib/structured-data";
 
 export const revalidate = 300; // 5-minute ISR
 
 export const metadata: Metadata = {
-  title: "Discover | osocios.club",
-  description: "Find clubs, events, and services near you on osocios.club",
+  title: "Discover",
+  description:
+    "Find clubs, events, and services near you on osocios.club. Browse the map, explore upcoming events, and discover offers from private clubs.",
+  alternates: {
+    canonical: "/discover",
+    languages: {
+      en: "/discover",
+      es: "/discover",
+      "x-default": "/discover",
+    },
+  },
 };
 
 async function getClubs(): Promise<DiscoverClub[]> {
@@ -135,8 +145,17 @@ export default async function DiscoverPage() {
     getOffers(),
   ]);
 
+  const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://osocios.club";
+  const clubListJsonLd = getItemListJsonLd(
+    clubs.map((c) => ({ name: c.name, url: `${SITE_URL}/${c.slug}/public` }))
+  );
+
   return (
     <div className="min-h-svh flex flex-col landing-dark">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(clubListJsonLd) }}
+      />
       {/* Header */}
       <header className="relative z-20 flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
         <Link href="/" className="text-xs font-mono tracking-widest uppercase opacity-60 hover:opacity-80 transition-opacity">

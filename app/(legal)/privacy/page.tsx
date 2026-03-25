@@ -2,7 +2,13 @@ import { getServerLocale } from "@/lib/i18n/server";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | osocios.club",
+  title: "Privacy Policy",
+  description:
+    "Privacy policy for osocios.club — how we collect, use, and protect your data. GDPR-compliant, operated by Osocios S.R.L, Barcelona, Spain.",
+  alternates: {
+    canonical: "/privacy",
+    languages: { en: "/privacy", es: "/privacy", "x-default": "/privacy" },
+  },
 };
 
 export default async function PrivacyPolicyPage() {

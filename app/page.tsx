@@ -1,6 +1,8 @@
+import type { Metadata } from "next";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getOrganizationJsonLd, getWebSiteJsonLd } from "@/lib/structured-data";
 import { Hero } from "./_landing/hero";
 import { PlatformOverview } from "./_landing/platform-overview";
 import { FeatureGrid } from "./_landing/feature-grid";
@@ -11,6 +13,16 @@ import { MembershipExplorer } from "./_landing/membership-explorer";
 import { ClubDirectory } from "./_landing/club-directory";
 import { FinalCta } from "./_landing/final-cta";
 import { LandingFooter } from "./_landing/landing-footer";
+
+export const metadata: Metadata = {
+  title: "osocios.club — The operating system for private clubs",
+  description:
+    "Turn every visit into loyalty. Manage members, gamify engagement with spin-the-wheel rewards and quests, run events, and operate your club — all under your brand. Set up in under 2 minutes.",
+  alternates: {
+    canonical: "/",
+    languages: { en: "/", es: "/", "x-default": "/" },
+  },
+};
 
 export const revalidate = 3600;
 
@@ -127,6 +139,14 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(getOrganizationJsonLd()) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(getWebSiteJsonLd()) }}
+      />
       <Hero t={tr} stats={stats} />
       <PlatformOverview t={tr} />
       <FeatureGrid t={tr} />
