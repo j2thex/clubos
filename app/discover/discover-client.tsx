@@ -36,7 +36,8 @@ export function DiscoverClient({
   const [flyToTrigger, setFlyToTrigger] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedTagFilters, setSelectedTagFilters] = useState<string[]>([]);
-  const [selectedSubtypes, setSelectedSubtypes] = useState<string[]>([]);
+  const [selectedOfferNames, setSelectedOfferNames] = useState<string[]>([]);
+  const [offerSearch, setOfferSearch] = useState("");
   const [dateFilter, setDateFilter] = useState<"all" | "today" | "week" | "month">("all");
   const mapSectionRef = useRef<HTMLDivElement>(null);
 
@@ -59,11 +60,24 @@ export function DiscoverClient({
     return events.filter((e) => e.date >= today && e.date <= end);
   }, [events, dateFilter]);
 
-  // Filter offers by subtype
+  // Filter offers by specific offer name + search
   const filteredOffers = useMemo(() => {
-    if (selectedSubtypes.length === 0) return offers;
-    return offers.filter((o) => selectedSubtypes.includes(o.subtype));
-  }, [offers, selectedSubtypes]);
+    return offers.filter((o) => {
+      if (selectedOfferNames.length > 0 && !selectedOfferNames.includes(o.offer_name)) return false;
+      if (offerSearch) {
+        const name = (locale === "es" && o.offer_name_es) ? o.offer_name_es : o.offer_name;
+        if (!name.toLowerCase().includes(offerSearch.toLowerCase())) return false;
+      }
+      return true;
+    });
+  }, [offers, selectedOfferNames, offerSearch, locale]);
+
+  // Popular offer names for filter pills (top 15 by frequency)
+  const popularOffers = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const o of offers) counts.set(o.offer_name, (counts.get(o.offer_name) ?? 0) + 1);
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 15).map(([name]) => name);
+  }, [offers]);
 
   // Build GeoJSON features for current tab
   const geoFeatures = useMemo(() => {
@@ -220,8 +234,11 @@ export function DiscoverClient({
           activeTab={activeTab}
           selectedTags={selectedTagFilters}
           onTagsChange={setSelectedTagFilters}
-          selectedSubtypes={selectedSubtypes}
-          onSubtypesChange={setSelectedSubtypes}
+          popularOffers={popularOffers}
+          selectedOfferNames={selectedOfferNames}
+          onOfferNamesChange={setSelectedOfferNames}
+          offerSearch={offerSearch}
+          onOfferSearchChange={setOfferSearch}
           dateFilter={dateFilter}
           onDateFilterChange={setDateFilter}
           locale={locale}
