@@ -13,6 +13,7 @@ import { getServerLocale } from "@/lib/i18n/server";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { LanguageSwitcher } from "@/lib/i18n/switcher";
 import { PublicEventsClient } from "./public-events-client";
+import { getClubJsonLd } from "@/lib/structured-data";
 
 export async function generateMetadata({
   params,
@@ -24,13 +25,38 @@ export async function generateMetadata({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("name")
+    .select("name, tags, club_branding(logo_url)")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
 
+  if (!club) return { title: "Club" };
+
+  const branding = Array.isArray(club.club_branding)
+    ? club.club_branding[0]
+    : club.club_branding;
+  const tags = (club.tags as string[] | null) ?? [];
+  const description = tags.length > 0
+    ? `${club.name} on osocios.club — ${tags.join(", ")}`
+    : `${club.name} — Member portal on osocios.club`;
+
   return {
-    title: club ? club.name : "Club",
+    title: club.name,
+    description,
+    keywords: tags,
+    openGraph: {
+      title: club.name,
+      description,
+      ...(branding?.logo_url && { images: [branding.logo_url] }),
+    },
+    alternates: {
+      canonical: `/${clubSlug}/public`,
+      languages: {
+        en: `/${clubSlug}/public`,
+        es: `/${clubSlug}/public`,
+        "x-default": `/${clubSlug}/public`,
+      },
+    },
   };
 }
 
@@ -127,8 +153,19 @@ export default async function PublicProfilePage({
     }
   }
 
+  const clubJsonLd = getClubJsonLd({
+    name: club.name,
+    slug: clubSlug,
+    logo_url: branding?.logo_url,
+    tags: club.tags as string[] | null,
+  });
+
   return (
     <div className="min-h-screen club-page-bg">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(clubJsonLd) }}
+      />
       {/* Hero */}
       <div
         className="relative px-6 pt-12 pb-16 text-center bg-cover bg-center overflow-hidden"

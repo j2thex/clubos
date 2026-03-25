@@ -17,8 +17,16 @@ export async function generateMetadata({
   if (!vertical) return { title: "Example | osocios.club" };
 
   return {
-    title: `${vertical.name} — Example | osocios.club`,
+    title: `${vertical.name} — Example`,
     description: vertical.tagline,
+    alternates: {
+      canonical: `/examples/${slug}`,
+      languages: {
+        en: `/examples/${slug}`,
+        es: `/examples/${slug}`,
+        "x-default": `/examples/${slug}`,
+      },
+    },
   };
 }
 

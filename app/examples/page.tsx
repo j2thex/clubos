@@ -3,8 +3,17 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Examples | osocios.club",
-  description: "See how osocios.club works for different types of businesses — sports clubs, bars, coworking spaces, and more.",
+  title: "Examples",
+  description:
+    "See how osocios.club works for different types of businesses — sports clubs, bars, coworking spaces, and more.",
+  alternates: {
+    canonical: "/examples",
+    languages: {
+      en: "/examples",
+      es: "/examples",
+      "x-default": "/examples",
+    },
+  },
 };
 
 export default function ExamplesPage() {
