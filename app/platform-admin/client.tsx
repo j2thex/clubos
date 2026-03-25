@@ -271,22 +271,13 @@ export function PlatformAdminClient({
                     <td className="text-right px-3 py-3">
                       <div className="flex gap-1 justify-end">
                         {!c.approved ? (
-                          <>
-                            <button
-                              onClick={() => startTransition(async () => { await approveClub(c.id); })}
-                              disabled={isPending}
-                              className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-500/20 text-green-300 hover:bg-green-500/30 disabled:opacity-50 transition-colors"
-                            >
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => startTransition(async () => { await rejectClub(c.id); })}
-                              disabled={isPending}
-                              className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 hover:bg-red-500/30 disabled:opacity-50 transition-colors"
-                            >
-                              Reject
-                            </button>
-                          </>
+                          <button
+                            onClick={() => startTransition(async () => { await approveClub(c.id); })}
+                            disabled={isPending}
+                            className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-500/20 text-green-300 hover:bg-green-500/30 disabled:opacity-50 transition-colors"
+                          >
+                            Approve
+                          </button>
                         ) : (
                           <button
                             onClick={() => startTransition(async () => { await rejectClub(c.id); })}
