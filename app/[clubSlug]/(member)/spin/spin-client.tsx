@@ -26,16 +26,28 @@ interface Segment {
   probability: number;
 }
 
+function formatBalance(value: number, decimals: number): string {
+  if (decimals === 2) {
+    const fixed = value.toFixed(2);
+    return value < 10 ? "0" + fixed : fixed;
+  }
+  return String(value);
+}
+
 export function MemberSpinClient({
   clubSlug,
   balance,
   segments,
   recentSpins: initialSpins,
+  displayDecimals,
+  spinCost,
 }: {
   clubSlug: string;
   balance: number;
   segments: Segment[];
   recentSpins: SpinRecord[];
+  displayDecimals: number;
+  spinCost: number;
 }) {
   const { t } = useLanguage();
   const [currentBalance, setCurrentBalance] = useState(balance);
@@ -78,9 +90,12 @@ export function MemberSpinClient({
       <div className="club-hero px-6 pt-10 pb-12 text-center">
         <h1 className="text-2xl font-bold text-white">{t("spin.title")}</h1>
         <div className="mt-3 inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-5 py-2">
-          <span className="text-3xl font-bold text-white">{currentBalance}</span>
+          <span className="text-3xl font-bold text-white">{formatBalance(currentBalance, displayDecimals)}</span>
           <span className="text-sm club-light-text">{t("spin.balance")}</span>
         </div>
+        {spinCost > 1 && (
+          <p className="mt-1 text-xs club-light-text">Cost: {formatBalance(spinCost, displayDecimals)} per spin</p>
+        )}
       </div>
 
       {/* Wheel */}
@@ -89,12 +104,13 @@ export function MemberSpinClient({
           <SpinWheel
             segments={segments}
             balance={currentBalance}
+            spinCost={spinCost}
             onSpin={handleSpin}
           />
         </div>
 
         {/* No spins message */}
-        {currentBalance <= 0 && (
+        {currentBalance < spinCost && (
           <div className="bg-white rounded-2xl shadow p-4 text-center">
             <p className="text-sm text-gray-500">{t("spin.earnMore")}</p>
           </div>

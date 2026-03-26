@@ -12,14 +12,26 @@ interface Segment {
   probability: number;
 }
 
+function formatBalance(value: number, decimals: number): string {
+  if (decimals === 2) {
+    const fixed = value.toFixed(2);
+    return value < 10 ? "0" + fixed : fixed;
+  }
+  return String(value);
+}
+
 export function StaffSpinClient({
   clubId,
   segments,
   initialMemberCode,
+  displayDecimals = 0,
+  spinCost = 1,
 }: {
   clubId: string;
   segments: Segment[];
   initialMemberCode?: string;
+  displayDecimals?: number;
+  spinCost?: number;
 }) {
   const [memberCode, setMemberCode] = useState(initialMemberCode ?? "");
   const [isPending, startTransition] = useTransition();
@@ -97,7 +109,7 @@ export function StaffSpinClient({
           {activeMemberCode && (
             <p className="text-sm text-gray-900">
               <span className="font-mono font-bold">{activeMemberCode}</span>
-              <span className="text-gray-400 ml-2">{t(memberBalance === 1 ? "staff.spinsRemaining" : "staff.spinsRemainingPlural", { balance: memberBalance })}</span>
+              <span className="text-gray-400 ml-2">{t(memberBalance === 1 ? "staff.spinsRemaining" : "staff.spinsRemainingPlural", { balance: formatBalance(memberBalance, displayDecimals) })}</span>
             </p>
           )}
         </div>
@@ -109,6 +121,7 @@ export function StaffSpinClient({
           ref={wheelRef}
           segments={segments}
           balance={activeMemberCode ? memberBalance : 0}
+          spinCost={spinCost}
           hideButton
         />
       </div>

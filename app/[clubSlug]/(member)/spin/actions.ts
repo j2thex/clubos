@@ -34,8 +34,17 @@ export async function memberSpin(
     return { error: "Account is inactive" };
   }
 
-  if (member.spin_balance <= 0) {
-    return { error: "No spins remaining" };
+  // Get club spin cost
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("spin_cost")
+    .eq("id", session.club_id)
+    .single();
+
+  const spinCost = club?.spin_cost ?? 1;
+
+  if (member.spin_balance < spinCost) {
+    return { error: "Not enough spins" };
   }
 
   // Get wheel config
@@ -70,7 +79,7 @@ export async function memberSpin(
   // Decrement balance
   await supabase
     .from("members")
-    .update({ spin_balance: member.spin_balance - 1 })
+    .update({ spin_balance: member.spin_balance - spinCost })
     .eq("id", member.id);
 
   // Insert spin record
@@ -107,7 +116,7 @@ export async function memberSpin(
       value: selected.reward_value,
       color: selected.color,
     },
-    newBalance: member.spin_balance - 1,
+    newBalance: member.spin_balance - spinCost,
     segmentIndex: segments.indexOf(selected),
   };
 }

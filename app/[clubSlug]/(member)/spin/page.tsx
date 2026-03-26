@@ -20,10 +20,10 @@ export default async function MemberSpinPage({
 
   const supabase = createAdminClient();
 
-  // Check if spin wheel is enabled
+  // Fetch club spin settings
   const { data: club } = await supabase
     .from("clubs")
-    .select("spin_enabled")
+    .select("spin_enabled, spin_display_decimals, spin_cost")
     .eq("id", session.club_id)
     .single();
 
@@ -106,6 +106,8 @@ export default async function MemberSpinPage({
           createdAt: s.created_at,
         })) ?? []
       }
+      displayDecimals={club?.spin_display_decimals ?? 0}
+      spinCost={club?.spin_cost ?? 1}
     />
   );
 }

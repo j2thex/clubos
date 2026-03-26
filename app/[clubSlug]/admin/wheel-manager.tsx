@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { addSegment, updateSegment, deleteSegment, toggleSpinEnabled } from "./actions";
+import { addSegment, updateSegment, deleteSegment, toggleSpinEnabled, updateSpinDisplayOptions } from "./actions";
 
 interface Segment {
   id: string;
@@ -18,11 +18,15 @@ export function WheelManager({
   clubId,
   clubSlug,
   spinEnabled,
+  spinDisplayDecimals,
+  spinCost,
 }: {
   segments: Segment[];
   clubId: string;
   clubSlug: string;
   spinEnabled: boolean;
+  spinDisplayDecimals: number;
+  spinCost: number;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editLabel, setEditLabel] = useState("");
@@ -36,6 +40,9 @@ export function WheelManager({
   const [newColor, setNewColor] = useState("#16a34a");
   const [newLabelColor, setNewLabelColor] = useState("#ffffff");
   const [newProb, setNewProb] = useState("10");
+
+  const [displayDecimals, setDisplayDecimals] = useState(spinDisplayDecimals);
+  const [costPerSpin, setCostPerSpin] = useState(spinCost);
 
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -118,6 +125,16 @@ export function WheelManager({
     });
   }
 
+  function handleSaveOptions() {
+    setError(null);
+    startTransition(async () => {
+      const result = await updateSpinDisplayOptions(clubId, displayDecimals, costPerSpin, clubSlug);
+      if ("error" in result) {
+        setError(result.error);
+      }
+    });
+  }
+
   return (
     <div className="space-y-2">
       {/* Spin enabled toggle */}
@@ -144,6 +161,62 @@ export function WheelManager({
             }`}
           />
         </button>
+      </div>
+
+      {/* Spin display settings */}
+      <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-4">
+        <div className="px-5 py-4 space-y-4">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Spin Settings</p>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-2">Display format</label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setDisplayDecimals(0)}
+                className={`px-4 py-1.5 rounded-lg text-sm font-semibold border transition-colors ${
+                  displayDecimals === 0
+                    ? "bg-gray-800 text-white border-gray-800"
+                    : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                5
+              </button>
+              <button
+                type="button"
+                onClick={() => setDisplayDecimals(2)}
+                className={`px-4 py-1.5 rounded-lg text-sm font-semibold border transition-colors ${
+                  displayDecimals === 2
+                    ? "bg-gray-800 text-white border-gray-800"
+                    : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                05.00
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Spins per play</label>
+            <input
+              type="number"
+              min={1}
+              max={100}
+              value={costPerSpin}
+              onChange={(e) => setCostPerSpin(Math.max(1, Math.min(100, Number(e.target.value) || 1)))}
+              className="w-20 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 text-center focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={handleSaveOptions}
+            disabled={isPending || (displayDecimals === spinDisplayDecimals && costPerSpin === spinCost)}
+            className="rounded-lg bg-gray-800 text-white px-4 py-1.5 text-xs font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Save Settings
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center justify-between px-1">

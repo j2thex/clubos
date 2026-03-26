@@ -86,8 +86,17 @@ export async function performSpinForMember(memberCode: string, clubId: string): 
     return { error: "Cannot spin for yourself" };
   }
 
-  if (member.spin_balance <= 0) {
-    return { error: "No spins remaining for this member" };
+  // Get club spin cost
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("spin_cost")
+    .eq("id", clubId)
+    .single();
+
+  const spinCost = club?.spin_cost ?? 1;
+
+  if (member.spin_balance < spinCost) {
+    return { error: "Not enough spins for this member" };
   }
 
   // Get wheel config
@@ -120,7 +129,7 @@ export async function performSpinForMember(memberCode: string, clubId: string): 
   // Decrement balance and log spin
   await supabase
     .from("members")
-    .update({ spin_balance: member.spin_balance - 1 })
+    .update({ spin_balance: member.spin_balance - spinCost })
     .eq("id", member.id);
 
   await supabase.from("spins").insert({
@@ -146,7 +155,7 @@ export async function performSpinForMember(memberCode: string, clubId: string): 
       value: selected.reward_value,
       color: selected.color,
     },
-    newBalance: member.spin_balance - 1,
+    newBalance: member.spin_balance - spinCost,
     segmentIndex: segments.indexOf(selected),
   };
 }
