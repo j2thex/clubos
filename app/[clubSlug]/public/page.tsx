@@ -14,6 +14,7 @@ import { DynamicIcon } from "@/components/dynamic-icon";
 import { LanguageSwitcher } from "@/lib/i18n/switcher";
 import { PublicEventsClient } from "./public-events-client";
 import { getClubJsonLd } from "@/lib/structured-data";
+import { MembersOnlyTeaser } from "@/components/club/members-only-teaser";
 
 export async function generateMetadata({
   params,
@@ -91,7 +92,7 @@ export default async function PublicProfilePage({
     ? club.club_branding[0]
     : club.club_branding;
 
-  const [{ data: events }, { data: quests }, { data: offers }, { data: galleryImages }, { data: inviteButtons }] =
+  const [{ data: events }, { data: quests }, { data: offers }, { data: galleryImages }, { data: inviteButtons }, { count: hiddenQuestsCount }, { count: hiddenEventsCount }, { count: hiddenOffersCount }] =
     await Promise.all([
       supabase
         .from("events")
@@ -124,6 +125,25 @@ export default async function PublicProfilePage({
         .select("type, label, url, icon_url")
         .eq("club_id", club.id)
         .order("display_order", { ascending: true }),
+      // Hidden counts for teaser badges
+      supabase
+        .from("quests")
+        .select("id", { count: "exact", head: true })
+        .eq("club_id", club.id)
+        .eq("active", true)
+        .eq("is_public", false),
+      supabase
+        .from("events")
+        .select("id", { count: "exact", head: true })
+        .eq("club_id", club.id)
+        .eq("active", true)
+        .eq("is_public", false),
+      supabase
+        .from("club_offers")
+        .select("id", { count: "exact", head: true })
+        .eq("club_id", club.id)
+        .eq("is_public", false)
+        .eq("archived", false),
     ]);
 
   const hasEvents = events && events.length > 0;
@@ -327,6 +347,7 @@ export default async function PublicProfilePage({
                   </div>
                 </div>
               ))}
+              <MembersOnlyTeaser count={hiddenQuestsCount ?? 0} locale={locale} />
             </div>
           </div>
         )}
@@ -352,6 +373,7 @@ export default async function PublicProfilePage({
                 reward_spins: ev.reward_spins,
               }))}
             />
+            <MembersOnlyTeaser count={hiddenEventsCount ?? 0} locale={locale} />
           </div>
         )}
 
@@ -395,6 +417,7 @@ export default async function PublicProfilePage({
                 </div>
               ))}
             </div>
+            <MembersOnlyTeaser count={hiddenOffersCount ?? 0} locale={locale} />
           </div>
         )}
 
