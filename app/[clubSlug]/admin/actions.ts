@@ -1446,3 +1446,47 @@ export async function addCustomOffer(
   revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
 }
+
+export async function createReferralSource(
+  clubId: string,
+  name: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const code = name.trim().toUpperCase();
+  if (!code || code.length < 2 || code.length > 30) {
+    return { error: "Referral source name must be 2-30 characters" };
+  }
+
+  const supabase = createAdminClient();
+  const { error } = await supabase.from("members").insert({
+    club_id: clubId,
+    member_code: code,
+    is_system_member: true,
+    is_premium_referrer: true,
+    spin_balance: 0,
+    status: "active",
+  });
+
+  if (error) {
+    if (error.code === "23505") return { error: "Referral source already exists" };
+    return { error: "Failed to create referral source" };
+  }
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
+export async function deleteReferralSource(
+  memberId: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("members")
+    .delete()
+    .eq("id", memberId)
+    .eq("is_system_member", true);
+  if (error) return { error: "Failed to delete referral source" };
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}

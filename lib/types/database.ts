@@ -166,6 +166,7 @@ export type Database = {
           valid_till: string | null;
           referred_by: string | null;
           is_premium_referrer: boolean;
+          is_system_member: boolean;
           referral_reward_spins: number;
           created_at: string;
         };
@@ -182,6 +183,7 @@ export type Database = {
           valid_till?: string | null;
           referred_by?: string | null;
           is_premium_referrer?: boolean;
+          is_system_member?: boolean;
           referral_reward_spins?: number;
           created_at?: string;
         };
@@ -198,6 +200,7 @@ export type Database = {
           valid_till?: string | null;
           referred_by?: string | null;
           is_premium_referrer?: boolean;
+          is_system_member?: boolean;
           referral_reward_spins?: number;
           created_at?: string;
         };
