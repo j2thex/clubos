@@ -200,10 +200,11 @@ export function WheelManager({
             <label className="block text-xs font-medium text-gray-500 mb-1">Spins per play</label>
             <input
               type="number"
-              min={1}
+              min={0.1}
               max={100}
+              step={0.1}
               value={costPerSpin}
-              onChange={(e) => setCostPerSpin(Math.max(1, Math.min(100, Number(e.target.value) || 1)))}
+              onChange={(e) => setCostPerSpin(Math.max(0.1, Math.min(100, Number(e.target.value) || 1)))}
               className="w-20 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 text-center focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
             />
           </div>

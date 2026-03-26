@@ -1534,8 +1534,8 @@ export async function updateSpinDisplayOptions(
   if (displayDecimals !== 0 && displayDecimals !== 2) {
     return { error: "Display decimals must be 0 or 2" };
   }
-  if (spinCost < 1 || spinCost > 100) {
-    return { error: "Spin cost must be between 1 and 100" };
+  if (spinCost < 0.1 || spinCost > 100) {
+    return { error: "Spin cost must be between 0.1 and 100" };
   }
 
   const supabase = createAdminClient();
