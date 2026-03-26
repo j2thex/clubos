@@ -9,6 +9,7 @@ import { FilterControls } from "./components/filter-controls";
 import { ResultsGrid } from "./components/results-grid";
 import { LocationSearch } from "./components/location-search";
 import { NearMeButton } from "./components/near-me-button";
+import { AgeGate } from "./components/age-gate";
 import { useLanguage } from "@/lib/i18n/provider";
 import { getTagLabel } from "@/lib/tags";
 
@@ -60,10 +61,28 @@ export function DiscoverClient({
     return events.filter((e) => e.date >= today && e.date <= end);
   }, [events, dateFilter]);
 
-  // Filter offers by specific offer name + search
+  // Filter offers by specific offer name (AND logic) + search
   const filteredOffers = useMemo(() => {
+    if (selectedOfferNames.length === 0) {
+      if (!offerSearch) return offers;
+      return offers.filter((o) => {
+        const name = (locale === "es" && o.offer_name_es) ? o.offer_name_es : o.offer_name;
+        return name.toLowerCase().includes(offerSearch.toLowerCase());
+      });
+    }
+    // AND logic: find clubs that have ALL selected offer names
+    const clubOfferNames = new Map<string, Set<string>>();
+    for (const o of offers) {
+      if (!clubOfferNames.has(o.club_slug)) clubOfferNames.set(o.club_slug, new Set());
+      clubOfferNames.get(o.club_slug)!.add(o.offer_name);
+    }
+    const qualifyingSlugs = new Set(
+      [...clubOfferNames.entries()]
+        .filter(([, names]) => selectedOfferNames.every((n) => names.has(n)))
+        .map(([slug]) => slug)
+    );
     return offers.filter((o) => {
-      if (selectedOfferNames.length > 0 && !selectedOfferNames.includes(o.offer_name)) return false;
+      if (!qualifyingSlugs.has(o.club_slug)) return false;
       if (offerSearch) {
         const name = (locale === "es" && o.offer_name_es) ? o.offer_name_es : o.offer_name;
         if (!name.toLowerCase().includes(offerSearch.toLowerCase())) return false;
@@ -200,6 +219,7 @@ export function DiscoverClient({
 
   return (
     <div className="flex flex-col">
+      <AgeGate />
       {/* Section 1: Map */}
       <section ref={mapSectionRef} className="relative h-[60svh] md:h-[50vh]">
         {/* Search + near-me overlay */}

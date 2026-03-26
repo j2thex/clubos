@@ -302,3 +302,17 @@
   100% { transform: scale(0.8); opacity: 0.3; }
 }
 .landing-expand-ring { animation: landing-expand-ring 4s ease-in-out infinite; }
+
+/* Age gate smoke wisps */
+@keyframes age-gate-wisp-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.20; }
+  50% { transform: translate(40px, -30px) scale(1.15); opacity: 0.30; }
+}
+@keyframes age-gate-wisp-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.15; }
+  50% { transform: translate(-30px, 20px) scale(1.1); opacity: 0.25; }
+}
+@keyframes age-gate-wisp-3 {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.10; }
+  50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.18; }
+}
