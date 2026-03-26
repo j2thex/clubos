@@ -1446,3 +1446,29 @@ export async function addCustomOffer(
   revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
 }
+
+export async function updateSpinDisplayOptions(
+  clubId: string,
+  displayDecimals: number,
+  spinCost: number,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  if (displayDecimals !== 0 && displayDecimals !== 2) {
+    return { error: "Display decimals must be 0 or 2" };
+  }
+  if (spinCost < 1 || spinCost > 100) {
+    return { error: "Spin cost must be between 1 and 100" };
+  }
+
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ spin_display_decimals: displayDecimals, spin_cost: spinCost })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to update spin options" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}

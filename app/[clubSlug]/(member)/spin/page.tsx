@@ -26,6 +26,13 @@ export default async function MemberSpinPage({
     .eq("id", session.member_id)
     .single();
 
+  // Fetch club spin settings
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("spin_display_decimals, spin_cost")
+    .eq("id", session.club_id)
+    .single();
+
   // Fetch active wheel segments
   const { data: segments } = await supabase
     .from("wheel_configs")
@@ -78,6 +85,8 @@ export default async function MemberSpinPage({
           createdAt: s.created_at,
         })) ?? []
       }
+      displayDecimals={club?.spin_display_decimals ?? 0}
+      spinCost={club?.spin_cost ?? 1}
     />
   );
 }
