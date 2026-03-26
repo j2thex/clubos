@@ -608,5 +608,8 @@
   "admin.findCoordinates": "Find Coordinates",
   "admin.locationSaved": "Location saved",
   "admin.locationName": "Location (optional)",
-  "admin.locationPlaceholder": "Venue name or address"
+  "admin.locationPlaceholder": "Venue name or address",
+  "discover.ageGate.subtitle": "Age Restricted Content",
+  "discover.ageGate.body": "This platform features clubs and services intended for adults. By continuing, you confirm you are 18 years or older.",
+  "discover.ageGate.confirm": "I am 18 or older — Enter"
 }

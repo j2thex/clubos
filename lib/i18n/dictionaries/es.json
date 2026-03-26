@@ -608,5 +608,8 @@
   "admin.findCoordinates": "Buscar coordenadas",
   "admin.locationSaved": "Ubicación guardada",
   "admin.locationName": "Ubicación (opcional)",
-  "admin.locationPlaceholder": "Nombre del lugar o dirección"
+  "admin.locationPlaceholder": "Nombre del lugar o dirección",
+  "discover.ageGate.subtitle": "Contenido Restringido por Edad",
+  "discover.ageGate.body": "Esta plataforma presenta clubes y servicios dirigidos a adultos. Al continuar, confirmas que tienes 18 años o más.",
+  "discover.ageGate.confirm": "Tengo 18 años o más — Entrar"
 }
