@@ -192,6 +192,7 @@
   "staff.memberPortal": "Member Portal",
   "staff.publicPage": "Public Page",
   "staff.wheelNotConfigured": "Wheel not configured yet.",
+  "staff.spinDisabledByAdmin": "Spin wheel disabled by admin.",
   "staff.memberCodePlaceholder": "ABC12",
   "staff.spinButton": "Spin",
   "staff.spinsRemaining": "{balance} spin remaining",

@@ -33,6 +33,24 @@ export async function updateLoginMode(
   return { ok: true };
 }
 
+export async function toggleSpinEnabled(
+  clubId: string,
+  enabled: boolean,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ spin_enabled: enabled })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to update spin setting" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
 export async function updateInviteOnly(
   clubId: string,
   inviteOnly: boolean,
