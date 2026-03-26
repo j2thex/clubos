@@ -14,6 +14,7 @@ import { DynamicIcon } from "@/components/dynamic-icon";
 import { LanguageSwitcher } from "@/lib/i18n/switcher";
 import { PublicEventsClient } from "./public-events-client";
 import { getClubJsonLd } from "@/lib/structured-data";
+import { WorkingHoursDisplay } from "@/components/club/working-hours-display";
 
 export async function generateMetadata({
   params,
@@ -73,7 +74,7 @@ export default async function PublicProfilePage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name, approved, invite_only, invite_mode, login_mode, hide_member_login, tags, club_branding(logo_url, cover_url, primary_color, secondary_color, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website)")
+    .select("id, name, approved, invite_only, invite_mode, login_mode, hide_member_login, tags, working_hours, timezone, club_branding(logo_url, cover_url, primary_color, secondary_color, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website)")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -228,6 +229,15 @@ export default async function PublicProfilePage({
               image_url: g.image_url,
               caption: g.caption,
             }))}
+          />
+        )}
+
+        {/* Working Hours */}
+        {club.working_hours && (
+          <WorkingHoursDisplay
+            workingHours={club.working_hours as Record<string, { open: string; close: string } | null>}
+            timezone={club.timezone ?? "UTC"}
+            locale={locale}
           />
         )}
 

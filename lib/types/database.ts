@@ -50,6 +50,7 @@ export type Database = {
           hide_member_login: boolean;
           tags: string[];
           claimed: boolean;
+          working_hours: Record<string, { open: string; close: string } | null> | null;
           created_at: string;
         };
         Insert: {
@@ -67,6 +68,7 @@ export type Database = {
           hide_member_login?: boolean;
           tags?: string[];
           claimed?: boolean;
+          working_hours?: Record<string, { open: string; close: string } | null> | null;
           created_at?: string;
         };
         Update: {
@@ -84,6 +86,7 @@ export type Database = {
           hide_member_login?: boolean;
           tags?: string[];
           claimed?: boolean;
+          working_hours?: Record<string, { open: string; close: string } | null> | null;
           created_at?: string;
         };
         Relationships: [
