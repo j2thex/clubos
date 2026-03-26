@@ -18,7 +18,7 @@ export default async function StaffSpinPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id")
+    .select("id, spin_enabled")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -64,7 +64,11 @@ export default async function StaffSpinPage({
       )}
 
       {/* Wheel */}
-      {segments && segments.length > 0 ? (
+      {club.spin_enabled === false ? (
+        <div className="bg-white rounded-2xl shadow-lg p-8 text-center text-gray-400 text-sm">
+          {t(locale, "staff.spinDisabledByAdmin")}
+        </div>
+      ) : segments && segments.length > 0 ? (
         <StaffSpinClient
           clubId={club.id}
           initialMemberCode={member}

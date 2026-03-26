@@ -22,7 +22,7 @@ export default async function SettingsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, login_mode, invite_only, invite_mode, hide_member_login, tags, telegram_bot_token, telegram_chat_id, notification_secret, latitude, longitude, address, city, country")
+    .select("id, login_mode, invite_only, invite_mode, hide_member_login, tags, telegram_bot_token, telegram_chat_id, notification_secret, latitude, longitude, address, city, country, spin_enabled")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -168,6 +168,7 @@ export default async function SettingsPage({
           }))}
           clubId={club.id}
           clubSlug={clubSlug}
+          spinEnabled={club.spin_enabled ?? true}
         />
       </CollapsibleSection>
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { addSegment, updateSegment, deleteSegment } from "./actions";
+import { addSegment, updateSegment, deleteSegment, toggleSpinEnabled } from "./actions";
 
 interface Segment {
   id: string;
@@ -17,10 +17,12 @@ export function WheelManager({
   segments,
   clubId,
   clubSlug,
+  spinEnabled,
 }: {
   segments: Segment[];
   clubId: string;
   clubSlug: string;
+  spinEnabled: boolean;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editLabel, setEditLabel] = useState("");
@@ -109,8 +111,41 @@ export function WheelManager({
   const totalProb = segments.reduce((sum, s) => sum + s.probability, 0);
   const totalPercent = Math.round(totalProb * 100);
 
+  function handleToggleSpinEnabled() {
+    startTransition(async () => {
+      const result = await toggleSpinEnabled(clubId, !spinEnabled, clubSlug);
+      if ("error" in result) setError(result.error);
+    });
+  }
+
   return (
     <div className="space-y-2">
+      {/* Spin enabled toggle */}
+      <div className="bg-white rounded-2xl shadow-lg px-5 py-4 flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-gray-900">Spin Wheel Enabled</p>
+          <p className="text-xs text-gray-400">
+            {spinEnabled ? "Members can access the spin wheel" : "Spin wheel is hidden from members"}
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={spinEnabled}
+          onClick={handleToggleSpinEnabled}
+          disabled={isPending}
+          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out disabled:opacity-50 ${
+            spinEnabled ? "bg-green-600" : "bg-gray-300"
+          }`}
+        >
+          <span
+            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+              spinEnabled ? "translate-x-5" : "translate-x-0"
+            }`}
+          />
+        </button>
+      </div>
+
       <div className="flex items-center justify-between px-1">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
           Wheel Segments ({segments.length})
