@@ -51,6 +51,7 @@ export type Database = {
           tags: string[];
           claimed: boolean;
           spin_enabled: boolean;
+          working_hours: Record<string, { open: string; close: string } | null> | null;
           created_at: string;
         };
         Insert: {
@@ -69,6 +70,7 @@ export type Database = {
           tags?: string[];
           claimed?: boolean;
           spin_enabled?: boolean;
+          working_hours?: Record<string, { open: string; close: string } | null> | null;
           created_at?: string;
         };
         Update: {
@@ -87,6 +89,7 @@ export type Database = {
           tags?: string[];
           claimed?: boolean;
           spin_enabled?: boolean;
+          working_hours?: Record<string, { open: string; close: string } | null> | null;
           created_at?: string;
         };
         Relationships: [

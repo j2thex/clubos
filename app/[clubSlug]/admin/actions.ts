@@ -1464,3 +1464,19 @@ export async function addCustomOffer(
   revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
 }
+
+export async function updateWorkingHours(
+  clubId: string,
+  workingHours: Record<string, { open: string; close: string } | null> | null,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("clubs")
+    .update({ working_hours: workingHours })
+    .eq("id", clubId);
+  if (error) return { error: "Failed to update working hours" };
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/public`);
+  return { ok: true };
+}

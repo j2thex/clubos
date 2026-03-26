@@ -10,6 +10,7 @@ import { WheelManager } from "../../wheel-manager";
 import { NotificationLightManager } from "../../notification-light-manager";
 import { TagManager } from "../../tag-manager";
 import { LocationManager } from "../../location-manager";
+import { WorkingHoursManager } from "../../working-hours-manager";
 import { CollapsibleSection } from "@/components/collapsible-section";
 
 export default async function SettingsPage({
@@ -22,7 +23,7 @@ export default async function SettingsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, login_mode, invite_only, invite_mode, hide_member_login, tags, telegram_bot_token, telegram_chat_id, notification_secret, latitude, longitude, address, city, country, spin_enabled")
+    .select("id, login_mode, invite_only, invite_mode, hide_member_login, tags, telegram_bot_token, telegram_chat_id, notification_secret, latitude, longitude, address, city, country, spin_enabled, working_hours")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -84,6 +85,13 @@ export default async function SettingsPage({
         clubId={club.id}
         clubSlug={clubSlug}
       />
+      <CollapsibleSection title="Working Hours">
+        <WorkingHoursManager
+          clubId={club.id}
+          clubSlug={clubSlug}
+          initialHours={club.working_hours as Record<string, { open: string; close: string } | null> | null}
+        />
+      </CollapsibleSection>
       <LoginModeManager
         loginMode={club.login_mode ?? "code_only"}
         inviteOnly={club.invite_only ?? false}
