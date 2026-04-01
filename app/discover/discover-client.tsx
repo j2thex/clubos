@@ -225,6 +225,21 @@ export function DiscoverClient({
   return (
     <div className="flex flex-col">
       <AgeGate />
+      {/* Filter controls — above the map so users pick filters before browsing */}
+      <FilterControls
+        activeTab={activeTab}
+        selectedTags={selectedTagFilters}
+        onTagsChange={setSelectedTagFilters}
+        popularOffers={popularOffers}
+        selectedOfferNames={selectedOfferNames}
+        onOfferNamesChange={setSelectedOfferNames}
+        offerSearch={offerSearch}
+        onOfferSearchChange={setOfferSearch}
+        dateFilter={dateFilter}
+        onDateFilterChange={setDateFilter}
+        locale={locale}
+      />
+
       {/* Section 1: Map */}
       <section ref={mapSectionRef} className="relative h-[60svh] md:h-[50vh]">
         {/* Search + near-me overlay */}
@@ -237,7 +252,7 @@ export function DiscoverClient({
           />
         </div>
 
-        {/* Filter tabs overlay at bottom of map */}
+        {/* Tab selector overlay at bottom of map */}
         <div className="absolute bottom-3 left-3 right-3 z-10">
           <div className="bg-black/70 backdrop-blur-lg rounded-xl border border-white/10">
             <FilterTabs activeTab={activeTab} onChange={setActiveTab} counts={counts} />
@@ -258,20 +273,6 @@ export function DiscoverClient({
 
       {/* Section 2: Results */}
       <section className="landing-dark border-t border-white/10">
-        {/* Filters */}
-        <FilterControls
-          activeTab={activeTab}
-          selectedTags={selectedTagFilters}
-          onTagsChange={setSelectedTagFilters}
-          popularOffers={popularOffers}
-          selectedOfferNames={selectedOfferNames}
-          onOfferNamesChange={setSelectedOfferNames}
-          offerSearch={offerSearch}
-          onOfferSearchChange={setOfferSearch}
-          dateFilter={dateFilter}
-          onDateFilterChange={setDateFilter}
-          locale={locale}
-        />
 
         {/* Results grid */}
         <ResultsGrid
