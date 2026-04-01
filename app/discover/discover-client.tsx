@@ -211,6 +211,11 @@ export function DiscoverClient({
     flyTo(lat, lng, 13);
   }, [flyTo]);
 
+  const handleNavigateToClub = useCallback((id: string, lat: number, lng: number) => {
+    setActiveTab("clubs");
+    handleSelectItem(id, lat, lng);
+  }, [handleSelectItem]);
+
   const counts = {
     clubs: filteredClubs.length,
     events: filteredEvents.length,
@@ -225,12 +230,16 @@ export function DiscoverClient({
         {/* Search + near-me overlay */}
         <div className="absolute top-3 left-3 right-3 z-10 flex gap-2">
           <LocationSearch onLocationFound={handleLocationFound} />
-          <NearMeButton onLocationFound={handleLocationFound} />
+          <NearMeButton
+            onLocationFound={handleLocationFound}
+            clubs={clubs}
+            onNavigateToClub={handleNavigateToClub}
+          />
         </div>
 
         {/* Filter tabs overlay at bottom of map */}
         <div className="absolute bottom-3 left-3 right-3 z-10">
-          <div className="bg-black/70 backdrop-blur-lg rounded-xl border border-white/[0.08]">
+          <div className="bg-black/70 backdrop-blur-lg rounded-xl border border-white/10">
             <FilterTabs activeTab={activeTab} onChange={setActiveTab} counts={counts} />
           </div>
         </div>
@@ -248,7 +257,7 @@ export function DiscoverClient({
       </section>
 
       {/* Section 2: Results */}
-      <section className="landing-dark border-t border-white/[0.06]">
+      <section className="landing-dark border-t border-white/10">
         {/* Filters */}
         <FilterControls
           activeTab={activeTab}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useCallback, useEffect } from "react";
-import Map, { Marker, Popup, NavigationControl } from "react-map-gl/maplibre";
+import Map, { Marker, Popup } from "react-map-gl/maplibre";
 import type { MapRef } from "react-map-gl/maplibre";
 import useSupercluster from "use-supercluster";
 import { DEFAULT_MAP_STYLE } from "../lib/map-styles";
@@ -109,13 +109,13 @@ function MarkerPopup({ feature, onClose }: { feature: GeoFeature; onClose: () =>
           </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-gray-900 truncate">{p.name}</p>
-            {p.city && <p className="text-[10px] text-gray-500">{p.city}</p>}
-            {p.club_name && <p className="text-[10px] text-gray-500">{p.club_name}</p>}
+            {p.city && <p className="text-xs text-gray-500">{p.city}</p>}
+            {p.club_name && <p className="text-xs text-gray-500">{p.club_name}</p>}
           </div>
         </div>
 
         {p.type === "event" && p.date && (
-          <div className="flex items-center gap-2 mb-2 text-[11px] text-gray-600">
+          <div className="flex items-center gap-2 mb-2 text-xs text-gray-600">
             <span className="font-medium">{formatPopupDate(p.date)}</span>
             {p.time && <span>{formatPopupTime(p.time)}</span>}
             {p.price != null && p.price > 0 && <span className="font-medium">€{p.price}</span>}
@@ -123,22 +123,22 @@ function MarkerPopup({ feature, onClose }: { feature: GeoFeature; onClose: () =>
         )}
 
         {p.type === "offer" && p.offer_count != null && (
-          <p className="text-[11px] text-gray-500 mb-2">{p.offer_count} offers available</p>
+          <p className="text-xs text-gray-500 mb-2">{p.offer_count} offers available</p>
         )}
 
         {p.tags && p.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-2">
             {p.tags.slice(0, 3).map((tag) => (
-              <span key={tag} className="text-[9px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">{tag}</span>
+              <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">{tag}</span>
             ))}
           </div>
         )}
 
         <div className="flex items-center gap-3 pt-1 border-t border-gray-100">
-          <Link href={`/${p.slug}/public`} className="text-[11px] font-medium text-primary hover:underline">
+          <Link href={`/${p.slug}/public`} className="text-xs font-medium text-primary hover:underline">
             View club →
           </Link>
-          <a href={directionsUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-gray-400 hover:text-gray-600 transition-colors">
+          <a href={directionsUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
             Directions
           </a>
         </div>
@@ -231,8 +231,6 @@ export default function DiscoverMap({
       style={{ width: "100%", height: "100%" }}
       attributionControl={false}
     >
-      <NavigationControl position="bottom-right" showCompass={false} />
-
       {clusters.map((cluster) => {
         const [lng, lat] = cluster.geometry.coordinates;
         const props = cluster.properties as FeatureProperties & { cluster?: boolean; cluster_id?: number; point_count?: number };

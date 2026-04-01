@@ -69,7 +69,7 @@ export function LocationSearch({
   return (
     <div ref={containerRef} className="flex-1 relative">
       <div className="relative">
-        <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
         <input
@@ -78,7 +78,7 @@ export function LocationSearch({
           onChange={(e) => handleSearch(e.target.value)}
           onFocus={() => results.length > 0 && setOpen(true)}
           placeholder="Search a city or address..."
-          className="w-full pl-8 pr-3 py-2 rounded-lg bg-white/[0.06] border border-white/[0.08] text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-white/20 transition"
+          className="w-full pl-8 pr-3 py-2 rounded-lg bg-white/[0.08] border border-white/10 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-white/25 transition"
         />
         {loading && (
           <div className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3 border border-white/30 border-t-white/60 rounded-full animate-spin" />
@@ -86,12 +86,12 @@ export function LocationSearch({
       </div>
 
       {open && results.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-[oklch(0.12_0.02_150)] border border-white/10 rounded-lg shadow-xl overflow-hidden z-50">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-[oklch(0.12_0.02_150)] border border-white/15 rounded-lg shadow-xl overflow-hidden z-50">
           {results.map((r, i) => (
             <button
               key={i}
               onClick={() => selectResult(r)}
-              className="w-full text-left px-3 py-2 text-xs text-white/70 hover:bg-white/[0.08] hover:text-white transition-colors border-b border-white/[0.04] last:border-0"
+              className="w-full text-left px-3 py-2 text-sm text-white/80 hover:bg-white/[0.1] hover:text-white transition-colors border-b border-white/[0.06] last:border-0"
             >
               <span className="line-clamp-1">{r.display_name}</span>
             </button>

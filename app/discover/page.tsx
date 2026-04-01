@@ -157,20 +157,26 @@ export default async function DiscoverPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(clubListJsonLd) }}
       />
       {/* Header */}
-      <header className="relative z-20 flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
-        <Link href="/" className="text-xs font-mono tracking-widest uppercase opacity-60 hover:opacity-80 transition-opacity">
+      <header className="relative z-20 flex items-center justify-between px-6 py-4 border-b border-white/10">
+        <Link href="/" className="text-xs font-mono tracking-widest uppercase opacity-80 hover:opacity-100 transition-opacity">
           {tr("landing.brandName")}
         </Link>
         <div className="flex items-center gap-4">
           <Link
             href="/onboarding"
-            className="text-xs opacity-50 hover:opacity-80 transition-opacity hidden sm:inline"
+            className="text-xs opacity-70 hover:opacity-100 transition-opacity hidden sm:inline"
           >
             {tr("landing.heroPrimaryCta")}
           </Link>
           <LanguageSwitcher variant="dark" />
         </div>
       </header>
+
+      {/* Page orientation */}
+      <section className="px-6 py-5 border-b border-white/10">
+        <h1 className="text-xl sm:text-2xl font-bold text-white">{tr("discover.title")}</h1>
+        <p className="text-sm text-white/60 mt-1">{tr("discover.subtitle")}</p>
+      </section>
 
       {/* Main content */}
       <main className="flex-1 flex flex-col">
