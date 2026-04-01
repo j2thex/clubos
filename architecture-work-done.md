@@ -496,3 +496,116 @@ Switching locale writes the `clubos-lang` cookie and calls `router.refresh()` to
 - `lib/i18n/dictionaries/es.json` — Spanish dictionary (~285 keys)
 - `middleware.ts` — `applyLocale()` helper detects locale, sets `x-lang` header + `clubos-lang` cookie
 - `app/layout.tsx` — async root layout, dynamic `<html lang>`, wraps children in `LanguageProvider`
+
+## SEO, Metadata & Structured Data
+
+### Root Metadata Foundation
+
+**Request:** Prepare the platform for public launch with proper SEO across all public pages.
+
+**Changes:** Updated `app/layout.tsx` with `metadataBase` (from `NEXT_PUBLIC_SITE_URL` env var, defaults to `https://osocios.club`), title template `%s | osocios.club`, rich description with keywords, OpenGraph defaults (`type: "website"`, `siteName`, `locale`), Twitter card `summary_large_image`, and multi-format icon references (`.ico`, `.svg`, `.png`). Added dedicated `metadata` export to `app/page.tsx` with landing-specific title (absolute, overrides template), description, and canonical URL with hreflang alternates.
+
+**How it works:** All pages inherit the root metadata template. Sub-pages only need to set `title: "Page Name"` and it renders as "Page Name | osocios.club". The landing page overrides with an absolute title. `metadataBase` enables relative URLs in all metadata (canonicals, OG images resolve against it automatically).
+
+**Key files:**
+- `app/layout.tsx` — `metadataBase`, title template, OG/Twitter defaults, icon config
+- `app/page.tsx` — landing-specific metadata with absolute title
+
+### robots.txt & Dynamic Sitemap
+
+**Request:** Create robots.txt and sitemap.xml for search engine crawling and indexing.
+
+**Changes:** Created `app/robots.ts` using Next.js Metadata API — allows crawling of public routes (`/`, `/discover`, `/examples/`, `/*/public`), blocks auth-required routes (`/*/staff/`, `/*/admin/`, `/*/login`, `/onboarding`, `/platform-admin`, `/api/`). Created `app/sitemap.ts` — dynamic sitemap that includes static pages with priorities (landing 1.0, discover 0.9, examples 0.5, legal 0.3), all vertical example slugs from `VERTICALS` array, and dynamically queries the `clubs` table for active+approved club slugs to generate `/{slug}/public` URLs (priority 0.7). Uses `createAdminClient` for the DB query.
+
+**How it works:** Next.js auto-serves `/robots.txt` and `/sitemap.xml` from these route files. The sitemap regenerates on each request with live club data. The middleware matcher was updated to exclude `robots.txt`, `sitemap.xml`, and `manifest.webmanifest` from auth checks (they were being intercepted as club slugs).
+
+**Key files:**
+- `app/robots.ts` — allow/disallow rules, sitemap reference
+- `app/sitemap.ts` — static pages + dynamic club profiles from DB
+- `middleware.ts` — matcher updated to exclude metadata routes
+
+### OG Images (Code-Generated)
+
+**Request:** Create social sharing preview images for all public pages.
+
+**Changes:** Created 4 `opengraph-image.tsx` files using Next.js `ImageResponse` from `next/og`. All use edge runtime and render 1200x630 PNG images: (1) `app/opengraph-image.tsx` — default landing image with logo mark, brand name, tagline, feature pills; (2) `app/discover/opengraph-image.tsx` — "Find clubs, events & services near you"; (3) `app/examples/opengraph-image.tsx` — "See it in action" with industry category pills; (4) `app/[clubSlug]/public/opengraph-image.tsx` — dynamic per-club image that fetches club name, primary color, and tags from DB, renders club initial in a colored square with tag pills.
+
+**How it works:** Next.js automatically discovers `opengraph-image.tsx` files and generates `<meta property="og:image">` tags pointing to the generated image URL. The club OG image is dynamic — each club gets a unique preview with their branding color and tags. All images use a dark background with the green brand accent. No external image files needed — everything is rendered from JSX at request/build time.
+
+**Key files:**
+- `app/opengraph-image.tsx` — default/landing OG image
+- `app/discover/opengraph-image.tsx` — discover page OG
+- `app/examples/opengraph-image.tsx` — examples page OG
+- `app/[clubSlug]/public/opengraph-image.tsx` — dynamic per-club OG (fetches from DB)
+
+### JSON-LD Structured Data
+
+**Request:** Add schema.org structured data for search engines and LLMs.
+
+**Changes:** Created `lib/structured-data.ts` with 4 helper functions: `getOrganizationJsonLd()` (platform Organization schema with name, URL, logo, description, Barcelona founding location), `getWebSiteJsonLd()` (WebSite with SearchAction pointing to `/discover`), `getClubJsonLd(club)` (per-club Organization with name, URL, logo, tags as keywords, address if available, `memberOf` linking to platform), `getItemListJsonLd(items)` (ItemList for directory listings). Added JSON-LD `<script>` tags to: landing page (Organization + WebSite), club public page (Club schema), discover page (ItemList of clubs).
+
+**How it works:** Each public page includes `<script type="application/ld+json">` blocks with structured data. Google and LLMs can parse these to understand: osocios.club is an organization based in Barcelona, it has a search feature at `/discover`, each club is a sub-organization with its own profile, and the discover page lists clubs as an ItemList. The helpers return plain objects — pages stringify them inline.
+
+**Key files:**
+- `lib/structured-data.ts` — all JSON-LD helper functions
+- `app/page.tsx` — Organization + WebSite JSON-LD
+- `app/[clubSlug]/public/page.tsx` — Club JSON-LD
+- `app/discover/page.tsx` — ItemList JSON-LD
+
+### Page-Level Metadata Enrichment
+
+**Request:** Add canonical URLs, hreflang alternates, and descriptions to all public pages.
+
+**Changes:** Updated metadata exports on 6 pages: discover (changed title from "Discover | osocios.club" to template-based "Discover", added richer description, canonical, hreflang), examples (same pattern), vertical examples (canonical with slug, hreflang), privacy (added description about GDPR/Spain, canonical, hreflang), terms (added description, canonical, hreflang), club public profile (enriched `generateMetadata` to fetch tags and logo, generate description from tags, add OG data with logo image, canonical, hreflang).
+
+**How it works:** Since locale is cookie-based (not URL-based), hreflang `en`, `es`, and `x-default` all point to the same URL. This tells search engines both languages are served from the same path. Canonical URLs use relative paths (resolved against `metadataBase`). Club profiles now have dynamic descriptions like "Club Name on osocios.club — tag1, tag2, tag3".
+
+**Key files:**
+- `app/discover/page.tsx` — canonical, hreflang, richer description
+- `app/examples/page.tsx` — canonical, hreflang
+- `app/examples/[vertical]/page.tsx` — dynamic canonical with slug
+- `app/(legal)/privacy/page.tsx` — description, canonical, hreflang
+- `app/(legal)/terms/page.tsx` — description, canonical, hreflang
+- `app/[clubSlug]/public/page.tsx` — dynamic description from tags, OG with logo, canonical
+
+### Brand Icons & PWA Manifest
+
+**Request:** Create proper favicon, apple-touch-icon, and PWA manifest for the platform.
+
+**Changes:** Created `public/logo.svg` — green (#16a34a) rounded square with a ring (the "O") and 3 dots representing community members. Converted via ImageMagick to: `app/icon.ico` (multi-res 48/32/16), `app/apple-icon.png` (180x180), `public/logo-192.png` and `public/logo-512.png` (PWA sizes). Created `app/manifest.ts` — PWA manifest with `name: "osocios.club"`, `display: "standalone"`, green theme color, icon references. Updated `app/layout.tsx` icon config to reference all formats.
+
+**How it works:** Next.js auto-discovers `icon.ico`, `apple-icon.png`, and `manifest.ts` from the `app/` directory and generates the appropriate `<link>` tags. The SVG favicon remains as a secondary icon format. The PWA manifest enables "Add to Home Screen" on mobile with the green brand theme. All icon formats derive from the same `logo.svg` source.
+
+**Key files:**
+- `public/logo.svg` — source logo (green rounded square + ring + 3 member dots)
+- `app/icon.ico` — multi-resolution favicon
+- `app/apple-icon.png` — 180x180 Apple touch icon
+- `public/logo-192.png`, `public/logo-512.png` — PWA icons
+- `app/manifest.ts` — PWA web app manifest
+
+## Analytics & Monitoring
+
+### Vercel Analytics + Speed Insights
+
+**Request:** Add analytics and performance monitoring for launch.
+
+**Changes:** Installed `@vercel/analytics` and `@vercel/speed-insights` via pnpm. Added `<Analytics />` and `<SpeedInsights />` components to `app/layout.tsx` inside `<body>`, after children. Decision: skip Google Analytics at launch (adds GDPR cookie consent complexity under Spanish AEPD), skip Sentry (add when traffic warrants). Vercel Analytics is privacy-friendly (no cookies, no consent banner needed).
+
+**How it works:** Both components are zero-config — they activate automatically on Vercel deployments. `Analytics` tracks pageviews, unique visitors, referrers, top pages, countries, devices. `SpeedInsights` tracks Core Web Vitals (LCP, CLS, INP) from real users. Data appears in the Vercel Dashboard under the Analytics and Speed Insights tabs within minutes of first visit. No env vars or API keys needed.
+
+**Key files:**
+- `app/layout.tsx` — `<Analytics />` and `<SpeedInsights />` in body
+- `package.json` — `@vercel/analytics`, `@vercel/speed-insights` dependencies
+
+## GitHub Workflow
+
+### gh CLI Token Fix
+
+**Request:** Fix `gh` CLI not having PR creation permissions, making the workflow inconvenient.
+
+**Changes:** Removed the `GITHUB_TOKEN` export from `~/.zshrc` — it was a fine-grained PAT that lacked PR/issue permissions and was overriding the better keychain-stored OAuth token (which has `repo`, `workflow`, `gist`, `read:org` scopes). The keychain token was already set up via `gh auth login` but was marked "inactive" because the env var took precedence.
+
+**How it works:** With the env var removed, `gh` uses the keychain token (set via `gh auth login` OAuth flow). This token has full `repo` scope — PRs, issues, releases all work. New terminal sessions pick it up automatically. The keychain token is managed by macOS Keychain and `gh` handles refresh. No manual token management needed.
+
+**Key files:**
+- `~/.zshrc` — `GITHUB_TOKEN` line replaced with comment

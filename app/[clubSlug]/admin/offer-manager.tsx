@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef, useCallback, useEffect } from "react";
 import { toggleOffer, updateOfferOptions, addCustomOffer, archiveOffer, restoreOffer } from "./actions";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { IconPicker } from "@/components/icon-picker";
@@ -58,6 +58,37 @@ export function OfferManager({
   // Custom offer form state
   const [customName, setCustomName] = useState("");
   const [showCustomForm, setShowCustomForm] = useState(false);
+
+  // Unsaved changes tracking
+  const dirtyOfferIdRef = useRef<string | null>(null);
+  const [showDiscardDialog, setShowDiscardDialog] = useState(false);
+  const pendingActionRef = useRef<(() => void) | null>(null);
+
+  const handleDirtyChange = useCallback((offerId: string, isDirty: boolean) => {
+    dirtyOfferIdRef.current = isDirty ? offerId : null;
+  }, []);
+
+  /** Run `action` immediately if no unsaved changes, otherwise show confirmation dialog */
+  const guardUnsaved = useCallback((action: () => void) => {
+    if (dirtyOfferIdRef.current) {
+      pendingActionRef.current = action;
+      setShowDiscardDialog(true);
+    } else {
+      action();
+    }
+  }, []);
+
+  const confirmDiscard = useCallback(() => {
+    dirtyOfferIdRef.current = null;
+    setShowDiscardDialog(false);
+    pendingActionRef.current?.();
+    pendingActionRef.current = null;
+  }, []);
+
+  const cancelDiscard = useCallback(() => {
+    setShowDiscardDialog(false);
+    pendingActionRef.current = null;
+  }, []);
 
   // Build a lookup of enabled offers (excluding archived)
   const activeEnabledMap = new Map<string, ClubOffer>();
@@ -120,12 +151,12 @@ export function OfferManager({
               <button
                 key={st}
                 type="button"
-                onClick={() => {
+                onClick={() => guardUnsaved(() => {
                   setActiveTab(st);
                   setShowCustomForm(false);
                   setError(null);
                   setExpandedOfferId(null);
-                }}
+                })}
                 className={`shrink-0 px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
                   activeTab === st
                     ? "bg-white text-gray-900 shadow-sm"
@@ -138,12 +169,12 @@ export function OfferManager({
             {archivedOffers.length > 0 && (
               <button
                 type="button"
-                onClick={() => {
+                onClick={() => guardUnsaved(() => {
                   setActiveTab("archived");
                   setShowCustomForm(false);
                   setError(null);
                   setExpandedOfferId(null);
-                }}
+                })}
                 className={`shrink-0 px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
                   isArchivedTab
                     ? "bg-white text-gray-900 shadow-sm"
@@ -217,7 +248,16 @@ export function OfferManager({
                   isPending={isPending}
                   onToggle={handleToggle}
                   onUpdateOptions={handleUpdateOptions}
-                  onToggleExpand={(id) => setExpandedOfferId(id === expandedOfferId ? null : id)}
+                  onDirtyChange={handleDirtyChange}
+                  onToggleExpand={(id) => {
+                    const action = () => setExpandedOfferId(id === expandedOfferId ? null : id);
+                    // Collapsing the currently dirty offer is fine, but switching to a different one needs guard
+                    if (id !== expandedOfferId && dirtyOfferIdRef.current && dirtyOfferIdRef.current !== id) {
+                      guardUnsaved(action);
+                    } else {
+                      action();
+                    }
+                  }}
                   onArchive={(id) => {
                     startTransition(async () => {
                       // id could be a clubOffer.id (enabled) or catalog offer.id (not enabled)
@@ -282,6 +322,30 @@ export function OfferManager({
           </div>
         )}
 
+        {/* Unsaved changes confirmation */}
+        {showDiscardDialog && (
+          <div className="px-5 py-3 bg-amber-50 border-t border-amber-200 flex items-center gap-3">
+            <svg className="w-4 h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+            </svg>
+            <p className="text-xs text-amber-800 flex-1">You have unsaved changes. Discard them?</p>
+            <button
+              type="button"
+              onClick={confirmDiscard}
+              className="rounded-lg bg-amber-600 text-white px-3 py-1 text-xs font-semibold hover:bg-amber-700 transition-colors"
+            >
+              Discard
+            </button>
+            <button
+              type="button"
+              onClick={cancelDiscard}
+              className="rounded-lg border border-amber-300 px-3 py-1 text-xs font-semibold text-amber-700 hover:bg-amber-100 transition-colors"
+            >
+              Go back
+            </button>
+          </div>
+        )}
+
         {error && (
           <div className="px-5 py-2 text-xs text-red-600 bg-red-50 border-t border-red-100">
             {error}
@@ -306,6 +370,7 @@ function OfferRow({
   onUpdateOptions,
   onToggleExpand,
   onArchive,
+  onDirtyChange,
   t,
 }: {
   offer: CatalogOffer;
@@ -317,6 +382,7 @@ function OfferRow({
   onUpdateOptions: (clubOfferId: string, formData: FormData) => void;
   onToggleExpand: (offerId: string) => void;
   onArchive: (id: string) => void;
+  onDirtyChange: (offerId: string, isDirty: boolean) => void;
   t: (key: string) => string;
 }) {
   const [localOrderable, setLocalOrderable] = useState(clubOffer?.orderable ?? false);
@@ -346,6 +412,10 @@ function OfferRow({
       localIcon !== serverIcon ||
       localIsPublic !== serverIsPublic ||
       localImage !== null);
+
+  useEffect(() => {
+    onDirtyChange(offer.id, optionsDirty);
+  }, [optionsDirty, offer.id, onDirtyChange]);
 
   function handleSave() {
     if (!clubOffer) return;

@@ -192,6 +192,7 @@
   "staff.memberPortal": "Portal de Socio",
   "staff.publicPage": "Página Pública",
   "staff.wheelNotConfigured": "La ruleta aún no está configurada.",
+  "staff.spinDisabledByAdmin": "La ruleta fue desactivada por el administrador.",
   "staff.memberCodePlaceholder": "ABC12",
   "staff.spinButton": "Girar",
   "staff.spinsRemaining": "{balance} tirada restante",

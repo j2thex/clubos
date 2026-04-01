@@ -50,6 +50,10 @@ export type Database = {
           hide_member_login: boolean;
           tags: string[];
           claimed: boolean;
+          spin_enabled: boolean;
+          working_hours: Record<string, { open: string; close: string } | null> | null;
+          spin_display_decimals: number;
+          spin_cost: number;
           created_at: string;
         };
         Insert: {
@@ -67,6 +71,10 @@ export type Database = {
           hide_member_login?: boolean;
           tags?: string[];
           claimed?: boolean;
+          spin_enabled?: boolean;
+          working_hours?: Record<string, { open: string; close: string } | null> | null;
+          spin_display_decimals?: number;
+          spin_cost?: number;
           created_at?: string;
         };
         Update: {
@@ -84,6 +92,10 @@ export type Database = {
           hide_member_login?: boolean;
           tags?: string[];
           claimed?: boolean;
+          spin_enabled?: boolean;
+          working_hours?: Record<string, { open: string; close: string } | null> | null;
+          spin_display_decimals?: number;
+          spin_cost?: number;
           created_at?: string;
         };
         Relationships: [
@@ -166,6 +178,7 @@ export type Database = {
           valid_till: string | null;
           referred_by: string | null;
           is_premium_referrer: boolean;
+          is_system_member: boolean;
           referral_reward_spins: number;
           created_at: string;
         };
@@ -182,6 +195,7 @@ export type Database = {
           valid_till?: string | null;
           referred_by?: string | null;
           is_premium_referrer?: boolean;
+          is_system_member?: boolean;
           referral_reward_spins?: number;
           created_at?: string;
         };
@@ -198,6 +212,7 @@ export type Database = {
           valid_till?: string | null;
           referred_by?: string | null;
           is_premium_referrer?: boolean;
+          is_system_member?: boolean;
           referral_reward_spins?: number;
           created_at?: string;
         };

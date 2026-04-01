@@ -33,6 +33,24 @@ export async function updateLoginMode(
   return { ok: true };
 }
 
+export async function toggleSpinEnabled(
+  clubId: string,
+  enabled: boolean,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ spin_enabled: enabled })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to update spin setting" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
 export async function updateInviteOnly(
   clubId: string,
   inviteOnly: boolean,
@@ -1443,6 +1461,89 @@ export async function addCustomOffer(
     display_order: nextOrder,
   });
 
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
+export async function updateWorkingHours(
+  clubId: string,
+  workingHours: Record<string, { open: string; close: string } | null> | null,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("clubs")
+    .update({ working_hours: workingHours })
+    .eq("id", clubId);
+  if (error) return { error: "Failed to update working hours" };
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/public`);
+  return { ok: true };
+}
+
+export async function createReferralSource(
+  clubId: string,
+  name: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const code = name.trim().toUpperCase();
+  if (!code || code.length < 2 || code.length > 30) {
+    return { error: "Referral source name must be 2-30 characters" };
+  }
+
+  const supabase = createAdminClient();
+  const { error } = await supabase.from("members").insert({
+    club_id: clubId,
+    member_code: code,
+    is_system_member: true,
+    is_premium_referrer: true,
+    spin_balance: 0,
+    status: "active",
+  });
+
+  if (error) {
+    if (error.code === "23505") return { error: "Referral source already exists" };
+    return { error: "Failed to create referral source" };
+  }
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
+export async function deleteReferralSource(
+  memberId: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("members")
+    .delete()
+    .eq("id", memberId)
+    .eq("is_system_member", true);
+  if (error) return { error: "Failed to delete referral source" };
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
+export async function updateSpinDisplayOptions(
+  clubId: string,
+  displayDecimals: number,
+  spinCost: number,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  if (displayDecimals !== 0 && displayDecimals !== 2) {
+    return { error: "Display decimals must be 0 or 2" };
+  }
+  if (spinCost < 0.1 || spinCost > 100) {
+    return { error: "Spin cost must be between 0.1 and 100" };
+  }
+
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("clubs")
+    .update({ spin_display_decimals: displayDecimals, spin_cost: spinCost })
+    .eq("id", clubId);
+  if (error) return { error: "Failed to update spin options" };
   revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
 }

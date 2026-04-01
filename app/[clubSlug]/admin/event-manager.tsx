@@ -345,6 +345,7 @@ export function EventManager({
                           type="number"
                           min="0"
                           max="100"
+                          step="0.1"
                           value={editReward}
                           onChange={(e) => setEditReward(e.target.value)}
                           className="w-16 rounded-lg border border-gray-300 px-2 py-1.5 text-sm text-gray-900 text-center focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
@@ -723,6 +724,7 @@ export function EventManager({
                 type="number"
                 min="0"
                 max="100"
+                step="0.1"
                 value={newReward}
                 onChange={(e) => setNewReward(e.target.value)}
                 required

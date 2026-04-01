@@ -24,6 +24,7 @@ interface SpinResult {
 interface SpinWheelProps {
   segments: Segment[];
   balance: number;
+  spinCost?: number;
   onSpin?: () => Promise<SpinResult | { error: string }>;
   hideButton?: boolean;
 }
@@ -34,7 +35,7 @@ export interface SpinWheelHandle {
 }
 
 const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
-  function SpinWheel({ segments, balance, onSpin, hideButton }, ref) {
+  function SpinWheel({ segments, balance, spinCost = 1, onSpin, hideButton }, ref) {
     const [spinning, setSpinning] = useState(false);
     const [currentBalance, setCurrentBalance] = useState(balance);
     const [result, setResult] = useState<SpinResult["outcome"] | null>(null);
@@ -154,7 +155,7 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
     }), [animateSpin]);
 
     const handleSpin = useCallback(async () => {
-      if (spinningRef.current || currentBalance <= 0 || !wheelRef.current || !onSpin) return;
+      if (spinningRef.current || currentBalance < spinCost || !wheelRef.current || !onSpin) return;
 
       spinningRef.current = true;
       setSpinning(true);
@@ -171,7 +172,7 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
       }
 
       animateSpin(res as SpinResult);
-    }, [currentBalance, onSpin, animateSpin]);
+    }, [currentBalance, spinCost, onSpin, animateSpin]);
 
     return (
       <div className="flex flex-col items-center gap-6">
@@ -204,12 +205,12 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
         {!hideButton && (
           <button
             onClick={handleSpin}
-            disabled={spinning || currentBalance <= 0}
+            disabled={spinning || currentBalance < spinCost}
             className="club-btn px-8 py-3 rounded-full text-lg font-bold shadow-lg disabled:cursor-not-allowed"
           >
             {spinning
               ? "Spinning..."
-              : currentBalance <= 0
+              : currentBalance < spinCost
                 ? "No Spins Left"
                 : "Spin the Wheel"}
           </button>

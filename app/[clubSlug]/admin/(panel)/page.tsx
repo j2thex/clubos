@@ -19,7 +19,7 @@ export default async function PeoplePage({
 
   if (!club) notFound();
 
-  const [{ data: roles }, { data: members }, { data: staff }] =
+  const [{ data: roles }, { data: members }, { data: staff }, { data: referralSources }] =
     await Promise.all([
       supabase
         .from("member_roles")
@@ -33,6 +33,7 @@ export default async function PeoplePage({
         )
         .eq("club_id", club.id)
         .eq("is_staff", false)
+        .eq("is_system_member", false)
         .order("created_at", { ascending: false }),
       supabase
         .from("members")
@@ -41,6 +42,15 @@ export default async function PeoplePage({
         )
         .eq("club_id", club.id)
         .eq("is_staff", true)
+        .eq("is_system_member", false)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("members")
+        .select(
+          "id, member_code, full_name, spin_balance, is_staff, status, member_roles(name)"
+        )
+        .eq("club_id", club.id)
+        .eq("is_system_member", true)
         .order("created_at", { ascending: false }),
     ]);
 
@@ -70,12 +80,23 @@ export default async function PeoplePage({
     roleName: extractRoleName(s),
   }));
 
+  const referralList = (referralSources ?? []).map((r) => ({
+    id: r.id,
+    member_code: r.member_code,
+    full_name: r.full_name,
+    spin_balance: r.spin_balance,
+    is_staff: r.is_staff,
+    status: r.status,
+    roleName: extractRoleName(r),
+  }));
+
   return (
     <PeopleManager
       clubId={club.id}
       clubSlug={clubSlug}
       members={memberList}
       staff={staffList}
+      referralSources={referralList}
     />
   );
 }
