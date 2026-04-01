@@ -162,7 +162,7 @@ export function DiscoverClient({
         id: e.id, type: "event" as const,
         title: locale === "es" && e.title_es ? e.title_es : e.title,
         subtitle: e.club_name, date: e.date, time: e.time, price: e.price,
-        location_name: e.location_name, slug: e.club_slug, logo_url: e.club_logo,
+        image_url: e.image_url, location_name: e.location_name, slug: e.club_slug, logo_url: e.club_logo,
         primary_color: e.club_primary_color ?? "#16a34a",
         hasLocation: (e.latitude ?? e.club_latitude) != null,
         latitude: e.latitude ?? e.club_latitude, longitude: e.longitude ?? e.club_longitude,

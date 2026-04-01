@@ -20,6 +20,7 @@ interface ListItem {
   hasLocation: boolean;
   latitude?: number | null;
   longitude?: number | null;
+  image_url?: string | null;
 }
 
 function formatDate(d: string) {
@@ -52,6 +53,14 @@ function ResultCard({
         selected ? "border-white/20 bg-white/[0.06] ring-1 ring-primary/30" : "border-white/[0.06] bg-white/[0.02]"
       }`}
     >
+      {/* Event image tile */}
+      {item.type === "event" && item.image_url && (
+        <div className="relative h-36 overflow-hidden rounded-t-xl">
+          <img src={item.image_url} alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/40 to-transparent" />
+        </div>
+      )}
+
       <div className="p-4">
         {/* Header */}
         <div className="flex items-start gap-3">
