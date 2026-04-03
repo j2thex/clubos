@@ -27,6 +27,7 @@ interface Quest {
   proof_placeholder: string | null;
   tutorial_steps: string[] | null;
   badge_id: string | null;
+  deadline: string | null;
 }
 
 const TEMPLATES = [
@@ -81,6 +82,7 @@ export function QuestManager({
   const [editLang, setEditLang] = useState<"en" | "es">("en");
   const [editTitleEs, setEditTitleEs] = useState("");
   const [editDescEs, setEditDescEs] = useState("");
+  const [editDeadline, setEditDeadline] = useState("");
 
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
@@ -98,6 +100,7 @@ export function QuestManager({
   const [newLang, setNewLang] = useState<"en" | "es">("en");
   const [newTitleEs, setNewTitleEs] = useState("");
   const [newDescEs, setNewDescEs] = useState("");
+  const [newDeadline, setNewDeadline] = useState("");
 
   const [showForm, setShowForm] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -182,6 +185,7 @@ export function QuestManager({
     setEditAwardBadge(q.badge_id != null);
     setEditTitleEs(q.title_es ?? "");
     setEditDescEs(q.description_es ?? "");
+    setEditDeadline(q.deadline ? q.deadline.slice(0, 16) : "");
     setEditLang("en");
     setEditImage(null);
     setError(null);
@@ -212,6 +216,7 @@ export function QuestManager({
       fd.set("award_badge", editAwardBadge ? "1" : "0");
       fd.set("title_es", editTitleEs);
       fd.set("description_es", editDescEs);
+      fd.set("deadline", editDeadline);
       if (editImage) fd.set("image", editImage);
 
       const result = await updateQuest(questId, fd, clubSlug);
@@ -252,6 +257,7 @@ export function QuestManager({
       fd.set("award_badge", newAwardBadge ? "1" : "0");
       fd.set("title_es", newTitleEs);
       fd.set("description_es", newDescEs);
+      fd.set("deadline", newDeadline);
       if (newImage) fd.set("image", newImage);
 
       const result = await addQuest(clubId, fd, clubSlug);
@@ -274,6 +280,7 @@ export function QuestManager({
         setNewImage(null);
         setNewTitleEs("");
         setNewDescEs("");
+        setNewDeadline("");
         setNewLang("en");
         setSuccessMsg(t("admin.questCreated", { title: createdTitle }));
         setShowForm(false);
@@ -537,6 +544,18 @@ export function QuestManager({
                         className="w-full text-sm text-gray-500 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
                       />
                     </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Deadline</label>
+                      <input
+                        type="datetime-local"
+                        value={editDeadline}
+                        onChange={(e) => setEditDeadline(e.target.value)}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                      />
+                      {editDeadline && (
+                        <button type="button" onClick={() => setEditDeadline("")} className="text-xs text-gray-400 hover:text-gray-600 mt-1">Clear deadline</button>
+                      )}
+                    </div>
                     <label className={`flex items-center gap-2 ${editQuestType === "feedback" || editQuestType === "tutorial" ? "opacity-50" : "cursor-pointer"}`}>
                       <input
                         type="checkbox"
@@ -626,6 +645,11 @@ export function QuestManager({
                         <span className="text-xs text-gray-300">
                           {q.completions} {t("admin.questDoneCount")}
                         </span>
+                        {q.deadline && (
+                          <span className="text-[10px] text-gray-400">
+                            ⏰ {new Date(q.deadline).toLocaleDateString()}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-2 shrink-0">
@@ -775,6 +799,18 @@ export function QuestManager({
               onChange={(e) => setNewImage(e.target.files?.[0] ?? null)}
               className="w-full text-sm text-gray-500 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
             />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Deadline</label>
+            <input
+              type="datetime-local"
+              value={newDeadline}
+              onChange={(e) => setNewDeadline(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+            />
+            {newDeadline && (
+              <button type="button" onClick={() => setNewDeadline("")} className="text-xs text-gray-400 hover:text-gray-600 mt-1">Clear deadline</button>
+            )}
           </div>
           <label className={`flex items-center gap-2 ${newQuestType === "feedback" || newQuestType === "tutorial" ? "opacity-50" : "cursor-pointer"}`}>
             <input

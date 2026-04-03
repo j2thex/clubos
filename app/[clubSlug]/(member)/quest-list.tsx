@@ -21,6 +21,19 @@ interface Quest {
   proof_mode: string | null;
   proof_placeholder: string | null;
   tutorial_steps: string[] | null;
+  deadline: string | null;
+}
+
+function deadlineBadge(deadline: string | null, locale: Locale) {
+  if (!deadline) return null;
+  const d = new Date(deadline);
+  const now = new Date();
+  const daysLeft = Math.ceil((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  const dateStr = d.toLocaleDateString(locale === "es" ? "es-ES" : "en-US", { month: "short", day: "numeric" });
+  if (daysLeft <= 3) {
+    return <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700">⏰ {locale === "es" ? "Hasta" : "Until"} {dateStr}</span>;
+  }
+  return <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-500">{locale === "es" ? "Hasta" : "Until"} {dateStr}</span>;
 }
 
 function TutorialSteps({ questId, steps }: { questId: string; steps: string[] }) {
@@ -184,9 +197,13 @@ export function QuestList({
   const [copiedToast, setCopiedToast] = useState(false);
   const [hideCompleted, setHideCompleted] = useState(false);
 
+  // Filter out expired quests
+  const now = new Date();
+  const activeQuests = quests.filter(q => !q.deadline || new Date(q.deadline) > now);
+
   // Sort: pending first, then incomplete, then completed at bottom
   // Within each group, preserve original display_order
-  const sortedQuests = [...quests].sort((a, b) => {
+  const sortedQuests = [...activeQuests].sort((a, b) => {
     const aCount = completionCounts[a.id] ?? 0;
     const bCount = completionCounts[b.id] ?? 0;
     const aDone = aCount > 0 && !a.multi_use;
@@ -200,7 +217,7 @@ export function QuestList({
     return aRank - bRank;
   });
 
-  const hasCompletedQuests = quests.some((q) => {
+  const hasCompletedQuests = activeQuests.some((q) => {
     const count = completionCounts[q.id] ?? 0;
     return count > 0 && !q.multi_use;
   });
@@ -326,7 +343,7 @@ export function QuestList({
             <div className="flex items-center gap-4">
               {renderIcon(q, done, isPendingQuest)}
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-gray-900 text-sm">{localized(q.title, q.title_es, locale)}</p>
+                <p className="font-semibold text-gray-900 text-sm flex items-center gap-1.5 flex-wrap">{localized(q.title, q.title_es, locale)} {deadlineBadge(q.deadline, locale)}</p>
                 {q.description && (
                   <p className="text-xs text-gray-400">{localized(q.description, q.description_es, locale)}</p>
                 )}
