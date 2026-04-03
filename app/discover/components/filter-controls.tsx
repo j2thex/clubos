@@ -93,6 +93,9 @@ export function FilterControls({
     );
   }
 
+  // Quests — no filters for now
+  if (activeTab === "quests") return null;
+
   // Offers — search + specific offer name pills
   const hasFilters = selectedOfferNames.length > 0 || offerSearch.length > 0;
 
