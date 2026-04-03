@@ -1,7 +1,133 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { hashPassword } from "@/lib/auth";
+import { generateSlug } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
+
+/** Extract place name and coordinates from a Google Maps URL */
+function parseGoogleMapsUrl(url: string): { name: string | null; lat: number | null; lng: number | null } {
+  let name: string | null = null;
+  let lat: number | null = null;
+  let lng: number | null = null;
+
+  // Try to extract place name from /place/Name+Name/ pattern
+  const placeMatch = url.match(/\/place\/([^/@]+)/);
+  if (placeMatch) {
+    name = decodeURIComponent(placeMatch[1].replace(/\+/g, " "));
+  }
+
+  // Try to extract coordinates from @lat,lng pattern
+  const coordMatch = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+  if (coordMatch) {
+    lat = parseFloat(coordMatch[1]);
+    lng = parseFloat(coordMatch[2]);
+  }
+
+  return { name, lat, lng };
+}
+
+export async function createClubFromGoogleMaps(
+  mapsUrl: string,
+  secret: string,
+): Promise<{ error: string } | { ok: true; slug: string; name: string; email: string }> {
+  if (secret !== process.env.PLATFORM_ADMIN_SECRET) {
+    return { error: "Unauthorized" };
+  }
+
+  if (!mapsUrl || !mapsUrl.includes("google")) {
+    return { error: "Please provide a valid Google Maps URL" };
+  }
+
+  const parsed = parseGoogleMapsUrl(mapsUrl);
+  if (!parsed.name) {
+    return { error: "Could not extract place name from URL. Ensure the URL contains /place/Name" };
+  }
+
+  const clubName = parsed.name;
+  const slug = generateSlug(clubName);
+  const emailPrefix = slug.replace(/-/g, "");
+  const email = `${emailPrefix}@osocios.com`;
+  const password = "q1234567";
+
+  const supabase = createAdminClient();
+
+  // Check slug uniqueness
+  const { count: slugCount } = await supabase
+    .from("clubs")
+    .select("*", { count: "exact", head: true })
+    .eq("slug", slug);
+
+  if ((slugCount ?? 0) > 0) {
+    return { error: `Club with slug "${slug}" already exists` };
+  }
+
+  // Check email uniqueness
+  const { count: emailCount } = await supabase
+    .from("club_owners")
+    .select("*", { count: "exact", head: true })
+    .ilike("email", email);
+
+  if ((emailCount ?? 0) > 0) {
+    return { error: `Owner email "${email}" already exists` };
+  }
+
+  // Create organization
+  const { data: org, error: orgError } = await supabase
+    .from("organizations")
+    .insert({ name: clubName, slug: `org-${slug}` })
+    .select("id")
+    .single();
+
+  if (orgError || !org) return { error: "Failed to create organization" };
+
+  // Create club
+  const { data: club, error: clubError } = await supabase
+    .from("clubs")
+    .insert({
+      organization_id: org.id,
+      name: clubName,
+      slug,
+      latitude: parsed.lat,
+      longitude: parsed.lng,
+      claimed: false,
+    })
+    .select("id")
+    .single();
+
+  if (clubError || !club) return { error: "Failed to create club" };
+
+  // Create branding with Google Maps link
+  await supabase.from("club_branding").insert({
+    club_id: club.id,
+    social_google_maps: mapsUrl,
+  });
+
+  // Create owner account
+  const { data: owner, error: ownerError } = await supabase
+    .from("club_owners")
+    .insert({
+      email,
+      password_hash: hashPassword(password),
+    })
+    .select("id")
+    .single();
+
+  if (ownerError || !owner) return { error: "Failed to create owner" };
+
+  // Link owner to club
+  await supabase.from("club_owner_clubs").insert({
+    owner_id: owner.id,
+    club_id: club.id,
+  });
+
+  // Seed defaults
+  const { seedClubDefaults } = await import("@/app/(platform)/onboarding/actions");
+  await seedClubDefaults(club.id);
+
+  revalidatePath("/platform-admin");
+  return { ok: true, slug, name: clubName, email };
+}
 
 export async function createUnclaimedClub(
   formData: FormData,
