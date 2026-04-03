@@ -38,7 +38,7 @@ export default async function MemberDashboard({
       .eq("member_id", session.member_id),
     supabase
       .from("quests")
-      .select("id, title, description, title_es, description_es, link, image_url, icon, reward_spins, multi_use, quest_type, proof_mode, proof_placeholder, tutorial_steps")
+      .select("id, title, description, title_es, description_es, link, image_url, icon, reward_spins, multi_use, quest_type, proof_mode, proof_placeholder, tutorial_steps, deadline")
       .eq("club_id", session.club_id)
       .eq("active", true)
       .order("display_order", { ascending: true }),
