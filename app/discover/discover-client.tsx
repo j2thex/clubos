@@ -103,11 +103,17 @@ export function DiscoverClient({
     });
   }, [offers, selectedOfferNames, offerSearch, locale]);
 
-  // Popular offer names for filter pills (top 15 by frequency)
+  // Popular offer names with unique club count for filter pills
   const popularOffers = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const o of offers) counts.set(o.offer_name, (counts.get(o.offer_name) ?? 0) + 1);
-    return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 15).map(([name]) => name);
+    const clubSets = new Map<string, Set<string>>();
+    for (const o of offers) {
+      if (!clubSets.has(o.offer_name)) clubSets.set(o.offer_name, new Set());
+      clubSets.get(o.offer_name)!.add(o.club_slug);
+    }
+    return [...clubSets.entries()]
+      .sort((a, b) => b[1].size - a[1].size)
+      .slice(0, 15)
+      .map(([name, clubs]) => ({ name, clubCount: clubs.size }));
   }, [offers]);
 
   // Build GeoJSON features for current tab
@@ -237,20 +243,22 @@ export function DiscoverClient({
   return (
     <div className="flex flex-col">
       <AgeGate />
-      {/* Filter controls — above the map so users pick filters before browsing */}
-      <FilterControls
-        activeTab={activeTab}
-        selectedTags={selectedTagFilters}
-        onTagsChange={setSelectedTagFilters}
-        popularOffers={popularOffers}
-        selectedOfferNames={selectedOfferNames}
-        onOfferNamesChange={setSelectedOfferNames}
-        offerSearch={offerSearch}
-        onOfferSearchChange={setOfferSearch}
-        dateFilter={dateFilter}
-        onDateFilterChange={setDateFilter}
-        locale={locale}
-      />
+      {/* Filter controls — above the map for clubs/events */}
+      {activeTab !== "offers" && (
+        <FilterControls
+          activeTab={activeTab}
+          selectedTags={selectedTagFilters}
+          onTagsChange={setSelectedTagFilters}
+          popularOffers={popularOffers}
+          selectedOfferNames={selectedOfferNames}
+          onOfferNamesChange={setSelectedOfferNames}
+          offerSearch={offerSearch}
+          onOfferSearchChange={setOfferSearch}
+          dateFilter={dateFilter}
+          onDateFilterChange={setDateFilter}
+          locale={locale}
+        />
+      )}
 
       {/* Section 1: Map */}
       <section ref={mapSectionRef} className="relative h-[60svh] md:h-[50vh]">
@@ -282,6 +290,23 @@ export function DiscoverClient({
           activeTab={activeTab}
         />
       </section>
+
+      {/* Offer filters — below the map */}
+      {activeTab === "offers" && (
+        <FilterControls
+          activeTab={activeTab}
+          selectedTags={selectedTagFilters}
+          onTagsChange={setSelectedTagFilters}
+          popularOffers={popularOffers}
+          selectedOfferNames={selectedOfferNames}
+          onOfferNamesChange={setSelectedOfferNames}
+          offerSearch={offerSearch}
+          onOfferSearchChange={setOfferSearch}
+          dateFilter={dateFilter}
+          onDateFilterChange={setDateFilter}
+          locale={locale}
+        />
+      )}
 
       {/* Section 2: Results */}
       <section className="landing-dark border-t border-white/10">

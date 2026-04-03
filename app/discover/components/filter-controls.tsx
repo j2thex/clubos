@@ -27,7 +27,7 @@ export function FilterControls({
   activeTab: ActiveTab;
   selectedTags: string[];
   onTagsChange: (tags: string[]) => void;
-  popularOffers: string[];
+  popularOffers: { name: string; clubCount: number }[];
   selectedOfferNames: string[];
   onOfferNamesChange: (names: string[]) => void;
   offerSearch: string;
@@ -115,16 +115,16 @@ export function FilterControls({
       {/* Popular offer pills */}
       {popularOffers.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
-          {popularOffers.map((name) => {
-            const active = selectedOfferNames.includes(name);
+          {popularOffers.map((offer) => {
+            const active = selectedOfferNames.includes(offer.name);
             return (
               <button
-                key={name}
+                key={offer.name}
                 onClick={() => {
                   if (active) {
-                    onOfferNamesChange(selectedOfferNames.filter((n) => n !== name));
+                    onOfferNamesChange(selectedOfferNames.filter((n) => n !== offer.name));
                   } else {
-                    onOfferNamesChange([...selectedOfferNames, name]);
+                    onOfferNamesChange([...selectedOfferNames, offer.name]);
                   }
                 }}
                 className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
@@ -133,7 +133,7 @@ export function FilterControls({
                     : "bg-white/[0.08] text-white/70 hover:text-white/90 hover:bg-white/[0.12]"
                 }`}
               >
-                {name}
+                {offer.name} <span className="opacity-60">({offer.clubCount})</span>
               </button>
             );
           })}
