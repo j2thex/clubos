@@ -11,7 +11,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 interface FeatureProperties {
   id: string;
-  type: "club" | "event" | "offer";
+  type: "club" | "event" | "offer" | "quest";
   name: string;
   slug: string;
   logo_url: string | null;
@@ -23,6 +23,7 @@ interface FeatureProperties {
   club_name?: string;
   price?: number | null;
   offer_count?: number;
+  reward_spins?: number;
 }
 
 type GeoFeature = GeoJSON.Feature<GeoJSON.Point, FeatureProperties>;
@@ -68,6 +69,22 @@ function OfferMarker({ feature, selected, onClick }: { feature: GeoFeature; sele
         </div>
         {offer_count != null && offer_count > 1 && (
           <span className="absolute -top-1 -right-1 bg-white text-gray-900 text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow">{offer_count}</span>
+        )}
+      </div>
+    </button>
+  );
+}
+
+function QuestMarker({ feature, selected, onClick }: { feature: GeoFeature; selected: boolean; onClick: () => void }) {
+  const { logo_url, primary_color, name, reward_spins } = feature.properties;
+  return (
+    <button onClick={onClick} className={`relative group transition-transform ${selected ? "scale-125 z-10" : "hover:scale-110"}`}>
+      <div className="relative">
+        <div className={`w-10 h-10 rounded-full border-2 overflow-hidden shadow-lg flex items-center justify-center text-white text-xs font-bold ${selected ? "border-white ring-2 ring-white/30" : "border-white/60"}`} style={{ backgroundColor: logo_url ? undefined : primary_color }}>
+          {logo_url ? <img src={logo_url} alt="" className="w-full h-full object-cover" /> : name.charAt(0).toUpperCase()}
+        </div>
+        {reward_spins != null && (
+          <span className="absolute -top-1 -right-1 bg-emerald-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow">{reward_spins}</span>
         )}
       </div>
     </button>
@@ -124,6 +141,10 @@ function MarkerPopup({ feature, onClose }: { feature: GeoFeature; onClose: () =>
 
         {p.type === "offer" && p.offer_count != null && (
           <p className="text-xs text-gray-500 mb-2">{p.offer_count} offers available</p>
+        )}
+
+        {p.type === "quest" && p.reward_spins != null && (
+          <p className="text-xs text-emerald-600 font-medium mb-2">🎡 {p.reward_spins} {p.reward_spins === 1 ? "spin" : "spins"} reward</p>
         )}
 
         {p.tags && p.tags.length > 0 && (
@@ -257,6 +278,14 @@ export default function DiscoverMap({
           return (
             <Marker key={props.id} latitude={lat} longitude={lng} anchor="center">
               <OfferMarker feature={cluster as GeoFeature} selected={isSelected} onClick={() => onSelectMarker(props.id, lat, lng)} />
+            </Marker>
+          );
+        }
+
+        if (activeTab === "quests") {
+          return (
+            <Marker key={props.id} latitude={lat} longitude={lng} anchor="center">
+              <QuestMarker feature={cluster as GeoFeature} selected={isSelected} onClick={() => onSelectMarker(props.id, lat, lng)} />
             </Marker>
           );
         }

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
-import type { DiscoverClub, DiscoverEvent, DiscoverOffer, ActiveTab, MapViewport } from "./lib/types";
+import type { DiscoverClub, DiscoverEvent, DiscoverOffer, DiscoverQuest, ActiveTab, MapViewport } from "./lib/types";
 import { DEFAULT_VIEWPORT } from "./lib/types";
 import { FilterTabs } from "./components/filter-tabs";
 import { FilterControls } from "./components/filter-controls";
@@ -26,10 +26,12 @@ export function DiscoverClient({
   clubs,
   events,
   offers,
+  quests,
 }: {
   clubs: DiscoverClub[];
   events: DiscoverEvent[];
   offers: DiscoverOffer[];
+  quests: DiscoverQuest[];
 }) {
   const { locale } = useLanguage();
   const [activeTab, setActiveTab] = useState<ActiveTab>("clubs");
@@ -45,7 +47,7 @@ export function DiscoverClient({
   // Sync tab with URL hash for deep linking (e.g., /discover#events)
   useEffect(() => {
     const hash = window.location.hash.replace("#", "");
-    if (hash === "clubs" || hash === "events" || hash === "offers") {
+    if (hash === "clubs" || hash === "events" || hash === "offers" || hash === "quests") {
       setActiveTab(hash);
     }
   }, []);
@@ -148,6 +150,22 @@ export function DiscoverClient({
         }));
     }
 
+    if (activeTab === "quests") {
+      return quests
+        .filter((q) => q.club_latitude != null && q.club_longitude != null)
+        .map((q) => ({
+          type: "Feature" as const,
+          properties: {
+            id: q.id, type: "quest" as const,
+            name: locale === "es" && q.title_es ? q.title_es : q.title,
+            slug: q.club_slug, logo_url: q.club_logo,
+            primary_color: q.club_primary_color ?? "#16a34a",
+            club_name: q.club_name, reward_spins: q.reward_spins,
+          },
+          geometry: { type: "Point" as const, coordinates: [q.club_longitude!, q.club_latitude!] },
+        }));
+    }
+
     // offers — group by club
     const clubMap = new Map<string, { lat: number; lng: number; club: { name: string; slug: string; logo: string | null; color: string }; offers: typeof filteredOffers }>();
     for (const o of filteredOffers) {
@@ -162,7 +180,7 @@ export function DiscoverClient({
       properties: { id: entry.club.slug, type: "offer" as const, name: entry.club.name, slug: entry.club.slug, logo_url: entry.club.logo, primary_color: entry.club.color, offer_count: entry.offers.length },
       geometry: { type: "Point" as const, coordinates: [entry.lng, entry.lat] },
     }));
-  }, [activeTab, filteredClubs, filteredEvents, filteredOffers, locale]);
+  }, [activeTab, filteredClubs, filteredEvents, filteredOffers, quests, locale]);
 
   // Items for the results grid (includes items without location)
   const listItems = useMemo(() => {
@@ -186,6 +204,18 @@ export function DiscoverClient({
         latitude: e.latitude ?? e.club_latitude, longitude: e.longitude ?? e.club_longitude,
       }));
     }
+    if (activeTab === "quests") {
+      return quests.map((q) => ({
+        id: q.id, type: "quest" as const,
+        title: locale === "es" && q.title_es ? q.title_es : q.title,
+        subtitle: q.club_name,
+        reward_spins: q.reward_spins,
+        slug: q.club_slug, logo_url: q.club_logo,
+        primary_color: q.club_primary_color ?? "#16a34a",
+        hasLocation: q.club_latitude != null,
+        latitude: q.club_latitude, longitude: q.club_longitude,
+      }));
+    }
     const byClub = new Map<string, { club_name: string; club_slug: string; logo: string | null; color: string; hasLocation: boolean; lat: number | null; lng: number | null; offers: typeof filteredOffers }>();
     for (const o of filteredOffers) {
       if (!byClub.has(o.club_slug)) {
@@ -199,7 +229,7 @@ export function DiscoverClient({
       offer_count: entry.offers.length, slug: entry.club_slug, logo_url: entry.logo,
       primary_color: entry.color, hasLocation: entry.hasLocation, latitude: entry.lat, longitude: entry.lng,
     }));
-  }, [activeTab, filteredClubs, filteredEvents, filteredOffers, locale]);
+  }, [activeTab, filteredClubs, filteredEvents, filteredOffers, quests, locale]);
 
   // Programmatic fly-to (from card click, search, near-me)
   const flyTo = useCallback((lat: number, lng: number, zoom = 15) => {
@@ -238,6 +268,7 @@ export function DiscoverClient({
     clubs: filteredClubs.length,
     events: filteredEvents.length,
     offers: filteredOffers.length,
+    quests: quests.length,
   };
 
   return (

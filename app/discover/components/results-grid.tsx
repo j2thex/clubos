@@ -5,7 +5,7 @@ import type { ActiveTab } from "../lib/types";
 
 interface ListItem {
   id: string;
-  type: "club" | "event" | "offer";
+  type: "club" | "event" | "offer" | "quest";
   title: string;
   subtitle?: string | null;
   tags?: string[];
@@ -13,6 +13,7 @@ interface ListItem {
   time?: string | null;
   price?: number | null;
   offer_count?: number;
+  reward_spins?: number;
   location_name?: string | null;
   slug: string;
   logo_url: string | null;
@@ -102,6 +103,11 @@ function ResultCard({
         {/* Offer count */}
         {item.type === "offer" && item.offer_count != null && (
           <p className="text-xs text-white/50 mt-2">{item.offer_count} offers available</p>
+        )}
+
+        {/* Quest reward */}
+        {item.type === "quest" && item.reward_spins != null && (
+          <p className="text-xs text-primary/80 mt-2 font-medium">🎡 {item.reward_spins} {item.reward_spins === 1 ? "spin" : "spins"}</p>
         )}
 
         {/* Tags */}

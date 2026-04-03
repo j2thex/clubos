@@ -6,6 +6,7 @@ const TABS: { key: ActiveTab; label: string; icon: string }[] = [
   { key: "clubs", label: "Clubs", icon: "🏠" },
   { key: "events", label: "Events", icon: "📅" },
   { key: "offers", label: "Offers", icon: "✨" },
+  { key: "quests", label: "Quests", icon: "🎯" },
 ];
 
 export function FilterTabs({
