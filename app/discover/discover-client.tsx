@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
 import type { DiscoverClub, DiscoverEvent, DiscoverOffer, ActiveTab, MapViewport } from "./lib/types";
 import { DEFAULT_VIEWPORT } from "./lib/types";
@@ -41,6 +41,18 @@ export function DiscoverClient({
   const [offerSearch, setOfferSearch] = useState("");
   const [dateFilter, setDateFilter] = useState<"all" | "today" | "week" | "month">("all");
   const mapSectionRef = useRef<HTMLDivElement>(null);
+
+  // Sync tab with URL hash for deep linking (e.g., /discover#events)
+  useEffect(() => {
+    const hash = window.location.hash.replace("#", "");
+    if (hash === "clubs" || hash === "events" || hash === "offers") {
+      setActiveTab(hash);
+    }
+  }, []);
+
+  useEffect(() => {
+    window.history.replaceState(null, "", `#${activeTab}`);
+  }, [activeTab]);
 
   // Filter clubs by tags
   const filteredClubs = useMemo(() => {
