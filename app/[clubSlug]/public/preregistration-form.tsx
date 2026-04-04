@@ -67,7 +67,7 @@ export function PreregistrationForm({ clubId, clubName }: { clubId: string; club
       </div>
 
       {sent && (
-        <p className="mt-2 text-xs text-gray-400 text-center">{t("public.preregSentDesc")}</p>
+        <p className="mt-2 text-xs text-gray-400">{t("public.preregSentDesc")}</p>
       )}
 
       {expanded && !sent && (

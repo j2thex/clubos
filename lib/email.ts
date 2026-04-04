@@ -33,7 +33,12 @@ export async function sendPreregistrationConfirmation(
   clubName: string,
   visitDate: string,
   numVisitors: number,
+  clubAddress?: string | null,
 ) {
+  const addressBlock = clubAddress
+    ? `<p style="font-size: 14px; color: #333; margin: 0;"><strong>Address:</strong> ${clubAddress}</p>`
+    : "";
+
   await resend.emails.send({
     from: "osocios.club <noreply@osocios.club>",
     to,
@@ -46,8 +51,12 @@ export async function sendPreregistrationConfirmation(
         </p>
         <div style="background: #f9fafb; border-radius: 8px; padding: 16px; margin: 0 0 16px;">
           <p style="font-size: 14px; color: #333; margin: 0 0 4px;"><strong>Date:</strong> ${visitDate}</p>
-          <p style="font-size: 14px; color: #333; margin: 0;"><strong>Visitors:</strong> ${numVisitors}</p>
+          <p style="font-size: 14px; color: #333; margin: 0 0 4px;"><strong>Visitors:</strong> ${numVisitors}</p>
+          ${addressBlock}
         </div>
+        <p style="font-size: 13px; color: #b45309; background: #fffbeb; border-radius: 6px; padding: 12px; margin: 0 0 16px;">
+          <strong>Important:</strong> Please bring a valid physical ID for all visitors.
+        </p>
         <p style="font-size: 12px; color: #999; margin: 0;">
           Please note that pre-registration does not guarantee entry. The club reserves the right to deny access.
         </p>

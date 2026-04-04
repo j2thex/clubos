@@ -62,9 +62,17 @@ export async function submitPreregistration(
 
   if (error) return { error: "Failed to submit pre-registration" };
 
+  // Fetch club address for the confirmation email
+  const { data: clubInfo } = await supabase
+    .from("clubs")
+    .select("address, city")
+    .eq("id", clubId)
+    .single();
+  const clubAddress = [clubInfo?.address, clubInfo?.city].filter(Boolean).join(", ") || null;
+
   // Send confirmation email (fire-and-forget)
   try {
-    await sendPreregistrationConfirmation(email.trim().toLowerCase(), clubName, visitDate, numVisitors);
+    await sendPreregistrationConfirmation(email.trim().toLowerCase(), clubName, visitDate, numVisitors, clubAddress);
   } catch {
     // Don't block on email failure
   }
