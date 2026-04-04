@@ -8,7 +8,7 @@ export async function sendPasswordResetEmail(
   clubName: string,
 ) {
   await resend.emails.send({
-    from: "osocios.club <onboarding@resend.dev>",
+    from: "osocios.club <noreply@osocios.club>",
     to,
     subject: `Reset your password — ${clubName}`,
     html: `
@@ -35,7 +35,7 @@ export async function sendPreregistrationConfirmation(
   numVisitors: number,
 ) {
   await resend.emails.send({
-    from: "osocios.club <onboarding@resend.dev>",
+    from: "osocios.club <noreply@osocios.club>",
     to,
     subject: `Pre-registration confirmed — ${clubName}`,
     html: `
