@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 
 export const revalidate = 300;
 
-async function getClubs(): Promise<DiscoverClub[]> {
+async function getClubs(): Promise<(DiscoverClub & { cover_url: string | null })[]> {
   try {
     const supabase = createAdminClient();
     const { data } = await supabase
@@ -46,6 +46,7 @@ async function getClubs(): Promise<DiscoverClub[]> {
         country: c.country,
         tags: c.tags,
         logo_url: branding?.logo_url ?? null,
+        cover_url: branding?.cover_url ?? null,
         primary_color: branding?.primary_color ?? null,
       };
     });
@@ -205,7 +206,7 @@ export default async function Home() {
     name: c.name,
     slug: c.slug,
     logo_url: c.logo_url,
-    cover_url: null as string | null,
+    cover_url: c.cover_url,
     primary_color: c.primary_color,
   }));
 
@@ -257,10 +258,14 @@ export default async function Home() {
       </header>
 
       {/* Title */}
-      <section className="px-6 py-5 border-b border-white/10">
-        <h1 className="text-xl sm:text-2xl font-bold text-white">{tr("discover.title")}</h1>
-        <p className="text-sm text-white/60 mt-1">{tr("discover.subtitle")}</p>
-      </section>
+      <div className="px-6 sm:px-10 pt-16 pb-10 sm:pt-20 sm:pb-14">
+        <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extralight tracking-tight">
+          {tr("discover.title")}
+        </h1>
+        <p className="mt-4 text-sm sm:text-base opacity-50 max-w-lg font-light leading-relaxed">
+          {tr("discover.subtitle")}
+        </p>
+      </div>
 
       {/* Map Hero */}
       <HomepageMap
