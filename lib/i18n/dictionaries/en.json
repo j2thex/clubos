@@ -82,6 +82,8 @@
   "quest.shareFeedback": "Share feedback",
   "quest.feedbackPlaceholder": "What would you like to suggest?",
   "quest.tutorialSteps": "Steps to complete",
+  "quest.submittedToast": "Quest submitted! Staff will verify and you'll earn your spins.",
+  "quest.feedbackSubmittedToast": "Feedback sent! Thanks for sharing.",
   "quests.hideCompleted": "Hide completed",
   "quests.showCompleted": "Show completed",
 
@@ -612,5 +614,15 @@
   "admin.locationPlaceholder": "Venue name or address",
   "discover.ageGate.subtitle": "Age Restricted Content",
   "discover.ageGate.body": "This platform features clubs and services intended for adults. By continuing, you confirm you are 18 years or older.",
-  "discover.ageGate.confirm": "I am 18 or older — Enter"
+  "discover.ageGate.confirm": "I am 18 or older — Enter",
+
+  "welcome.title": "Welcome to {club}!",
+  "welcome.subtitle": "Here's what you can do as a member",
+  "welcome.quests": "Complete Quests",
+  "welcome.questsDesc": "Earn spins by completing tasks and challenges",
+  "welcome.spin": "Spin the Wheel",
+  "welcome.spinDesc": "Use your earned spins to win prizes and rewards",
+  "welcome.events": "Join Events",
+  "welcome.eventsDesc": "Discover upcoming events and RSVP",
+  "welcome.start": "Let's Go!"
 }

@@ -276,8 +276,9 @@ export default async function PublicProfilePage({
 
         {/* Member Login — inline form */}
         {!(club.invite_only && club.hide_member_login) && (
-          <div className="bg-white rounded-2xl shadow-lg p-5">
-            <p className="text-sm text-gray-500 mb-3 text-center">{localized("Already a member?", "¿Ya eres socio?", locale)}</p>
+          <div className="bg-white rounded-2xl shadow-lg p-5 ring-2 ring-[var(--club-primary,#16a34a)]/20">
+            <p className="text-sm font-semibold text-gray-700 mb-1 text-center">{localized("Have a member code?", "¿Tienes un código de socio?", locale)}</p>
+            <p className="text-xs text-gray-400 mb-3 text-center">{localized("Enter it below to access your portal", "Ingrésalo abajo para acceder a tu portal", locale)}</p>
             <PublicLoginForm loginMode={club.login_mode ?? "code_only"} clubSlug={clubSlug} />
           </div>
         )}

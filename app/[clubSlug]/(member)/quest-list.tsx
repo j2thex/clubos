@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { submitQuest } from "./quest-actions";
 import { useLanguage } from "@/lib/i18n/provider";
 import { localized, type Locale } from "@/lib/i18n";
@@ -239,6 +240,7 @@ export function QuestList({
       // No proof needed — submit immediately
       startTransition(async () => {
         await submitQuest(memberId, quest.id, clubSlug);
+        toast.success(t("quest.submittedToast"));
       });
     }
   }
@@ -252,6 +254,8 @@ export function QuestList({
       await submitQuest(memberId, quest.id, clubSlug, proof || undefined);
       setProofUrls((prev) => { const next = { ...prev }; delete next[quest.id]; return next; });
       setExpandedId(null);
+      const qType = quest.quest_type ?? "default";
+      toast.success(qType === "feedback" ? t("quest.feedbackSubmittedToast") : t("quest.submittedToast"));
     });
   }
 
@@ -262,7 +266,7 @@ export function QuestList({
 
     const qType = quest.quest_type ?? "default";
     const baseClass = `w-10 h-10 rounded-full flex items-center justify-center shrink-0`;
-    const colorClass = done ? "club-tint-bg club-primary" : isPendingQuest ? "bg-yellow-50 text-yellow-500" : "bg-gray-100 text-gray-300";
+    const colorClass = done ? "club-tint-bg club-primary" : isPendingQuest ? "bg-yellow-50 text-yellow-500" : "club-tint-bg club-primary opacity-50";
 
     // Use custom icon if set by admin
     if (quest.icon) {

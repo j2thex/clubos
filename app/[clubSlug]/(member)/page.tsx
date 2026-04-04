@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { QuestList } from "./quest-list";
 import { SocialLinks } from "@/components/club/social-links";
 import { PhotoGallery } from "@/components/club/photo-gallery";
+import { WelcomeOverlay } from "@/components/club/welcome-overlay";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 
@@ -80,6 +81,7 @@ export default async function MemberDashboard({
 
   return (
     <div className="min-h-screen club-page-bg">
+      <WelcomeOverlay clubName={clubName} />
       {/* Hero area */}
       <div
         className="relative px-6 pt-10 pb-16 text-center bg-cover bg-center overflow-hidden"

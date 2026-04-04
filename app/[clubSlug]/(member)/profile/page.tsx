@@ -3,7 +3,7 @@ import { getMemberFromCookie } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logout } from "./actions";
 import { MemberQrCard } from "@/components/club/member-qr-card";
-import { AddToHomescreen } from "@/components/club/add-to-homescreen";
+
 import { BadgeCollection } from "../badge-collection";
 import { t, getDateLocale } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
@@ -108,8 +108,6 @@ export default async function ProfilePage({
 
       {/* Profile card */}
       <div className="px-4 -mt-8 pb-10 max-w-md mx-auto space-y-4">
-        <AddToHomescreen />
-
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           {/* QR Code & Member Code */}
           <div className="club-tint-bg border-b club-tint-border px-6 py-8 text-center">

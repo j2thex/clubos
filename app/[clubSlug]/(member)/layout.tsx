@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { MemberNav } from "@/components/club/member-nav";
 import { LanguageSwitcher } from "@/lib/i18n/switcher";
 import { PendingApproval } from "@/components/pending-approval";
+import { Toaster } from "sonner";
 
 export async function generateMetadata({
   params,
@@ -49,6 +50,7 @@ export default async function MemberLayout({
       </div>
       {children}
       <MemberNav clubSlug={clubSlug} />
+      <Toaster position="top-center" richColors />
     </div>
   );
 }

@@ -6,6 +6,15 @@ import { getServerLocale } from "@/lib/i18n/server";
 import { MemberSpinClient } from "./spin-client";
 import { CircleSlash } from "lucide-react";
 
+function WheelPreload() {
+  return (
+    <>
+      <link rel="preload" href="/wheel/hub.svg" as="image" type="image/svg+xml" />
+      <link rel="preload" href="/wheel/overlay.svg" as="image" type="image/svg+xml" />
+    </>
+  );
+}
+
 export default async function MemberSpinPage({
   params,
 }: {
@@ -20,14 +29,34 @@ export default async function MemberSpinPage({
 
   const supabase = createAdminClient();
 
-  // Fetch club spin settings
-  const { data: club } = await supabase
-    .from("clubs")
-    .select("spin_enabled, spin_display_decimals, spin_cost")
-    .eq("id", session.club_id)
-    .single();
-
-  const locale = await getServerLocale();
+  // Fetch all data in parallel
+  const [{ data: club }, { data: member }, { data: segments }, { data: recentSpins }, locale] =
+    await Promise.all([
+      supabase
+        .from("clubs")
+        .select("spin_enabled, spin_display_decimals, spin_cost")
+        .eq("id", session.club_id)
+        .single(),
+      supabase
+        .from("members")
+        .select("spin_balance")
+        .eq("id", session.member_id)
+        .single(),
+      supabase
+        .from("wheel_configs")
+        .select("label, label_es, color, label_color, probability")
+        .eq("club_id", session.club_id)
+        .eq("active", true)
+        .order("display_order", { ascending: true }),
+      supabase
+        .from("spins")
+        .select("id, outcome_label, outcome_value, created_at")
+        .eq("member_id", session.member_id)
+        .eq("club_id", session.club_id)
+        .order("created_at", { ascending: false })
+        .limit(10),
+      getServerLocale(),
+    ]);
 
   if (club?.spin_enabled === false) {
     return (
@@ -49,30 +78,6 @@ export default async function MemberSpinPage({
     );
   }
 
-  // Fetch member balance
-  const { data: member } = await supabase
-    .from("members")
-    .select("spin_balance")
-    .eq("id", session.member_id)
-    .single();
-
-  // Fetch active wheel segments
-  const { data: segments } = await supabase
-    .from("wheel_configs")
-    .select("label, label_es, color, label_color, probability")
-    .eq("club_id", session.club_id)
-    .eq("active", true)
-    .order("display_order", { ascending: true });
-
-  // Fetch last 10 spins
-  const { data: recentSpins } = await supabase
-    .from("spins")
-    .select("id, outcome_label, outcome_value, created_at")
-    .eq("member_id", session.member_id)
-    .eq("club_id", session.club_id)
-    .order("created_at", { ascending: false })
-    .limit(10);
-
   if (!segments || segments.length === 0) {
     return (
       <div className="min-h-screen club-page-bg">
@@ -89,6 +94,8 @@ export default async function MemberSpinPage({
   }
 
   return (
+    <>
+    <WheelPreload />
     <MemberSpinClient
       clubSlug={clubSlug}
       balance={member?.spin_balance ?? 0}
@@ -109,5 +116,6 @@ export default async function MemberSpinPage({
       displayDecimals={club?.spin_display_decimals ?? 0}
       spinCost={club?.spin_cost ?? 1}
     />
+    </>
   );
 }

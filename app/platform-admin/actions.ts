@@ -1,7 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { hashPassword } from "@/lib/auth";
+import { hashPassword, createOwnerToken, setOwnerCookie } from "@/lib/auth";
 import { generateSlug } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
 
@@ -261,4 +261,110 @@ export async function rejectClub(
 
   revalidatePath("/platform-admin");
   return { ok: true };
+}
+
+export async function setupStandardContent(
+  clubId: string,
+  clubType: string,
+  secret: string,
+): Promise<{ error: string } | { ok: true; questCount: number; eventCount: number }> {
+  if (secret !== process.env.PLATFORM_ADMIN_SECRET) {
+    return { error: "Unauthorized" };
+  }
+
+  const { CLUB_TYPE_TEMPLATES } = await import("@/lib/club-templates");
+  const template = CLUB_TYPE_TEMPLATES[clubType];
+  if (!template) return { error: `Unknown club type: ${clubType}` };
+
+  const supabase = createAdminClient();
+
+  // Get existing quest count for display_order
+  const { count: existingQuestCount } = await supabase
+    .from("quests")
+    .select("*", { count: "exact", head: true })
+    .eq("club_id", clubId);
+
+  let questOrder = existingQuestCount ?? 0;
+
+  // Insert quests
+  const questRows = template.quests.map((q) => ({
+    club_id: clubId,
+    title: q.title,
+    title_es: q.title_es,
+    description: q.description,
+    description_es: q.description_es,
+    icon: q.icon,
+    reward_spins: q.reward_spins,
+    quest_type: q.quest_type,
+    proof_mode: q.proof_mode,
+    multi_use: q.multi_use,
+    is_public: q.is_public,
+    active: true,
+    display_order: questOrder++,
+  }));
+
+  const { error: questError } = await supabase.from("quests").insert(questRows);
+  if (questError) return { error: `Failed to create quests: ${questError.message}` };
+
+  // Get existing event count for display_order
+  const { count: existingEventCount } = await supabase
+    .from("events")
+    .select("*", { count: "exact", head: true })
+    .eq("club_id", clubId);
+
+  let eventOrder = existingEventCount ?? 0;
+
+  // Insert events (set date to next Saturday as default)
+  const nextSaturday = new Date();
+  nextSaturday.setDate(nextSaturday.getDate() + (6 - nextSaturday.getDay() + 7) % 7 || 7);
+  const eventDate = nextSaturday.toISOString().split("T")[0];
+
+  const eventRows = template.events.map((e) => ({
+    club_id: clubId,
+    title: e.title,
+    title_es: e.title_es,
+    description: e.description,
+    description_es: e.description_es,
+    icon: e.icon,
+    date: eventDate,
+    time: "20:00",
+    active: true,
+    is_public: true,
+    display_order: eventOrder++,
+  }));
+
+  const { error: eventError } = await supabase.from("events").insert(eventRows);
+  if (eventError) return { error: `Failed to create events: ${eventError.message}` };
+
+  revalidatePath("/platform-admin");
+  return { ok: true, questCount: questRows.length, eventCount: eventRows.length };
+}
+
+export async function loginAsClubAdmin(
+  clubId: string,
+  clubSlug: string,
+  secret: string,
+): Promise<{ error: string } | { ok: true; redirectUrl: string }> {
+  if (secret !== process.env.PLATFORM_ADMIN_SECRET) {
+    return { error: "Unauthorized" };
+  }
+
+  const supabase = createAdminClient();
+
+  // Find the first owner linked to this club
+  const { data: link } = await supabase
+    .from("club_owner_clubs")
+    .select("owner_id")
+    .eq("club_id", clubId)
+    .limit(1)
+    .maybeSingle();
+
+  if (!link) {
+    return { error: "No owner found for this club" };
+  }
+
+  const token = await createOwnerToken(link.owner_id, clubId);
+  await setOwnerCookie(token);
+
+  return { ok: true, redirectUrl: `/${clubSlug}/admin` };
 }

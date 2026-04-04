@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { createUnclaimedClub, createClubFromGoogleMaps, approveCustomOffer, approveClub, rejectClub } from "./actions";
+import { createUnclaimedClub, createClubFromGoogleMaps, approveCustomOffer, approveClub, rejectClub, loginAsClubAdmin, setupStandardContent } from "./actions";
 
 interface ClubInfo {
   id: string;
@@ -121,6 +121,8 @@ export function PlatformAdminClient({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [setupClubId, setSetupClubId] = useState<string | null>(null);
+  const [setupType, setSetupType] = useState("general");
 
   function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -302,6 +304,55 @@ export function PlatformAdminClient({
                             className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-500/20 text-gray-400 hover:bg-gray-500/30 disabled:opacity-50 transition-colors"
                           >
                             Take Offline
+                          </button>
+                        )}
+                        <button
+                          onClick={() => startTransition(async () => {
+                            const res = await loginAsClubAdmin(c.id, c.slug, secret);
+                            if ("ok" in res) window.open(res.redirectUrl, "_blank");
+                            else setError(res.error);
+                          })}
+                          disabled={isPending}
+                          className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 disabled:opacity-50 transition-colors"
+                        >
+                          Admin ↗
+                        </button>
+                        {setupClubId === c.id ? (
+                          <span className="flex items-center gap-1">
+                            <select
+                              value={setupType}
+                              onChange={(e) => setSetupType(e.target.value)}
+                              className="text-[10px] bg-white/10 text-white rounded px-1 py-0.5 border border-white/10"
+                            >
+                              <option value="general">General</option>
+                              <option value="smoke">Smoke</option>
+                              <option value="bar">Bar</option>
+                              <option value="sports">Sports</option>
+                              <option value="coworking">Coworking</option>
+                              <option value="coffee">Coffee</option>
+                            </select>
+                            <button
+                              onClick={() => startTransition(async () => {
+                                const res = await setupStandardContent(c.id, setupType, secret);
+                                if ("ok" in res) {
+                                  setSuccess(`Added ${res.questCount} quests + ${res.eventCount} events`);
+                                  setSetupClubId(null);
+                                  setTimeout(() => setSuccess(null), 5000);
+                                } else setError(res.error);
+                              })}
+                              disabled={isPending}
+                              className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-green-500/20 text-green-300 hover:bg-green-500/30 disabled:opacity-50"
+                            >
+                              Go
+                            </button>
+                            <button onClick={() => setSetupClubId(null)} className="text-[10px] text-white/30 hover:text-white/60">✕</button>
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => { setSetupClubId(c.id); setSetupType("general"); }}
+                            className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 transition-colors"
+                          >
+                            Setup
                           </button>
                         )}
                       </div>
