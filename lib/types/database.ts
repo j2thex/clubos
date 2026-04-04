@@ -54,6 +54,7 @@ export type Database = {
           working_hours: Record<string, { open: string; close: string } | null> | null;
           spin_display_decimals: number;
           spin_cost: number;
+          preregistration_enabled: boolean;
           created_at: string;
         };
         Insert: {
@@ -75,6 +76,7 @@ export type Database = {
           working_hours?: Record<string, { open: string; close: string } | null> | null;
           spin_display_decimals?: number;
           spin_cost?: number;
+          preregistration_enabled?: boolean;
           created_at?: string;
         };
         Update: {
@@ -96,6 +98,7 @@ export type Database = {
           working_hours?: Record<string, { open: string; close: string } | null> | null;
           spin_display_decimals?: number;
           spin_cost?: number;
+          preregistration_enabled?: boolean;
           created_at?: string;
         };
         Relationships: [
@@ -372,6 +375,56 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "invite_requests_club_id_fkey";
+            columns: ["club_id"];
+            isOneToOne: false;
+            referencedRelation: "clubs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      preregistrations: {
+        Row: {
+          id: string;
+          club_id: string;
+          email: string;
+          visit_date: string;
+          num_visitors: number;
+          age_confirmed: boolean;
+          disclaimer_accepted: boolean;
+          status: string;
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          club_id: string;
+          email: string;
+          visit_date: string;
+          num_visitors?: number;
+          age_confirmed?: boolean;
+          disclaimer_accepted?: boolean;
+          status?: string;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          club_id?: string;
+          email?: string;
+          visit_date?: string;
+          num_visitors?: number;
+          age_confirmed?: boolean;
+          disclaimer_accepted?: boolean;
+          status?: string;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "preregistrations_club_id_fkey";
             columns: ["club_id"];
             isOneToOne: false;
             referencedRelation: "clubs";
