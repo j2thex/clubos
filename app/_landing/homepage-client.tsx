@@ -97,16 +97,16 @@ export function HomepageMap({
 
       {/* Tab navigation — links to /discover#tab */}
       <div className="absolute bottom-0 left-0 right-0 z-10">
-        <div className="flex bg-gray-900/90 backdrop-blur-sm">
+        <div className="flex gap-1 px-2 sm:px-4 bg-gray-900/90 backdrop-blur-sm py-2">
           {TABS.map((tab) => (
             <Link
               key={tab.key}
               href={`/discover#${tab.key}`}
-              className="flex-1 flex items-center justify-center gap-1.5 py-3 text-sm font-medium text-white/70 hover:text-white hover:bg-white/[0.08] transition-all"
+              className="flex-1 min-w-0 flex items-center justify-center gap-1 py-2 rounded-lg text-xs sm:text-sm font-medium text-white/70 hover:text-white hover:bg-white/[0.08] transition-all"
             >
-              <span>{tab.icon}</span>
-              <span className="hidden sm:inline">{locale === "es" ? tab.labelEs : tab.label}</span>
-              <span className="text-xs px-1.5 py-0.5 rounded-full bg-white/[0.08] text-white/60">
+              <span className="shrink-0">{tab.icon}</span>
+              <span className="truncate">{locale === "es" ? tab.labelEs : tab.label}</span>
+              <span className="shrink-0 text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded-full bg-white/[0.08] text-white/60">
                 {counts[tab.key]}
               </span>
             </Link>
