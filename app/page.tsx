@@ -240,9 +240,9 @@ export default async function Home() {
     .slice(0, 12);
 
   const QUEST_COLORS = [
-    "bg-emerald-500", "bg-violet-500", "bg-amber-500", "bg-sky-500",
-    "bg-rose-500", "bg-indigo-500", "bg-orange-500", "bg-teal-500",
-    "bg-pink-500", "bg-cyan-500", "bg-lime-500", "bg-fuchsia-500",
+    "text-emerald-400", "text-violet-400", "text-amber-400", "text-sky-400",
+    "text-rose-400", "text-indigo-400", "text-orange-400", "text-teal-400",
+    "text-pink-400", "text-cyan-400", "text-lime-400", "text-fuchsia-400",
   ];
 
   return (
@@ -397,7 +397,7 @@ export default async function Home() {
                   href="/discover#quests"
                   className="bg-white/[0.04] rounded-xl p-4 hover:bg-white/[0.07] transition-colors text-center flex flex-col items-center gap-2"
                 >
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white ${QUEST_COLORS[i % QUEST_COLORS.length]}`}>
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-white/[0.06] ${QUEST_COLORS[i % QUEST_COLORS.length]}`}>
                     {quest.icon ? (
                       <DynamicIcon name={quest.icon} className="w-5 h-5" />
                     ) : (
