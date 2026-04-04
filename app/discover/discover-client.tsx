@@ -44,10 +44,13 @@ export function DiscoverClient({
   const [dateFilter, setDateFilter] = useState<"all" | "today" | "week" | "month">("all");
   const mapSectionRef = useRef<HTMLDivElement>(null);
 
-  // Sync tab with URL hash for deep linking (e.g., /discover#events)
+  // Sync tab with URL hash for deep linking (e.g., /discover#events or /discover#offers:Wi-Fi)
   useEffect(() => {
     const hash = window.location.hash.replace("#", "");
-    if (hash === "clubs" || hash === "events" || hash === "offers" || hash === "quests") {
+    if (hash.startsWith("offers:")) {
+      setActiveTab("offers");
+      setSelectedOfferNames([decodeURIComponent(hash.slice(7))]);
+    } else if (hash === "clubs" || hash === "events" || hash === "offers" || hash === "quests") {
       setActiveTab(hash);
     }
   }, []);
