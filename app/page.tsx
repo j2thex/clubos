@@ -54,7 +54,8 @@ async function getClubs(): Promise<DiscoverClub[]> {
   }
 }
 
-async function getEvents(): Promise<DiscoverEvent[]> {
+async function getEvents(activeClubIds: string[]): Promise<DiscoverEvent[]> {
+  if (activeClubIds.length === 0) return [];
   try {
     const supabase = createAdminClient();
     const today = new Date().toISOString().split("T")[0];
@@ -62,6 +63,7 @@ async function getEvents(): Promise<DiscoverEvent[]> {
       .from("events")
       .select("id, title, title_es, description, description_es, date, time, price, image_url, icon, location_name, latitude, longitude, clubs(name, slug, latitude, longitude, club_branding(logo_url, primary_color))")
       .eq("active", true).eq("is_public", true)
+      .in("club_id", activeClubIds)
       .gte("date", today)
       .order("date", { ascending: true })
       .limit(50);
@@ -89,13 +91,15 @@ async function getEvents(): Promise<DiscoverEvent[]> {
   }
 }
 
-async function getOffers(): Promise<DiscoverOffer[]> {
+async function getOffers(activeClubIds: string[]): Promise<DiscoverOffer[]> {
+  if (activeClubIds.length === 0) return [];
   try {
     const supabase = createAdminClient();
     const { data } = await supabase
       .from("club_offers")
       .select("id, description, description_es, price, image_url, icon, offer_catalog(name, name_es, subtype), clubs(name, slug, latitude, longitude, club_branding(logo_url, primary_color))")
       .eq("is_public", true).neq("archived", true)
+      .in("club_id", activeClubIds)
       .limit(100);
 
     return (data ?? []).map((o) => {
@@ -122,7 +126,8 @@ async function getOffers(): Promise<DiscoverOffer[]> {
   }
 }
 
-async function getQuests(): Promise<DiscoverQuest[]> {
+async function getQuests(activeClubIds: string[]): Promise<DiscoverQuest[]> {
+  if (activeClubIds.length === 0) return [];
   try {
     const supabase = createAdminClient();
     const now = new Date().toISOString();
@@ -130,6 +135,7 @@ async function getQuests(): Promise<DiscoverQuest[]> {
       .from("quests")
       .select("id, title, title_es, description, description_es, reward_spins, icon, image_url, deadline, clubs(name, slug, latitude, longitude, club_branding(logo_url, primary_color))")
       .eq("active", true).eq("is_public", true)
+      .in("club_id", activeClubIds)
       .or(`deadline.is.null,deadline.gt.${now}`)
       .order("reward_spins", { ascending: false })
       .limit(100);
@@ -181,11 +187,12 @@ async function getMembershipDeals() {
 
 export default async function Home() {
   const locale = await getServerLocale();
-  const [clubs, events, offers, quests, deals] = await Promise.all([
-    getClubs(),
-    getEvents(),
-    getOffers(),
-    getQuests(),
+  const clubs = await getClubs();
+  const activeClubIds = clubs.map((c) => c.id);
+  const [events, offers, quests, deals] = await Promise.all([
+    getEvents(activeClubIds),
+    getOffers(activeClubIds),
+    getQuests(activeClubIds),
     getMembershipDeals(),
   ]);
 
@@ -234,7 +241,7 @@ export default async function Home() {
         </Link>
         <div className="flex items-center gap-4">
           <Link
-            href="/for-clubs"
+            href="/onboarding"
             className="text-xs opacity-60 hover:opacity-100 transition-opacity"
           >
             {localized("For Clubs", "Para Clubes", locale)}

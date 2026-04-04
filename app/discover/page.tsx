@@ -55,7 +55,8 @@ async function getClubs(): Promise<DiscoverClub[]> {
   }
 }
 
-async function getEvents(): Promise<DiscoverEvent[]> {
+async function getEvents(activeClubIds: string[]): Promise<DiscoverEvent[]> {
+  if (activeClubIds.length === 0) return [];
   try {
     const supabase = createAdminClient();
     const today = new Date().toISOString().split("T")[0];
@@ -64,6 +65,7 @@ async function getEvents(): Promise<DiscoverEvent[]> {
       .select("id, title, title_es, description, description_es, date, time, price, image_url, icon, location_name, latitude, longitude, clubs(name, slug, latitude, longitude, club_branding(logo_url, primary_color))")
       .eq("active", true)
       .eq("is_public", true)
+      .in("club_id", activeClubIds)
       .gte("date", today)
       .order("date", { ascending: true })
       .limit(200);
@@ -98,7 +100,8 @@ async function getEvents(): Promise<DiscoverEvent[]> {
   }
 }
 
-async function getOffers(): Promise<DiscoverOffer[]> {
+async function getOffers(activeClubIds: string[]): Promise<DiscoverOffer[]> {
+  if (activeClubIds.length === 0) return [];
   try {
     const supabase = createAdminClient();
     const { data } = await supabase
@@ -106,6 +109,7 @@ async function getOffers(): Promise<DiscoverOffer[]> {
       .select("id, description, description_es, price, image_url, icon, offer_catalog(name, name_es, subtype), clubs(name, slug, latitude, longitude, club_branding(logo_url, primary_color))")
       .eq("is_public", true)
       .neq("archived", true)
+      .in("club_id", activeClubIds)
       .limit(300);
 
     return (data ?? []).map((o) => {
@@ -135,7 +139,8 @@ async function getOffers(): Promise<DiscoverOffer[]> {
   }
 }
 
-async function getQuests(): Promise<DiscoverQuest[]> {
+async function getQuests(activeClubIds: string[]): Promise<DiscoverQuest[]> {
+  if (activeClubIds.length === 0) return [];
   try {
     const supabase = createAdminClient();
     const now = new Date().toISOString();
@@ -144,6 +149,7 @@ async function getQuests(): Promise<DiscoverQuest[]> {
       .select("id, title, title_es, description, description_es, reward_spins, icon, image_url, deadline, clubs(name, slug, latitude, longitude, club_branding(logo_url, primary_color))")
       .eq("active", true)
       .eq("is_public", true)
+      .in("club_id", activeClubIds)
       .or(`deadline.is.null,deadline.gt.${now}`)
       .order("reward_spins", { ascending: false })
       .limit(200);
@@ -178,11 +184,12 @@ export default async function DiscoverPage() {
   const locale = await getServerLocale();
   const tr = (key: string, params?: Record<string, string | number>) => t(locale, key, params);
 
-  const [clubs, events, offers, quests] = await Promise.all([
-    getClubs(),
-    getEvents(),
-    getOffers(),
-    getQuests(),
+  const clubs = await getClubs();
+  const activeClubIds = clubs.map((c) => c.id);
+  const [events, offers, quests] = await Promise.all([
+    getEvents(activeClubIds),
+    getOffers(activeClubIds),
+    getQuests(activeClubIds),
   ]);
 
   const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://osocios.club";
