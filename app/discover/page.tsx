@@ -212,12 +212,6 @@ export default async function DiscoverPage() {
         </div>
       </header>
 
-      {/* Page orientation */}
-      <section className="px-6 py-5 border-b border-white/10">
-        <h1 className="text-xl sm:text-2xl font-bold text-white">{tr("discover.title")}</h1>
-        <p className="text-sm text-white/60 mt-1">{tr("discover.subtitle")}</p>
-      </section>
-
       {/* Main content */}
       <main className="flex-1 flex flex-col">
         <DiscoverClient clubs={clubs} events={events} offers={offers} quests={quests} />

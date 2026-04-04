@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo } from "react";
 import dynamic from "next/dynamic";
-import type { DiscoverClub, DiscoverEvent, DiscoverOffer, DiscoverQuest, ActiveTab, MapViewport } from "../discover/lib/types";
+import Link from "next/link";
+import type { DiscoverClub, MapViewport, ActiveTab } from "../discover/lib/types";
 import { DEFAULT_VIEWPORT } from "../discover/lib/types";
-import { FilterTabs } from "../discover/components/filter-tabs";
 import { LocationSearch } from "../discover/components/location-search";
-import { NearMeButton } from "../discover/components/near-me-button";
 import { useLanguage } from "@/lib/i18n/provider";
 
 const DiscoverMap = dynamic(() => import("../discover/components/discover-map"), {
@@ -18,134 +17,101 @@ const DiscoverMap = dynamic(() => import("../discover/components/discover-map"),
   ),
 });
 
+const TABS: { key: ActiveTab; label: string; labelEs: string; icon: string }[] = [
+  { key: "clubs", label: "Clubs", labelEs: "Clubes", icon: "🏠" },
+  { key: "events", label: "Events", labelEs: "Eventos", icon: "📅" },
+  { key: "offers", label: "Offers", labelEs: "Ofertas", icon: "✨" },
+  { key: "quests", label: "Quests", labelEs: "Misiones", icon: "🎯" },
+];
+
 export function HomepageMap({
   clubs,
-  events,
-  offers,
-  quests,
+  clubCount,
+  eventCount,
+  offerCount,
+  questCount,
 }: {
   clubs: DiscoverClub[];
-  events: DiscoverEvent[];
-  offers: DiscoverOffer[];
-  quests: DiscoverQuest[];
+  clubCount: number;
+  eventCount: number;
+  offerCount: number;
+  questCount: number;
 }) {
-  const { locale } = useLanguage();
-  const [activeTab, setActiveTab] = useState<ActiveTab>("clubs");
+  const { locale, t } = useLanguage();
   const [viewport, setViewport] = useState<MapViewport>(DEFAULT_VIEWPORT);
   const [flyToTrigger, setFlyToTrigger] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const mapSectionRef = useRef<HTMLDivElement>(null);
 
-  // Build GeoJSON features for map (same pattern as discover-client)
+  const counts: Record<ActiveTab, number> = { clubs: clubCount, events: eventCount, offers: offerCount, quests: questCount };
+
+  // Always show clubs on homepage map
   const geoFeatures = useMemo(() => {
-    if (activeTab === "clubs") {
-      return clubs
-        .filter((c) => c.latitude != null && c.longitude != null)
-        .map((c) => ({
-          type: "Feature" as const,
-          properties: {
-            id: c.id, type: "club" as const, name: c.name, slug: c.slug,
-            logo_url: c.logo_url, primary_color: c.primary_color ?? "#16a34a",
-            city: c.city, tags: c.tags,
-          },
-          geometry: { type: "Point" as const, coordinates: [c.longitude!, c.latitude!] },
-        }));
-    }
-
-    if (activeTab === "events") {
-      return events
-        .filter((e) => (e.latitude ?? e.club_latitude) != null && (e.longitude ?? e.club_longitude) != null)
-        .map((e) => ({
-          type: "Feature" as const,
-          properties: {
-            id: e.id, type: "event" as const,
-            name: locale === "es" && e.title_es ? e.title_es : e.title,
-            slug: e.club_slug, logo_url: e.club_logo,
-            primary_color: e.club_primary_color ?? "#16a34a",
-            date: e.date, time: e.time, club_name: e.club_name, price: e.price,
-          },
-          geometry: { type: "Point" as const, coordinates: [e.longitude ?? e.club_longitude!, e.latitude ?? e.club_latitude!] },
-        }));
-    }
-
-    if (activeTab === "quests") {
-      return quests
-        .filter((q) => q.club_latitude != null && q.club_longitude != null)
-        .map((q) => ({
-          type: "Feature" as const,
-          properties: {
-            id: q.id, type: "quest" as const,
-            name: locale === "es" && q.title_es ? q.title_es : q.title,
-            slug: q.club_slug, logo_url: q.club_logo,
-            primary_color: q.club_primary_color ?? "#16a34a",
-            club_name: q.club_name, reward_spins: q.reward_spins,
-          },
-          geometry: { type: "Point" as const, coordinates: [q.club_longitude!, q.club_latitude!] },
-        }));
-    }
-
-    // offers — group by club
-    const clubMap = new Map<string, { lat: number; lng: number; club: { name: string; slug: string; logo: string | null; color: string }; count: number }>();
-    for (const o of offers) {
-      if (o.club_latitude == null || o.club_longitude == null) continue;
-      if (!clubMap.has(o.club_slug)) {
-        clubMap.set(o.club_slug, { lat: o.club_latitude, lng: o.club_longitude, club: { name: o.club_name, slug: o.club_slug, logo: o.club_logo, color: o.club_primary_color ?? "#16a34a" }, count: 0 });
-      }
-      clubMap.get(o.club_slug)!.count++;
-    }
-    return Array.from(clubMap.values()).map((entry) => ({
-      type: "Feature" as const,
-      properties: { id: entry.club.slug, type: "offer" as const, name: entry.club.name, slug: entry.club.slug, logo_url: entry.club.logo, primary_color: entry.club.color, offer_count: entry.count },
-      geometry: { type: "Point" as const, coordinates: [entry.lng, entry.lat] },
-    }));
-  }, [activeTab, clubs, events, offers, quests, locale]);
+    return clubs
+      .filter((c) => c.latitude != null && c.longitude != null)
+      .map((c) => ({
+        type: "Feature" as const,
+        properties: {
+          id: c.id, type: "club" as const, name: c.name, slug: c.slug,
+          logo_url: c.logo_url, primary_color: c.primary_color ?? "#16a34a",
+          city: c.city, tags: c.tags,
+        },
+        geometry: { type: "Point" as const, coordinates: [c.longitude!, c.latitude!] },
+      }));
+  }, [clubs]);
 
   function flyTo(lat: number, lng: number, zoom?: number) {
     setViewport({ latitude: lat, longitude: lng, zoom: zoom ?? 14 });
-    setFlyToTrigger((t) => t + 1);
+    setFlyToTrigger((prev) => prev + 1);
   }
 
   return (
-    <div ref={mapSectionRef} className="relative w-full" style={{ height: "50svh", minHeight: 320 }}>
+    <div className="relative w-full" style={{ height: "50svh", minHeight: 320 }}>
       <DiscoverMap
         features={geoFeatures}
-        activeTab={activeTab}
+        activeTab="clubs"
         viewport={viewport}
         onMove={setViewport}
         flyToTrigger={flyToTrigger}
         selectedId={selectedId}
         onSelectMarker={(id) => setSelectedId(id)}
         onDeselectMarker={() => setSelectedId(null)}
+        scrollZoom={false}
       />
 
-      {/* Overlays */}
-      <div className="absolute top-3 left-3 right-3 z-10 flex gap-2">
-        <div className="flex-1">
-          <LocationSearch
-            onLocationFound={(lat, lng) => flyTo(lat, lng, 13)}
-          />
-        </div>
-        <NearMeButton
-          clubs={clubs}
-          onLocationFound={(lat, lng) => {
-            flyTo(lat, lng, 13);
-            setActiveTab("clubs");
-          }}
+      {/* Search overlay */}
+      <div className="absolute top-3 left-3 right-3 z-10">
+        <LocationSearch
+          onLocationFound={(lat, lng) => flyTo(lat, lng, 13)}
         />
       </div>
 
-      {/* Filter tabs at bottom */}
-      <div className="absolute bottom-3 left-3 right-3 z-10">
-        <FilterTabs
-          activeTab={activeTab}
-          onChange={(tab) => { setActiveTab(tab); setSelectedId(null); }}
-          counts={{
-            clubs: clubs.length,
-            events: events.length,
-            offers: offers.length,
-            quests: quests.length,
-          }}
-        />
+      {/* CTA button — centered */}
+      <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+        <Link
+          href="/discover"
+          className="pointer-events-auto px-6 py-3 rounded-full bg-white text-gray-900 font-bold text-sm shadow-xl hover:bg-gray-100 transition-colors"
+        >
+          {locale === "es" ? "Explorar el mapa" : "Explore the Map"} →
+        </Link>
+      </div>
+
+      {/* Tab navigation — links to /discover#tab */}
+      <div className="absolute bottom-0 left-0 right-0 z-10">
+        <div className="flex bg-gray-900/90 backdrop-blur-sm">
+          {TABS.map((tab) => (
+            <Link
+              key={tab.key}
+              href={`/discover#${tab.key}`}
+              className="flex-1 flex items-center justify-center gap-1.5 py-3 text-sm font-medium text-white/70 hover:text-white hover:bg-white/[0.08] transition-all"
+            >
+              <span>{tab.icon}</span>
+              <span className="hidden sm:inline">{locale === "es" ? tab.labelEs : tab.label}</span>
+              <span className="text-xs px-1.5 py-0.5 rounded-full bg-white/[0.08] text-white/60">
+                {counts[tab.key]}
+              </span>
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -249,8 +249,20 @@ export default async function Home() {
         </div>
       </header>
 
+      {/* Title */}
+      <section className="px-6 py-5 border-b border-white/10">
+        <h1 className="text-xl sm:text-2xl font-bold text-white">{tr("discover.title")}</h1>
+        <p className="text-sm text-white/60 mt-1">{tr("discover.subtitle")}</p>
+      </section>
+
       {/* Map Hero */}
-      <HomepageMap clubs={clubs} events={events} offers={offers} quests={quests} />
+      <HomepageMap
+        clubs={clubs}
+        clubCount={clubs.length}
+        eventCount={events.length}
+        offerCount={offers.length}
+        questCount={quests.length}
+      />
 
       {/* Upcoming Events */}
       {upcomingEvents.length > 0 && (

@@ -177,6 +177,7 @@ export default function DiscoverMap({
   onSelectMarker,
   onDeselectMarker,
   activeTab,
+  scrollZoom = true,
 }: {
   features: GeoFeature[];
   viewport: MapViewport;
@@ -185,6 +186,7 @@ export default function DiscoverMap({
   selectedId: string | null;
   onSelectMarker: (id: string, lat?: number | null, lng?: number | null) => void;
   onDeselectMarker: () => void;
+  scrollZoom?: boolean;
   activeTab: ActiveTab;
 }) {
   const mapRef = useRef<MapRef>(null);
@@ -251,6 +253,7 @@ export default function DiscoverMap({
       mapStyle={DEFAULT_MAP_STYLE}
       style={{ width: "100%", height: "100%" }}
       attributionControl={false}
+      scrollZoom={scrollZoom}
     >
       {clusters.map((cluster) => {
         const [lng, lat] = cluster.geometry.coordinates;
