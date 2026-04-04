@@ -341,7 +341,7 @@ export default async function Home() {
               {popularOffers.map((offer) => (
                 <Link
                   key={offer.name}
-                  href={`/discover#offers`}
+                  href={`/discover#offers:${encodeURIComponent(offer.name)}`}
                   className="bg-white/[0.04] rounded-xl p-4 hover:bg-white/[0.07] transition-colors text-center"
                 >
                   <p className="text-sm font-semibold text-white">
