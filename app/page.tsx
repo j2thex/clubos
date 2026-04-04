@@ -257,17 +257,7 @@ export default async function Home() {
         </div>
       </header>
 
-      {/* Title */}
-      <div className="px-6 sm:px-10 pt-16 pb-10 sm:pt-20 sm:pb-14">
-        <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extralight tracking-tight">
-          {tr("discover.title")}
-        </h1>
-        <p className="mt-4 text-sm sm:text-base opacity-50 max-w-lg font-light leading-relaxed">
-          {tr("discover.subtitle")}
-        </p>
-      </div>
-
-      {/* Map Hero */}
+      {/* Map Hero + Tabs */}
       <HomepageMap
         clubs={clubs}
         clubCount={clubs.length}
@@ -275,6 +265,16 @@ export default async function Home() {
         offerCount={offers.length}
         questCount={quests.length}
       />
+
+      {/* Title */}
+      <div className="px-6 sm:px-10 pt-14 pb-8 sm:pt-16 sm:pb-10">
+        <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extralight tracking-tight">
+          {tr("discover.title")}
+        </h1>
+        <p className="mt-4 text-sm sm:text-base opacity-50 max-w-lg font-light leading-relaxed">
+          {tr("discover.subtitle")}
+        </p>
+      </div>
 
       {/* Upcoming Events */}
       {upcomingEvents.length > 0 && (

@@ -65,54 +65,55 @@ export function HomepageMap({
   }
 
   return (
-    <div className="relative w-full" style={{ height: "50svh", minHeight: 320 }}>
-      <DiscoverMap
-        features={geoFeatures}
-        activeTab="clubs"
-        viewport={viewport}
-        onMove={setViewport}
-        flyToTrigger={flyToTrigger}
-        selectedId={selectedId}
-        onSelectMarker={(id) => setSelectedId(id)}
-        onDeselectMarker={() => setSelectedId(null)}
-        scrollZoom={false}
-      />
-
-      {/* Search overlay */}
-      <div className="absolute top-3 left-3 right-3 z-10">
-        <LocationSearch
-          onLocationFound={(lat, lng) => flyTo(lat, lng, 13)}
+    <>
+      {/* Map */}
+      <div className="relative w-full" style={{ height: "50svh", minHeight: 320 }}>
+        <DiscoverMap
+          features={geoFeatures}
+          activeTab="clubs"
+          viewport={viewport}
+          onMove={setViewport}
+          flyToTrigger={flyToTrigger}
+          selectedId={selectedId}
+          onSelectMarker={(id) => setSelectedId(id)}
+          onDeselectMarker={() => setSelectedId(null)}
+          scrollZoom={false}
         />
-      </div>
 
-      {/* CTA button — centered */}
-      <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
-        <Link
-          href="/discover"
-          className="pointer-events-auto px-6 py-3 rounded-full bg-white text-gray-900 font-bold text-sm shadow-xl hover:bg-gray-100 transition-colors"
-        >
-          {locale === "es" ? "Explorar el mapa" : "Explore the Map"} →
-        </Link>
-      </div>
+        {/* Search overlay */}
+        <div className="absolute top-3 left-3 right-3 z-10">
+          <LocationSearch
+            onLocationFound={(lat, lng) => flyTo(lat, lng, 13)}
+          />
+        </div>
 
-      {/* Tab navigation — links to /discover#tab */}
-      <div className="absolute bottom-0 left-0 right-0 z-10">
-        <div className="flex gap-1 px-2 sm:px-4 bg-gray-900/90 backdrop-blur-sm py-2">
-          {TABS.map((tab) => (
-            <Link
-              key={tab.key}
-              href={`/discover#${tab.key}`}
-              className="flex-1 min-w-0 flex items-center justify-center gap-1 py-2 rounded-lg text-xs sm:text-sm font-medium text-white/70 hover:text-white hover:bg-white/[0.08] transition-all"
-            >
-              <span className="shrink-0">{tab.icon}</span>
-              <span className="truncate">{locale === "es" ? tab.labelEs : tab.label}</span>
-              <span className="shrink-0 text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded-full bg-white/[0.08] text-white/60">
-                {counts[tab.key]}
-              </span>
-            </Link>
-          ))}
+        {/* CTA button — centered */}
+        <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+          <Link
+            href="/discover"
+            className="pointer-events-auto px-6 py-3 rounded-full bg-white text-gray-900 font-bold text-sm shadow-xl hover:bg-gray-100 transition-colors"
+          >
+            {locale === "es" ? "Explorar el mapa" : "Explore the Map"} →
+          </Link>
         </div>
       </div>
-    </div>
+
+      {/* Tab navigation — standalone row below map */}
+      <div className="flex border-b border-white/[0.06] bg-[oklch(0.13_0.02_150)]">
+        {TABS.map((tab) => (
+          <Link
+            key={tab.key}
+            href={`/discover#${tab.key}`}
+            className="flex-1 flex items-center justify-center gap-2 py-4 text-sm sm:text-base font-medium text-white/60 hover:text-white hover:bg-white/[0.05] transition-all border-r last:border-r-0 border-white/[0.06]"
+          >
+            <span>{tab.icon}</span>
+            <span>{locale === "es" ? tab.labelEs : tab.label}</span>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-white/[0.08] text-white/50">
+              {counts[tab.key]}
+            </span>
+          </Link>
+        ))}
+      </div>
+    </>
   );
 }
