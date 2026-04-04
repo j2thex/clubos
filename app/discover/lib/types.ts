@@ -52,7 +52,25 @@ export interface DiscoverOffer {
   club_longitude: number | null;
 }
 
-export type ActiveTab = "clubs" | "events" | "offers";
+export interface DiscoverQuest {
+  id: string;
+  title: string;
+  title_es: string | null;
+  description: string | null;
+  description_es: string | null;
+  reward_spins: number;
+  icon: string | null;
+  image_url: string | null;
+  deadline: string | null;
+  club_name: string;
+  club_slug: string;
+  club_logo: string | null;
+  club_primary_color: string | null;
+  club_latitude: number | null;
+  club_longitude: number | null;
+}
+
+export type ActiveTab = "clubs" | "events" | "offers" | "quests";
 
 export interface MapViewport {
   latitude: number;

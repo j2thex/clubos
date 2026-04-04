@@ -5,7 +5,7 @@ import { LandingFooter } from "../_landing/landing-footer";
 import { LanguageSwitcher } from "@/lib/i18n/switcher";
 import Link from "next/link";
 import { DiscoverClient } from "./discover-client";
-import type { DiscoverClub, DiscoverEvent, DiscoverOffer } from "./lib/types";
+import type { DiscoverClub, DiscoverEvent, DiscoverOffer, DiscoverQuest } from "./lib/types";
 import type { Metadata } from "next";
 import { getItemListJsonLd } from "@/lib/structured-data";
 
@@ -55,7 +55,8 @@ async function getClubs(): Promise<DiscoverClub[]> {
   }
 }
 
-async function getEvents(): Promise<DiscoverEvent[]> {
+async function getEvents(activeClubIds: string[]): Promise<DiscoverEvent[]> {
+  if (activeClubIds.length === 0) return [];
   try {
     const supabase = createAdminClient();
     const today = new Date().toISOString().split("T")[0];
@@ -64,6 +65,7 @@ async function getEvents(): Promise<DiscoverEvent[]> {
       .select("id, title, title_es, description, description_es, date, time, price, image_url, icon, location_name, latitude, longitude, clubs(name, slug, latitude, longitude, club_branding(logo_url, primary_color))")
       .eq("active", true)
       .eq("is_public", true)
+      .in("club_id", activeClubIds)
       .gte("date", today)
       .order("date", { ascending: true })
       .limit(200);
@@ -98,7 +100,8 @@ async function getEvents(): Promise<DiscoverEvent[]> {
   }
 }
 
-async function getOffers(): Promise<DiscoverOffer[]> {
+async function getOffers(activeClubIds: string[]): Promise<DiscoverOffer[]> {
+  if (activeClubIds.length === 0) return [];
   try {
     const supabase = createAdminClient();
     const { data } = await supabase
@@ -106,6 +109,7 @@ async function getOffers(): Promise<DiscoverOffer[]> {
       .select("id, description, description_es, price, image_url, icon, offer_catalog(name, name_es, subtype), clubs(name, slug, latitude, longitude, club_branding(logo_url, primary_color))")
       .eq("is_public", true)
       .neq("archived", true)
+      .in("club_id", activeClubIds)
       .limit(300);
 
     return (data ?? []).map((o) => {
@@ -135,14 +139,57 @@ async function getOffers(): Promise<DiscoverOffer[]> {
   }
 }
 
+async function getQuests(activeClubIds: string[]): Promise<DiscoverQuest[]> {
+  if (activeClubIds.length === 0) return [];
+  try {
+    const supabase = createAdminClient();
+    const now = new Date().toISOString();
+    const { data } = await supabase
+      .from("quests")
+      .select("id, title, title_es, description, description_es, reward_spins, icon, image_url, deadline, clubs(name, slug, latitude, longitude, club_branding(logo_url, primary_color))")
+      .eq("active", true)
+      .eq("is_public", true)
+      .in("club_id", activeClubIds)
+      .or(`deadline.is.null,deadline.gt.${now}`)
+      .order("reward_spins", { ascending: false })
+      .limit(200);
+
+    return (data ?? []).map((q) => {
+      const club = Array.isArray(q.clubs) ? q.clubs[0] : q.clubs;
+      const branding = club ? (Array.isArray(club.club_branding) ? club.club_branding[0] : club.club_branding) : null;
+      return {
+        id: q.id,
+        title: q.title,
+        title_es: q.title_es,
+        description: q.description,
+        description_es: q.description_es,
+        reward_spins: Number(q.reward_spins),
+        icon: q.icon,
+        image_url: q.image_url,
+        deadline: q.deadline,
+        club_name: club?.name ?? "",
+        club_slug: club?.slug ?? "",
+        club_logo: branding?.logo_url ?? null,
+        club_primary_color: branding?.primary_color ?? null,
+        club_latitude: club?.latitude ?? null,
+        club_longitude: club?.longitude ?? null,
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
 export default async function DiscoverPage() {
   const locale = await getServerLocale();
   const tr = (key: string, params?: Record<string, string | number>) => t(locale, key, params);
 
-  const [clubs, events, offers] = await Promise.all([
-    getClubs(),
-    getEvents(),
-    getOffers(),
+  const clubs = await getClubs();
+  const activeClubIds = clubs.map((c) => c.id);
+  const [events, offers, quests] = await Promise.all([
+    getEvents(activeClubIds),
+    getOffers(activeClubIds),
+    getQuests(activeClubIds),
   ]);
 
   const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://osocios.club";
@@ -157,14 +204,14 @@ export default async function DiscoverPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(clubListJsonLd) }}
       />
       {/* Header */}
-      <header className="relative z-20 flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
-        <Link href="/" className="text-xs font-mono tracking-widest uppercase opacity-60 hover:opacity-80 transition-opacity">
+      <header className="relative z-20 flex items-center justify-between px-6 py-4 border-b border-white/10">
+        <Link href="/" className="text-xs font-mono tracking-widest uppercase opacity-80 hover:opacity-100 transition-opacity">
           {tr("landing.brandName")}
         </Link>
         <div className="flex items-center gap-4">
           <Link
             href="/onboarding"
-            className="text-xs opacity-50 hover:opacity-80 transition-opacity hidden sm:inline"
+            className="text-xs opacity-70 hover:opacity-100 transition-opacity hidden sm:inline"
           >
             {tr("landing.heroPrimaryCta")}
           </Link>
@@ -174,7 +221,7 @@ export default async function DiscoverPage() {
 
       {/* Main content */}
       <main className="flex-1 flex flex-col">
-        <DiscoverClient clubs={clubs} events={events} offers={offers} />
+        <DiscoverClient clubs={clubs} events={events} offers={offers} quests={quests} />
       </main>
 
       {/* Footer */}

@@ -82,6 +82,8 @@
   "quest.shareFeedback": "Compartir opinión",
   "quest.feedbackPlaceholder": "¿Qué te gustaría sugerir?",
   "quest.tutorialSteps": "Pasos a completar",
+  "quest.submittedToast": "¡Misión enviada! El staff la verificará y ganarás tus tiradas.",
+  "quest.feedbackSubmittedToast": "¡Opinión enviada! Gracias por compartir.",
   "quests.hideCompleted": "Ocultar completadas",
   "quests.showCompleted": "Mostrar completadas",
 
@@ -585,8 +587,8 @@
   "legal.consentAnd": "y las",
   "legal.backToHome": "Volver al inicio",
 
-  "discover.title": "Descubrir",
-  "discover.subtitle": "Encuentra clubs, eventos y servicios cerca de ti",
+  "discover.title": "Descubre Clubes",
+  "discover.subtitle": "Encuentra clubes, eventos y ofertas cerca de ti",
   "discover.clubs": "Clubs",
   "discover.events": "Eventos",
   "discover.offers": "Ofertas",
@@ -612,5 +614,15 @@
   "admin.locationPlaceholder": "Nombre del lugar o dirección",
   "discover.ageGate.subtitle": "Contenido Restringido por Edad",
   "discover.ageGate.body": "Esta plataforma presenta clubes y servicios dirigidos a adultos. Al continuar, confirmas que tienes 18 años o más.",
-  "discover.ageGate.confirm": "Tengo 18 años o más — Entrar"
+  "discover.ageGate.confirm": "Tengo 18 años o más — Entrar",
+
+  "welcome.title": "¡Bienvenido a {club}!",
+  "welcome.subtitle": "Esto es lo que puedes hacer como socio",
+  "welcome.quests": "Completa Misiones",
+  "welcome.questsDesc": "Gana tiradas completando tareas y desafíos",
+  "welcome.spin": "Gira la Ruleta",
+  "welcome.spinDesc": "Usa tus tiradas ganadas para obtener premios",
+  "welcome.events": "Únete a Eventos",
+  "welcome.eventsDesc": "Descubre próximos eventos y confirma asistencia",
+  "welcome.start": "¡Vamos!"
 }

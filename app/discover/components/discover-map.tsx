@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useCallback, useEffect } from "react";
-import Map, { Marker, Popup, NavigationControl } from "react-map-gl/maplibre";
+import Map, { Marker, Popup } from "react-map-gl/maplibre";
 import type { MapRef } from "react-map-gl/maplibre";
 import useSupercluster from "use-supercluster";
 import { DEFAULT_MAP_STYLE } from "../lib/map-styles";
@@ -11,7 +11,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 interface FeatureProperties {
   id: string;
-  type: "club" | "event" | "offer";
+  type: "club" | "event" | "offer" | "quest";
   name: string;
   slug: string;
   logo_url: string | null;
@@ -23,6 +23,7 @@ interface FeatureProperties {
   club_name?: string;
   price?: number | null;
   offer_count?: number;
+  reward_spins?: number;
 }
 
 type GeoFeature = GeoJSON.Feature<GeoJSON.Point, FeatureProperties>;
@@ -74,6 +75,22 @@ function OfferMarker({ feature, selected, onClick }: { feature: GeoFeature; sele
   );
 }
 
+function QuestMarker({ feature, selected, onClick }: { feature: GeoFeature; selected: boolean; onClick: () => void }) {
+  const { logo_url, primary_color, name, reward_spins } = feature.properties;
+  return (
+    <button onClick={onClick} className={`relative group transition-transform ${selected ? "scale-125 z-10" : "hover:scale-110"}`}>
+      <div className="relative">
+        <div className={`w-10 h-10 rounded-full border-2 overflow-hidden shadow-lg flex items-center justify-center text-white text-xs font-bold ${selected ? "border-white ring-2 ring-white/30" : "border-white/60"}`} style={{ backgroundColor: logo_url ? undefined : primary_color }}>
+          {logo_url ? <img src={logo_url} alt="" className="w-full h-full object-cover" /> : name.charAt(0).toUpperCase()}
+        </div>
+        {reward_spins != null && (
+          <span className="absolute -top-1 -right-1 bg-emerald-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow">{reward_spins}</span>
+        )}
+      </div>
+    </button>
+  );
+}
+
 function ClusterMarker({ count, onClick }: { count: number; onClick: () => void }) {
   const size = count < 10 ? 36 : count < 50 ? 42 : 50;
   return (
@@ -109,13 +126,13 @@ function MarkerPopup({ feature, onClose }: { feature: GeoFeature; onClose: () =>
           </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-gray-900 truncate">{p.name}</p>
-            {p.city && <p className="text-[10px] text-gray-500">{p.city}</p>}
-            {p.club_name && <p className="text-[10px] text-gray-500">{p.club_name}</p>}
+            {p.city && <p className="text-xs text-gray-500">{p.city}</p>}
+            {p.club_name && <p className="text-xs text-gray-500">{p.club_name}</p>}
           </div>
         </div>
 
         {p.type === "event" && p.date && (
-          <div className="flex items-center gap-2 mb-2 text-[11px] text-gray-600">
+          <div className="flex items-center gap-2 mb-2 text-xs text-gray-600">
             <span className="font-medium">{formatPopupDate(p.date)}</span>
             {p.time && <span>{formatPopupTime(p.time)}</span>}
             {p.price != null && p.price > 0 && <span className="font-medium">€{p.price}</span>}
@@ -123,22 +140,26 @@ function MarkerPopup({ feature, onClose }: { feature: GeoFeature; onClose: () =>
         )}
 
         {p.type === "offer" && p.offer_count != null && (
-          <p className="text-[11px] text-gray-500 mb-2">{p.offer_count} offers available</p>
+          <p className="text-xs text-gray-500 mb-2">{p.offer_count} offers available</p>
+        )}
+
+        {p.type === "quest" && p.reward_spins != null && (
+          <p className="text-xs text-emerald-600 font-medium mb-2">🎡 {p.reward_spins} {p.reward_spins === 1 ? "spin" : "spins"} reward</p>
         )}
 
         {p.tags && p.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-2">
             {p.tags.slice(0, 3).map((tag) => (
-              <span key={tag} className="text-[9px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">{tag}</span>
+              <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">{tag}</span>
             ))}
           </div>
         )}
 
         <div className="flex items-center gap-3 pt-1 border-t border-gray-100">
-          <Link href={`/${p.slug}/public`} className="text-[11px] font-medium text-primary hover:underline">
+          <Link href={`/${p.slug}/public`} className="text-xs font-medium text-primary hover:underline">
             View club →
           </Link>
-          <a href={directionsUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-gray-400 hover:text-gray-600 transition-colors">
+          <a href={directionsUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
             Directions
           </a>
         </div>
@@ -156,6 +177,7 @@ export default function DiscoverMap({
   onSelectMarker,
   onDeselectMarker,
   activeTab,
+  scrollZoom = true,
 }: {
   features: GeoFeature[];
   viewport: MapViewport;
@@ -164,6 +186,7 @@ export default function DiscoverMap({
   selectedId: string | null;
   onSelectMarker: (id: string, lat?: number | null, lng?: number | null) => void;
   onDeselectMarker: () => void;
+  scrollZoom?: boolean;
   activeTab: ActiveTab;
 }) {
   const mapRef = useRef<MapRef>(null);
@@ -230,9 +253,8 @@ export default function DiscoverMap({
       mapStyle={DEFAULT_MAP_STYLE}
       style={{ width: "100%", height: "100%" }}
       attributionControl={false}
+      scrollZoom={scrollZoom}
     >
-      <NavigationControl position="bottom-right" showCompass={false} />
-
       {clusters.map((cluster) => {
         const [lng, lat] = cluster.geometry.coordinates;
         const props = cluster.properties as FeatureProperties & { cluster?: boolean; cluster_id?: number; point_count?: number };
@@ -259,6 +281,14 @@ export default function DiscoverMap({
           return (
             <Marker key={props.id} latitude={lat} longitude={lng} anchor="center">
               <OfferMarker feature={cluster as GeoFeature} selected={isSelected} onClick={() => onSelectMarker(props.id, lat, lng)} />
+            </Marker>
+          );
+        }
+
+        if (activeTab === "quests") {
+          return (
+            <Marker key={props.id} latitude={lat} longitude={lng} anchor="center">
+              <QuestMarker feature={cluster as GeoFeature} selected={isSelected} onClick={() => onSelectMarker(props.id, lat, lng)} />
             </Marker>
           );
         }

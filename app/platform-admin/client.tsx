@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { createUnclaimedClub, approveCustomOffer, approveClub, rejectClub } from "./actions";
+import { createUnclaimedClub, createClubFromGoogleMaps, approveCustomOffer, approveClub, rejectClub, loginAsClubAdmin, setupStandardContent } from "./actions";
 
 interface ClubInfo {
   id: string;
@@ -112,13 +112,17 @@ export function PlatformAdminClient({
   unapprovedOffers: UnapprovedOffer[];
 }) {
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showGoogleForm, setShowGoogleForm] = useState(false);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#16a34a");
   const [secondaryColor, setSecondaryColor] = useState("#052e16");
+  const [googleMapsUrl, setGoogleMapsUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [setupClubId, setSetupClubId] = useState<string | null>(null);
+  const [setupType, setSetupType] = useState("general");
 
   function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -134,6 +138,21 @@ export function PlatformAdminClient({
         setName("");
         setSlug("");
         setTimeout(() => setSuccess(null), 3000);
+      }
+    });
+  }
+
+  function handleGoogleCreate(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    startTransition(async () => {
+      const result = await createClubFromGoogleMaps(googleMapsUrl, secret);
+      if ("error" in result) {
+        setError(result.error);
+      } else {
+        setSuccess(`Created "${result.name}" → /${result.slug} — Login: ${result.email} / q1234567`);
+        setGoogleMapsUrl("");
+        setTimeout(() => setSuccess(null), 10000);
       }
     });
   }
@@ -287,6 +306,55 @@ export function PlatformAdminClient({
                             Take Offline
                           </button>
                         )}
+                        <button
+                          onClick={() => startTransition(async () => {
+                            const res = await loginAsClubAdmin(c.id, c.slug, secret);
+                            if ("ok" in res) window.open(res.redirectUrl, "_blank");
+                            else setError(res.error);
+                          })}
+                          disabled={isPending}
+                          className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 disabled:opacity-50 transition-colors"
+                        >
+                          Admin ↗
+                        </button>
+                        {setupClubId === c.id ? (
+                          <span className="flex items-center gap-1">
+                            <select
+                              value={setupType}
+                              onChange={(e) => setSetupType(e.target.value)}
+                              className="text-[10px] bg-white/10 text-white rounded px-1 py-0.5 border border-white/10"
+                            >
+                              <option value="general">General</option>
+                              <option value="smoke">Smoke</option>
+                              <option value="bar">Bar</option>
+                              <option value="sports">Sports</option>
+                              <option value="coworking">Coworking</option>
+                              <option value="coffee">Coffee</option>
+                            </select>
+                            <button
+                              onClick={() => startTransition(async () => {
+                                const res = await setupStandardContent(c.id, setupType, secret);
+                                if ("ok" in res) {
+                                  setSuccess(`Added ${res.questCount} quests + ${res.eventCount} events`);
+                                  setSetupClubId(null);
+                                  setTimeout(() => setSuccess(null), 5000);
+                                } else setError(res.error);
+                              })}
+                              disabled={isPending}
+                              className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-green-500/20 text-green-300 hover:bg-green-500/30 disabled:opacity-50"
+                            >
+                              Go
+                            </button>
+                            <button onClick={() => setSetupClubId(null)} className="text-[10px] text-white/30 hover:text-white/60">✕</button>
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => { setSetupClubId(c.id); setSetupType("general"); }}
+                            className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 transition-colors"
+                          >
+                            Setup
+                          </button>
+                        )}
                       </div>
                     </td>
                     <td className="text-right px-5 py-3 text-xs text-white/30">{timeAgo(c.createdAt)}</td>
@@ -360,6 +428,34 @@ export function PlatformAdminClient({
             </div>
           </div>
         )}
+
+        {/* Create from Google Maps (collapsible) */}
+        <div className="bg-white/[0.03] rounded-xl border border-emerald-500/20 overflow-hidden">
+          <button onClick={() => setShowGoogleForm(!showGoogleForm)} className="w-full px-5 py-3 flex items-center justify-between text-sm font-medium text-emerald-400/70 hover:text-emerald-300 transition-colors">
+            <span>🗺️ Create Club from Google Maps</span>
+            <svg className={`w-4 h-4 transition-transform ${showGoogleForm ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          {showGoogleForm && (
+            <form onSubmit={handleGoogleCreate} className="px-5 pb-5 space-y-3 border-t border-white/[0.06] pt-4">
+              {error && <p className="text-xs text-red-400">{error}</p>}
+              {success && <p className="text-xs text-green-400">{success}</p>}
+              <p className="text-xs text-white/40">Paste a Google Maps link. Club name, location, and owner account will be created automatically.</p>
+              <input
+                value={googleMapsUrl}
+                onChange={(e) => setGoogleMapsUrl(e.target.value)}
+                placeholder="https://www.google.com/maps/place/..."
+                required
+                className="w-full rounded-lg bg-white/[0.05] border border-white/10 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-emerald-500/30"
+              />
+              <p className="text-[10px] text-white/30">Owner login: [slug]@osocios.com / q1234567</p>
+              <button type="submit" disabled={isPending} className="rounded-lg bg-emerald-600/30 text-emerald-300 px-4 py-2 text-sm font-semibold hover:bg-emerald-600/50 disabled:opacity-50 transition-colors">
+                {isPending ? "Creating..." : "Create from Maps"}
+              </button>
+            </form>
+          )}
+        </div>
 
         {/* Create Club (collapsible) */}
         <div className="bg-white/[0.03] rounded-xl border border-white/[0.06] overflow-hidden">

@@ -5,7 +5,7 @@ import type { ActiveTab } from "../lib/types";
 
 interface ListItem {
   id: string;
-  type: "club" | "event" | "offer";
+  type: "club" | "event" | "offer" | "quest";
   title: string;
   subtitle?: string | null;
   tags?: string[];
@@ -13,6 +13,7 @@ interface ListItem {
   time?: string | null;
   price?: number | null;
   offer_count?: number;
+  reward_spins?: number;
   location_name?: string | null;
   slug: string;
   logo_url: string | null;
@@ -49,8 +50,8 @@ function ResultCard({
   return (
     <div
       onClick={onSelect}
-      className={`rounded-xl border cursor-pointer transition-all hover:border-white/20 hover:bg-white/[0.04] ${
-        selected ? "border-white/20 bg-white/[0.06] ring-1 ring-primary/30" : "border-white/[0.06] bg-white/[0.02]"
+      className={`rounded-xl border cursor-pointer transition-all hover:border-white/25 hover:bg-white/[0.06] ${
+        selected ? "border-white/25 bg-white/[0.08] ring-1 ring-primary/30" : "border-white/10 bg-white/[0.04]"
       }`}
     >
       {/* Event image tile */}
@@ -65,7 +66,7 @@ function ResultCard({
         {/* Header */}
         <div className="flex items-start gap-3">
           <div
-            className="w-11 h-11 rounded-xl shrink-0 flex items-center justify-center text-sm font-bold text-white overflow-hidden"
+            className="w-12 h-12 rounded-xl shrink-0 flex items-center justify-center text-sm font-bold text-white overflow-hidden"
             style={{ backgroundColor: item.logo_url ? undefined : item.primary_color }}
           >
             {item.logo_url ? (
@@ -75,40 +76,45 @@ function ResultCard({
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-white truncate">{item.title}</p>
+            <p className="text-base font-semibold text-white truncate">{item.title}</p>
             {item.subtitle && (
-              <p className="text-xs text-white/40 truncate mt-0.5">{item.subtitle}</p>
+              <p className="text-sm text-white/60 truncate mt-0.5">{item.subtitle}</p>
             )}
           </div>
           {item.hasLocation && (
-            <div className="shrink-0 w-2 h-2 rounded-full bg-primary/60 mt-1.5" title="On map" />
+            <div className="shrink-0 w-2 h-2 rounded-full bg-primary/80 mt-2" title="On map" />
           )}
         </div>
 
         {/* Event date/time */}
         {item.type === "event" && item.date && (
-          <div className="flex items-center gap-2 mt-3 text-xs">
-            <span className="text-white/60 font-medium">{formatDate(item.date)}</span>
-            {item.time && <span className="text-white/30">{formatTime(item.time)}</span>}
+          <div className="flex items-center gap-2 mt-3 text-sm">
+            <span className="text-white/70 font-medium">{formatDate(item.date)}</span>
+            {item.time && <span className="text-white/50">{formatTime(item.time)}</span>}
             {item.price != null && item.price > 0 && (
-              <span className="ml-auto text-white/50 font-semibold">€{item.price}</span>
+              <span className="ml-auto text-white/60 font-semibold">&euro;{item.price}</span>
             )}
             {(item.price == null || item.price === 0) && (
-              <span className="ml-auto text-primary/60 text-[10px] font-medium">Free</span>
+              <span className="ml-auto text-primary/80 text-xs font-medium">Free</span>
             )}
           </div>
         )}
 
         {/* Offer count */}
         {item.type === "offer" && item.offer_count != null && (
-          <p className="text-[11px] text-white/30 mt-2">{item.offer_count} offers available</p>
+          <p className="text-xs text-white/50 mt-2">{item.offer_count} offers available</p>
+        )}
+
+        {/* Quest reward */}
+        {item.type === "quest" && item.reward_spins != null && (
+          <p className="text-xs text-primary/80 mt-2 font-medium">🎡 {item.reward_spins} {item.reward_spins === 1 ? "spin" : "spins"}</p>
         )}
 
         {/* Tags */}
         {item.tags && item.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-3">
             {item.tags.slice(0, 4).map((tag) => (
-              <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] text-white/40">
+              <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-white/[0.08] text-white/60">
                 {tag}
               </span>
             ))}
@@ -116,20 +122,20 @@ function ResultCard({
         )}
 
         {/* Actions */}
-        <div className="flex items-center gap-3 mt-3 pt-3 border-t border-white/[0.04]">
+        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/[0.08]">
           <Link
             href={`/${item.slug}/public`}
-            className="text-[11px] font-medium text-primary/70 hover:text-primary transition-colors"
+            className="text-xs font-medium px-3 py-1.5 rounded-full bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
             onClick={(e) => e.stopPropagation()}
           >
-            View club →
+            View club
           </Link>
           {directionsUrl && (
             <a
               href={directionsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[11px] text-white/25 hover:text-white/50 transition-colors flex items-center gap-0.5"
+              className="text-xs font-medium px-3 py-1.5 rounded-full bg-white/[0.08] text-white/60 hover:bg-white/[0.12] hover:text-white/80 transition-colors flex items-center gap-1"
               onClick={(e) => e.stopPropagation()}
             >
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -160,8 +166,8 @@ export function ResultsGrid({
     return (
       <div className="flex items-center justify-center py-16 px-6">
         <div className="text-center">
-          <p className="text-sm text-white/30">No {activeTab} found</p>
-          <p className="text-xs text-white/15 mt-1">Try adjusting your filters</p>
+          <p className="text-sm text-white/50">No {activeTab} found</p>
+          <p className="text-xs text-white/30 mt-1">Try adjusting your filters</p>
         </div>
       </div>
     );
@@ -169,7 +175,7 @@ export function ResultsGrid({
 
   return (
     <div className="px-4 py-6 md:px-6 lg:px-8">
-      <p className="text-xs text-white/30 mb-4 font-mono">{items.length} {activeTab}</p>
+      <p className="text-sm text-white/50 mb-4 font-mono">{items.length} {activeTab}</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {items.map((item) => (
           <ResultCard
