@@ -106,6 +106,7 @@
   "events.cancelSignUp": "Cancel Sign Up",
   "events.repeat": "Repeat",
   "events.noRepeat": "Does not repeat",
+  "events.daily": "Daily",
   "events.weekly": "Weekly",
   "events.biweekly": "Every 2 weeks",
   "events.monthly": "Monthly",

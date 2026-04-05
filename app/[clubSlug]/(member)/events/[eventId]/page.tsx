@@ -20,7 +20,7 @@ export default async function EventDetailPage({
   const [{ data: event }, { data: rsvp }, { data: checkin }] = await Promise.all([
     supabase
       .from("events")
-      .select("id, title, description, date, time, price, image_url, link, reward_spins")
+      .select("id, title, description, date, time, end_time, price, image_url, link, reward_spins")
       .eq("id", eventId)
       .eq("club_id", session.club_id)
       .eq("active", true)
@@ -99,11 +99,14 @@ export default async function EventDetailPage({
                 {event.time && (
                   <p className="text-xs text-gray-500">
                     {(() => {
-                      const [h, m] = event.time.split(":");
-                      const hour = parseInt(h);
-                      const ampm = hour >= 12 ? "PM" : "AM";
-                      const h12 = hour % 12 || 12;
-                      return `${h12}:${m} ${ampm}`;
+                      const fmt = (t: string) => {
+                        const [h, m] = t.split(":");
+                        const hour = parseInt(h);
+                        const ampm = hour >= 12 ? "PM" : "AM";
+                        const h12 = hour % 12 || 12;
+                        return `${h12}:${m} ${ampm}`;
+                      };
+                      return `${fmt(event.time)}${event.end_time ? ` – ${fmt(event.end_time)}` : ""}`;
                     })()}
                   </p>
                 )}
