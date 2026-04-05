@@ -270,9 +270,9 @@ export default async function Home() {
           </Link>
           <Link
             href="/discover"
-            className="text-xs opacity-60 hover:opacity-100 transition-opacity hidden sm:inline"
+            className="text-xs opacity-60 hover:opacity-100 transition-opacity"
           >
-            Discover
+            {localized("Discover", "Descubrir", locale)}
           </Link>
           <LanguageSwitcher variant="dark" />
         </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import type { ActiveTab } from "../lib/types";
+import { t } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { PREDEFINED_TAGS, getTagLabel } from "@/lib/tags";
 
@@ -38,7 +39,9 @@ export function FilterControls({
 }) {
   if (activeTab === "clubs") {
     return (
-      <div className="px-4 py-2 flex flex-wrap gap-1.5 border-b border-white/10">
+      <div className="px-4 py-2 border-b border-white/10">
+        <p className="text-[10px] uppercase tracking-wider text-white/40 font-medium mb-1.5">{t(locale, "discover.filterByType")}</p>
+        <div className="flex flex-wrap gap-1.5">
         {PREDEFINED_TAGS.slice(0, 10).map((tag) => {
           const active = selectedTags.includes(tag.value);
           return (
@@ -69,13 +72,16 @@ export function FilterControls({
             Clear
           </button>
         )}
+        </div>
       </div>
     );
   }
 
   if (activeTab === "events") {
     return (
-      <div className="px-4 py-2 flex gap-1.5 border-b border-white/10">
+      <div className="px-4 py-2 border-b border-white/10">
+        <p className="text-[10px] uppercase tracking-wider text-white/40 font-medium mb-1.5">{t(locale, "discover.filterByDate")}</p>
+        <div className="flex gap-1.5">
         {DATE_OPTIONS.map((opt) => (
           <button
             key={opt.value}
@@ -89,6 +95,7 @@ export function FilterControls({
             {locale === "es" ? opt.es : opt.en}
           </button>
         ))}
+        </div>
       </div>
     );
   }
@@ -101,6 +108,7 @@ export function FilterControls({
 
   return (
     <div className="px-4 py-2 space-y-2 border-b border-white/10">
+      <p className="text-[10px] uppercase tracking-wider text-white/40 font-medium">{t(locale, "discover.filterOffers")}</p>
       {/* Search input */}
       <div className="relative">
         <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -110,7 +118,7 @@ export function FilterControls({
           type="text"
           value={offerSearch}
           onChange={(e) => onOfferSearchChange(e.target.value)}
-          placeholder={locale === "es" ? "Buscar oferta..." : "Search offers..."}
+          placeholder={t(locale, "discover.searchOffers")}
           className="w-full pl-7 pr-3 py-1.5 rounded-lg bg-white/[0.06] border border-white/10 text-xs text-white placeholder:text-white/40 focus:outline-none focus:border-white/20 transition"
         />
       </div>

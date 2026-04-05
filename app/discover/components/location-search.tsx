@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { t } from "@/lib/i18n";
+import type { Locale } from "@/lib/i18n";
 
 interface SearchResult {
   display_name: string;
@@ -10,8 +12,10 @@ interface SearchResult {
 
 export function LocationSearch({
   onLocationFound,
+  locale = "en",
 }: {
   onLocationFound: (lat: number, lng: number) => void;
+  locale?: Locale;
 }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -77,8 +81,8 @@ export function LocationSearch({
           value={query}
           onChange={(e) => handleSearch(e.target.value)}
           onFocus={() => results.length > 0 && setOpen(true)}
-          placeholder="Search a city or address..."
-          className="w-full pl-8 pr-3 py-2 rounded-lg bg-white/[0.08] border border-white/10 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-white/25 transition"
+          placeholder={t(locale, "discover.searchLocation")}
+          className="w-full pl-8 pr-3 py-2 rounded-lg bg-white/[0.08] border border-white/10 text-sm text-white placeholder:text-white/50 focus:outline-none focus:border-white/25 transition"
         />
         {loading && (
           <div className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3 border border-white/30 border-t-white/60 rounded-full animate-spin" />

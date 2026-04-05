@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { t } from "@/lib/i18n";
+import type { Locale } from "@/lib/i18n";
 import type { ActiveTab } from "../lib/types";
 
 interface ListItem {
@@ -151,16 +153,25 @@ function ResultCard({
   );
 }
 
+const TAB_HEADING_KEYS: Record<ActiveTab, string> = {
+  clubs: "discover.allClubs",
+  events: "discover.allEvents",
+  offers: "discover.allOffers",
+  quests: "discover.allQuests",
+};
+
 export function ResultsGrid({
   items,
   selectedId,
   onSelect,
   activeTab,
+  locale = "en",
 }: {
   items: ListItem[];
   selectedId: string | null;
   onSelect: (id: string, lat?: number | null, lng?: number | null) => void;
   activeTab: ActiveTab;
+  locale?: Locale;
 }) {
   if (items.length === 0) {
     return (
@@ -175,7 +186,10 @@ export function ResultsGrid({
 
   return (
     <div className="px-4 py-6 md:px-6 lg:px-8">
-      <p className="text-sm text-white/50 mb-4 font-mono">{items.length} {activeTab}</p>
+      <div className="flex items-baseline gap-2 mb-4">
+        <h2 className="text-sm font-semibold text-white/80">{t(locale, TAB_HEADING_KEYS[activeTab])}</h2>
+        <span className="text-xs text-white/40">{t(locale, "discover.resultsCount", { count: items.length })}</span>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {items.map((item) => (
           <ResultCard
