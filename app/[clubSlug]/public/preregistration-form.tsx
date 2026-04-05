@@ -7,7 +7,8 @@ import { useLanguage } from "@/lib/i18n/provider";
 export function PreregistrationForm({ clubId, clubName }: { clubId: string; clubName: string }) {
   const [expanded, setExpanded] = useState(false);
   const [email, setEmail] = useState("");
-  const [visitDate, setVisitDate] = useState("");
+  const today = new Date().toISOString().split("T")[0];
+  const [visitDate, setVisitDate] = useState(today);
   const [numVisitors, setNumVisitors] = useState(1);
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
@@ -15,8 +16,6 @@ export function PreregistrationForm({ clubId, clubName }: { clubId: string; club
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const { t } = useLanguage();
-
-  const today = new Date().toISOString().split("T")[0];
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -99,15 +98,22 @@ export function PreregistrationForm({ clubId, clubName }: { clubId: string; club
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">{t("public.preregNumVisitors")}</label>
-            <input
-              type="number"
-              value={numVisitors}
-              onChange={(e) => setNumVisitors(Math.max(1, Math.min(20, Number(e.target.value))))}
-              min={1}
-              max={20}
-              required
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-            />
+            <div className="flex gap-2">
+              {[1, 2, 3, 4].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setNumVisitors(n)}
+                  className={`flex-1 rounded-lg border py-2 text-sm font-medium transition-colors ${
+                    numVisitors === n
+                      ? "border-blue-600 bg-blue-600 text-white"
+                      : "border-gray-200 text-gray-700 hover:border-blue-300"
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
           </div>
           <label className="flex items-start gap-2 cursor-pointer">
             <input

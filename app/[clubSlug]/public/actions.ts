@@ -45,7 +45,7 @@ export async function submitPreregistration(
 ): Promise<{ error: string } | { ok: true }> {
   if (!email.trim() || !email.includes("@")) return { error: "Valid email is required" };
   if (!visitDate) return { error: "Visit date is required" };
-  if (numVisitors < 1 || numVisitors > 20) return { error: "Invalid number of visitors" };
+  if (numVisitors < 1 || numVisitors > 4) return { error: "Invalid number of visitors" };
   if (!ageConfirmed) return { error: "Age confirmation is required" };
   if (!disclaimerAccepted) return { error: "Disclaimer must be accepted" };
 
