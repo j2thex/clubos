@@ -11,6 +11,7 @@ import { ClubDirectory } from "./_landing/club-directory";
 import { LandingFooter } from "./_landing/landing-footer";
 import type { DiscoverClub, DiscoverEvent, DiscoverOffer, DiscoverQuest } from "./discover/lib/types";
 import { localized } from "@/lib/i18n";
+import { DynamicIcon } from "@/components/dynamic-icon";
 
 export const metadata: Metadata = {
   title: "osocios.club — Discover clubs, events & offers near you",
@@ -224,6 +225,26 @@ export default async function Home() {
     .sort((a, b) => b.count - a.count)
     .slice(0, 12);
 
+  // Group quests by title, count clubs per quest
+  const questGroups = new Map<string, { title: string; title_es: string | null; count: number; icon: string | null; reward_spins: number }>();
+  for (const q of quests) {
+    const existing = questGroups.get(q.title);
+    if (existing) {
+      existing.count++;
+    } else {
+      questGroups.set(q.title, { title: q.title, title_es: q.title_es, count: 1, icon: q.icon, reward_spins: q.reward_spins });
+    }
+  }
+  const popularQuests = [...questGroups.values()]
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 12);
+
+  const QUEST_COLORS = [
+    "text-emerald-400", "text-violet-400", "text-amber-400", "text-sky-400",
+    "text-rose-400", "text-indigo-400", "text-orange-400", "text-teal-400",
+    "text-pink-400", "text-cyan-400", "text-lime-400", "text-fuchsia-400",
+  ];
+
   return (
     <div className="min-h-screen landing-dark">
       <script
@@ -257,17 +278,7 @@ export default async function Home() {
         </div>
       </header>
 
-      {/* Title */}
-      <div className="px-6 sm:px-10 pt-16 pb-10 sm:pt-20 sm:pb-14">
-        <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extralight tracking-tight">
-          {tr("discover.title")}
-        </h1>
-        <p className="mt-4 text-sm sm:text-base opacity-50 max-w-lg font-light leading-relaxed">
-          {tr("discover.subtitle")}
-        </p>
-      </div>
-
-      {/* Map Hero */}
+      {/* Map Hero + Tabs */}
       <HomepageMap
         clubs={clubs}
         clubCount={clubs.length}
@@ -275,6 +286,16 @@ export default async function Home() {
         offerCount={offers.length}
         questCount={quests.length}
       />
+
+      {/* Title */}
+      <div className="px-6 sm:px-10 pt-14 pb-8 sm:pt-16 sm:pb-10">
+        <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extralight tracking-tight">
+          {tr("discover.title")}
+        </h1>
+        <p className="mt-4 text-sm sm:text-base opacity-50 max-w-lg font-light leading-relaxed">
+          {tr("discover.subtitle")}
+        </p>
+      </div>
 
       {/* Upcoming Events */}
       {upcomingEvents.length > 0 && (
@@ -352,6 +373,52 @@ export default async function Home() {
                       ? localized("club", "club", locale)
                       : localized("clubs", "clubes", locale)}
                   </p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Popular Quests */}
+      {popularQuests.length > 0 && (
+        <section className="px-6 py-12 border-t border-white/[0.04]">
+          <div className="max-w-5xl mx-auto">
+            <h2 className="text-lg font-bold text-white mb-1">
+              {localized("Popular Quests", "Misiones Populares", locale)}
+            </h2>
+            <p className="text-xs text-white/40 mb-6">
+              {localized("Complete quests, earn spins", "Completa misiones, gana tiradas", locale)}
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {popularQuests.map((quest, i) => (
+                <Link
+                  key={quest.title}
+                  href="/discover#quests"
+                  className="bg-white/[0.04] rounded-xl p-4 hover:bg-white/[0.07] transition-colors text-center flex flex-col items-center gap-2"
+                >
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-white/[0.06] ${QUEST_COLORS[i % QUEST_COLORS.length]}`}>
+                    {quest.icon ? (
+                      <DynamicIcon name={quest.icon} className="w-5 h-5" />
+                    ) : (
+                      <span className="text-lg">🎯</span>
+                    )}
+                  </div>
+                  <p className="text-sm font-semibold text-white leading-tight">
+                    {localized(quest.title, quest.title_es, locale)}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-white/40">
+                      {quest.count} {quest.count === 1
+                        ? localized("club", "club", locale)
+                        : localized("clubs", "clubes", locale)}
+                    </span>
+                    {quest.reward_spins > 0 && (
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-white/10 text-white/60">
+                        +{quest.reward_spins} {quest.reward_spins === 1 ? "spin" : "spins"}
+                      </span>
+                    )}
+                  </div>
                 </Link>
               ))}
             </div>

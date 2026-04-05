@@ -8,7 +8,7 @@ export async function sendPasswordResetEmail(
   clubName: string,
 ) {
   await resend.emails.send({
-    from: "osocios.club <onboarding@resend.dev>",
+    from: "osocios.club <noreply@osocios.club>",
     to,
     subject: `Reset your password — ${clubName}`,
     html: `
@@ -22,6 +22,43 @@ export async function sendPasswordResetEmail(
         </a>
         <p style="font-size: 12px; color: #999; margin: 24px 0 0;">
           This link expires in 1 hour. If you didn't request this, ignore this email.
+        </p>
+      </div>
+    `,
+  });
+}
+
+export async function sendPreregistrationConfirmation(
+  to: string,
+  clubName: string,
+  visitDate: string,
+  numVisitors: number,
+  clubAddress?: string | null,
+) {
+  const addressBlock = clubAddress
+    ? `<p style="font-size: 14px; color: #333; margin: 0;"><strong>Address:</strong> ${clubAddress}</p>`
+    : "";
+
+  await resend.emails.send({
+    from: "osocios.club <noreply@osocios.club>",
+    to,
+    subject: `Pre-registration confirmed — ${clubName}`,
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
+        <h2 style="font-size: 20px; font-weight: 600; color: #111; margin: 0 0 8px;">Pre-registration received</h2>
+        <p style="font-size: 14px; color: #666; margin: 0 0 16px;">
+          Your visit to <strong>${clubName}</strong> has been pre-registered.
+        </p>
+        <div style="background: #f9fafb; border-radius: 8px; padding: 16px; margin: 0 0 16px;">
+          <p style="font-size: 14px; color: #333; margin: 0 0 4px;"><strong>Date:</strong> ${visitDate}</p>
+          <p style="font-size: 14px; color: #333; margin: 0 0 4px;"><strong>Visitors:</strong> ${numVisitors}</p>
+          ${addressBlock}
+        </div>
+        <p style="font-size: 13px; color: #b45309; background: #fffbeb; border-radius: 6px; padding: 12px; margin: 0 0 16px;">
+          <strong>Important:</strong> Please bring a valid physical ID for all visitors.
+        </p>
+        <p style="font-size: 12px; color: #999; margin: 0;">
+          Please note that pre-registration does not guarantee entry. The club reserves the right to deny access.
         </p>
       </div>
     `,

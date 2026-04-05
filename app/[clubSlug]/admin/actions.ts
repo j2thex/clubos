@@ -70,6 +70,25 @@ export async function updateInviteOnly(
   return { ok: true };
 }
 
+export async function updatePreregistrationEnabled(
+  clubId: string,
+  enabled: boolean,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ preregistration_enabled: enabled })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to update pre-registration setting" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/public`);
+  return { ok: true };
+}
+
 export async function updateHideMemberLogin(
   clubId: string,
   hide: boolean,

@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { SocialLinks } from "@/components/club/social-links";
 import { PhotoGallery } from "@/components/club/photo-gallery";
 import { InviteForm } from "./invite-form";
+import { PreregistrationForm } from "./preregistration-form";
 import { InviteSocialButtons } from "./invite-social-buttons";
 import { PublicLoginForm } from "./public-login-form";
 import { getTagLabel } from "@/lib/tags";
@@ -75,7 +76,7 @@ export default async function PublicProfilePage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name, approved, invite_only, invite_mode, login_mode, hide_member_login, tags, working_hours, timezone, club_branding(logo_url, cover_url, primary_color, secondary_color, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website)")
+    .select("id, name, approved, invite_only, invite_mode, login_mode, hide_member_login, preregistration_enabled, tags, working_hours, timezone, club_branding(logo_url, cover_url, primary_color, secondary_color, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website)")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -281,6 +282,11 @@ export default async function PublicProfilePage({
             <p className="text-xs text-gray-400 mb-3 text-center">{localized("Enter it below to access your portal", "Ingrésalo abajo para acceder a tu portal", locale)}</p>
             <PublicLoginForm loginMode={club.login_mode ?? "code_only"} clubSlug={clubSlug} />
           </div>
+        )}
+
+        {/* Pre-Registration */}
+        {club.preregistration_enabled && (
+          <PreregistrationForm clubId={club.id} clubName={club.name} />
         )}
 
         {/* Quests */}

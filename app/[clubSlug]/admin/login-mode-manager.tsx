@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
-import { updateLoginMode, updateInviteOnly, updateInviteMode, saveInviteButtons, updateHideMemberLogin } from "./actions";
+import { updateLoginMode, updateInviteOnly, updateInviteMode, saveInviteButtons, updateHideMemberLogin, updatePreregistrationEnabled } from "./actions";
 import { useLanguage } from "@/lib/i18n/provider";
 
 interface InviteButton {
@@ -26,6 +26,7 @@ export function LoginModeManager({
   inviteMode,
   inviteButtons,
   hideMemberLogin,
+  preregistrationEnabled,
   clubId,
   clubSlug,
 }: {
@@ -34,6 +35,7 @@ export function LoginModeManager({
   inviteMode: string;
   inviteButtons: InviteButton[];
   hideMemberLogin: boolean;
+  preregistrationEnabled: boolean;
   clubId: string;
   clubSlug: string;
 }) {
@@ -93,6 +95,12 @@ export function LoginModeManager({
   function handleHideLoginToggle(checked: boolean) {
     startTransition(async () => {
       await updateHideMemberLogin(clubId, checked, clubSlug);
+    });
+  }
+
+  function handlePreregToggle(checked: boolean) {
+    startTransition(async () => {
+      await updatePreregistrationEnabled(clubId, checked, clubSlug);
     });
   }
 
@@ -205,6 +213,21 @@ export function LoginModeManager({
           <div>
             <p className="text-sm font-medium text-gray-900">{t("admin.inviteOnly")}</p>
             <p className="text-xs text-gray-400 mt-0.5">{t("admin.inviteOnlyDesc")}</p>
+          </div>
+        </label>
+
+        <label
+          className={`flex items-start gap-3 px-5 py-4 cursor-pointer hover:bg-gray-50 transition-colors ${isPending ? "opacity-50 pointer-events-none" : ""}`}
+        >
+          <input
+            type="checkbox"
+            checked={preregistrationEnabled}
+            onChange={(e) => handlePreregToggle(e.target.checked)}
+            className="mt-0.5 rounded border-gray-300 text-gray-800 focus:ring-gray-400"
+          />
+          <div>
+            <p className="text-sm font-medium text-gray-900">{t("admin.preregistration")}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{t("admin.preregistrationDesc")}</p>
           </div>
         </label>
 
