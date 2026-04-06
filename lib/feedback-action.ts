@@ -2,7 +2,6 @@
 
 import { getMemberFromCookie, getStaffFromCookie, getOwnerFromCookie } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { uploadFeedbackImage } from "@/lib/supabase/storage";
 
 const TRELLO_FEEDBACK_LIST_ID = "69d3b192d12d727409f0953b";
 
@@ -61,15 +60,6 @@ export async function submitFeedback(
       }
     }
 
-    // Upload screenshot if provided
-    let screenshotUrl: string | null = null;
-    if (screenshot && screenshot.size > 0) {
-      const uploadResult = await uploadFeedbackImage(screenshot);
-      if ("url" in uploadResult) {
-        screenshotUrl = uploadResult.url;
-      }
-    }
-
     const categoryEmoji = category === "bug" ? "🐛" : category === "idea" ? "💡" : "❓";
     const cardTitle = `${categoryEmoji} ${text.slice(0, 200)}`;
     const cardDesc = [
@@ -81,7 +71,6 @@ export async function submitFeedback(
       `**User:** ${userLabel}`,
       `**Page:** ${pageUrl}`,
       `**Time:** ${new Date().toISOString()}`,
-      ...(screenshotUrl ? [`**Screenshot:** ${screenshotUrl}`] : []),
     ].join("\n");
 
     // Push to Trello
@@ -113,16 +102,15 @@ export async function submitFeedback(
 
     const card = await res.json();
 
-    // Attach screenshot to card if available
-    if (screenshotUrl && card?.id) {
+    // Attach screenshot directly to Trello card
+    if (screenshot && screenshot.size > 0 && card?.id) {
+      const attachForm = new FormData();
+      attachForm.append("file", screenshot, screenshot.name);
+      attachForm.append("key", apiKey);
+      attachForm.append("token", apiToken);
       await fetch(`https://api.trello.com/1/cards/${card.id}/attachments`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: screenshotUrl,
-          key: apiKey,
-          token: apiToken,
-        }),
+        body: attachForm,
       });
     }
 
