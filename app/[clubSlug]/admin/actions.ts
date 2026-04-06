@@ -489,7 +489,7 @@ export async function addQuest(
   const description = (formData.get("description") as string)?.trim() || null;
   const link = (formData.get("link") as string)?.trim() || null;
   const rawSpins = formData.get("reward_spins");
-  const rewardSpins = rawSpins !== null && rawSpins !== "" ? Number(rawSpins) : 1;
+  const rewardSpins = rawSpins !== null && rawSpins !== "" ? Number(rawSpins) : 0;
   const multiUse = formData.get("multi_use") === "1";
   const isPublic = formData.get("is_public") === "1";
   const questType = (formData.get("quest_type") as string) || "default";
@@ -580,7 +580,7 @@ export async function updateQuest(
   const description = (formData.get("description") as string)?.trim() || null;
   const link = (formData.get("link") as string)?.trim() || null;
   const rawSpins = formData.get("reward_spins");
-  const rewardSpins = rawSpins !== null && rawSpins !== "" ? Number(rawSpins) : 1;
+  const rewardSpins = rawSpins !== null && rawSpins !== "" ? Number(rawSpins) : 0;
   const multiUse = formData.get("multi_use") === "1";
   const isPublic = formData.get("is_public") === "1";
   const questType = (formData.get("quest_type") as string) || "default";
@@ -739,7 +739,7 @@ export async function addEvent(
   const priceStr = (formData.get("price") as string)?.trim();
   const link = (formData.get("link") as string)?.trim() || null;
   const rawSpins = formData.get("reward_spins");
-  const rewardSpins = rawSpins !== null && rawSpins !== "" ? Number(rawSpins) : 1;
+  const rewardSpins = rawSpins !== null && rawSpins !== "" ? Number(rawSpins) : 0;
   const isPublic = formData.get("is_public") === "1";
   const icon = (formData.get("icon") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
@@ -851,7 +851,7 @@ export async function updateEvent(
   const priceStr = (formData.get("price") as string)?.trim();
   const link = (formData.get("link") as string)?.trim() || null;
   const rawSpins = formData.get("reward_spins");
-  const rewardSpins = rawSpins !== null && rawSpins !== "" ? Number(rawSpins) : 1;
+  const rewardSpins = rawSpins !== null && rawSpins !== "" ? Number(rawSpins) : 0;
   const isPublic = formData.get("is_public") === "1";
   const icon = (formData.get("icon") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
