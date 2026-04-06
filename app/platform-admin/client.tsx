@@ -166,15 +166,15 @@ export function PlatformAdminClient({
   const pendingTotal = stats.pendingInvites + stats.pendingQuests + stats.expiringMembers;
 
   return (
-    <div className="min-h-screen landing-dark text-white">
+    <div className="min-h-screen landing-dark">
       <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">osocios control panel</h1>
-            <p className="text-sm text-white/40 font-mono mt-1">platform dashboard</p>
+            <p className="text-sm text-landing-text-tertiary font-mono mt-1">platform dashboard</p>
           </div>
-          <a href="/" className="text-xs text-white/30 hover:text-white/60 transition-colors">
+          <a href="/" className="text-xs text-landing-text-tertiary hover:text-landing-text-secondary transition-colors">
             Back to site
           </a>
         </div>
@@ -190,8 +190,8 @@ export function PlatformAdminClient({
         </div>
 
         {/* Growth Timeline */}
-        <div className="bg-white/[0.03] rounded-xl border border-white/[0.06] p-5">
-          <h2 className="text-sm font-semibold text-white/60 uppercase tracking-wide mb-4">Growth</h2>
+        <div className="bg-landing-surface rounded-xl border border-landing-border-subtle p-5">
+          <h2 className="text-sm font-semibold text-landing-text-secondary uppercase tracking-wide mb-4">Growth</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <GrowthColumn label="Members" today={growth.membersToday} week={growth.membersThisWeek} month={growth.membersThisMonth} total={growth.membersAllTime} />
             <GrowthColumn label="Spins" today={growth.spinsToday} week={growth.spinsThisWeek} month={growth.spinsThisMonth} total={growth.spinsAllTime} />
@@ -224,14 +224,14 @@ export function PlatformAdminClient({
         )}
 
         {/* Per-Club Breakdown */}
-        <div className="bg-white/[0.03] rounded-xl border border-white/[0.06] overflow-hidden">
-          <div className="px-5 py-3 border-b border-white/[0.06]">
-            <h2 className="text-sm font-semibold text-white/60 uppercase tracking-wide">Clubs ({clubs.length})</h2>
+        <div className="bg-landing-surface rounded-xl border border-landing-border-subtle overflow-hidden">
+          <div className="px-5 py-3 border-b border-landing-border-subtle">
+            <h2 className="text-sm font-semibold text-landing-text-secondary uppercase tracking-wide">Clubs ({clubs.length})</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-white/40 text-xs uppercase tracking-wide">
+                <tr className="text-landing-text-tertiary text-xs uppercase tracking-wide">
                   <th className="text-left px-5 py-2">Club</th>
                   <th className="text-left px-3 py-2">Owner</th>
                   <th className="text-right px-3 py-2">Members</th>
@@ -243,7 +243,7 @@ export function PlatformAdminClient({
                   <th className="text-right px-5 py-2">Created</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.04]">
+              <tbody className="divide-y divide-landing-border-subtle">
                 {clubs.map((c) => (
                   <tr key={c.id} className="hover:bg-white/[0.02] transition-colors">
                     <td className="px-5 py-3">
@@ -256,8 +256,8 @@ export function PlatformAdminClient({
                           </div>
                         )}
                         <div>
-                          <a href={`/${c.slug}/admin`} className="font-medium text-white hover:underline">{c.name}</a>
-                          <p className="text-xs text-white/30 font-mono">{c.slug}</p>
+                          <a href={`/${c.slug}/admin`} className="font-medium text-landing-text hover:underline">{c.name}</a>
+                          <p className="text-xs text-landing-text-tertiary font-mono">{c.slug}</p>
                         </div>
                       </div>
                     </td>
@@ -265,13 +265,13 @@ export function PlatformAdminClient({
                       {c.ownerEmail ? (
                         <span className="text-xs text-gray-500 font-mono truncate block max-w-[180px]">{c.ownerEmail}</span>
                       ) : (
-                        <span className="text-xs text-white/20">—</span>
+                        <span className="text-xs text-landing-text-tertiary">—</span>
                       )}
                     </td>
-                    <td className="text-right px-3 py-3 font-mono text-white/70">{c.members}</td>
-                    <td className="text-right px-3 py-3 font-mono text-white/70">{c.spins}</td>
-                    <td className="text-right px-3 py-3 font-mono text-white/70">{c.events}</td>
-                    <td className="text-right px-3 py-3 font-mono text-white/70">{c.offers}</td>
+                    <td className="text-right px-3 py-3 font-mono text-landing-text">{c.members}</td>
+                    <td className="text-right px-3 py-3 font-mono text-landing-text">{c.spins}</td>
+                    <td className="text-right px-3 py-3 font-mono text-landing-text">{c.events}</td>
+                    <td className="text-right px-3 py-3 font-mono text-landing-text">{c.offers}</td>
                     <td className="text-right px-3 py-3">
                       <div className="flex gap-1 justify-end">
                         {!c.approved ? (
@@ -322,7 +322,7 @@ export function PlatformAdminClient({
                             <select
                               value={setupType}
                               onChange={(e) => setSetupType(e.target.value)}
-                              className="text-[10px] bg-white/10 text-white rounded px-1 py-0.5 border border-white/10"
+                              className="text-[10px] bg-landing-surface-hover text-landing-text rounded px-1 py-0.5 border border-landing-border"
                             >
                               <option value="general">General</option>
                               <option value="smoke">Smoke</option>
@@ -345,7 +345,7 @@ export function PlatformAdminClient({
                             >
                               Go
                             </button>
-                            <button onClick={() => setSetupClubId(null)} className="text-[10px] text-white/30 hover:text-white/60">✕</button>
+                            <button onClick={() => setSetupClubId(null)} className="text-[10px] text-landing-text-tertiary hover:text-landing-text-secondary">✕</button>
                           </span>
                         ) : (
                           <button
@@ -357,7 +357,7 @@ export function PlatformAdminClient({
                         )}
                       </div>
                     </td>
-                    <td className="text-right px-5 py-3 text-xs text-white/30">{timeAgo(c.createdAt)}</td>
+                    <td className="text-right px-5 py-3 text-xs text-landing-text-tertiary">{timeAgo(c.createdAt)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -367,19 +367,19 @@ export function PlatformAdminClient({
 
         {/* Recent Invite Requests */}
         {inviteRequests.length > 0 && (
-          <div className="bg-white/[0.03] rounded-xl border border-white/[0.06] p-5 space-y-3">
-            <h2 className="text-sm font-semibold text-white/60 uppercase tracking-wide">Recent Invite Requests</h2>
+          <div className="bg-landing-surface rounded-xl border border-landing-border-subtle p-5 space-y-3">
+            <h2 className="text-sm font-semibold text-landing-text-secondary uppercase tracking-wide">Recent Invite Requests</h2>
             <div className="space-y-2">
               {inviteRequests.map((r) => (
                 <div key={r.id} className="flex items-center justify-between text-sm">
                   <div>
-                    <span className="text-white/80">{r.name}</span>
-                    <span className="text-white/30 mx-2">&middot;</span>
-                    <span className="text-white/40 font-mono text-xs">{r.contact}</span>
-                    <span className="text-white/30 mx-2">&rarr;</span>
-                    <span className="text-white/50">{r.clubName}</span>
+                    <span className="text-landing-text">{r.name}</span>
+                    <span className="text-landing-text-tertiary mx-2">&middot;</span>
+                    <span className="text-landing-text-tertiary font-mono text-xs">{r.contact}</span>
+                    <span className="text-landing-text-tertiary mx-2">&rarr;</span>
+                    <span className="text-landing-text-secondary">{r.clubName}</span>
                   </div>
-                  <span className="text-xs text-white/30">{timeAgo(r.createdAt)}</span>
+                  <span className="text-xs text-landing-text-tertiary">{timeAgo(r.createdAt)}</span>
                 </div>
               ))}
             </div>
@@ -388,16 +388,16 @@ export function PlatformAdminClient({
 
         {/* Unapproved Custom Offers */}
         {unapprovedOffers.length > 0 && (
-          <div className="bg-white/[0.03] rounded-xl border border-white/[0.06] p-5 space-y-3">
-            <h2 className="text-sm font-semibold text-white/60 uppercase tracking-wide">Custom Offers Awaiting Approval ({unapprovedOffers.length})</h2>
+          <div className="bg-landing-surface rounded-xl border border-landing-border-subtle p-5 space-y-3">
+            <h2 className="text-sm font-semibold text-landing-text-secondary uppercase tracking-wide">Custom Offers Awaiting Approval ({unapprovedOffers.length})</h2>
             <div className="space-y-2">
               {unapprovedOffers.map((o) => (
                 <div key={o.id} className="flex items-center justify-between text-sm">
                   <div>
-                    <span className="text-white/80">{o.name}</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-white/40 ml-2">{o.subtype}</span>
-                    <span className="text-white/30 mx-2">from</span>
-                    <span className="text-white/50">{o.clubName}</span>
+                    <span className="text-landing-text">{o.name}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-landing-surface-hover text-landing-text-tertiary ml-2">{o.subtype}</span>
+                    <span className="text-landing-text-tertiary mx-2">from</span>
+                    <span className="text-landing-text-secondary">{o.clubName}</span>
                   </div>
                   <button onClick={() => handleApproveOffer(o.id)} disabled={isPending} className="text-xs font-semibold px-3 py-1 rounded-full bg-green-500/20 text-green-300 hover:bg-green-500/30 disabled:opacity-50 transition-colors">
                     Approve
@@ -410,18 +410,18 @@ export function PlatformAdminClient({
 
         {/* Activity Feed */}
         {activityFeed.length > 0 && (
-          <div className="bg-white/[0.03] rounded-xl border border-white/[0.06] p-5 space-y-3">
-            <h2 className="text-sm font-semibold text-white/60 uppercase tracking-wide">Recent Activity</h2>
+          <div className="bg-landing-surface rounded-xl border border-landing-border-subtle p-5 space-y-3">
+            <h2 className="text-sm font-semibold text-landing-text-secondary uppercase tracking-wide">Recent Activity</h2>
             <div className="space-y-1.5 max-h-80 overflow-y-auto">
               {activityFeed.map((a) => {
-                const badge = ACTION_BADGES[a.action] ?? { label: a.action, color: "bg-white/10 text-white/40" };
+                const badge = ACTION_BADGES[a.action] ?? { label: a.action, color: "bg-landing-surface-hover text-landing-text-tertiary" };
                 return (
                   <div key={a.id} className="flex items-center gap-3 text-sm py-1">
-                    <span className="text-xs text-white/20 w-14 shrink-0 text-right font-mono">{timeAgo(a.createdAt)}</span>
+                    <span className="text-xs text-landing-text-tertiary w-14 shrink-0 text-right font-mono">{timeAgo(a.createdAt)}</span>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-full shrink-0 ${badge.color}`}>{badge.label}</span>
-                    <span className="text-white/40 text-xs shrink-0">{a.clubName}</span>
-                    {a.target && <span className="text-white/60 font-mono text-xs">{a.target}</span>}
-                    {a.details && <span className="text-white/30 text-xs truncate">{a.details}</span>}
+                    <span className="text-landing-text-tertiary text-xs shrink-0">{a.clubName}</span>
+                    {a.target && <span className="text-landing-text-secondary font-mono text-xs">{a.target}</span>}
+                    {a.details && <span className="text-landing-text-tertiary text-xs truncate">{a.details}</span>}
                   </div>
                 );
               })}
@@ -430,7 +430,7 @@ export function PlatformAdminClient({
         )}
 
         {/* Create from Google Maps (collapsible) */}
-        <div className="bg-white/[0.03] rounded-xl border border-emerald-500/20 overflow-hidden">
+        <div className="bg-landing-surface rounded-xl border border-emerald-500/20 overflow-hidden">
           <button onClick={() => setShowGoogleForm(!showGoogleForm)} className="w-full px-5 py-3 flex items-center justify-between text-sm font-medium text-emerald-400/70 hover:text-emerald-300 transition-colors">
             <span>🗺️ Create Club from Google Maps</span>
             <svg className={`w-4 h-4 transition-transform ${showGoogleForm ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -438,18 +438,18 @@ export function PlatformAdminClient({
             </svg>
           </button>
           {showGoogleForm && (
-            <form onSubmit={handleGoogleCreate} className="px-5 pb-5 space-y-3 border-t border-white/[0.06] pt-4">
+            <form onSubmit={handleGoogleCreate} className="px-5 pb-5 space-y-3 border-t border-landing-border-subtle pt-4">
               {error && <p className="text-xs text-red-400">{error}</p>}
               {success && <p className="text-xs text-green-400">{success}</p>}
-              <p className="text-xs text-white/40">Paste a Google Maps link. Club name, location, and owner account will be created automatically.</p>
+              <p className="text-xs text-landing-text-tertiary">Paste a Google Maps link. Club name, location, and owner account will be created automatically.</p>
               <input
                 value={googleMapsUrl}
                 onChange={(e) => setGoogleMapsUrl(e.target.value)}
                 placeholder="https://www.google.com/maps/place/..."
                 required
-                className="w-full rounded-lg bg-white/[0.05] border border-white/10 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-emerald-500/30"
+                className="w-full rounded-lg bg-landing-surface border border-landing-border px-3 py-2 text-sm text-landing-text placeholder:text-landing-text-tertiary focus:outline-none focus:border-emerald-500/30"
               />
-              <p className="text-[10px] text-white/30">Owner login: [slug]@osocios.com / q1234567</p>
+              <p className="text-[10px] text-landing-text-tertiary">Owner login: [slug]@osocios.com / q1234567</p>
               <button type="submit" disabled={isPending} className="rounded-lg bg-emerald-600/30 text-emerald-300 px-4 py-2 text-sm font-semibold hover:bg-emerald-600/50 disabled:opacity-50 transition-colors">
                 {isPending ? "Creating..." : "Create from Maps"}
               </button>
@@ -458,42 +458,42 @@ export function PlatformAdminClient({
         </div>
 
         {/* Create Club (collapsible) */}
-        <div className="bg-white/[0.03] rounded-xl border border-white/[0.06] overflow-hidden">
-          <button onClick={() => setShowCreateForm(!showCreateForm)} className="w-full px-5 py-3 flex items-center justify-between text-sm font-medium text-white/50 hover:text-white/70 transition-colors">
+        <div className="bg-landing-surface rounded-xl border border-landing-border-subtle overflow-hidden">
+          <button onClick={() => setShowCreateForm(!showCreateForm)} className="w-full px-5 py-3 flex items-center justify-between text-sm font-medium text-landing-text-secondary hover:text-landing-text transition-colors">
             <span>Create Unclaimed Club</span>
             <svg className={`w-4 h-4 transition-transform ${showCreateForm ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
             </svg>
           </button>
           {showCreateForm && (
-            <form onSubmit={handleCreate} className="px-5 pb-5 space-y-3 border-t border-white/[0.06] pt-4">
+            <form onSubmit={handleCreate} className="px-5 pb-5 space-y-3 border-t border-landing-border-subtle pt-4">
               {error && <p className="text-xs text-red-400">{error}</p>}
               {success && <p className="text-xs text-green-400">{success}</p>}
               <div className="grid grid-cols-2 gap-3">
-                <input name="name" value={name} onChange={(e) => { setName(e.target.value); setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")); }} placeholder="Club name" required className="rounded-lg bg-white/[0.05] border border-white/10 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-white/20" />
-                <input name="slug" value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))} placeholder="slug" required className="rounded-lg bg-white/[0.05] border border-white/10 px-3 py-2 text-sm text-white font-mono placeholder:text-white/30 focus:outline-none focus:border-white/20" />
+                <input name="name" value={name} onChange={(e) => { setName(e.target.value); setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")); }} placeholder="Club name" required className="rounded-lg bg-landing-surface border border-landing-border px-3 py-2 text-sm text-landing-text placeholder:text-landing-text-tertiary focus:outline-none focus:border-white/20" />
+                <input name="slug" value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))} placeholder="slug" required className="rounded-lg bg-landing-surface border border-landing-border px-3 py-2 text-sm text-landing-text font-mono placeholder:text-landing-text-tertiary focus:outline-none focus:border-white/20" />
               </div>
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
-                  <input name="primaryColor" type="color" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="w-8 h-8 rounded border border-white/10 cursor-pointer" />
-                  <span className="text-xs text-white/30 font-mono">{primaryColor}</span>
+                  <input name="primaryColor" type="color" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="w-8 h-8 rounded border border-landing-border cursor-pointer" />
+                  <span className="text-xs text-landing-text-tertiary font-mono">{primaryColor}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <input name="secondaryColor" type="color" value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} className="w-8 h-8 rounded border border-white/10 cursor-pointer" />
-                  <span className="text-xs text-white/30 font-mono">{secondaryColor}</span>
+                  <input name="secondaryColor" type="color" value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} className="w-8 h-8 rounded border border-landing-border cursor-pointer" />
+                  <span className="text-xs text-landing-text-tertiary font-mono">{secondaryColor}</span>
                 </div>
               </div>
               <div className="flex gap-3">
                 <div className="flex-1">
-                  <label className="text-xs text-white/30 block mb-1">Logo</label>
-                  <input name="logo" type="file" accept="image/*" className="text-xs text-white/40" />
+                  <label className="text-xs text-landing-text-tertiary block mb-1">Logo</label>
+                  <input name="logo" type="file" accept="image/*" className="text-xs text-landing-text-tertiary" />
                 </div>
                 <div className="flex-1">
-                  <label className="text-xs text-white/30 block mb-1">Cover</label>
-                  <input name="cover" type="file" accept="image/*" className="text-xs text-white/40" />
+                  <label className="text-xs text-landing-text-tertiary block mb-1">Cover</label>
+                  <input name="cover" type="file" accept="image/*" className="text-xs text-landing-text-tertiary" />
                 </div>
               </div>
-              <button type="submit" disabled={isPending} className="rounded-lg bg-white/10 text-white px-4 py-2 text-sm font-semibold hover:bg-white/20 disabled:opacity-50 transition-colors">
+              <button type="submit" disabled={isPending} className="rounded-lg bg-landing-surface-hover text-landing-text px-4 py-2 text-sm font-semibold hover:bg-white/20 disabled:opacity-50 transition-colors">
                 {isPending ? "Creating..." : "Create Club"}
               </button>
             </form>
@@ -506,9 +506,9 @@ export function PlatformAdminClient({
 
 function StatCard({ label, value, alert }: { label: string; value: number; alert?: boolean }) {
   return (
-    <div className={`rounded-xl border p-4 ${alert ? "bg-amber-500/10 border-amber-500/20" : "bg-white/[0.03] border-white/[0.06]"}`}>
-      <p className={`text-xs font-medium uppercase tracking-wide ${alert ? "text-amber-300/60" : "text-white/40"}`}>{label}</p>
-      <p className={`mt-1 text-2xl font-bold font-mono ${alert ? "text-amber-300" : "text-white"}`}>{value.toLocaleString()}</p>
+    <div className={`rounded-xl border p-4 ${alert ? "bg-amber-500/10 border-amber-500/20" : "bg-landing-surface border-landing-border-subtle"}`}>
+      <p className={`text-xs font-medium uppercase tracking-wide ${alert ? "text-amber-300/60" : "text-landing-text-tertiary"}`}>{label}</p>
+      <p className={`mt-1 text-2xl font-bold font-mono ${alert ? "text-amber-300" : "text-landing-text"}`}>{value.toLocaleString()}</p>
     </div>
   );
 }
@@ -516,25 +516,25 @@ function StatCard({ label, value, alert }: { label: string; value: number; alert
 function GrowthColumn({ label, today, week, month, total }: { label: string; today?: number; week: number; month: number; total: number }) {
   return (
     <div className="space-y-2">
-      <p className="text-xs font-semibold text-white/50 uppercase tracking-wide">{label}</p>
+      <p className="text-xs font-semibold text-landing-text-secondary uppercase tracking-wide">{label}</p>
       <div className="space-y-1 text-sm">
         {today !== undefined && (
           <div className="flex justify-between">
-            <span className="text-white/30">Today</span>
-            <span className="font-mono text-white/70">{today}</span>
+            <span className="text-landing-text-tertiary">Today</span>
+            <span className="font-mono text-landing-text">{today}</span>
           </div>
         )}
         <div className="flex justify-between">
-          <span className="text-white/30">This week</span>
-          <span className="font-mono text-white/70">{week}</span>
+          <span className="text-landing-text-tertiary">This week</span>
+          <span className="font-mono text-landing-text">{week}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-white/30">This month</span>
-          <span className="font-mono text-white/70">{month}</span>
+          <span className="text-landing-text-tertiary">This month</span>
+          <span className="font-mono text-landing-text">{month}</span>
         </div>
-        <div className="flex justify-between border-t border-white/[0.06] pt-1">
-          <span className="text-white/40 font-medium">All time</span>
-          <span className="font-mono font-bold text-white">{total.toLocaleString()}</span>
+        <div className="flex justify-between border-t border-landing-border-subtle pt-1">
+          <span className="text-landing-text-tertiary font-medium">All time</span>
+          <span className="font-mono font-bold text-landing-text">{total.toLocaleString()}</span>
         </div>
       </div>
     </div>

@@ -5,7 +5,7 @@ import { useTheme } from "next-themes";
 import Map, { Marker, Popup } from "react-map-gl/maplibre";
 import type { MapRef } from "react-map-gl/maplibre";
 import useSupercluster from "use-supercluster";
-import { MAP_STYLE_DARK_MATTER, MAP_STYLE_POSITRON } from "../lib/map-styles";
+import { MAP_STYLE_DARK, MAP_STYLE_LIGHT } from "../lib/map-styles";
 import type { ActiveTab, MapViewport } from "../lib/types";
 import Link from "next/link";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -191,7 +191,7 @@ export default function DiscoverMap({
   activeTab: ActiveTab;
 }) {
   const { resolvedTheme } = useTheme();
-  const mapStyle = resolvedTheme === "dark" ? MAP_STYLE_DARK_MATTER : MAP_STYLE_POSITRON;
+  const mapStyle = resolvedTheme === "dark" ? MAP_STYLE_DARK : MAP_STYLE_LIGHT;
   const mapRef = useRef<MapRef>(null);
   const boundsRef = useRef<[number, number, number, number]>([-180, -85, 180, 85]);
   const zoomRef = useRef(viewport.zoom);
