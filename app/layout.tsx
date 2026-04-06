@@ -5,6 +5,7 @@ import { getServerLocale } from "@/lib/i18n/server";
 import { LanguageProvider } from "@/lib/i18n/provider";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { FeedbackWidget } from "@/components/feedback-widget";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -84,6 +85,7 @@ export default async function RootLayout({
               </div>
             )}
             {children}
+            <FeedbackWidget />
           </LanguageProvider>
         </ThemeProvider>
         <Analytics />
