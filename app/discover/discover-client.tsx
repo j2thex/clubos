@@ -42,6 +42,7 @@ export function DiscoverClient({
   const [selectedOfferNames, setSelectedOfferNames] = useState<string[]>([]);
   const [offerSearch, setOfferSearch] = useState("");
   const [dateFilter, setDateFilter] = useState<"all" | "today" | "week" | "month">("all");
+  const [showSearch, setShowSearch] = useState(false);
   const mapSectionRef = useRef<HTMLDivElement>(null);
 
   // Sync tab with URL hash for deep linking (e.g., /discover#events or /discover#offers:Wi-Fi)
@@ -298,7 +299,19 @@ export function DiscoverClient({
       <section ref={mapSectionRef} className="relative h-[60svh] md:h-[50vh]">
         {/* Search + near-me overlay */}
         <div className="absolute top-3 left-3 right-3 z-10 flex gap-2">
-          <LocationSearch onLocationFound={handleLocationFound} locale={locale} />
+          {showSearch ? (
+            <LocationSearch onLocationFound={(lat, lng) => { handleLocationFound(lat, lng); setShowSearch(false); }} locale={locale} onClose={() => setShowSearch(false)} />
+          ) : (
+            <button
+              onClick={() => setShowSearch(true)}
+              className="shrink-0 h-10 px-3 flex items-center justify-center gap-2 rounded-lg bg-landing-surface-hover border border-landing-border text-landing-text-secondary hover:text-landing-text hover:border-landing-border transition"
+            >
+              <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <span className="hidden sm:inline text-xs font-medium">Search</span>
+            </button>
+          )}
           <NearMeButton
             onLocationFound={handleLocationFound}
             clubs={clubs}

@@ -13,9 +13,11 @@ interface SearchResult {
 export function LocationSearch({
   onLocationFound,
   locale = "en",
+  onClose,
 }: {
   onLocationFound: (lat: number, lng: number) => void;
   locale?: Locale;
+  onClose?: () => void;
 }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -28,11 +30,22 @@ export function LocationSearch({
     function handleClick(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
+        onClose?.();
+      }
+    }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setOpen(false);
+        onClose?.();
       }
     }
     document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose]);
 
   function handleSearch(value: string) {
     setQuery(value);
@@ -82,6 +95,7 @@ export function LocationSearch({
           onChange={(e) => handleSearch(e.target.value)}
           onFocus={() => results.length > 0 && setOpen(true)}
           placeholder={t(locale, "discover.searchLocation")}
+          autoFocus
           className="w-full pl-8 pr-3 py-2 rounded-lg bg-landing-surface-hover border border-landing-border text-sm text-landing-text placeholder:text-landing-text-secondary focus:outline-none focus:border-landing-border transition"
         />
         {loading && (

@@ -100,26 +100,23 @@ export function HomepageMap({
         </div>
       </div>
 
-      {/* Tab navigation — standalone row below map */}
-      <div className="border-b border-landing-border-subtle bg-landing-surface">
-        <p className="text-[10px] uppercase tracking-wider text-landing-text-tertiary font-medium px-4 pt-2">
-          {t("discover.browseby")}
-        </p>
-      <div className="flex">
-        {TABS.map((tab) => (
-          <Link
-            key={tab.key}
-            href={`/discover#${tab.key}`}
-            className="flex-1 flex items-center justify-center gap-2 py-4 text-sm sm:text-base font-medium text-landing-text-secondary hover:text-landing-text hover:bg-landing-surface-hover transition-all border-r last:border-r-0 border-landing-border-subtle"
-          >
-            <span>{tab.icon}</span>
-            <span>{locale === "es" ? tab.labelEs : tab.label}</span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-landing-surface-hover text-landing-text-secondary">
-              {counts[tab.key]}
-            </span>
-          </Link>
-        ))}
-      </div>
+      {/* Tab navigation — compact row below map */}
+      <div className="px-2 sm:px-4 pt-2 pb-1">
+        <div className="flex gap-1">
+          {TABS.map((tab) => (
+            <Link
+              key={tab.key}
+              href={`/discover#${tab.key}`}
+              className="flex-1 min-w-0 flex items-center justify-center gap-1 py-2 rounded-lg text-xs sm:text-sm font-medium text-landing-text-secondary hover:text-landing-text hover:bg-landing-surface-hover transition-all"
+            >
+              <span className="shrink-0">{tab.icon}</span>
+              <span className="truncate">{locale === "es" ? tab.labelEs : tab.label}</span>
+              <span className="shrink-0 text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded-full bg-landing-surface-hover text-landing-text-secondary">
+                {counts[tab.key]}
+              </span>
+            </Link>
+          ))}
+        </div>
       </div>
     </>
   );
