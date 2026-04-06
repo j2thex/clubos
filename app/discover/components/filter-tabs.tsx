@@ -23,10 +23,7 @@ export function FilterTabs({
   locale?: Locale;
 }) {
   return (
-    <div className="px-2 sm:px-4 pt-2 pb-1">
-      <p className="text-[10px] uppercase tracking-wider text-landing-text-tertiary font-medium px-1 mb-1.5">
-        {t(locale, "discover.browseby")}
-      </p>
+    <div className="px-2 sm:px-4 py-1.5">
       <div className="flex gap-1">
         {TABS.map((tab) => (
           <button

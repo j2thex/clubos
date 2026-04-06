@@ -93,10 +93,7 @@ export function HomepageMap({
         {/* Tab navigation — overlay at bottom of map, identical to discover page */}
         <div className="absolute bottom-3 left-3 right-3 z-10">
           <div className="bg-landing-surface-hover backdrop-blur-lg rounded-xl border border-landing-border">
-            <div className="px-2 sm:px-4 pt-2 pb-1">
-              <p className="text-[10px] uppercase tracking-wider text-landing-text-tertiary font-medium px-1 mb-1.5">
-                {t("discover.browseby")}
-              </p>
+            <div className="px-2 sm:px-4 py-1.5">
               <div className="flex gap-1">
                 {TABS.map((tab) => (
                   <Link
