@@ -16,35 +16,42 @@ export async function submitFeedback(
     return { error: "Feedback too short" };
   }
 
+  try {
   // Detect user context from cookies
   let role = "visitor";
   let userId: string | null = null;
   let clubId: string | null = null;
   let userLabel = "Anonymous visitor";
 
-  const owner = await getOwnerFromCookie();
-  if (owner) {
-    role = "admin";
-    userId = owner.owner_id;
-    clubId = owner.club_id;
+  try {
+    const owner = await getOwnerFromCookie();
+    if (owner) {
+      role = "admin";
+      userId = owner.owner_id;
+      clubId = owner.club_id;
+    }
+  } catch { /* no owner cookie */ }
+
+  if (!userId) {
+    try {
+      const staff = await getStaffFromCookie();
+      if (staff) {
+        role = "staff";
+        userId = staff.member_id;
+        clubId = staff.club_id;
+      }
+    } catch { /* no staff cookie */ }
   }
 
   if (!userId) {
-    const staff = await getStaffFromCookie();
-    if (staff) {
-      role = "staff";
-      userId = staff.member_id;
-      clubId = staff.club_id;
-    }
-  }
-
-  if (!userId) {
-    const member = await getMemberFromCookie();
-    if (member) {
-      role = "member";
-      userId = member.member_id;
-      clubId = member.club_id;
-    }
+    try {
+      const member = await getMemberFromCookie();
+      if (member) {
+        role = "member";
+        userId = member.member_id;
+        clubId = member.club_id;
+      }
+    } catch { /* no member cookie */ }
   }
 
   // Fetch display info if we have a user
@@ -110,5 +117,10 @@ export async function submitFeedback(
   } catch (err) {
     console.error("Trello API error:", err);
     return { error: "Failed to submit feedback" };
+  }
+
+  } catch (outerErr) {
+    console.error("Feedback action error:", outerErr);
+    return { error: "Something went wrong" };
   }
 }
