@@ -3,7 +3,7 @@
 import { getMemberFromCookie, getStaffFromCookie, getOwnerFromCookie } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-const TRELLO_FEEDBACK_LIST_ID = "69d3b192d12d727409f0953b";
+const TRELLO_FEEDBACK_LIST_ID = "69d3be8d8dfac139e7641bf8";
 
 export async function submitFeedback(
   formData: FormData,
