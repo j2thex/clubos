@@ -90,9 +90,13 @@ export async function submitFeedback(
   const apiToken = process.env.TRELLO_TOKEN;
 
   if (!apiKey || !apiToken) {
-    console.error("Missing env vars — key:", !!apiKey, "token:", !!apiToken);
-    return { error: `Feedback service not configured (key: ${!!apiKey}, token: ${!!apiToken})` };
+    return { error: `Not configured (key: ${!!apiKey}, token: ${!!apiToken})` };
   }
+
+  // Debug: show what Vercel loaded (first 4 + last 4 chars)
+  const keyPreview = `${apiKey.slice(0, 4)}...${apiKey.slice(-4)} (${apiKey.length})`;
+  const tokenPreview = `${apiToken.slice(0, 4)}...${apiToken.slice(-4)} (${apiToken.length})`;
+  console.log("Trello creds loaded:", keyPreview, tokenPreview);
 
   try {
     const res = await fetch("https://api.trello.com/1/cards", {
@@ -111,7 +115,7 @@ export async function submitFeedback(
     if (!res.ok) {
       const body = await res.text();
       console.error("Trello API error:", res.status, body);
-      return { error: `Trello error ${res.status}: ${body.slice(0, 100)}` };
+      return { error: `Trello ${res.status}: ${body.slice(0, 60)} | key:${keyPreview} tok:${tokenPreview}` };
     }
 
     return { ok: true };
