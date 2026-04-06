@@ -258,14 +258,14 @@ export default async function Home() {
       />
 
       {/* Header */}
-      <header className="relative z-20 flex items-center justify-between px-6 py-4 border-b border-landing-border">
-        <Link href="/" className="text-xs font-mono tracking-widest uppercase opacity-80 hover:opacity-100 transition-opacity">
+      <header className="relative z-20 flex items-center justify-between px-4 sm:px-6 py-4 border-b border-landing-border">
+        <Link href="/" className="text-xs font-mono tracking-widest uppercase opacity-80 hover:opacity-100 transition-opacity shrink-0">
           {tr("landing.brandName")}
         </Link>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <Link
             href="/onboarding"
-            className="text-xs opacity-60 hover:opacity-100 transition-opacity"
+            className="text-xs opacity-60 hover:opacity-100 transition-opacity hidden sm:inline"
           >
             {localized("For Clubs", "Para Clubes", locale)}
           </Link>
