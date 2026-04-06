@@ -90,8 +90,8 @@ export async function submitFeedback(
   const apiToken = process.env.TRELLO_TOKEN;
 
   if (!apiKey || !apiToken) {
-    console.error("Missing TRELLO_API_KEY or TRELLO_TOKEN env vars");
-    return { error: "Feedback service not configured" };
+    console.error("Missing env vars — key:", !!apiKey, "token:", !!apiToken);
+    return { error: `Feedback service not configured (key: ${!!apiKey}, token: ${!!apiToken})` };
   }
 
   try {
@@ -109,14 +109,15 @@ export async function submitFeedback(
     });
 
     if (!res.ok) {
-      console.error("Trello API error:", res.status, await res.text());
-      return { error: "Failed to submit feedback" };
+      const body = await res.text();
+      console.error("Trello API error:", res.status, body);
+      return { error: `Trello error ${res.status}: ${body.slice(0, 100)}` };
     }
 
     return { ok: true };
   } catch (err) {
-    console.error("Trello API error:", err);
-    return { error: "Failed to submit feedback" };
+    console.error("Trello fetch error:", err);
+    return { error: `Network error: ${String(err).slice(0, 100)}` };
   }
 
   } catch (outerErr) {
