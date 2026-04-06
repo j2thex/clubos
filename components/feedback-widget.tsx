@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { MessageSquare, X } from "lucide-react";
 import { toast } from "sonner";
 import { submitFeedback } from "@/lib/feedback-action";
@@ -18,12 +18,13 @@ export function FeedbackWidget() {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [category, setCategory] = useState<Category>("idea");
-  const [isPending, startTransition] = useTransition();
+  const [sending, setSending] = useState(false);
   const { locale } = useLanguage();
 
-  function handleSubmit() {
-    if (!text.trim()) return;
-    startTransition(async () => {
+  async function handleSubmit() {
+    if (!text.trim() || sending) return;
+    setSending(true);
+    try {
       const result = await submitFeedback(text, category, window.location.href);
       if ("error" in result) {
         toast.error(result.error);
@@ -33,7 +34,12 @@ export function FeedbackWidget() {
         setCategory("idea");
         setOpen(false);
       }
-    });
+    } catch (err) {
+      console.error("Feedback submit error:", err);
+      toast.error("Failed to send feedback");
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
@@ -95,10 +101,10 @@ export function FeedbackWidget() {
               {/* Submit */}
               <button
                 onClick={handleSubmit}
-                disabled={isPending || !text.trim()}
+                disabled={sending || !text.trim()}
                 className="w-full py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:brightness-110 disabled:opacity-50 transition-all"
               >
-                {isPending
+                {sending
                   ? (locale === "es" ? "Enviando..." : "Sending...")
                   : (locale === "es" ? "Enviar" : "Send")}
               </button>
