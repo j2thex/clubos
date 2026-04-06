@@ -1,10 +1,11 @@
 "use client";
 
 import { useRef, useCallback, useEffect } from "react";
+import { useTheme } from "next-themes";
 import Map, { Marker, Popup } from "react-map-gl/maplibre";
 import type { MapRef } from "react-map-gl/maplibre";
 import useSupercluster from "use-supercluster";
-import { DEFAULT_MAP_STYLE } from "../lib/map-styles";
+import { MAP_STYLE_DARK_MATTER, MAP_STYLE_POSITRON } from "../lib/map-styles";
 import type { ActiveTab, MapViewport } from "../lib/types";
 import Link from "next/link";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -189,6 +190,8 @@ export default function DiscoverMap({
   scrollZoom?: boolean;
   activeTab: ActiveTab;
 }) {
+  const { resolvedTheme } = useTheme();
+  const mapStyle = resolvedTheme === "dark" ? MAP_STYLE_DARK_MATTER : MAP_STYLE_POSITRON;
   const mapRef = useRef<MapRef>(null);
   const boundsRef = useRef<[number, number, number, number]>([-180, -85, 180, 85]);
   const zoomRef = useRef(viewport.zoom);
@@ -250,7 +253,7 @@ export default function DiscoverMap({
       ref={mapRef}
       initialViewState={{ latitude: viewport.latitude, longitude: viewport.longitude, zoom: viewport.zoom }}
       onMove={onMove}
-      mapStyle={DEFAULT_MAP_STYLE}
+      mapStyle={mapStyle}
       style={{ width: "100%", height: "100%" }}
       attributionControl={false}
       scrollZoom={scrollZoom}
