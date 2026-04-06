@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { MessageSquare, X } from "lucide-react";
+import { useState, useRef } from "react";
+import { MessageSquare, X, ImagePlus } from "lucide-react";
 import { toast } from "sonner";
 import { submitFeedback } from "@/lib/feedback-action";
 import { useLanguage } from "@/lib/i18n/provider";
@@ -18,20 +18,46 @@ export function FeedbackWidget() {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [category, setCategory] = useState<Category>("idea");
+  const [screenshot, setScreenshot] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
   const { locale } = useLanguage();
+
+  function handleFile(file: File | null) {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    if (file) {
+      setScreenshot(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    } else {
+      setScreenshot(null);
+      setPreviewUrl(null);
+    }
+  }
+
+  function clearScreenshot() {
+    handleFile(null);
+    if (fileRef.current) fileRef.current.value = "";
+  }
 
   async function handleSubmit() {
     if (!text.trim() || sending) return;
     setSending(true);
     try {
-      const result = await submitFeedback(text, category, window.location.href);
+      const formData = new FormData();
+      formData.set("text", text);
+      formData.set("category", category);
+      formData.set("pageUrl", window.location.href);
+      if (screenshot) formData.set("screenshot", screenshot);
+
+      const result = await submitFeedback(formData);
       if ("error" in result) {
         toast.error(result.error);
       } else {
         toast.success(locale === "es" ? "¡Gracias por tu feedback!" : "Thanks for your feedback!");
         setText("");
         setCategory("idea");
+        clearScreenshot();
         setOpen(false);
       }
     } catch (err) {
@@ -97,6 +123,38 @@ export function FeedbackWidget() {
                 className="w-full h-24 px-3 py-2 text-sm rounded-lg border border-input bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
                 autoFocus
               />
+
+              {/* Screenshot */}
+              <div className="flex items-center gap-2">
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ImagePlus className="w-4 h-4" />
+                  {locale === "es" ? "Adjuntar captura" : "Attach screenshot"}
+                </button>
+              </div>
+
+              {/* Screenshot preview */}
+              {previewUrl && (
+                <div className="relative inline-block">
+                  <img src={previewUrl} alt="Screenshot" className="h-16 rounded-lg border border-border object-cover" />
+                  <button
+                    onClick={clearScreenshot}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-white flex items-center justify-center text-xs"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
 
               {/* Submit */}
               <button

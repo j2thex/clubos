@@ -26,6 +26,25 @@ export async function deleteClubImage(imageUrl: string): Promise<void> {
   return deleteFromBucket("club-images", imageUrl);
 }
 
+// --- Feedback screenshots (bucket: feedback) ---
+
+export async function uploadFeedbackImage(
+  file: File,
+): Promise<{ url: string } | { error: string }> {
+  const supabase = createAdminClient();
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+  const filename = `${crypto.randomUUID()}.${ext}`;
+
+  const { error } = await supabase.storage
+    .from("feedback")
+    .upload(filename, file, { contentType: file.type, upsert: false });
+
+  if (error) return { error: "Failed to upload screenshot" };
+
+  const { data } = supabase.storage.from("feedback").getPublicUrl(filename);
+  return { url: data.publicUrl };
+}
+
 // --- Shared helpers ---
 
 async function uploadToBucket(
