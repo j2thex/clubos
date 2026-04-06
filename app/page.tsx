@@ -12,6 +12,7 @@ import { LandingFooter } from "./_landing/landing-footer";
 import type { DiscoverClub, DiscoverEvent, DiscoverOffer, DiscoverQuest } from "./discover/lib/types";
 import { localized } from "@/lib/i18n";
 import { DynamicIcon } from "@/components/dynamic-icon";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export const metadata: Metadata = {
   title: "osocios.club — Discover clubs, events & offers near you",
@@ -257,7 +258,7 @@ export default async function Home() {
       />
 
       {/* Header */}
-      <header className="relative z-20 flex items-center justify-between px-6 py-4 border-b border-white/10">
+      <header className="relative z-20 flex items-center justify-between px-6 py-4 border-b border-landing-border">
         <Link href="/" className="text-xs font-mono tracking-widest uppercase opacity-80 hover:opacity-100 transition-opacity">
           {tr("landing.brandName")}
         </Link>
@@ -274,7 +275,8 @@ export default async function Home() {
           >
             {localized("Discover", "Descubrir", locale)}
           </Link>
-          <LanguageSwitcher variant="dark" />
+          <ThemeToggle />
+          <LanguageSwitcher variant="auto" />
         </div>
       </header>
 
@@ -289,12 +291,12 @@ export default async function Home() {
 
       {/* Upcoming Events */}
       {upcomingEvents.length > 0 && (
-        <section className="px-6 py-12 border-t border-white/[0.04]">
+        <section className="px-6 py-12 border-t border-landing-border-subtle">
           <div className="max-w-5xl mx-auto">
-            <h2 className="text-lg font-bold text-white mb-1">
+            <h2 className="text-lg font-bold text-landing-text mb-1">
               {localized("Upcoming Events", "Próximos Eventos", locale)}
             </h2>
-            <p className="text-xs text-white/40 mb-6">
+            <p className="text-xs text-landing-text-tertiary mb-6">
               {localized("Don't miss what's happening near you", "No te pierdas lo que pasa cerca de ti", locale)}
             </p>
             <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
@@ -306,26 +308,26 @@ export default async function Home() {
                   <Link
                     key={ev.id}
                     href={`/${ev.club_slug}/public`}
-                    className="flex-shrink-0 w-56 snap-start bg-white/[0.04] rounded-xl overflow-hidden hover:bg-white/[0.07] transition-colors group"
+                    className="flex-shrink-0 w-56 snap-start bg-landing-surface rounded-xl overflow-hidden hover:bg-landing-surface-hover transition-colors group"
                   >
                     {ev.image_url ? (
                       <img src={ev.image_url} alt="" className="w-full h-28 object-cover" />
                     ) : (
-                      <div className="w-full h-28 flex items-center justify-center bg-white/[0.03]">
+                      <div className="w-full h-28 flex items-center justify-center bg-landing-surface">
                         <span className="text-2xl opacity-30">📅</span>
                       </div>
                     )}
                     <div className="p-3">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] font-bold uppercase text-white/50">{month} {day}</span>
-                        {ev.time && <span className="text-[10px] text-white/30">{ev.time}</span>}
+                        <span className="text-[10px] font-bold uppercase text-landing-text-secondary">{month} {day}</span>
+                        {ev.time && <span className="text-[10px] text-landing-text-tertiary">{ev.time}</span>}
                       </div>
-                      <p className="text-sm font-semibold text-white truncate">
+                      <p className="text-sm font-semibold text-landing-text truncate">
                         {localized(ev.title, ev.title_es, locale)}
                       </p>
-                      <p className="text-[10px] text-white/40 mt-0.5 truncate">{ev.club_name}</p>
+                      <p className="text-[10px] text-landing-text-tertiary mt-0.5 truncate">{ev.club_name}</p>
                       {ev.price != null && ev.price > 0 && (
-                        <span className="inline-block mt-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-white/10 text-white/70">
+                        <span className="inline-block mt-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-landing-surface-hover text-landing-text-secondary">
                           €{ev.price}
                         </span>
                       )}
@@ -340,12 +342,12 @@ export default async function Home() {
 
       {/* Popular Offers */}
       {popularOffers.length > 0 && (
-        <section className="px-6 py-12 border-t border-white/[0.04]">
+        <section className="px-6 py-12 border-t border-landing-border-subtle">
           <div className="max-w-5xl mx-auto">
-            <h2 className="text-lg font-bold text-white mb-1">
+            <h2 className="text-lg font-bold text-landing-text mb-1">
               {localized("Popular Offers", "Ofertas Populares", locale)}
             </h2>
-            <p className="text-xs text-white/40 mb-6">
+            <p className="text-xs text-landing-text-tertiary mb-6">
               {localized("What clubs are offering", "Lo que ofrecen los clubes", locale)}
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
@@ -353,12 +355,12 @@ export default async function Home() {
                 <Link
                   key={offer.name}
                   href={`/discover#offers:${encodeURIComponent(offer.name)}`}
-                  className="bg-white/[0.04] rounded-xl p-4 hover:bg-white/[0.07] transition-colors text-center"
+                  className="bg-landing-surface rounded-xl p-4 hover:bg-landing-surface-hover transition-colors text-center"
                 >
-                  <p className="text-sm font-semibold text-white">
+                  <p className="text-sm font-semibold text-landing-text">
                     {localized(offer.name, offer.name_es, locale)}
                   </p>
-                  <p className="text-[10px] text-white/40 mt-1">
+                  <p className="text-[10px] text-landing-text-tertiary mt-1">
                     {offer.count} {offer.count === 1
                       ? localized("club", "club", locale)
                       : localized("clubs", "clubes", locale)}
@@ -372,12 +374,12 @@ export default async function Home() {
 
       {/* Popular Quests */}
       {popularQuests.length > 0 && (
-        <section className="px-6 py-12 border-t border-white/[0.04]">
+        <section className="px-6 py-12 border-t border-landing-border-subtle">
           <div className="max-w-5xl mx-auto">
-            <h2 className="text-lg font-bold text-white mb-1">
+            <h2 className="text-lg font-bold text-landing-text mb-1">
               {localized("Popular Quests", "Misiones Populares", locale)}
             </h2>
-            <p className="text-xs text-white/40 mb-6">
+            <p className="text-xs text-landing-text-tertiary mb-6">
               {localized("Complete quests, earn spins", "Completa misiones, gana tiradas", locale)}
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
@@ -385,26 +387,26 @@ export default async function Home() {
                 <Link
                   key={quest.title}
                   href="/discover#quests"
-                  className="bg-white/[0.04] rounded-xl p-4 hover:bg-white/[0.07] transition-colors text-center flex flex-col items-center gap-2"
+                  className="bg-landing-surface rounded-xl p-4 hover:bg-landing-surface-hover transition-colors text-center flex flex-col items-center gap-2"
                 >
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-white/[0.06] ${QUEST_COLORS[i % QUEST_COLORS.length]}`}>
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-landing-surface-hover ${QUEST_COLORS[i % QUEST_COLORS.length]}`}>
                     {quest.icon ? (
                       <DynamicIcon name={quest.icon} className="w-5 h-5" />
                     ) : (
                       <span className="text-lg">🎯</span>
                     )}
                   </div>
-                  <p className="text-sm font-semibold text-white leading-tight">
+                  <p className="text-sm font-semibold text-landing-text leading-tight">
                     {localized(quest.title, quest.title_es, locale)}
                   </p>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-white/40">
+                    <span className="text-[10px] text-landing-text-tertiary">
                       {quest.count} {quest.count === 1
                         ? localized("club", "club", locale)
                         : localized("clubs", "clubes", locale)}
                     </span>
                     {quest.reward_spins > 0 && (
-                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-white/10 text-white/60">
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-landing-surface-hover text-landing-text-secondary">
                         +{quest.reward_spins} {quest.reward_spins === 1 ? "spin" : "spins"}
                       </span>
                     )}

@@ -9,7 +9,7 @@ export function HowItWorks({ t }: { t: (key: string) => string }) {
   ];
 
   return (
-    <section id="how-it-works" className="landing-dark px-6 py-20 sm:py-28 border-t border-white/[0.04]">
+    <section id="how-it-works" className="landing-dark px-6 py-20 sm:py-28 border-t border-landing-border-subtle">
       <div className="mx-auto max-w-5xl">
         <ScrollReveal>
           <h2 className="text-center text-3xl sm:text-4xl lg:text-5xl font-extralight tracking-tight">

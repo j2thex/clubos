@@ -27,7 +27,7 @@ export function MembershipExplorer({
   if (deals.length === 0) return null;
 
   return (
-    <section className="landing-dark px-6 py-20 sm:py-28 border-t border-white/[0.04]">
+    <section className="landing-dark px-6 py-20 sm:py-28 border-t border-landing-border-subtle">
       <div className="mx-auto max-w-5xl">
         <ScrollReveal>
           <h2 className="text-center text-3xl sm:text-4xl lg:text-5xl font-extralight tracking-tight">
@@ -43,7 +43,7 @@ export function MembershipExplorer({
             <ScrollReveal key={d.id} delay={i * 60}>
               <Link
                 href={`/${d.club_slug}/public`}
-                className="group rounded-2xl bg-white/[0.03] border border-white/[0.06] p-5 hover:bg-white/[0.06] transition-colors duration-300 block h-full"
+                className="group rounded-2xl bg-landing-surface border border-landing-border-subtle p-5 hover:bg-landing-surface-hover transition-colors duration-300 block h-full"
               >
                 <div className="flex items-center gap-3 mb-3">
                   {d.club_logo ? (

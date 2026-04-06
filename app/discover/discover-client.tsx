@@ -16,8 +16,8 @@ import { getTagLabel } from "@/lib/tags";
 const DiscoverMap = dynamic(() => import("./components/discover-map"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full bg-[oklch(0.12_0.02_150)] animate-pulse flex items-center justify-center">
-      <span className="text-xs text-white/30 font-mono">Loading map...</span>
+    <div className="w-full h-full bg-landing-surface animate-pulse flex items-center justify-center">
+      <span className="text-xs text-landing-text-tertiary font-mono">Loading map...</span>
     </div>
   ),
 });
@@ -309,7 +309,7 @@ export function DiscoverClient({
 
         {/* Tab selector overlay at bottom of map */}
         <div className="absolute bottom-3 left-3 right-3 z-10">
-          <div className="bg-black/70 backdrop-blur-lg rounded-xl border border-white/10">
+          <div className="bg-landing-surface-hover backdrop-blur-lg rounded-xl border border-landing-border">
             <FilterTabs activeTab={activeTab} onChange={setActiveTab} counts={counts} locale={locale} />
           </div>
         </div>
@@ -344,7 +344,7 @@ export function DiscoverClient({
       )}
 
       {/* Section 2: Results */}
-      <section className="landing-dark border-t border-white/10">
+      <section className="landing-dark border-t border-landing-border">
 
         {/* Results grid */}
         <ResultsGrid

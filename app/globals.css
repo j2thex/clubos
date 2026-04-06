@@ -38,6 +38,13 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-landing-surface: var(--landing-surface);
+  --color-landing-surface-hover: var(--landing-surface-hover);
+  --color-landing-border: var(--landing-border);
+  --color-landing-border-subtle: var(--landing-border-subtle);
+  --color-landing-text: var(--landing-text);
+  --color-landing-text-secondary: var(--landing-text-secondary);
+  --color-landing-text-tertiary: var(--landing-text-tertiary);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -51,6 +58,15 @@
   --radius: 0.625rem;
   --background: oklch(0.98 0.005 150);
   --foreground: oklch(0.18 0.05 150);
+  --landing-surface: oklch(0 0 0 / 4%);
+  --landing-surface-hover: oklch(0 0 0 / 7%);
+  --landing-border: oklch(0 0 0 / 8%);
+  --landing-border-subtle: oklch(0 0 0 / 4%);
+  --landing-text: oklch(0.15 0.04 150);
+  --landing-text-secondary: oklch(0.15 0.04 150 / 60%);
+  --landing-text-tertiary: oklch(0.15 0.04 150 / 40%);
+  --gradient-from: oklch(0.4 0.15 150);
+  --gradient-to: oklch(0.5 0.12 170);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.18 0.05 150);
   --popover: oklch(1 0 0);
@@ -85,6 +101,15 @@
 .dark {
   --background: oklch(0.15 0.04 150);
   --foreground: oklch(0.95 0.02 150);
+  --landing-surface: oklch(1 0 0 / 4%);
+  --landing-surface-hover: oklch(1 0 0 / 7%);
+  --landing-border: oklch(1 0 0 / 10%);
+  --landing-border-subtle: oklch(1 0 0 / 4%);
+  --landing-text: oklch(0.95 0.02 150);
+  --landing-text-secondary: oklch(1 0 0 / 60%);
+  --landing-text-tertiary: oklch(1 0 0 / 40%);
+  --gradient-from: oklch(0.6 0.18 150);
+  --gradient-to: oklch(0.7 0.15 170);
   --card: oklch(0.20 0.05 150);
   --card-foreground: oklch(0.95 0.02 150);
   --popover: oklch(0.20 0.05 150);
@@ -168,28 +193,33 @@
 
 /* Map popup overrides */
 .discover-popup .maplibregl-popup-content {
-  background: white;
+  background: var(--card);
+  color: var(--card-foreground);
   border-radius: 0.75rem;
   padding: 0.75rem;
   box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2), 0 8px 10px -6px rgba(0,0,0,0.1);
-  border: 1px solid rgba(0,0,0,0.06);
+  border: 1px solid var(--landing-border);
 }
 .discover-popup .maplibregl-popup-close-button {
   font-size: 16px;
   padding: 2px 6px;
-  color: #999;
+  color: var(--landing-text-tertiary);
 }
 .discover-popup .maplibregl-popup-tip {
-  border-top-color: white;
+  border-top-color: var(--card);
 }
 
 /* Landing page */
 .landing-dark {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+.dark .landing-dark {
   background-color: oklch(0.06 0.02 150);
   color: oklch(0.9 0.01 150);
 }
 .text-gradient {
-  background: linear-gradient(135deg, oklch(0.6 0.18 150), oklch(0.7 0.15 170));
+  background: linear-gradient(135deg, var(--gradient-from), var(--gradient-to));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

@@ -31,7 +31,7 @@ export function PlatformOverview({
   ];
 
   return (
-    <section className="landing-dark px-6 py-20 sm:py-28 border-t border-white/[0.04]">
+    <section className="landing-dark px-6 py-20 sm:py-28 border-t border-landing-border-subtle">
       <div className="mx-auto max-w-5xl">
         <ScrollReveal>
           <h2 className="text-center text-3xl sm:text-4xl lg:text-5xl font-extralight tracking-tight">
@@ -46,7 +46,7 @@ export function PlatformOverview({
         <div className="hidden sm:grid sm:grid-cols-3 gap-4 mt-16">
           {portals.map((p, i) => (
             <ScrollReveal key={i} delay={i * 100}>
-              <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] overflow-hidden hover:bg-white/[0.05] transition-colors duration-300">
+              <div className="rounded-2xl bg-landing-surface border border-landing-border-subtle overflow-hidden hover:bg-landing-surface-hover transition-colors duration-300">
                 <div className="p-5 pb-3">{p.mockup}</div>
                 <div className="p-5 pt-3">
                   <div className="flex items-center gap-2 mb-2">
@@ -73,7 +73,7 @@ export function PlatformOverview({
             tabs={portals.map((p) => ({
               label: p.title,
               content: (
-                <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] overflow-hidden">
+                <div className="rounded-2xl bg-landing-surface border border-landing-border-subtle overflow-hidden">
                   <div className="p-4">{p.mockup}</div>
                   <div className="p-4 pt-2">
                     <p className="text-xs opacity-60 mb-3">{p.desc}</p>
@@ -97,17 +97,17 @@ export function PlatformOverview({
 
 function MemberMockup() {
   return (
-    <div className="rounded-xl bg-white/[0.03] border border-white/[0.04] overflow-hidden mx-auto max-w-[180px]">
+    <div className="rounded-xl bg-landing-surface border border-landing-border-subtle overflow-hidden mx-auto max-w-[180px]">
       <div className="h-6 bg-green-600/30" />
       <div className="p-2.5 space-y-1.5">
-        <div className="w-8 h-8 rounded-full bg-white/[0.06] mx-auto" />
+        <div className="w-8 h-8 rounded-full bg-landing-surface-hover mx-auto" />
         <div className="grid grid-cols-3 gap-1">
-          <div className="h-6 rounded bg-white/[0.04]" />
-          <div className="h-6 rounded bg-white/[0.04]" />
-          <div className="h-6 rounded bg-white/[0.04]" />
+          <div className="h-6 rounded bg-landing-surface" />
+          <div className="h-6 rounded bg-landing-surface" />
+          <div className="h-6 rounded bg-landing-surface" />
         </div>
-        <div className="h-7 rounded bg-white/[0.03]" />
-        <div className="h-7 rounded bg-white/[0.03]" />
+        <div className="h-7 rounded bg-landing-surface" />
+        <div className="h-7 rounded bg-landing-surface" />
       </div>
     </div>
   );
@@ -115,12 +115,12 @@ function MemberMockup() {
 
 function StaffMockup() {
   return (
-    <div className="rounded-xl bg-white/[0.03] border border-white/[0.04] overflow-hidden mx-auto max-w-[180px]">
-      <div className="h-6 bg-white/[0.06]" />
+    <div className="rounded-xl bg-landing-surface border border-landing-border-subtle overflow-hidden mx-auto max-w-[180px]">
+      <div className="h-6 bg-landing-surface-hover" />
       <div className="p-2.5 space-y-1.5">
         <div className="w-12 h-12 rounded-full border-2 border-blue-400/20 mx-auto" />
-        <div className="h-6 rounded bg-white/[0.04] mx-auto max-w-[100px]" />
-        <div className="h-8 rounded bg-white/[0.06] mx-auto max-w-[120px]" />
+        <div className="h-6 rounded bg-landing-surface mx-auto max-w-[100px]" />
+        <div className="h-8 rounded bg-landing-surface-hover mx-auto max-w-[120px]" />
       </div>
     </div>
   );
@@ -128,14 +128,14 @@ function StaffMockup() {
 
 function AdminMockup() {
   return (
-    <div className="rounded-xl bg-white/[0.03] border border-white/[0.04] overflow-hidden mx-auto max-w-[180px]">
-      <div className="h-6 bg-white/[0.06]" />
+    <div className="rounded-xl bg-landing-surface border border-landing-border-subtle overflow-hidden mx-auto max-w-[180px]">
+      <div className="h-6 bg-landing-surface-hover" />
       <div className="p-2.5 space-y-1">
         {[0, 1, 2, 3].map((i) => (
           <div key={i} className="flex items-center gap-1.5 p-1 rounded bg-white/[0.02]">
-            <div className="w-4 h-4 rounded-full bg-white/[0.05]" />
-            <div className="flex-1 h-1.5 rounded bg-white/[0.04]" />
-            <div className={`w-5 h-2.5 rounded-full ${i < 2 ? "bg-green-500/30" : "bg-white/[0.04]"}`} />
+            <div className="w-4 h-4 rounded-full bg-landing-surface" />
+            <div className="flex-1 h-1.5 rounded bg-landing-surface" />
+            <div className={`w-5 h-2.5 rounded-full ${i < 2 ? "bg-green-500/30" : "bg-landing-surface"}`} />
           </div>
         ))}
       </div>

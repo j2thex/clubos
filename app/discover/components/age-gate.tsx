@@ -73,7 +73,7 @@ export function AgeGate() {
 
       {/* Card — fade only, no slide or scale */}
       <div
-        className={`relative z-10 w-[380px] max-w-[calc(100vw-2rem)] rounded-2xl border border-white/[0.08] px-8 py-10 text-center transition-opacity duration-[1200ms] ease-in-out ${
+        className={`relative z-10 w-[380px] max-w-[calc(100vw-2rem)] rounded-2xl border border-landing-border px-8 py-10 text-center transition-opacity duration-[1200ms] ease-in-out ${
           exiting ? "opacity-0" : "opacity-100"
         }`}
         style={{
@@ -83,7 +83,7 @@ export function AgeGate() {
         }}
       >
         {/* 18+ */}
-        <p className="font-mono text-[120px] leading-none font-bold tracking-tighter text-white/90 select-none">
+        <p className="font-mono text-[120px] leading-none font-bold tracking-tighter text-landing-text select-none">
           18<span className="text-green-500">+</span>
         </p>
 
@@ -91,12 +91,12 @@ export function AgeGate() {
         <div className="mx-auto mt-4 mb-5 h-px w-16 bg-green-500/30" />
 
         {/* Subtitle */}
-        <p className="text-sm font-medium tracking-wide uppercase text-white/50 mb-3">
+        <p className="text-sm font-medium tracking-wide uppercase text-landing-text-secondary mb-3">
           {t("discover.ageGate.subtitle")}
         </p>
 
         {/* Body */}
-        <p className="text-sm leading-relaxed text-white/35 mb-8">
+        <p className="text-sm leading-relaxed text-landing-text-tertiary mb-8">
           {t("discover.ageGate.body")}
         </p>
 

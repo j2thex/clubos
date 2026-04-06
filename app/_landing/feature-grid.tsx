@@ -60,7 +60,7 @@ const FEATURES: Feature[] = [
 
 export function FeatureGrid({ t }: { t: (key: string) => string }) {
   return (
-    <section className="landing-dark px-6 py-20 sm:py-28 border-t border-white/[0.04]">
+    <section className="landing-dark px-6 py-20 sm:py-28 border-t border-landing-border-subtle">
       <div className="mx-auto max-w-5xl">
         <ScrollReveal>
           <h2 className="text-center text-3xl sm:text-4xl lg:text-5xl font-extralight tracking-tight">
@@ -74,7 +74,7 @@ export function FeatureGrid({ t }: { t: (key: string) => string }) {
         <div className="mt-14 grid grid-cols-1 sm:grid-cols-4 gap-3">
           {FEATURES.map((f, i) => (
             <ScrollReveal key={i} delay={i * 40} className={f.span ?? ""}>
-              <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-5 hover:bg-white/[0.06] transition-colors duration-300 h-full">
+              <div className="rounded-2xl bg-landing-surface border border-landing-border-subtle p-5 hover:bg-landing-surface-hover transition-colors duration-300 h-full">
                 <svg className="h-4 w-4 opacity-50 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                   {f.icon}
                 </svg>

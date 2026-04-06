@@ -8,6 +8,7 @@ import { DiscoverClient } from "./discover-client";
 import type { DiscoverClub, DiscoverEvent, DiscoverOffer, DiscoverQuest } from "./lib/types";
 import type { Metadata } from "next";
 import { getItemListJsonLd } from "@/lib/structured-data";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export const revalidate = 300; // 5-minute ISR
 
@@ -204,7 +205,7 @@ export default async function DiscoverPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(clubListJsonLd) }}
       />
       {/* Header */}
-      <header className="relative z-20 flex items-center justify-between px-6 py-4 border-b border-white/10">
+      <header className="relative z-20 flex items-center justify-between px-6 py-4 border-b border-landing-border">
         <Link href="/" className="text-xs font-mono tracking-widest uppercase opacity-80 hover:opacity-100 transition-opacity">
           {tr("landing.brandName")}
         </Link>
@@ -215,7 +216,8 @@ export default async function DiscoverPage() {
           >
             {tr("landing.heroPrimaryCta")}
           </Link>
-          <LanguageSwitcher variant="dark" />
+          <ThemeToggle />
+          <LanguageSwitcher variant="auto" />
         </div>
       </header>
 

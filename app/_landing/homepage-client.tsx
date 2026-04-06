@@ -11,8 +11,8 @@ import { useLanguage } from "@/lib/i18n/provider";
 const DiscoverMap = dynamic(() => import("../discover/components/discover-map"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full bg-[oklch(0.12_0.02_150)] animate-pulse flex items-center justify-center">
-      <span className="text-xs text-white/30 font-mono">Loading map...</span>
+    <div className="w-full h-full bg-landing-surface animate-pulse flex items-center justify-center">
+      <span className="text-xs text-landing-text-tertiary font-mono">Loading map...</span>
     </div>
   ),
 });
@@ -90,7 +90,7 @@ export function HomepageMap({
 
         {/* CTA button — centered */}
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center pointer-events-none gap-2">
-          <p className="text-xs text-white/60 font-medium">{t("discover.clubsNearYou")}</p>
+          <p className="text-xs text-landing-text-secondary font-medium">{t("discover.clubsNearYou")}</p>
           <Link
             href="/discover"
             className="pointer-events-auto px-6 py-3 rounded-full bg-white text-gray-900 font-bold text-sm shadow-xl hover:bg-gray-100 transition-colors"
@@ -101,8 +101,8 @@ export function HomepageMap({
       </div>
 
       {/* Tab navigation — standalone row below map */}
-      <div className="border-b border-white/[0.06] bg-[oklch(0.13_0.02_150)]">
-        <p className="text-[10px] uppercase tracking-wider text-white/40 font-medium px-4 pt-2">
+      <div className="border-b border-landing-border-subtle bg-landing-surface">
+        <p className="text-[10px] uppercase tracking-wider text-landing-text-tertiary font-medium px-4 pt-2">
           {t("discover.browseby")}
         </p>
       <div className="flex">
@@ -110,11 +110,11 @@ export function HomepageMap({
           <Link
             key={tab.key}
             href={`/discover#${tab.key}`}
-            className="flex-1 flex items-center justify-center gap-2 py-4 text-sm sm:text-base font-medium text-white/60 hover:text-white hover:bg-white/[0.05] transition-all border-r last:border-r-0 border-white/[0.06]"
+            className="flex-1 flex items-center justify-center gap-2 py-4 text-sm sm:text-base font-medium text-landing-text-secondary hover:text-landing-text hover:bg-landing-surface-hover transition-all border-r last:border-r-0 border-landing-border-subtle"
           >
             <span>{tab.icon}</span>
             <span>{locale === "es" ? tab.labelEs : tab.label}</span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-white/[0.08] text-white/50">
+            <span className="text-xs px-2 py-0.5 rounded-full bg-landing-surface-hover text-landing-text-secondary">
               {counts[tab.key]}
             </span>
           </Link>

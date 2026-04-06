@@ -11,13 +11,13 @@ export function Hero({
 }) {
   return (
     <section className="landing-dark relative min-h-svh flex flex-col">
-      <HeroArt />
+      <div className="hidden dark:block"><HeroArt /></div>
       {/* Top bar */}
       <div className="relative z-10 flex items-center justify-between px-6 pt-6 sm:px-10">
         <span className="text-xs font-mono tracking-widest uppercase opacity-60">
           {t("landing.brandName")}
         </span>
-        <LanguageSwitcher variant="dark" />
+        <LanguageSwitcher variant="auto" />
       </div>
 
       {/* Center content */}

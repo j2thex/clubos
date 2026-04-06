@@ -20,7 +20,7 @@ export function UseCases({ t }: { t: (key: string) => string }) {
   ];
 
   return (
-    <section className="landing-dark px-6 py-20 sm:py-28 border-t border-white/[0.04]">
+    <section className="landing-dark px-6 py-20 sm:py-28 border-t border-landing-border-subtle">
       <div className="mx-auto max-w-5xl">
         <ScrollReveal>
           <h2 className="text-center text-3xl sm:text-4xl lg:text-5xl font-extralight tracking-tight">
@@ -37,7 +37,7 @@ export function UseCases({ t }: { t: (key: string) => string }) {
             const Icon = ICONS[i];
             return (
               <ScrollReveal key={i} delay={i * 60}>
-                <Link href={c.example} className="block rounded-2xl bg-white/[0.03] border border-white/[0.06] p-5 hover:bg-white/[0.06] transition-colors duration-300 h-full group/card">
+                <Link href={c.example} className="block rounded-2xl bg-landing-surface border border-landing-border-subtle p-5 hover:bg-landing-surface-hover transition-colors duration-300 h-full group/card">
                   <Icon />
                   <h3 className="font-medium text-sm">{c.title}</h3>
                   <p className="mt-2 text-xs font-light opacity-60 leading-relaxed">{c.desc}</p>
@@ -57,7 +57,7 @@ export function UseCases({ t }: { t: (key: string) => string }) {
                 <Link
                   key={i}
                   href={c.example}
-                  className="snap-start shrink-0 w-[220px] rounded-2xl bg-white/[0.03] border border-white/[0.06] p-5"
+                  className="snap-start shrink-0 w-[220px] rounded-2xl bg-landing-surface border border-landing-border-subtle p-5"
                 >
                   <Icon />
                   <h3 className="font-medium text-sm">{c.title}</h3>

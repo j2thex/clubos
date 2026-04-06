@@ -40,7 +40,7 @@ export function OfferFinder({
     : offers;
 
   return (
-    <section className="landing-dark px-6 py-20 sm:py-28 border-t border-white/[0.04]">
+    <section className="landing-dark px-6 py-20 sm:py-28 border-t border-landing-border-subtle">
       <div className="mx-auto max-w-5xl">
         <h2 className="text-center text-3xl sm:text-4xl lg:text-5xl font-extralight tracking-tight">
           {labels.title}
@@ -56,7 +56,7 @@ export function OfferFinder({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={labels.placeholder}
-            className="w-full rounded-full bg-white/[0.06] border border-white/[0.08] px-5 py-3 text-sm placeholder:opacity-50 focus:outline-none focus:border-white/[0.15] transition-colors"
+            className="w-full rounded-full bg-landing-surface-hover border border-landing-border px-5 py-3 text-sm placeholder:opacity-50 focus:outline-none focus:border-white/[0.15] transition-colors"
           />
         </div>
 
@@ -66,19 +66,19 @@ export function OfferFinder({
             <Link
               key={a.id}
               href={`/${a.club_slug}/public`}
-              className="group rounded-2xl bg-white/[0.03] border border-white/[0.06] p-5 hover:bg-white/[0.06] transition-colors duration-300 block"
+              className="group rounded-2xl bg-landing-surface border border-landing-border-subtle p-5 hover:bg-landing-surface-hover transition-colors duration-300 block"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <h3 className="font-medium text-sm">{a.name}</h3>
                 </div>
                 {a.subtype && (
-                  <span className="text-[10px] font-medium uppercase tracking-wide opacity-50 bg-white/[0.06] rounded-full px-2 py-0.5 shrink-0">
+                  <span className="text-[10px] font-medium uppercase tracking-wide opacity-50 bg-landing-surface-hover rounded-full px-2 py-0.5 shrink-0">
                     {a.subtype}
                   </span>
                 )}
               </div>
-              <div className="mt-3 flex items-center gap-2 pt-3 border-t border-white/[0.04]">
+              <div className="mt-3 flex items-center gap-2 pt-3 border-t border-landing-border-subtle">
                 {a.club_logo ? (
                   <img src={a.club_logo} alt="" className="w-5 h-5 rounded object-cover" />
                 ) : (
