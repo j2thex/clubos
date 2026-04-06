@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import type { DiscoverClub, MapViewport, ActiveTab } from "../discover/lib/types";
 import { DEFAULT_VIEWPORT } from "../discover/lib/types";
-import { LocationSearch } from "../discover/components/location-search";
 import { useLanguage } from "@/lib/i18n/provider";
 
 const DiscoverMap = dynamic(() => import("../discover/components/discover-map"), {
@@ -80,14 +79,6 @@ export function HomepageMap({
           scrollZoom={false}
         />
 
-        {/* Search overlay */}
-        <div className="absolute top-3 left-3 right-3 z-10">
-          <LocationSearch
-            onLocationFound={(lat, lng) => flyTo(lat, lng, 13)}
-            locale={locale}
-          />
-        </div>
-
         {/* CTA button — centered */}
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center pointer-events-none gap-2">
           <p className="text-xs text-landing-text-secondary font-medium">{t("discover.clubsNearYou")}</p>
@@ -98,24 +89,31 @@ export function HomepageMap({
             {t("discover.exploreMap")} →
           </Link>
         </div>
-      </div>
 
-      {/* Tab navigation — compact row below map */}
-      <div className="px-2 sm:px-4 pt-2 pb-1">
-        <div className="flex gap-1">
-          {TABS.map((tab) => (
-            <Link
-              key={tab.key}
-              href={`/discover#${tab.key}`}
-              className="flex-1 min-w-0 flex items-center justify-center gap-1 py-2 rounded-lg text-xs sm:text-sm font-medium text-landing-text-secondary hover:text-landing-text hover:bg-landing-surface-hover transition-all"
-            >
-              <span className="shrink-0">{tab.icon}</span>
-              <span className="truncate">{locale === "es" ? tab.labelEs : tab.label}</span>
-              <span className="shrink-0 text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded-full bg-landing-surface-hover text-landing-text-secondary">
-                {counts[tab.key]}
-              </span>
-            </Link>
-          ))}
+        {/* Tab navigation — overlay at bottom of map, identical to discover page */}
+        <div className="absolute bottom-3 left-3 right-3 z-10">
+          <div className="bg-landing-surface-hover backdrop-blur-lg rounded-xl border border-landing-border">
+            <div className="px-2 sm:px-4 pt-2 pb-1">
+              <p className="text-[10px] uppercase tracking-wider text-landing-text-tertiary font-medium px-1 mb-1.5">
+                {t("discover.browseby")}
+              </p>
+              <div className="flex gap-1">
+                {TABS.map((tab) => (
+                  <Link
+                    key={tab.key}
+                    href={`/discover#${tab.key}`}
+                    className="flex-1 min-w-0 flex items-center justify-center gap-1 py-2 rounded-lg text-xs sm:text-sm font-medium text-landing-text-secondary hover:text-landing-text hover:bg-landing-surface-hover transition-all"
+                  >
+                    <span className="shrink-0">{tab.icon}</span>
+                    <span className="truncate">{locale === "es" ? tab.labelEs : tab.label}</span>
+                    <span className="shrink-0 text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded-full bg-landing-surface-hover text-landing-text-secondary">
+                      {counts[tab.key]}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </>
