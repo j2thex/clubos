@@ -287,16 +287,6 @@ export default async function Home() {
         questCount={quests.length}
       />
 
-      {/* Title */}
-      <div className="px-6 sm:px-10 pt-14 pb-8 sm:pt-16 sm:pb-10">
-        <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extralight tracking-tight">
-          {tr("discover.title")}
-        </h1>
-        <p className="mt-4 text-sm sm:text-base opacity-50 max-w-lg font-light leading-relaxed">
-          {tr("discover.subtitle")}
-        </p>
-      </div>
-
       {/* Upcoming Events */}
       {upcomingEvents.length > 0 && (
         <section className="px-6 py-12 border-t border-white/[0.04]">
