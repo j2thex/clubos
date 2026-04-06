@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { MessageSquare, X } from "lucide-react";
 import { toast } from "sonner";
-import { submitFeedback } from "@/app/feedback-action";
+import { submitFeedback } from "@/lib/feedback-action";
 import { useLanguage } from "@/lib/i18n/provider";
 
 type Category = "bug" | "idea" | "question";
