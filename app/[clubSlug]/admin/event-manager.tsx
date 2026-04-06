@@ -20,6 +20,7 @@ interface Event {
   description: string | null;
   date: string;
   time: string | null;
+  end_time: string | null;
   price: number | null;
   title_es: string | null;
   description_es: string | null;
@@ -53,9 +54,10 @@ export function EventManager({
   const [editDesc, setEditDesc] = useState("");
   const [editDate, setEditDate] = useState("");
   const [editTime, setEditTime] = useState("");
+  const [editEndTime, setEditEndTime] = useState("");
   const [editPrice, setEditPrice] = useState("");
   const [editLink, setEditLink] = useState("");
-  const [editReward, setEditReward] = useState("1");
+  const [editReward, setEditReward] = useState("0");
   const [editIsPublic, setEditIsPublic] = useState(false);
   const [editImage, setEditImage] = useState<File | null>(null);
   const [editIcon, setEditIcon] = useState<string | null>(null);
@@ -70,9 +72,10 @@ export function EventManager({
   const [newDesc, setNewDesc] = useState("");
   const [newDate, setNewDate] = useState("");
   const [newTime, setNewTime] = useState("");
+  const [newEndTime, setNewEndTime] = useState("");
   const [newPrice, setNewPrice] = useState("");
   const [newLink, setNewLink] = useState("");
-  const [newReward, setNewReward] = useState("1");
+  const [newReward, setNewReward] = useState("0");
   const [newIsPublic, setNewIsPublic] = useState(false);
   const [newImage, setNewImage] = useState<File | null>(null);
   const [newIcon, setNewIcon] = useState<string | null>(null);
@@ -105,6 +108,7 @@ export function EventManager({
     setEditDesc(ev.description ?? "");
     setEditDate(ev.date);
     setEditTime(ev.time ?? "");
+    setEditEndTime(ev.end_time ?? "");
     setEditPrice(ev.price != null ? String(ev.price) : "");
     setEditLink(ev.link ?? "");
     setEditReward(String(ev.reward_spins));
@@ -133,6 +137,7 @@ export function EventManager({
       fd.set("description", editDesc);
       fd.set("date", editDate);
       fd.set("time", editTime);
+      fd.set("end_time", editEndTime);
       fd.set("price", editPrice);
       fd.set("link", editLink);
       fd.set("reward_spins", editReward);
@@ -173,6 +178,7 @@ export function EventManager({
       fd.set("description", newDesc);
       fd.set("date", newDate);
       fd.set("time", newTime);
+      fd.set("end_time", newEndTime);
       fd.set("price", newPrice);
       fd.set("link", newLink);
       fd.set("reward_spins", newReward);
@@ -197,6 +203,7 @@ export function EventManager({
         setNewDesc("");
         setNewDate("");
         setNewTime("");
+        setNewEndTime("");
         setNewPrice("");
         setNewLink("");
         setNewReward("1");
@@ -317,11 +324,20 @@ export function EventManager({
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1">Time (optional)</label>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Start time (optional)</label>
                         <input
                           type="time"
                           value={editTime}
                           onChange={(e) => setEditTime(e.target.value)}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">End time (optional)</label>
+                        <input
+                          type="time"
+                          value={editEndTime}
+                          onChange={(e) => setEditEndTime(e.target.value)}
                           className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
                         />
                       </div>
@@ -644,11 +660,20 @@ export function EventManager({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Time (optional)</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Start time (optional)</label>
               <input
                 type="time"
                 value={newTime}
                 onChange={(e) => setNewTime(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">End time (optional)</label>
+              <input
+                type="time"
+                value={newEndTime}
+                onChange={(e) => setNewEndTime(e.target.value)}
                 className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
               />
             </div>
@@ -662,6 +687,7 @@ export function EventManager({
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
             >
               <option value="">{t("events.noRepeat")}</option>
+              <option value="daily">{t("events.daily")}</option>
               <option value="weekly">{t("events.weekly")}</option>
               <option value="biweekly">{t("events.biweekly")}</option>
               <option value="monthly">{t("events.monthly")}</option>
@@ -688,7 +714,8 @@ export function EventManager({
                   let count = 0;
                   let cur = new Date(start);
                   while (count < 52) {
-                    if (newRecurrence === "weekly") cur.setDate(cur.getDate() + 7);
+                    if (newRecurrence === "daily") cur.setDate(cur.getDate() + 1);
+                    else if (newRecurrence === "weekly") cur.setDate(cur.getDate() + 7);
                     else if (newRecurrence === "biweekly") cur.setDate(cur.getDate() + 14);
                     else if (newRecurrence === "monthly") {
                       const day = start.getDate();

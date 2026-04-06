@@ -11,7 +11,7 @@ export function PortalTabs({ tabs }: PortalTabsProps) {
 
   return (
     <div className="sm:hidden">
-      <div className="flex rounded-xl bg-white/[0.06] p-1 gap-1">
+      <div className="flex rounded-xl bg-landing-surface-hover p-1 gap-1">
         {tabs.map((tab, index) => (
           <button
             key={index}
@@ -19,7 +19,7 @@ export function PortalTabs({ tabs }: PortalTabsProps) {
             className={`flex-1 py-2 text-sm font-medium rounded-lg text-center transition-colors ${
               index === activeIndex
                 ? "bg-primary text-primary-foreground"
-                : "bg-transparent text-white/60"
+                : "bg-transparent text-landing-text-secondary"
             }`}
           >
             {tab.label}

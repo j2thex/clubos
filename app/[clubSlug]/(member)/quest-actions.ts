@@ -1,7 +1,6 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { revalidatePath } from "next/cache";
 import { notifyStaff } from "@/lib/staff-notify";
 
 export async function submitQuest(
@@ -61,6 +60,5 @@ export async function submitQuest(
     `🎯 Quest validation needed\n<b>${quest.title}</b>\nMember: ${member?.member_code ?? "Unknown"}`,
   );
 
-  revalidatePath(`/${clubSlug}`);
   return { ok: true };
 }

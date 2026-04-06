@@ -56,3 +56,6 @@ next-env.d.ts
 
 # turbopack
 .turbo/
+
+# internal docs (not for git)
+docs/

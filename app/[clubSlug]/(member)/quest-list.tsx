@@ -192,11 +192,12 @@ export function QuestList({
   const [isPending, startTransition] = useTransition();
   const [proofUrls, setProofUrls] = useState<Record<string, string>>({});
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const pendingSet = new Set(pendingQuestIds);
+  const [optimisticPending, setOptimisticPending] = useState<Set<string>>(new Set());
+  const pendingSet = new Set([...pendingQuestIds, ...optimisticPending]);
   const { t } = useLanguage();
 
   const [copiedToast, setCopiedToast] = useState(false);
-  const [hideCompleted, setHideCompleted] = useState(false);
+  const [hideCompleted, setHideCompleted] = useState(true);
 
   // Filter out expired quests
   const now = new Date();
@@ -238,9 +239,15 @@ export function QuestList({
       setExpandedId(quest.id);
     } else {
       // No proof needed — submit immediately
+      setOptimisticPending((prev) => new Set(prev).add(quest.id));
       startTransition(async () => {
-        await submitQuest(memberId, quest.id, clubSlug);
-        toast.success(t("quest.submittedToast"));
+        const result = await submitQuest(memberId, quest.id, clubSlug);
+        if ("error" in result) {
+          setOptimisticPending((prev) => { const next = new Set(prev); next.delete(quest.id); return next; });
+          toast.error(result.error);
+        } else {
+          toast.success(t("quest.submittedToast"));
+        }
       });
     }
   }
@@ -250,12 +257,18 @@ export function QuestList({
     const qType = quest.quest_type ?? "default";
     // Feedback requires text; default respects proof_mode
     if ((qType === "feedback" || quest.proof_mode === "required") && !proof) return;
+    setOptimisticPending((prev) => new Set(prev).add(quest.id));
     startTransition(async () => {
-      await submitQuest(memberId, quest.id, clubSlug, proof || undefined);
-      setProofUrls((prev) => { const next = { ...prev }; delete next[quest.id]; return next; });
-      setExpandedId(null);
-      const qType = quest.quest_type ?? "default";
-      toast.success(qType === "feedback" ? t("quest.feedbackSubmittedToast") : t("quest.submittedToast"));
+      const result = await submitQuest(memberId, quest.id, clubSlug, proof || undefined);
+      if ("error" in result) {
+        setOptimisticPending((prev) => { const next = new Set(prev); next.delete(quest.id); return next; });
+        toast.error(result.error);
+      } else {
+        setProofUrls((prev) => { const next = { ...prev }; delete next[quest.id]; return next; });
+        setExpandedId(null);
+        const qType2 = quest.quest_type ?? "default";
+        toast.success(qType2 === "feedback" ? t("quest.feedbackSubmittedToast") : t("quest.submittedToast"));
+      }
     });
   }
 

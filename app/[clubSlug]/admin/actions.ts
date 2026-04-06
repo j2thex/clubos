@@ -489,7 +489,7 @@ export async function addQuest(
   const description = (formData.get("description") as string)?.trim() || null;
   const link = (formData.get("link") as string)?.trim() || null;
   const rawSpins = formData.get("reward_spins");
-  const rewardSpins = rawSpins !== null && rawSpins !== "" ? Number(rawSpins) : 1;
+  const rewardSpins = rawSpins !== null && rawSpins !== "" ? Number(rawSpins) : 0;
   const multiUse = formData.get("multi_use") === "1";
   const isPublic = formData.get("is_public") === "1";
   const questType = (formData.get("quest_type") as string) || "default";
@@ -580,7 +580,7 @@ export async function updateQuest(
   const description = (formData.get("description") as string)?.trim() || null;
   const link = (formData.get("link") as string)?.trim() || null;
   const rawSpins = formData.get("reward_spins");
-  const rewardSpins = rawSpins !== null && rawSpins !== "" ? Number(rawSpins) : 1;
+  const rewardSpins = rawSpins !== null && rawSpins !== "" ? Number(rawSpins) : 0;
   const multiUse = formData.get("multi_use") === "1";
   const isPublic = formData.get("is_public") === "1";
   const questType = (formData.get("quest_type") as string) || "default";
@@ -705,7 +705,9 @@ function generateOccurrenceDates(startDate: string, rule: string, endDate: strin
 
   // Skip the first occurrence (that's the parent)
   while (dates.length < 52) {
-    if (rule === "weekly") {
+    if (rule === "daily") {
+      current.setDate(current.getDate() + 1);
+    } else if (rule === "weekly") {
       current.setDate(current.getDate() + 7);
     } else if (rule === "biweekly") {
       current.setDate(current.getDate() + 14);
@@ -733,10 +735,11 @@ export async function addEvent(
   const description = (formData.get("description") as string)?.trim() || null;
   const date = formData.get("date") as string;
   const time = (formData.get("time") as string) || null;
+  const endTime = (formData.get("end_time") as string) || null;
   const priceStr = (formData.get("price") as string)?.trim();
   const link = (formData.get("link") as string)?.trim() || null;
   const rawSpins = formData.get("reward_spins");
-  const rewardSpins = rawSpins !== null && rawSpins !== "" ? Number(rawSpins) : 1;
+  const rewardSpins = rawSpins !== null && rawSpins !== "" ? Number(rawSpins) : 0;
   const isPublic = formData.get("is_public") === "1";
   const icon = (formData.get("icon") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
@@ -771,7 +774,7 @@ export async function addEvent(
       .from("events")
       .insert({
         club_id: clubId,
-        title, description, date, time: time || null,
+        title, description, date, time: time || null, end_time: endTime || null,
         price: price || null, image_url: imageUrl,
         link: link || null, reward_spins: rewardSpins,
         is_public: isPublic, icon: icon || null,
@@ -792,7 +795,7 @@ export async function addEvent(
     if (occurrenceDates.length > 0) {
       const children = occurrenceDates.map(d => ({
         club_id: clubId,
-        title, description, date: d, time: time || null,
+        title, description, date: d, time: time || null, end_time: endTime || null,
         price: price || null, image_url: imageUrl,
         link: link || null, reward_spins: rewardSpins,
         is_public: isPublic, icon: icon || null,
@@ -814,6 +817,7 @@ export async function addEvent(
       description,
       date,
       time: time || null,
+      end_time: endTime || null,
       price: price || null,
       image_url: imageUrl,
       link: link || null,
@@ -843,10 +847,11 @@ export async function updateEvent(
   const description = (formData.get("description") as string)?.trim() || null;
   const date = formData.get("date") as string;
   const time = (formData.get("time") as string) || null;
+  const endTime = (formData.get("end_time") as string) || null;
   const priceStr = (formData.get("price") as string)?.trim();
   const link = (formData.get("link") as string)?.trim() || null;
   const rawSpins = formData.get("reward_spins");
-  const rewardSpins = rawSpins !== null && rawSpins !== "" ? Number(rawSpins) : 1;
+  const rewardSpins = rawSpins !== null && rawSpins !== "" ? Number(rawSpins) : 0;
   const isPublic = formData.get("is_public") === "1";
   const icon = (formData.get("icon") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
@@ -869,6 +874,7 @@ export async function updateEvent(
     description,
     date,
     time: time || null,
+    end_time: endTime || null,
     price: priceStr ? Number(priceStr) : null,
     icon,
     link,
@@ -1026,6 +1032,7 @@ export async function addMembershipPeriod(
   name: string,
   durationMonths: number,
   clubSlug: string,
+  price?: number | null,
 ): Promise<{ error: string } | { ok: true }> {
   if (!name.trim()) return { error: "Name is required" };
   if (durationMonths < 1) return { error: "Duration must be at least 1 month" };
@@ -1047,6 +1054,7 @@ export async function addMembershipPeriod(
     name: name.trim(),
     duration_months: durationMonths,
     display_order: nextOrder,
+    ...(price != null && { price }),
   });
 
   if (error) return { error: "Failed to add membership period" };

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { t } from "@/lib/i18n";
+import type { Locale } from "@/lib/i18n";
 
 interface SearchResult {
   display_name: string;
@@ -10,8 +12,12 @@ interface SearchResult {
 
 export function LocationSearch({
   onLocationFound,
+  locale = "en",
+  onClose,
 }: {
   onLocationFound: (lat: number, lng: number) => void;
+  locale?: Locale;
+  onClose?: () => void;
 }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -24,11 +30,22 @@ export function LocationSearch({
     function handleClick(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
+        onClose?.();
+      }
+    }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setOpen(false);
+        onClose?.();
       }
     }
     document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose]);
 
   function handleSearch(value: string) {
     setQuery(value);
@@ -69,7 +86,7 @@ export function LocationSearch({
   return (
     <div ref={containerRef} className="flex-1 relative">
       <div className="relative">
-        <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-landing-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
         <input
@@ -77,21 +94,22 @@ export function LocationSearch({
           value={query}
           onChange={(e) => handleSearch(e.target.value)}
           onFocus={() => results.length > 0 && setOpen(true)}
-          placeholder="Search a city or address..."
-          className="w-full pl-8 pr-3 py-2 rounded-lg bg-white/[0.08] border border-white/10 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-white/25 transition"
+          placeholder={t(locale, "discover.searchLocation")}
+          autoFocus
+          className="w-full pl-8 pr-3 py-2 rounded-lg bg-landing-surface-hover border border-landing-border text-sm text-landing-text placeholder:text-landing-text-secondary focus:outline-none focus:border-landing-border transition"
         />
         {loading && (
-          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3 border border-white/30 border-t-white/60 rounded-full animate-spin" />
+          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3 border border-landing-text-tertiary border-t-landing-text-secondary rounded-full animate-spin" />
         )}
       </div>
 
       {open && results.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-[oklch(0.12_0.02_150)] border border-white/15 rounded-lg shadow-xl overflow-hidden z-50">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-landing-surface border border-landing-border rounded-lg shadow-xl overflow-hidden z-50">
           {results.map((r, i) => (
             <button
               key={i}
               onClick={() => selectResult(r)}
-              className="w-full text-left px-3 py-2 text-sm text-white/80 hover:bg-white/[0.1] hover:text-white transition-colors border-b border-white/[0.06] last:border-0"
+              className="w-full text-left px-3 py-2 text-sm text-landing-text hover:bg-landing-surface-hover hover:text-landing-text transition-colors border-b border-landing-border-subtle last:border-0"
             >
               <span className="line-clamp-1">{r.display_name}</span>
             </button>

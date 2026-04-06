@@ -19,7 +19,7 @@ export function ClubDirectory({
   if (clubs.length === 0) return null;
 
   return (
-    <section className="landing-dark px-6 py-20 sm:py-28 border-t border-white/[0.04]">
+    <section className="landing-dark px-6 py-20 sm:py-28 border-t border-landing-border-subtle">
       <div className="mx-auto max-w-5xl">
         <ScrollReveal>
           <h2 className="text-center text-3xl sm:text-4xl lg:text-5xl font-extralight tracking-tight">
@@ -39,7 +39,7 @@ export function ClubDirectory({
             >
               <Link
                 href={`/${club.slug}/public`}
-                className="group block rounded-2xl bg-white/[0.03] border border-white/[0.06] overflow-hidden hover:bg-white/[0.06] transition-colors duration-300 h-full"
+                className="group block rounded-2xl bg-landing-surface border border-landing-border-subtle overflow-hidden hover:bg-landing-surface-hover transition-colors duration-300 h-full"
               >
                 <div
                   className="h-20 bg-cover bg-center relative"
@@ -56,10 +56,10 @@ export function ClubDirectory({
 
                 <div className="p-4 flex items-center gap-3">
                   {club.logo_url ? (
-                    <img src={club.logo_url} alt={club.name} className="w-9 h-9 rounded-lg object-cover shrink-0 -mt-7 ring-2 ring-[oklch(0.06_0.02_150)]" />
+                    <img src={club.logo_url} alt={club.name} className="w-9 h-9 rounded-lg object-cover shrink-0 -mt-7 ring-2 ring-background" />
                   ) : (
                     <div
-                      className="w-9 h-9 rounded-lg shrink-0 -mt-7 ring-2 ring-[oklch(0.06_0.02_150)] flex items-center justify-center text-white font-medium text-xs"
+                      className="w-9 h-9 rounded-lg shrink-0 -mt-7 ring-2 ring-background flex items-center justify-center text-white font-medium text-xs"
                       style={{ backgroundColor: club.primary_color || "#16a34a" }}
                     >
                       {club.name.charAt(0).toUpperCase()}

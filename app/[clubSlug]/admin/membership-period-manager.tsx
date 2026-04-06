@@ -7,6 +7,7 @@ interface Period {
   id: string;
   name: string;
   duration_months: number;
+  price: number | null;
 }
 
 export function MembershipPeriodManager({
@@ -20,6 +21,7 @@ export function MembershipPeriodManager({
 }) {
   const [newName, setNewName] = useState("");
   const [newDuration, setNewDuration] = useState("12");
+  const [newPrice, setNewPrice] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -28,12 +30,14 @@ export function MembershipPeriodManager({
     setError(null);
 
     startTransition(async () => {
-      const result = await addMembershipPeriod(clubId, newName, Number(newDuration), clubSlug);
+      const priceVal = newPrice.trim() ? Number(newPrice) : null;
+      const result = await addMembershipPeriod(clubId, newName, Number(newDuration), clubSlug, priceVal);
       if ("error" in result) {
         setError(result.error);
       } else {
         setNewName("");
         setNewDuration("12");
+        setNewPrice("");
       }
     });
   }
@@ -59,6 +63,11 @@ export function MembershipPeriodManager({
                   <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
                     {p.duration_months} {p.duration_months === 1 ? "month" : "months"}
                   </span>
+                  {p.price != null && (
+                    <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                      ${p.price}
+                    </span>
+                  )}
                 </div>
                 <button
                   onClick={() => handleDelete(p.id)}
@@ -92,6 +101,15 @@ export function MembershipPeriodManager({
             />
             <span className="text-xs text-gray-400">mo</span>
           </div>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            value={newPrice}
+            onChange={(e) => setNewPrice(e.target.value)}
+            placeholder="Price"
+            className="w-20 rounded-lg border border-gray-300 px-2 py-1.5 text-sm text-gray-900 text-center placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+          />
           <button
             onClick={handleAdd}
             disabled={isPending || !newName.trim()}

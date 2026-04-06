@@ -1,9 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { ThemeProvider } from "next-themes";
 import { getServerLocale } from "@/lib/i18n/server";
 import { LanguageProvider } from "@/lib/i18n/provider";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { FeedbackWidget } from "@/components/feedback-widget";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -71,18 +74,22 @@ export default async function RootLayout({
   const locale = await getServerLocale();
 
   return (
-    <html lang={locale}>
+    <html lang={locale} suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <LanguageProvider initialLocale={locale}>
-          {process.env.NEXT_PUBLIC_VERCEL_ENV === "preview" && (
-            <div className="bg-yellow-500 text-black text-center text-xs py-1 fixed top-0 w-full z-[9999]">
-              STAGING
-            </div>
-          )}
-          {children}
-        </LanguageProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <LanguageProvider initialLocale={locale}>
+            {process.env.NEXT_PUBLIC_VERCEL_ENV === "preview" && (
+              <div className="bg-yellow-500 text-black text-center text-xs py-1 fixed top-0 w-full z-[9999]">
+                STAGING
+              </div>
+            )}
+            {children}
+            <FeedbackWidget />
+            <Toaster position="top-center" richColors />
+          </LanguageProvider>
+        </ThemeProvider>
         <Analytics />
         <SpeedInsights />
       </body>

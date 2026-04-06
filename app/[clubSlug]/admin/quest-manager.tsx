@@ -69,7 +69,7 @@ export function QuestManager({
   const [editTitle, setEditTitle] = useState("");
   const [editDesc, setEditDesc] = useState("");
   const [editLink, setEditLink] = useState("");
-  const [editReward, setEditReward] = useState("1");
+  const [editReward, setEditReward] = useState("0");
   const [editMultiUse, setEditMultiUse] = useState(false);
   const [editIsPublic, setEditIsPublic] = useState(false);
   const [editImage, setEditImage] = useState<File | null>(null);
@@ -87,7 +87,7 @@ export function QuestManager({
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [newLink, setNewLink] = useState("");
-  const [newReward, setNewReward] = useState("1");
+  const [newReward, setNewReward] = useState("0");
   const [newMultiUse, setNewMultiUse] = useState(false);
   const [newIsPublic, setNewIsPublic] = useState(false);
   const [newImage, setNewImage] = useState<File | null>(null);

@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { t } from "@/lib/i18n";
+import type { Locale } from "@/lib/i18n";
 import type { ActiveTab } from "../lib/types";
 
 interface ListItem {
@@ -50,8 +52,8 @@ function ResultCard({
   return (
     <div
       onClick={onSelect}
-      className={`rounded-xl border cursor-pointer transition-all hover:border-white/25 hover:bg-white/[0.06] ${
-        selected ? "border-white/25 bg-white/[0.08] ring-1 ring-primary/30" : "border-white/10 bg-white/[0.04]"
+      className={`rounded-xl border cursor-pointer transition-all hover:border-landing-border hover:bg-landing-surface-hover ${
+        selected ? "border-landing-border bg-landing-surface-hover ring-1 ring-primary/30" : "border-landing-border bg-landing-surface"
       }`}
     >
       {/* Event image tile */}
@@ -76,9 +78,9 @@ function ResultCard({
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-base font-semibold text-white truncate">{item.title}</p>
+            <p className="text-base font-semibold text-landing-text truncate">{item.title}</p>
             {item.subtitle && (
-              <p className="text-sm text-white/60 truncate mt-0.5">{item.subtitle}</p>
+              <p className="text-sm text-landing-text-secondary truncate mt-0.5">{item.subtitle}</p>
             )}
           </div>
           {item.hasLocation && (
@@ -89,10 +91,10 @@ function ResultCard({
         {/* Event date/time */}
         {item.type === "event" && item.date && (
           <div className="flex items-center gap-2 mt-3 text-sm">
-            <span className="text-white/70 font-medium">{formatDate(item.date)}</span>
-            {item.time && <span className="text-white/50">{formatTime(item.time)}</span>}
+            <span className="text-landing-text-secondary font-medium">{formatDate(item.date)}</span>
+            {item.time && <span className="text-landing-text-secondary">{formatTime(item.time)}</span>}
             {item.price != null && item.price > 0 && (
-              <span className="ml-auto text-white/60 font-semibold">&euro;{item.price}</span>
+              <span className="ml-auto text-landing-text-secondary font-semibold">&euro;{item.price}</span>
             )}
             {(item.price == null || item.price === 0) && (
               <span className="ml-auto text-primary/80 text-xs font-medium">Free</span>
@@ -102,7 +104,7 @@ function ResultCard({
 
         {/* Offer count */}
         {item.type === "offer" && item.offer_count != null && (
-          <p className="text-xs text-white/50 mt-2">{item.offer_count} offers available</p>
+          <p className="text-xs text-landing-text-secondary mt-2">{item.offer_count} offers available</p>
         )}
 
         {/* Quest reward */}
@@ -114,7 +116,7 @@ function ResultCard({
         {item.tags && item.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-3">
             {item.tags.slice(0, 4).map((tag) => (
-              <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-white/[0.08] text-white/60">
+              <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-landing-surface-hover text-landing-text-secondary">
                 {tag}
               </span>
             ))}
@@ -122,7 +124,7 @@ function ResultCard({
         )}
 
         {/* Actions */}
-        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/[0.08]">
+        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-landing-border">
           <Link
             href={`/${item.slug}/public`}
             className="text-xs font-medium px-3 py-1.5 rounded-full bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
@@ -135,7 +137,7 @@ function ResultCard({
               href={directionsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs font-medium px-3 py-1.5 rounded-full bg-white/[0.08] text-white/60 hover:bg-white/[0.12] hover:text-white/80 transition-colors flex items-center gap-1"
+              className="text-xs font-medium px-3 py-1.5 rounded-full bg-landing-surface-hover text-landing-text-secondary hover:bg-landing-surface-hover hover:text-landing-text transition-colors flex items-center gap-1"
               onClick={(e) => e.stopPropagation()}
             >
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -151,23 +153,32 @@ function ResultCard({
   );
 }
 
+const TAB_HEADING_KEYS: Record<ActiveTab, string> = {
+  clubs: "discover.allClubs",
+  events: "discover.allEvents",
+  offers: "discover.allOffers",
+  quests: "discover.allQuests",
+};
+
 export function ResultsGrid({
   items,
   selectedId,
   onSelect,
   activeTab,
+  locale = "en",
 }: {
   items: ListItem[];
   selectedId: string | null;
   onSelect: (id: string, lat?: number | null, lng?: number | null) => void;
   activeTab: ActiveTab;
+  locale?: Locale;
 }) {
   if (items.length === 0) {
     return (
       <div className="flex items-center justify-center py-16 px-6">
         <div className="text-center">
-          <p className="text-sm text-white/50">No {activeTab} found</p>
-          <p className="text-xs text-white/30 mt-1">Try adjusting your filters</p>
+          <p className="text-sm text-landing-text-secondary">No {activeTab} found</p>
+          <p className="text-xs text-landing-text-tertiary mt-1">Try adjusting your filters</p>
         </div>
       </div>
     );
@@ -175,7 +186,10 @@ export function ResultsGrid({
 
   return (
     <div className="px-4 py-6 md:px-6 lg:px-8">
-      <p className="text-sm text-white/50 mb-4 font-mono">{items.length} {activeTab}</p>
+      <div className="flex items-baseline gap-2 mb-4">
+        <h2 className="text-sm font-semibold text-landing-text">{t(locale, TAB_HEADING_KEYS[activeTab])}</h2>
+        <span className="text-xs text-landing-text-tertiary">{t(locale, "discover.resultsCount", { count: items.length })}</span>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {items.map((item) => (
           <ResultCard

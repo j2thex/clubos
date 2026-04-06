@@ -13,6 +13,7 @@ interface Event {
   description_es: string | null;
   date: string;
   time: string | null;
+  end_time: string | null;
   price: number | null;
   image_url: string | null;
   link: string | null;
@@ -207,7 +208,7 @@ export function EventsClient({
                     <p className="font-semibold text-gray-900">{localized(ev.title, ev.title_es, locale)}</p>
                     <p className="text-xs text-gray-500 mt-1">
                       {formatDate(ev.date)}
-                      {ev.time && ` at ${formatTime(ev.time)}`}
+                      {ev.time && ` at ${formatTime(ev.time)}${ev.end_time ? ` – ${formatTime(ev.end_time)}` : ""}`}
                     </p>
                   </div>
                   <div className="text-right shrink-0">
@@ -326,7 +327,7 @@ export function EventsClient({
                           {localized(ev.title, ev.title_es, locale)}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {ev.time ? formatTime(ev.time) : t("events.allDay")}
+                          {ev.time ? `${formatTime(ev.time)}${ev.end_time ? ` – ${formatTime(ev.end_time)}` : ""}` : t("events.allDay")}
                           {ev.price != null
                             ? ` · $${Number(ev.price).toFixed(2)}`
                             : ` · ${t("common.free")}`}
