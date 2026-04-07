@@ -30,11 +30,12 @@ const ACTION_CONFIG: Record<string, { label: string; color: string }> = {
   walkin_order: { label: "Walk-in order", color: "bg-amber-100 text-amber-700" },
   offer_order_fulfilled: { label: "Fulfilled order", color: "bg-amber-100 text-amber-700" },
   offer_walkin_order: { label: "Walk-in order", color: "bg-amber-100 text-amber-700" },
+  email_collected: { label: "Email collected", color: "bg-indigo-100 text-indigo-700" },
 };
 
 const CATEGORIES: { key: string; label: string; actions: string[]; color: string }[] = [
   { key: "all", label: "All", actions: [], color: "bg-gray-100 text-gray-700" },
-  { key: "members", label: "Members", actions: ["member_created", "role_assigned", "membership_assigned", "membership_prolongated", "validity_updated", "referral_reward", "quest_auto_completed"], color: "bg-blue-100 text-blue-700" },
+  { key: "members", label: "Members", actions: ["member_created", "role_assigned", "membership_assigned", "membership_prolongated", "validity_updated", "referral_reward", "quest_auto_completed", "email_collected"], color: "bg-blue-100 text-blue-700" },
   { key: "spins", label: "Spins", actions: ["member_spin", "spin_performed"], color: "bg-purple-100 text-purple-700" },
   { key: "quests", label: "Quests", actions: ["quest_validated", "quest_approved", "quest_declined"], color: "bg-green-100 text-green-700" },
   { key: "orders", label: "Orders", actions: ["offer_order_fulfilled", "offer_walkin_order", "order_fulfilled", "walkin_order"], color: "bg-amber-100 text-amber-700" },

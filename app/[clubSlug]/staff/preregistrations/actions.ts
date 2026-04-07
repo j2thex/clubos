@@ -15,7 +15,7 @@ export async function confirmPreregistration(
 
   const { data: prereg } = await supabase
     .from("preregistrations")
-    .select("id, club_id, email, visit_date, num_visitors, status")
+    .select("id, club_id, email, visit_date, num_visitors, status, member_id")
     .eq("id", preregId)
     .single();
 
@@ -33,15 +33,32 @@ export async function confirmPreregistration(
 
   if (error) return { error: "Failed to confirm" };
 
+  // Activate auto-registered member
+  let memberCode: string | null = null;
+  if (prereg.member_id) {
+    const { data: member } = await supabase
+      .from("members")
+      .select("member_code")
+      .eq("id", prereg.member_id)
+      .single();
+    memberCode = member?.member_code ?? null;
+
+    await supabase
+      .from("members")
+      .update({ status: "active" })
+      .eq("id", prereg.member_id);
+  }
+
   await logActivity({
     clubId: prereg.club_id,
     staffMemberId,
     action: "preregistration_confirmed",
-    targetMemberCode: null,
-    details: `${prereg.email} — ${prereg.visit_date} (${prereg.num_visitors} visitors)`,
+    targetMemberCode: memberCode,
+    details: `${prereg.email} — ${prereg.visit_date} (${prereg.num_visitors} visitors)${memberCode ? ` — member ${memberCode} activated` : ""}`,
   });
 
   revalidatePath(`/${clubSlug}/staff/preregistrations`);
+  revalidatePath(`/${clubSlug}/staff/members`);
   return { ok: true };
 }
 
@@ -55,7 +72,7 @@ export async function denyPreregistration(
 
   const { data: prereg } = await supabase
     .from("preregistrations")
-    .select("id, club_id, email, visit_date, num_visitors, status")
+    .select("id, club_id, email, visit_date, num_visitors, status, member_id")
     .eq("id", preregId)
     .single();
 
@@ -73,14 +90,20 @@ export async function denyPreregistration(
 
   if (error) return { error: "Failed to deny" };
 
+  // Delete auto-registered member
+  if (prereg.member_id) {
+    await supabase.from("members").delete().eq("id", prereg.member_id);
+  }
+
   await logActivity({
     clubId: prereg.club_id,
     staffMemberId,
     action: "preregistration_denied",
     targetMemberCode: null,
-    details: `${prereg.email} — ${prereg.visit_date} (${prereg.num_visitors} visitors)`,
+    details: `${prereg.email} — ${prereg.visit_date} (${prereg.num_visitors} visitors)${prereg.member_id ? " — auto-registered member removed" : ""}`,
   });
 
   revalidatePath(`/${clubSlug}/staff/preregistrations`);
+  revalidatePath(`/${clubSlug}/staff/members`);
   return { ok: true };
 }

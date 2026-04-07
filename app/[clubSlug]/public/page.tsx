@@ -17,6 +17,7 @@ import { PublicEventsClient } from "./public-events-client";
 import { getClubJsonLd } from "@/lib/structured-data";
 import { MembersOnlyTeaser } from "@/components/club/members-only-teaser";
 import { WorkingHoursDisplay } from "@/components/club/working-hours-display";
+import { PublicQuestCard } from "./public-quest-card";
 
 export async function generateMetadata({
   params,
@@ -320,49 +321,20 @@ export default async function PublicProfilePage({
                 </div>
               )}
               {(quests ?? []).map((q) => (
-                <div key={q.id} className="bg-white rounded-2xl shadow p-4">
-                  <div className="flex items-center gap-4">
-                    {q.image_url ? (
-                      <img src={q.image_url} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-gray-100 text-gray-300">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 text-sm">{localized(q.title, q.title_es, locale)}</p>
-                      {q.description && (
-                        <p className="text-xs text-gray-400">{localized(q.description, q.description_es, locale)}</p>
-                      )}
-                      {q.link && (() => {
-                        const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(q.link!);
-                        const href = isEmail
-                          ? `mailto:${q.link}`
-                          : q.link!.match(/^https?:\/\//) ? q.link! : `https://${q.link}`;
-                        const display = isEmail
-                          ? q.link!
-                          : q.link!.replace(/^https?:\/\//, "").replace(/\/$/, "");
-                        return (
-                          <a
-                            href={href}
-                            target={isEmail ? undefined : "_blank"}
-                            rel={isEmail ? undefined : "noopener noreferrer"}
-                            className="inline-block mt-1 text-xs font-medium club-primary underline truncate max-w-[200px]"
-                          >
-                            {display.length > 40 ? `${display.slice(0, 37)}...` : display}
-                          </a>
-                        );
-                      })()}
-                    </div>
-                    {q.reward_spins > 0 && (
-                      <span className="shrink-0 text-xs club-tint-text font-medium px-2 py-0.5 club-tint-bg rounded-full">
-                        +{q.reward_spins} spin{q.reward_spins === 1 ? "" : "s"}
-                      </span>
-                    )}
-                  </div>
-                </div>
+                <PublicQuestCard
+                  key={q.id}
+                  quest={{
+                    id: q.id,
+                    title: q.title,
+                    description: q.description,
+                    title_es: q.title_es,
+                    description_es: q.description_es,
+                    image_url: q.image_url,
+                    link: q.link,
+                    reward_spins: q.reward_spins,
+                  }}
+                  clubSlug={clubSlug}
+                />
               ))}
               <MembersOnlyTeaser count={hiddenQuestsCount ?? 0} locale={locale} />
             </div>
@@ -389,6 +361,7 @@ export default async function PublicProfilePage({
                 link: ev.link,
                 reward_spins: ev.reward_spins,
               }))}
+              clubSlug={clubSlug}
             />
             <MembersOnlyTeaser count={hiddenEventsCount ?? 0} locale={locale} />
           </div>

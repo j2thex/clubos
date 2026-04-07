@@ -167,6 +167,47 @@ export type Database = {
           },
         ];
       };
+      email_campaigns: {
+        Row: {
+          id: string;
+          club_id: string;
+          subject: string;
+          body_markdown: string;
+          segment_filters: Record<string, unknown>;
+          recipient_count: number;
+          sent_at: string;
+          sent_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          club_id: string;
+          subject: string;
+          body_markdown: string;
+          segment_filters?: Record<string, unknown>;
+          recipient_count: number;
+          sent_at?: string;
+          sent_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          club_id?: string;
+          subject?: string;
+          body_markdown?: string;
+          segment_filters?: Record<string, unknown>;
+          recipient_count?: number;
+          sent_at?: string;
+          sent_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "email_campaigns_club_id_fkey";
+            columns: ["club_id"];
+            isOneToOne: false;
+            referencedRelation: "clubs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       members: {
         Row: {
           id: string;
@@ -174,6 +215,8 @@ export type Database = {
           member_code: string;
           pin_hash: string;
           full_name: string | null;
+          email: string | null;
+          email_opt_out: boolean;
           role_id: string | null;
           spin_balance: number;
           status: string;
@@ -191,6 +234,8 @@ export type Database = {
           member_code: string;
           pin_hash: string;
           full_name?: string | null;
+          email?: string | null;
+          email_opt_out?: boolean;
           role_id?: string | null;
           spin_balance?: number;
           status?: string;
@@ -208,6 +253,8 @@ export type Database = {
           member_code?: string;
           pin_hash?: string;
           full_name?: string | null;
+          email?: string | null;
+          email_opt_out?: boolean;
           role_id?: string | null;
           spin_balance?: number;
           status?: string;

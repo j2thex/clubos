@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { submitQuest } from "./quest-actions";
+import { submitQuest, submitEmailQuest } from "./quest-actions";
 import { useLanguage } from "@/lib/i18n/provider";
 import { localized, type Locale } from "@/lib/i18n";
 import { DynamicIcon } from "@/components/dynamic-icon";
@@ -234,6 +234,11 @@ export function QuestList({
   function handleMarkDone(quest: Quest) {
     const mode = quest.proof_mode ?? "none";
     const qType = quest.quest_type ?? "default";
+    // Email collect quests expand for email input
+    if (qType === "email_collect") {
+      setExpandedId(quest.id);
+      return;
+    }
     // Feedback quests always expand for text input
     if (qType === "feedback" || (mode !== "none" && qType !== "tutorial")) {
       setExpandedId(quest.id);
@@ -250,6 +255,26 @@ export function QuestList({
         }
       });
     }
+  }
+
+  function handleEmailSubmit(quest: Quest) {
+    const email = proofUrls[quest.id]?.trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error(t("quest.emailPlaceholder"));
+      return;
+    }
+    setOptimisticPending((prev) => new Set(prev).add(quest.id));
+    startTransition(async () => {
+      const result = await submitEmailQuest(memberId, quest.id, clubSlug, email);
+      if ("error" in result) {
+        setOptimisticPending((prev) => { const next = new Set(prev); next.delete(quest.id); return next; });
+        toast.error(result.error);
+      } else {
+        setProofUrls((prev) => { const next = { ...prev }; delete next[quest.id]; return next; });
+        setExpandedId(null);
+        toast.success(t("quest.submittedToast"));
+      }
+    });
   }
 
   function handleSubmit(quest: Quest) {
@@ -305,6 +330,16 @@ export function QuestList({
         <div className={`${baseClass} ${colorClass}`}>
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          </svg>
+        </div>
+      );
+    }
+
+    if (qType === "email_collect") {
+      return (
+        <div className={`${baseClass} ${colorClass}`}>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
         </div>
       );
@@ -424,7 +459,7 @@ export function QuestList({
                       disabled={isPending}
                       className="text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50 transition-colors"
                     >
-                      {isFeedback ? t("quest.shareFeedback") : t("quest.markDone")}
+                      {isFeedback ? t("quest.shareFeedback") : qType === "email_collect" ? t("quest.shareEmail") : t("quest.markDone")}
                     </button>
                   </>
                 )}
@@ -441,8 +476,29 @@ export function QuestList({
               <ReferralShare clubSlug={clubSlug} memberCode={memberCode} clubName={clubName} />
             )}
 
+            {/* Email collect input */}
+            {expandedId === q.id && qType === "email_collect" && (
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  value={proofUrls[q.id] ?? ""}
+                  onChange={(e) => setProofUrls((prev) => ({ ...prev, [q.id]: e.target.value }))}
+                  placeholder={t("quest.emailPlaceholder")}
+                  autoFocus
+                  className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-700 placeholder:text-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300 transition"
+                />
+                <button
+                  onClick={() => handleEmailSubmit(q)}
+                  disabled={isPending || !proofUrls[q.id]?.trim()}
+                  className="text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-50 transition-colors shrink-0 self-end"
+                >
+                  {isPending ? "..." : t("quest.emailSubmit")}
+                </button>
+              </div>
+            )}
+
             {/* Feedback textarea or proof input */}
-            {expandedId === q.id && (
+            {expandedId === q.id && qType !== "email_collect" && (
               <div className="flex gap-2">
                 {isFeedback ? (
                   <textarea

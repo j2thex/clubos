@@ -5,6 +5,19 @@ import { hashPassword, createOwnerToken, setOwnerCookie } from "@/lib/auth";
 import { generateSlug } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
 
+/** Resolve shortened Google Maps URLs (maps.app.goo.gl) to full URLs */
+async function resolveGoogleMapsUrl(url: string): Promise<string> {
+  if (url.includes("maps.app.goo.gl") || url.includes("goo.gl/maps")) {
+    try {
+      const res = await fetch(url, { redirect: "follow" });
+      return res.url;
+    } catch {
+      return url;
+    }
+  }
+  return url;
+}
+
 /** Extract place name and coordinates from a Google Maps URL */
 function parseGoogleMapsUrl(url: string): { name: string | null; lat: number | null; lng: number | null } {
   let name: string | null = null;
@@ -35,11 +48,12 @@ export async function createClubFromGoogleMaps(
     return { error: "Unauthorized" };
   }
 
-  if (!mapsUrl || !mapsUrl.includes("google")) {
+  if (!mapsUrl || (!mapsUrl.includes("google") && !mapsUrl.includes("goo.gl"))) {
     return { error: "Please provide a valid Google Maps URL" };
   }
 
-  const parsed = parseGoogleMapsUrl(mapsUrl);
+  const resolvedUrl = await resolveGoogleMapsUrl(mapsUrl.trim());
+  const parsed = parseGoogleMapsUrl(resolvedUrl);
   if (!parsed.name) {
     return { error: "Could not extract place name from URL. Ensure the URL contains /place/Name" };
   }

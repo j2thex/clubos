@@ -12,6 +12,9 @@ import { TagManager } from "../../tag-manager";
 import { LocationManager } from "../../location-manager";
 import { WorkingHoursManager } from "../../working-hours-manager";
 import { CollapsibleSection } from "@/components/collapsible-section";
+import { EmailCampaignManager } from "../../email-campaign-manager";
+import { getCampaignHistory, getEmailStats } from "../../email-actions";
+import { getOwnerFromCookie } from "@/lib/auth";
 
 export default async function SettingsPage({
   params,
@@ -23,14 +26,14 @@ export default async function SettingsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, login_mode, invite_only, invite_mode, hide_member_login, preregistration_enabled, tags, telegram_bot_token, telegram_chat_id, notification_secret, latitude, longitude, address, city, country, spin_enabled, working_hours, spin_display_decimals, spin_cost")
+    .select("id, login_mode, invite_only, invite_mode, hide_member_login, preregistration_enabled, auto_registration, tags, telegram_bot_token, telegram_chat_id, notification_secret, latitude, longitude, address, city, country, spin_enabled, working_hours, spin_display_decimals, spin_cost")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
 
   if (!club) notFound();
 
-  const [{ data: branding }, { data: segments }, { data: roles }, { data: membershipPeriods }, { data: galleryImages }, { data: inviteButtons }] = await Promise.all([
+  const [{ data: branding }, { data: segments }, { data: roles }, { data: membershipPeriods }, { data: galleryImages }, { data: inviteButtons }, { data: emailQuests }, { data: emailEvents }, { data: emailOffers }] = await Promise.all([
     supabase
       .from("club_branding")
       .select("logo_url, cover_url, primary_color, secondary_color, hero_content, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website, google_place_id")
@@ -65,6 +68,30 @@ export default async function SettingsPage({
       .select("id, type, label, url, icon_url, display_order")
       .eq("club_id", club.id)
       .order("display_order", { ascending: true }),
+    supabase
+      .from("quests")
+      .select("id, title")
+      .eq("club_id", club.id)
+      .eq("active", true)
+      .order("display_order", { ascending: true }),
+    supabase
+      .from("events")
+      .select("id, title")
+      .eq("club_id", club.id)
+      .eq("active", true)
+      .order("date", { ascending: false })
+      .limit(20),
+    supabase
+      .from("club_offers")
+      .select("id, offer_catalog(name)")
+      .eq("club_id", club.id),
+  ]);
+
+  // Fetch email-specific data
+  const [emailCount, campaigns, ownerSession] = await Promise.all([
+    getEmailStats(club.id),
+    getCampaignHistory(club.id),
+    getOwnerFromCookie(),
   ]);
 
   return (
@@ -98,6 +125,7 @@ export default async function SettingsPage({
         inviteMode={club.invite_mode ?? "form"}
         hideMemberLogin={club.hide_member_login ?? false}
         preregistrationEnabled={club.preregistration_enabled ?? false}
+        autoRegistration={club.auto_registration ?? false}
         inviteButtons={(inviteButtons ?? []).map((b) => ({
           id: b.id,
           type: b.type,
@@ -181,6 +209,22 @@ export default async function SettingsPage({
           spinEnabled={club.spin_enabled ?? true}
           spinDisplayDecimals={club.spin_display_decimals ?? 0}
           spinCost={club.spin_cost ?? 1}
+        />
+      </CollapsibleSection>
+      <CollapsibleSection title="Email Campaigns">
+        <EmailCampaignManager
+          clubId={club.id}
+          clubSlug={clubSlug}
+          emailCount={emailCount}
+          roles={(roles ?? []).map((r) => ({ id: r.id, name: r.name }))}
+          quests={(emailQuests ?? []).map((q) => ({ id: q.id, title: q.title }))}
+          events={(emailEvents ?? []).map((e) => ({ id: e.id, title: e.title }))}
+          offers={(emailOffers ?? []).map((o) => {
+            const catalog = Array.isArray(o.offer_catalog) ? o.offer_catalog[0] : o.offer_catalog;
+            return { id: o.id, name: catalog?.name ?? "Unknown" };
+          })}
+          campaigns={campaigns}
+          ownerId={ownerSession?.owner_id ?? null}
         />
       </CollapsibleSection>
     </div>

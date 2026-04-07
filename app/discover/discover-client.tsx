@@ -296,7 +296,7 @@ export function DiscoverClient({
       )}
 
       {/* Section 1: Map */}
-      <section ref={mapSectionRef} className="relative h-[60svh] md:h-[50vh]">
+      <section ref={mapSectionRef} className="relative h-[90svh] md:h-[85vh]">
         {/* Search + near-me overlay */}
         <div className="absolute top-3 left-3 right-3 z-10 flex gap-2">
           {showSearch ? (
@@ -336,6 +336,7 @@ export function DiscoverClient({
           onSelectMarker={handleSelectItem}
           onDeselectMarker={handleDeselectItem}
           activeTab={activeTab}
+          locale={locale}
         />
       </section>
 
