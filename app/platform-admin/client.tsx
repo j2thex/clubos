@@ -294,7 +294,7 @@ export function PlatformAdminClient({
                           <button
                             onClick={() => startTransition(async () => { await approveClub(c.id); })}
                             disabled={isPending}
-                            className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-500/20 text-green-300 hover:bg-green-500/30 disabled:opacity-50 transition-colors"
+                            className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-50 transition-colors"
                           >
                             Approve
                           </button>
