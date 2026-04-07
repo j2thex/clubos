@@ -71,16 +71,16 @@ interface UnapprovedOffer {
 }
 
 const ACTION_BADGES: Record<string, { label: string; color: string }> = {
-  member_created: { label: "New member", color: "bg-green-500/20 text-green-300" },
-  spin_performed: { label: "Spin", color: "bg-purple-500/20 text-purple-300" },
-  quest_validated: { label: "Quest", color: "bg-blue-500/20 text-blue-300" },
-  quest_approved: { label: "Quest", color: "bg-blue-500/20 text-blue-300" },
-  checkin: { label: "Check-in", color: "bg-green-500/20 text-green-300" },
-  order_fulfilled: { label: "Order", color: "bg-amber-500/20 text-amber-300" },
-  offer_order_fulfilled: { label: "Order", color: "bg-amber-500/20 text-amber-300" },
-  offer_walkin_order: { label: "Walk-in", color: "bg-amber-500/20 text-amber-300" },
-  role_assigned: { label: "Role", color: "bg-blue-500/20 text-blue-300" },
-  validity_updated: { label: "Validity", color: "bg-cyan-500/20 text-cyan-300" },
+  member_created: { label: "New member", color: "bg-green-100 text-green-700" },
+  spin_performed: { label: "Spin", color: "bg-purple-100 text-purple-700" },
+  quest_validated: { label: "Quest", color: "bg-blue-100 text-blue-700" },
+  quest_approved: { label: "Quest", color: "bg-blue-100 text-blue-700" },
+  checkin: { label: "Check-in", color: "bg-green-100 text-green-700" },
+  order_fulfilled: { label: "Order", color: "bg-amber-100 text-amber-700" },
+  offer_order_fulfilled: { label: "Order", color: "bg-amber-100 text-amber-700" },
+  offer_walkin_order: { label: "Walk-in", color: "bg-amber-100 text-amber-700" },
+  role_assigned: { label: "Role", color: "bg-blue-100 text-blue-700" },
+  validity_updated: { label: "Validity", color: "bg-cyan-100 text-cyan-700" },
 };
 
 function timeAgo(iso: string): string {
@@ -201,21 +201,21 @@ export function PlatformAdminClient({
 
         {/* Operational Alerts */}
         {pendingTotal > 0 && (
-          <div className="bg-amber-500/10 rounded-xl border border-amber-500/20 p-5 space-y-3">
-            <h2 className="text-sm font-semibold text-amber-300 uppercase tracking-wide">Alerts</h2>
+          <div className="bg-amber-50 rounded-xl border border-amber-200 p-5 space-y-3">
+            <h2 className="text-sm font-semibold text-amber-700 uppercase tracking-wide">Alerts</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
               {stats.pendingQuests > 0 && (
-                <div className="text-amber-200">
+                <div className="text-amber-800">
                   <span className="font-mono text-lg font-bold">{stats.pendingQuests}</span> pending quest verifications
                 </div>
               )}
               {stats.pendingInvites > 0 && (
-                <div className="text-amber-200">
+                <div className="text-amber-800">
                   <span className="font-mono text-lg font-bold">{stats.pendingInvites}</span> invite requests
                 </div>
               )}
               {stats.expiringMembers > 0 && (
-                <div className="text-amber-200">
+                <div className="text-amber-800">
                   <span className="font-mono text-lg font-bold">{stats.expiringMembers}</span> members expiring this week
                 </div>
               )}
@@ -279,7 +279,7 @@ export function PlatformAdminClient({
                         ) : c.approved && !c.claimed ? (
                           <>
                             <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-300">Live</span>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-500/20 text-gray-400">unclaimed</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600">unclaimed</span>
                           </>
                         ) : (
                           <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-300">Live</span>
@@ -301,7 +301,7 @@ export function PlatformAdminClient({
                           <button
                             onClick={() => startTransition(async () => { await rejectClub(c.id); })}
                             disabled={isPending}
-                            className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-500/20 text-gray-400 hover:bg-gray-500/30 disabled:opacity-50 transition-colors"
+                            className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50 transition-colors"
                           >
                             Take Offline
                           </button>
@@ -313,7 +313,7 @@ export function PlatformAdminClient({
                             else setError(res.error);
                           })}
                           disabled={isPending}
-                          className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 disabled:opacity-50 transition-colors"
+                          className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 disabled:opacity-50 transition-colors"
                         >
                           Admin ↗
                         </button>
@@ -341,7 +341,7 @@ export function PlatformAdminClient({
                                 } else setError(res.error);
                               })}
                               disabled={isPending}
-                              className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-green-500/20 text-green-300 hover:bg-green-500/30 disabled:opacity-50"
+                              className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-50"
                             >
                               Go
                             </button>
@@ -350,7 +350,7 @@ export function PlatformAdminClient({
                         ) : (
                           <button
                             onClick={() => { setSetupClubId(c.id); setSetupType("general"); }}
-                            className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 transition-colors"
+                            className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors"
                           >
                             Setup
                           </button>
@@ -399,7 +399,7 @@ export function PlatformAdminClient({
                     <span className="text-landing-text-tertiary mx-2">from</span>
                     <span className="text-landing-text-secondary">{o.clubName}</span>
                   </div>
-                  <button onClick={() => handleApproveOffer(o.id)} disabled={isPending} className="text-xs font-semibold px-3 py-1 rounded-full bg-green-500/20 text-green-300 hover:bg-green-500/30 disabled:opacity-50 transition-colors">
+                  <button onClick={() => handleApproveOffer(o.id)} disabled={isPending} className="text-xs font-semibold px-3 py-1 rounded-full bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-50 transition-colors">
                     Approve
                   </button>
                 </div>
@@ -430,8 +430,8 @@ export function PlatformAdminClient({
         )}
 
         {/* Create from Google Maps (collapsible) */}
-        <div className="bg-landing-surface rounded-xl border border-emerald-500/20 overflow-hidden">
-          <button onClick={() => setShowGoogleForm(!showGoogleForm)} className="w-full px-5 py-3 flex items-center justify-between text-sm font-medium text-emerald-400/70 hover:text-emerald-300 transition-colors">
+        <div className="bg-landing-surface rounded-xl border border-emerald-200 overflow-hidden">
+          <button onClick={() => setShowGoogleForm(!showGoogleForm)} className="w-full px-5 py-3 flex items-center justify-between text-sm font-medium text-emerald-600 hover:text-emerald-700 transition-colors">
             <span>🗺️ Create Club from Google Maps</span>
             <svg className={`w-4 h-4 transition-transform ${showGoogleForm ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -439,8 +439,8 @@ export function PlatformAdminClient({
           </button>
           {showGoogleForm && (
             <form onSubmit={handleGoogleCreate} className="px-5 pb-5 space-y-3 border-t border-landing-border-subtle pt-4">
-              {error && <p className="text-xs text-red-400">{error}</p>}
-              {success && <p className="text-xs text-green-400">{success}</p>}
+              {error && <p className="text-xs text-red-600">{error}</p>}
+              {success && <p className="text-xs text-green-600">{success}</p>}
               <p className="text-xs text-landing-text-tertiary">Paste a Google Maps link. Club name, location, and owner account will be created automatically.</p>
               <input
                 value={googleMapsUrl}
@@ -450,7 +450,7 @@ export function PlatformAdminClient({
                 className="w-full rounded-lg bg-landing-surface border border-landing-border px-3 py-2 text-sm text-landing-text placeholder:text-landing-text-tertiary focus:outline-none focus:border-emerald-500/30"
               />
               <p className="text-[10px] text-landing-text-tertiary">Owner login: [slug]@osocios.com / q1234567</p>
-              <button type="submit" disabled={isPending} className="rounded-lg bg-emerald-600/30 text-emerald-300 px-4 py-2 text-sm font-semibold hover:bg-emerald-600/50 disabled:opacity-50 transition-colors">
+              <button type="submit" disabled={isPending} className="rounded-lg bg-emerald-100 text-emerald-700 px-4 py-2 text-sm font-semibold hover:bg-emerald-200 disabled:opacity-50 transition-colors">
                 {isPending ? "Creating..." : "Create from Maps"}
               </button>
             </form>
@@ -467,8 +467,8 @@ export function PlatformAdminClient({
           </button>
           {showCreateForm && (
             <form onSubmit={handleCreate} className="px-5 pb-5 space-y-3 border-t border-landing-border-subtle pt-4">
-              {error && <p className="text-xs text-red-400">{error}</p>}
-              {success && <p className="text-xs text-green-400">{success}</p>}
+              {error && <p className="text-xs text-red-600">{error}</p>}
+              {success && <p className="text-xs text-green-600">{success}</p>}
               <div className="grid grid-cols-2 gap-3">
                 <input name="name" value={name} onChange={(e) => { setName(e.target.value); setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")); }} placeholder="Club name" required className="rounded-lg bg-landing-surface border border-landing-border px-3 py-2 text-sm text-landing-text placeholder:text-landing-text-tertiary focus:outline-none focus:border-white/20" />
                 <input name="slug" value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))} placeholder="slug" required className="rounded-lg bg-landing-surface border border-landing-border px-3 py-2 text-sm text-landing-text font-mono placeholder:text-landing-text-tertiary focus:outline-none focus:border-white/20" />
@@ -506,9 +506,9 @@ export function PlatformAdminClient({
 
 function StatCard({ label, value, alert }: { label: string; value: number; alert?: boolean }) {
   return (
-    <div className={`rounded-xl border p-4 ${alert ? "bg-amber-500/10 border-amber-500/20" : "bg-landing-surface border-landing-border-subtle"}`}>
-      <p className={`text-xs font-medium uppercase tracking-wide ${alert ? "text-amber-300/60" : "text-landing-text-tertiary"}`}>{label}</p>
-      <p className={`mt-1 text-2xl font-bold font-mono ${alert ? "text-amber-300" : "text-landing-text"}`}>{value.toLocaleString()}</p>
+    <div className={`rounded-xl border p-4 ${alert ? "bg-amber-50 border-amber-200" : "bg-landing-surface border-landing-border-subtle"}`}>
+      <p className={`text-xs font-medium uppercase tracking-wide ${alert ? "text-amber-600" : "text-landing-text-tertiary"}`}>{label}</p>
+      <p className={`mt-1 text-2xl font-bold font-mono ${alert ? "text-amber-700" : "text-landing-text"}`}>{value.toLocaleString()}</p>
     </div>
   );
 }
