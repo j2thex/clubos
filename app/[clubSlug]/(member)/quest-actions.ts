@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyStaff } from "@/lib/staff-notify";
+import { logActivity } from "@/lib/activity-log";
 
 export async function submitQuest(
   memberId: string,
@@ -129,6 +130,13 @@ export async function submitEmailQuest(
     quest.club_id,
     `📧 Email collected via quest\n<b>${quest.title}</b>\nMember: ${member?.member_code ?? "Unknown"}\nEmail: ${email}`,
   );
+
+  await logActivity({
+    clubId: quest.club_id,
+    action: "email_collected",
+    targetMemberCode: member?.member_code ?? null,
+    details: email,
+  });
 
   return { ok: true };
 }

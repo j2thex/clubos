@@ -81,6 +81,7 @@ const ACTION_BADGES: Record<string, { label: string; color: string }> = {
   offer_walkin_order: { label: "Walk-in", color: "bg-amber-100 text-amber-700" },
   role_assigned: { label: "Role", color: "bg-blue-100 text-blue-700" },
   validity_updated: { label: "Validity", color: "bg-cyan-100 text-cyan-700" },
+  email_collected: { label: "Email", color: "bg-indigo-100 text-indigo-700" },
 };
 
 function timeAgo(iso: string): string {
