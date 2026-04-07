@@ -67,6 +67,53 @@ export async function sendPreregistrationConfirmation(
   });
 }
 
+// --- Auto-registration email ---
+
+export async function sendAutoRegistrationEmail(
+  to: string,
+  clubName: string,
+  memberCode: string,
+  visitDate: string,
+  numVisitors: number,
+  clubAddress?: string | null,
+) {
+  const addressBlock = clubAddress
+    ? `<p style="font-size: 14px; color: #333; margin: 0;"><strong>Address:</strong> ${clubAddress}</p>`
+    : "";
+
+  await resend.emails.send({
+    from: "osocios.club <noreply@osocios.club>",
+    to,
+    subject: `Welcome to ${clubName} — Your member code`,
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
+        <h2 style="font-size: 20px; font-weight: 600; color: #111; margin: 0 0 8px;">Welcome to ${clubName}!</h2>
+        <p style="font-size: 14px; color: #666; margin: 0 0 16px;">
+          Your visit has been registered and your member account is being set up.
+        </p>
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; margin: 0 0 16px; text-align: center;">
+          <p style="font-size: 12px; color: #666; margin: 0 0 4px; text-transform: uppercase; letter-spacing: 1px;">Your Member Code</p>
+          <p style="font-size: 32px; font-weight: 700; color: #111; margin: 0; font-family: monospace; letter-spacing: 4px;">${memberCode}</p>
+        </div>
+        <div style="background: #f9fafb; border-radius: 8px; padding: 16px; margin: 0 0 16px;">
+          <p style="font-size: 14px; color: #333; margin: 0 0 4px;"><strong>Date:</strong> ${visitDate}</p>
+          <p style="font-size: 14px; color: #333; margin: 0 0 4px;"><strong>Visitors:</strong> ${numVisitors}</p>
+          ${addressBlock}
+        </div>
+        <p style="font-size: 13px; color: #b45309; background: #fffbeb; border-radius: 6px; padding: 12px; margin: 0 0 16px;">
+          Your account is being reviewed and will be activated soon. You'll be able to log in once a staff member approves your registration.
+        </p>
+        <p style="font-size: 13px; color: #b45309; background: #fffbeb; border-radius: 6px; padding: 12px; margin: 0 0 16px;">
+          <strong>Important:</strong> Please bring a valid physical ID for all visitors.
+        </p>
+        <p style="font-size: 12px; color: #999; margin: 0;">
+          Pre-registration does not guarantee entry. The club reserves the right to deny access.
+        </p>
+      </div>
+    `,
+  });
+}
+
 // --- Unsubscribe tokens ---
 
 export async function generateUnsubscribeToken(

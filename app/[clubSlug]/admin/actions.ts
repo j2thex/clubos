@@ -89,6 +89,25 @@ export async function updatePreregistrationEnabled(
   return { ok: true };
 }
 
+export async function updateAutoRegistration(
+  clubId: string,
+  enabled: boolean,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ auto_registration: enabled })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to update auto-registration setting" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/public`);
+  return { ok: true };
+}
+
 export async function updateHideMemberLogin(
   clubId: string,
   hide: boolean,

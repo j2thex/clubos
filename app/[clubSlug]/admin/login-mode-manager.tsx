@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
-import { updateLoginMode, updateInviteOnly, updateInviteMode, saveInviteButtons, updateHideMemberLogin, updatePreregistrationEnabled } from "./actions";
+import { updateLoginMode, updateInviteOnly, updateInviteMode, saveInviteButtons, updateHideMemberLogin, updatePreregistrationEnabled, updateAutoRegistration } from "./actions";
 import { useLanguage } from "@/lib/i18n/provider";
 
 interface InviteButton {
@@ -27,6 +27,7 @@ export function LoginModeManager({
   inviteButtons,
   hideMemberLogin,
   preregistrationEnabled,
+  autoRegistration,
   clubId,
   clubSlug,
 }: {
@@ -36,6 +37,7 @@ export function LoginModeManager({
   inviteButtons: InviteButton[];
   hideMemberLogin: boolean;
   preregistrationEnabled: boolean;
+  autoRegistration: boolean;
   clubId: string;
   clubSlug: string;
 }) {
@@ -101,6 +103,12 @@ export function LoginModeManager({
   function handlePreregToggle(checked: boolean) {
     startTransition(async () => {
       await updatePreregistrationEnabled(clubId, checked, clubSlug);
+    });
+  }
+
+  function handleAutoRegToggle(checked: boolean) {
+    startTransition(async () => {
+      await updateAutoRegistration(clubId, checked, clubSlug);
     });
   }
 
@@ -230,6 +238,24 @@ export function LoginModeManager({
             <p className="text-xs text-gray-400 mt-0.5">{t("admin.preregistrationDesc")}</p>
           </div>
         </label>
+
+        {/* Auto-registration sub-option */}
+        {preregistrationEnabled && (
+          <label
+            className={`flex items-start gap-3 px-5 py-3 ml-8 cursor-pointer hover:bg-gray-50 transition-colors ${isPending ? "opacity-50 pointer-events-none" : ""}`}
+          >
+            <input
+              type="checkbox"
+              checked={autoRegistration}
+              onChange={(e) => handleAutoRegToggle(e.target.checked)}
+              className="mt-0.5 rounded border-gray-300 text-gray-800 focus:ring-gray-400"
+            />
+            <div>
+              <p className="text-sm font-medium text-gray-900">{t("admin.autoRegistration")}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{t("admin.autoRegistrationDesc")}</p>
+            </div>
+          </label>
+        )}
 
         {/* Invite Mode sub-section */}
         {inviteOnly && (

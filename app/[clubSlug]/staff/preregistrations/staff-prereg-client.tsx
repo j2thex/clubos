@@ -11,6 +11,7 @@ interface Preregistration {
   num_visitors: number;
   status: string;
   created_at: string;
+  member_id: string | null;
 }
 
 type Feedback = { type: "confirmed" } | { type: "denied" } | { type: "error"; message: string };
@@ -129,21 +130,28 @@ export function StaffPreregClient({
                         </span>
                       </p>
                       <p className="text-xs text-gray-500 truncate">{p.email}</p>
-                      <p className="text-[10px] text-gray-400">{formatTimestamp(p.created_at)}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-[10px] text-gray-400">{formatTimestamp(p.created_at)}</p>
+                        {p.member_id && (
+                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600">
+                            {t("staff.autoRegistered")}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <button
                       onClick={() => handleDeny(p.id)}
                       disabled={isPending}
                       className="text-xs font-semibold text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50"
                     >
-                      {t("staff.preregDeny")}
+                      {p.member_id ? t("staff.denyRemove") : t("staff.preregDeny")}
                     </button>
                     <button
                       onClick={() => handleConfirm(p.id)}
                       disabled={isPending}
                       className="text-xs font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50"
                     >
-                      {t("staff.preregConfirm")}
+                      {p.member_id ? t("staff.activateMember") : t("staff.preregConfirm")}
                     </button>
                   </div>
                   {fb?.type === "error" && (

@@ -645,6 +645,8 @@
   "nav.preregistrations": "Pre-Reg",
   "admin.preregistration": "Pre-Registration",
   "admin.preregistrationDesc": "Allow visitors to pre-register for visits on the public page",
+  "admin.autoRegistration": "Auto Registration",
+  "admin.autoRegistrationDesc": "Auto-create member account on pre-registration. Staff approval required to activate.",
   "public.preregTitle": "Pre-Register Your Visit",
   "public.preregDesc": "Plan ahead and let us know you're coming",
   "public.preregButton": "Pre-Register",
@@ -664,6 +666,9 @@
   "staff.preregDeny": "Deny",
   "staff.preregConfirmed": "Confirmed",
   "staff.preregDenied": "Denied",
+  "staff.autoRegistered": "Auto-registered",
+  "staff.activateMember": "Activate Member",
+  "staff.denyRemove": "Deny & Remove",
   "staff.preregVisitors": "visitors",
   "staff.pendingPreregs": "Pending ({count})",
   "staff.reviewedPreregs": "Reviewed ({count})",
@@ -718,5 +723,7 @@
   "email.unsubscribed": "You've been unsubscribed",
   "email.unsubscribedDesc": "You will no longer receive emails from this club",
   "email.footer": "You're receiving this because you shared your email with our club.",
-  "email.unsubscribe": "Unsubscribe from emails"
+  "email.unsubscribe": "Unsubscribe from emails",
+
+  "login.accountPendingApproval": "Your account is pending approval. Please wait for staff to activate it."
 }

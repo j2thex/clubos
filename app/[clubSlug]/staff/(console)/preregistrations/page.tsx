@@ -41,7 +41,7 @@ export default async function StaffPreregistrationsPage({
 
   const { data: preregistrations } = await supabase
     .from("preregistrations")
-    .select("id, email, visit_date, num_visitors, status, created_at")
+    .select("id, email, visit_date, num_visitors, status, created_at, member_id")
     .eq("club_id", club.id)
     .order("visit_date", { ascending: true })
     .limit(100);
@@ -55,6 +55,7 @@ export default async function StaffPreregistrationsPage({
         num_visitors: p.num_visitors,
         status: p.status,
         created_at: p.created_at,
+        member_id: p.member_id ?? null,
       }))}
       clubSlug={clubSlug}
       staffMemberId={session?.member_id ?? ""}

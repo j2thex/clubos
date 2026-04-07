@@ -31,7 +31,7 @@ export async function loginMember(clubSlug: string, locale: Locale, formData: Fo
     .single();
 
   if (!member) return { error: "Invalid member code" };
-  if (member.status !== "active") return { error: "Account is inactive" };
+  if (member.status !== "active") return { error: t(locale, "login.accountPendingApproval") };
 
   // Validate expiry code if club requires it
   if (club.login_mode === "code_and_expiry") {

@@ -645,6 +645,8 @@
   "nav.preregistrations": "Pre-Reg",
   "admin.preregistration": "Pre-Registro",
   "admin.preregistrationDesc": "Permitir a visitantes pre-registrarse en la página pública",
+  "admin.autoRegistration": "Registro Automático",
+  "admin.autoRegistrationDesc": "Auto-crear cuenta de socio al pre-registrarse. Requiere aprobación del staff.",
   "public.preregTitle": "Pre-Registra Tu Visita",
   "public.preregDesc": "Planifica con anticipación y avísanos que vienes",
   "public.preregButton": "Pre-Registrar",
@@ -664,6 +666,9 @@
   "staff.preregDeny": "Denegar",
   "staff.preregConfirmed": "Confirmado",
   "staff.preregDenied": "Denegado",
+  "staff.autoRegistered": "Auto-registrado",
+  "staff.activateMember": "Activar Socio",
+  "staff.denyRemove": "Denegar y Eliminar",
   "staff.preregVisitors": "visitantes",
   "staff.pendingPreregs": "Pendientes ({count})",
   "staff.reviewedPreregs": "Revisados ({count})",
@@ -718,5 +723,7 @@
   "email.unsubscribed": "Te has dado de baja",
   "email.unsubscribedDesc": "Ya no recibirás correos de este club",
   "email.footer": "Recibes este correo porque compartiste tu email con nuestro club.",
-  "email.unsubscribe": "Darse de baja"
+  "email.unsubscribe": "Darse de baja",
+
+  "login.accountPendingApproval": "Tu cuenta está pendiente de aprobación. Espera a que el staff la active."
 }
