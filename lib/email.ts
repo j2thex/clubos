@@ -1,6 +1,8 @@
 import { Resend } from "resend";
+import { SignJWT, jwtVerify } from "jose";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
 export async function sendPasswordResetEmail(
   to: string,
@@ -63,4 +65,79 @@ export async function sendPreregistrationConfirmation(
       </div>
     `,
   });
+}
+
+// --- Unsubscribe tokens ---
+
+export async function generateUnsubscribeToken(
+  memberId: string,
+  clubId: string,
+): Promise<string> {
+  return new SignJWT({ member_id: memberId, club_id: clubId, purpose: "unsubscribe" })
+    .setProtectedHeader({ alg: "HS256" })
+    .setExpirationTime("90d")
+    .sign(secret);
+}
+
+export async function verifyUnsubscribeToken(
+  token: string,
+): Promise<{ member_id: string; club_id: string } | null> {
+  try {
+    const { payload } = await jwtVerify(token, secret);
+    if (payload.purpose !== "unsubscribe") return null;
+    return {
+      member_id: payload.member_id as string,
+      club_id: payload.club_id as string,
+    };
+  } catch {
+    return null;
+  }
+}
+
+// --- Campaign email ---
+
+export async function sendCampaignEmail(
+  to: string,
+  subject: string,
+  bodyHtml: string,
+  clubName: string,
+  logoUrl: string | null,
+  primaryColor: string,
+  unsubscribeUrl: string,
+): Promise<{ ok: true } | { error: string }> {
+  const logoBlock = logoUrl
+    ? `<img src="${logoUrl}" alt="${clubName}" style="height: 40px; margin-right: 12px; border-radius: 6px;" />`
+    : "";
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 0;">
+      <div style="background: ${primaryColor}; padding: 20px 24px; border-radius: 8px 8px 0 0;">
+        <table cellpadding="0" cellspacing="0" border="0"><tr>
+          <td style="vertical-align: middle;">${logoBlock}</td>
+          <td style="vertical-align: middle;"><span style="font-size: 18px; font-weight: 700; color: #fff;">${clubName}</span></td>
+        </tr></table>
+      </div>
+      <div style="padding: 32px 24px; background: #ffffff;">
+        ${bodyHtml}
+      </div>
+      <div style="padding: 20px 24px; background: #f9fafb; border-radius: 0 0 8px 8px; border-top: 1px solid #e5e7eb;">
+        <p style="font-size: 12px; color: #999; margin: 0 0 8px;">
+          You're receiving this because you shared your email with our club.
+        </p>
+        <a href="${unsubscribeUrl}" style="font-size: 12px; color: #999; text-decoration: underline;">Unsubscribe</a>
+      </div>
+    </div>
+  `;
+
+  try {
+    await resend.emails.send({
+      from: "osocios.club <noreply@osocios.club>",
+      to,
+      subject,
+      html,
+    });
+    return { ok: true };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Failed to send email" };
+  }
 }

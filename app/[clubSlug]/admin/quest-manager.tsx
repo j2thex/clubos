@@ -43,6 +43,7 @@ const TEMPLATES = [
   { titleKey: "admin.quickReferFriend", descKey: "admin.quickReferFriendDesc", link: "", rewardSpins: 2, questType: "referral", icon: "user-plus", proofMode: "none" },
   { titleKey: "admin.quickFeedback", descKey: "admin.quickFeedbackDesc", link: "", rewardSpins: 1, questType: "feedback", icon: "message-square", proofMode: "required" },
   { titleKey: "admin.quickTutorial", descKey: "admin.quickTutorialDesc", link: "", rewardSpins: 1, questType: "tutorial", icon: "book-open", proofMode: "none" },
+  { titleKey: "admin.quickShareEmail", descKey: "admin.quickShareEmailDesc", link: "", rewardSpins: 1, questType: "email_collect", icon: "mail", proofMode: "none" },
 ];
 
 // Templates that get bulk-created with "Add All Common"

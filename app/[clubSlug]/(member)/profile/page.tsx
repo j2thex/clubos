@@ -3,6 +3,7 @@ import { getMemberFromCookie } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logout } from "./actions";
 import { MemberQrCard } from "@/components/club/member-qr-card";
+import { EmailField } from "./email-field";
 
 import { BadgeCollection } from "../badge-collection";
 import { t, getDateLocale } from "@/lib/i18n";
@@ -42,7 +43,7 @@ export default async function ProfilePage({
   const [{ data: member }, { data: spins }, { data: branding }, { data: clubBadges }, { data: memberBadges }] = await Promise.all([
     supabase
       .from("members")
-      .select("member_code, spin_balance, valid_till, created_at")
+      .select("member_code, spin_balance, valid_till, created_at, email")
       .eq("id", session.member_id)
       .single(),
     supabase
@@ -145,6 +146,12 @@ export default async function ProfilePage({
                 );
               })()}
             </div>
+
+            {/* Email */}
+            <EmailField
+              currentEmail={member?.email ?? null}
+              memberId={session.member_id}
+            />
           </div>
         </div>
 
