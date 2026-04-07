@@ -43,7 +43,7 @@ export function PublicLoginForm({
         autoCapitalize="characters"
         autoComplete="off"
         placeholder={t("login.memberCodePlaceholder")}
-        className="club-ring block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-lg font-mono tracking-widest uppercase placeholder:text-gray-400 placeholder:tracking-widest transition"
+        className="club-ring block w-full rounded-lg border border-gray-300 px-4 py-3 text-center text-2xl font-mono tracking-[0.2em] uppercase placeholder:text-gray-400 placeholder:tracking-[0.2em] placeholder:text-base transition"
         onChange={(e) => {
           e.target.value = e.target.value.toUpperCase();
         }}

@@ -7,6 +7,8 @@ import type { MapRef } from "react-map-gl/maplibre";
 import useSupercluster from "use-supercluster";
 import { MAP_STYLE_DARK, MAP_STYLE_LIGHT } from "../lib/map-styles";
 import type { ActiveTab, MapViewport } from "../lib/types";
+import { t } from "@/lib/i18n";
+import type { Locale } from "@/lib/i18n";
 import Link from "next/link";
 import "maplibre-gl/dist/maplibre-gl.css";
 
@@ -113,7 +115,7 @@ function formatPopupTime(t: string) {
   return `${hour % 12 || 12}:${m} ${hour >= 12 ? "PM" : "AM"}`;
 }
 
-function MarkerPopup({ feature, onClose }: { feature: GeoFeature; onClose: () => void }) {
+function MarkerPopup({ feature, onClose, locale = "en" }: { feature: GeoFeature; onClose: () => void; locale?: Locale }) {
   const [lng, lat] = feature.geometry.coordinates;
   const p = feature.properties;
   const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
@@ -158,10 +160,10 @@ function MarkerPopup({ feature, onClose }: { feature: GeoFeature; onClose: () =>
 
         <div className="flex items-center gap-3 pt-1 border-t border-gray-100">
           <Link href={`/${p.slug}/public`} className="text-xs font-medium text-primary hover:underline">
-            View club →
+            {t(locale, "discover.viewClub")} →
           </Link>
           <a href={directionsUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
-            Directions
+            {t(locale, "discover.directions")}
           </a>
         </div>
       </div>
@@ -179,6 +181,7 @@ export default function DiscoverMap({
   onDeselectMarker,
   activeTab,
   scrollZoom = true,
+  locale = "en",
 }: {
   features: GeoFeature[];
   viewport: MapViewport;
@@ -189,6 +192,7 @@ export default function DiscoverMap({
   onDeselectMarker: () => void;
   scrollZoom?: boolean;
   activeTab: ActiveTab;
+  locale?: Locale;
 }) {
   const { resolvedTheme } = useTheme();
   const mapStyle = resolvedTheme === "dark" ? MAP_STYLE_DARK : MAP_STYLE_LIGHT;
@@ -305,7 +309,7 @@ export default function DiscoverMap({
 
       {/* Popup for selected marker */}
       {selectedFeature && (
-        <MarkerPopup feature={selectedFeature} onClose={onDeselectMarker} />
+        <MarkerPopup feature={selectedFeature} onClose={onDeselectMarker} locale={locale} />
       )}
     </Map>
   );

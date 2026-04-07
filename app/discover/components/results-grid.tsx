@@ -40,10 +40,12 @@ function ResultCard({
   item,
   selected,
   onSelect,
+  locale = "en",
 }: {
   item: ListItem;
   selected: boolean;
   onSelect: () => void;
+  locale?: Locale;
 }) {
   const directionsUrl = item.hasLocation && item.latitude != null && item.longitude != null
     ? `https://www.google.com/maps/dir/?api=1&destination=${item.latitude},${item.longitude}`
@@ -130,7 +132,7 @@ function ResultCard({
             className="text-xs font-medium px-3 py-1.5 rounded-full bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
             onClick={(e) => e.stopPropagation()}
           >
-            View club
+            {t(locale, "discover.viewClub")}
           </Link>
           {directionsUrl && (
             <a
@@ -144,7 +146,7 @@ function ResultCard({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              Directions
+              {t(locale, "discover.directions")}
             </a>
           )}
         </div>
@@ -197,6 +199,7 @@ export function ResultsGrid({
             item={item}
             selected={selectedId === item.id}
             onSelect={() => onSelect(item.id, item.latitude, item.longitude)}
+            locale={locale}
           />
         ))}
       </div>

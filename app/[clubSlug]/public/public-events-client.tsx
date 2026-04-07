@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/provider";
 import { getDateLocale, localized } from "@/lib/i18n";
 
@@ -18,7 +19,7 @@ interface PublicEvent {
   reward_spins: number;
 }
 
-export function PublicEventsClient({ events }: { events: PublicEvent[] }) {
+export function PublicEventsClient({ events, clubSlug }: { events: PublicEvent[]; clubSlug: string }) {
   const { t, locale } = useLanguage();
   const [view, setView] = useState<"list" | "calendar">("calendar");
 
@@ -150,6 +151,12 @@ export function PublicEventsClient({ events }: { events: PublicEvent[] }) {
                       {localized("Learn more", "Más info", locale)}
                     </a>
                   )}
+                  <Link
+                    href={`/${clubSlug}/login`}
+                    className="ml-auto club-btn px-4 py-1.5 rounded-full text-xs font-bold shadow-sm"
+                  >
+                    {localized("Join", "Unirse", locale)}
+                  </Link>
                 </div>
               </div>
             </div>
@@ -262,16 +269,24 @@ export function PublicEventsClient({ events }: { events: PublicEvent[] }) {
                         </span>
                       )}
                     </div>
-                    {ev.link && (
-                      <a
-                        href={ev.link.match(/^https?:\/\//) ? ev.link : `https://${ev.link}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block mt-2 text-xs font-medium club-primary underline"
+                    <div className="flex items-center gap-2 mt-2">
+                      {ev.link && (
+                        <a
+                          href={ev.link.match(/^https?:\/\//) ? ev.link : `https://${ev.link}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-medium club-primary underline"
+                        >
+                          {localized("Learn more", "Más info", locale)}
+                        </a>
+                      )}
+                      <Link
+                        href={`/${clubSlug}/login`}
+                        className="ml-auto club-btn px-3 py-1 rounded-full text-xs font-bold shadow-sm"
                       >
-                        {localized("Learn more", "Más info", locale)}
-                      </a>
-                    )}
+                        {localized("Join", "Unirse", locale)}
+                      </Link>
+                    </div>
                   </div>
                 ))}
               </div>

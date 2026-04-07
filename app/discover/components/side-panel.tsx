@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { t } from "@/lib/i18n";
+import type { Locale } from "@/lib/i18n";
 import type { ActiveTab } from "../lib/types";
 
 interface ListItem {
@@ -38,7 +40,7 @@ function formatTime(t: string) {
   return `${h12}:${m} ${ampm}`;
 }
 
-function DirectionsLink({ lat, lng }: { lat: number; lng: number }) {
+function DirectionsLink({ lat, lng, locale = "en" }: { lat: number; lng: number; locale?: Locale }) {
   const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
   return (
     <a
@@ -52,7 +54,7 @@ function DirectionsLink({ lat, lng }: { lat: number; lng: number }) {
         <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
       </svg>
-      Directions
+      {t(locale, "discover.directions")}
     </a>
   );
 }
@@ -61,10 +63,12 @@ function PanelCard({
   item,
   selected,
   onSelect,
+  locale = "en",
 }: {
   item: ListItem;
   selected: boolean;
   onSelect: () => void;
+  locale?: Locale;
 }) {
   return (
     <div
@@ -132,10 +136,10 @@ function PanelCard({
             className="text-[10px] text-primary/60 hover:text-primary/80 transition-colors"
             onClick={(e) => e.stopPropagation()}
           >
-            View club →
+            {t(locale, "discover.viewClub")} →
           </Link>
           {item.hasLocation && item.latitude != null && item.longitude != null && (
-            <DirectionsLink lat={item.latitude} lng={item.longitude} />
+            <DirectionsLink lat={item.latitude} lng={item.longitude} locale={locale} />
           )}
         </div>
       </div>
