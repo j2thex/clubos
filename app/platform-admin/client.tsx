@@ -172,7 +172,7 @@ export function PlatformAdminClient({
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">osocios control panel</h1>
+            <h1 className="text-2xl font-bold">osocios tower</h1>
             <p className="text-sm text-landing-text-tertiary font-mono mt-1">platform dashboard</p>
           </div>
           <a href="/" className="text-xs text-landing-text-tertiary hover:text-landing-text-secondary transition-colors">
