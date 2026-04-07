@@ -6,6 +6,8 @@ import Link from "next/link";
 import type { DiscoverClub, MapViewport, ActiveTab } from "../discover/lib/types";
 import { DEFAULT_VIEWPORT } from "../discover/lib/types";
 import { useLanguage } from "@/lib/i18n/provider";
+import { Building2, CalendarDays, Gift, Target } from "lucide-react";
+import type { ReactNode } from "react";
 
 const DiscoverMap = dynamic(() => import("../discover/components/discover-map"), {
   ssr: false,
@@ -16,11 +18,11 @@ const DiscoverMap = dynamic(() => import("../discover/components/discover-map"),
   ),
 });
 
-const TABS: { key: ActiveTab; label: string; labelEs: string; icon: string }[] = [
-  { key: "clubs", label: "Clubs", labelEs: "Clubes", icon: "🏠" },
-  { key: "events", label: "Events", labelEs: "Eventos", icon: "📅" },
-  { key: "offers", label: "Offers", labelEs: "Ofertas", icon: "✨" },
-  { key: "quests", label: "Quests", labelEs: "Misiones", icon: "🎯" },
+const TABS: { key: ActiveTab; label: string; labelEs: string; icon: ReactNode }[] = [
+  { key: "clubs", label: "Clubs", labelEs: "Clubes", icon: <Building2 className="w-4 h-4" /> },
+  { key: "events", label: "Events", labelEs: "Eventos", icon: <CalendarDays className="w-4 h-4" /> },
+  { key: "offers", label: "Offers", labelEs: "Ofertas", icon: <Gift className="w-4 h-4" /> },
+  { key: "quests", label: "Quests", labelEs: "Misiones", icon: <Target className="w-4 h-4" /> },
 ];
 
 export function HomepageMap({
