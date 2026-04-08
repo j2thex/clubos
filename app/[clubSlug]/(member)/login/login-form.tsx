@@ -83,7 +83,7 @@ export function LoginForm({ loginMode }: { loginMode: string }) {
                 autoCapitalize="characters"
                 autoComplete="off"
                 placeholder={t("login.memberCodePlaceholder")}
-                className="club-ring block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-lg font-mono tracking-widest uppercase placeholder:text-gray-400 placeholder:tracking-widest transition"
+                className="club-ring block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-lg font-mono tracking-widest uppercase text-gray-900 placeholder:text-gray-400 placeholder:tracking-widest transition"
                 onChange={(e) => {
                   e.target.value = e.target.value.toUpperCase();
                 }}
@@ -107,7 +107,7 @@ export function LoginForm({ loginMode }: { loginMode: string }) {
                   inputMode="numeric"
                   autoComplete="off"
                   placeholder="DDMM"
-                  className="club-ring block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-lg font-mono tracking-widest placeholder:text-gray-400 placeholder:tracking-widest transition"
+                  className="club-ring block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-lg font-mono tracking-widest text-gray-900 placeholder:text-gray-400 placeholder:tracking-widest transition"
                   onChange={(e) => {
                     e.target.value = e.target.value.replace(/\D/g, "").slice(0, 4);
                   }}
