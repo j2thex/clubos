@@ -149,6 +149,34 @@ export async function updateClubTags(
   return { ok: true };
 }
 
+export async function updateTelegramBotConfig(
+  clubId: string,
+  config: {
+    telegram_bot_enabled: boolean;
+    telegram_bot_referral_name: string | null;
+    telegram_bot_registration_price: number | null;
+    telegram_bot_welcome_message: string | null;
+  },
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({
+      telegram_bot_enabled: config.telegram_bot_enabled,
+      telegram_bot_referral_name: config.telegram_bot_referral_name || null,
+      telegram_bot_registration_price: config.telegram_bot_registration_price,
+      telegram_bot_welcome_message: config.telegram_bot_welcome_message || null,
+    })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to save Telegram bot config" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
 export async function updateTelegramConfig(
   clubId: string,
   botToken: string,
@@ -518,6 +546,7 @@ export async function addQuest(
   const icon = (formData.get("icon") as string)?.trim() || null;
   const awardBadge = formData.get("award_badge") === "1";
   const imageFile = formData.get("image") as File | null;
+  const imageUrlInput = (formData.get("image_url") as string)?.trim() || null;
   const titleEs = (formData.get("title_es") as string)?.trim() || null;
   const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
   const deadlineRaw = (formData.get("deadline") as string)?.trim() || null;
@@ -548,6 +577,8 @@ export async function addQuest(
     const result = await uploadClubImage(clubId, imageFile);
     if ("error" in result) return { error: result.error };
     imageUrl = result.url;
+  } else if (imageUrlInput) {
+    imageUrl = imageUrlInput;
   }
 
   const { data: quest, error } = await supabase.from("quests").insert({
@@ -609,6 +640,7 @@ export async function updateQuest(
   const icon = (formData.get("icon") as string)?.trim() || null;
   const awardBadge = formData.get("award_badge") === "1";
   const imageFile = formData.get("image") as File | null;
+  const imageUrlInput = (formData.get("image_url") as string)?.trim() || null;
   const titleEs = (formData.get("title_es") as string)?.trim() || null;
   const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
   const deadlineRaw = (formData.get("deadline") as string)?.trim() || null;
@@ -673,6 +705,12 @@ export async function updateQuest(
     const result = await uploadClubImage(currentQuest?.club_id ?? "", imageFile);
     if ("error" in result) return { error: result.error };
     updates.image_url = result.url;
+  } else if (imageUrlInput && imageUrlInput !== currentQuest?.image_url) {
+    if (currentQuest?.image_url) {
+      const { deleteClubImage } = await import("@/lib/supabase/storage");
+      await deleteClubImage(currentQuest.image_url);
+    }
+    updates.image_url = imageUrlInput;
   }
 
   const { error } = await supabase

@@ -74,6 +74,7 @@ export function QuestManager({
   const [editMultiUse, setEditMultiUse] = useState(false);
   const [editIsPublic, setEditIsPublic] = useState(false);
   const [editImage, setEditImage] = useState<File | null>(null);
+  const [editImageUrl, setEditImageUrl] = useState("");
   const [editQuestType, setEditQuestType] = useState("default");
   const [editProofMode, setEditProofMode] = useState("none");
   const [editProofPlaceholder, setEditProofPlaceholder] = useState("");
@@ -92,6 +93,7 @@ export function QuestManager({
   const [newMultiUse, setNewMultiUse] = useState(false);
   const [newIsPublic, setNewIsPublic] = useState(false);
   const [newImage, setNewImage] = useState<File | null>(null);
+  const [newImageUrl, setNewImageUrl] = useState("");
   const [newQuestType, setNewQuestType] = useState("default");
   const [newProofMode, setNewProofMode] = useState("none");
   const [newProofPlaceholder, setNewProofPlaceholder] = useState("");
@@ -189,6 +191,7 @@ export function QuestManager({
     setEditDeadline(q.deadline ? q.deadline.slice(0, 16) : "");
     setEditLang("en");
     setEditImage(null);
+    setEditImageUrl(q.image_url ?? "");
     setError(null);
   }
 
@@ -219,6 +222,7 @@ export function QuestManager({
       fd.set("description_es", editDescEs);
       fd.set("deadline", editDeadline);
       if (editImage) fd.set("image", editImage);
+      fd.set("image_url", editImageUrl);
 
       const result = await updateQuest(questId, fd, clubSlug);
       if ("error" in result) {
@@ -260,6 +264,7 @@ export function QuestManager({
       fd.set("description_es", newDescEs);
       fd.set("deadline", newDeadline);
       if (newImage) fd.set("image", newImage);
+      fd.set("image_url", newImageUrl);
 
       const result = await addQuest(clubId, fd, clubSlug);
       if ("error" in result) {
@@ -279,6 +284,7 @@ export function QuestManager({
         setNewIcon(null);
         setNewAwardBadge(false);
         setNewImage(null);
+        setNewImageUrl("");
         setNewTitleEs("");
         setNewDescEs("");
         setNewDeadline("");
@@ -539,9 +545,17 @@ export function QuestManager({
                     <div>
                       <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questImage")}</label>
                       <input
+                        type="url"
+                        placeholder="https://..."
+                        value={editImageUrl}
+                        onChange={(e) => { setEditImageUrl(e.target.value); if (e.target.value) setEditImage(null); }}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition mb-1"
+                      />
+                      <span className="block text-xs text-gray-400 text-center mb-1">or</span>
+                      <input
                         type="file"
                         accept="image/jpeg,image/png,image/webp,image/gif"
-                        onChange={(e) => setEditImage(e.target.files?.[0] ?? null)}
+                        onChange={(e) => { setEditImage(e.target.files?.[0] ?? null); if (e.target.files?.[0]) setEditImageUrl(""); }}
                         className="w-full text-sm text-gray-500 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
                       />
                     </div>
@@ -795,9 +809,17 @@ export function QuestManager({
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questImage")}</label>
             <input
+              type="url"
+              placeholder="https://..."
+              value={newImageUrl}
+              onChange={(e) => { setNewImageUrl(e.target.value); if (e.target.value) setNewImage(null); }}
+              className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition mb-1"
+            />
+            <span className="block text-xs text-gray-400 text-center mb-1">or</span>
+            <input
               type="file"
               accept="image/jpeg,image/png,image/webp,image/gif"
-              onChange={(e) => setNewImage(e.target.files?.[0] ?? null)}
+              onChange={(e) => { setNewImage(e.target.files?.[0] ?? null); if (e.target.files?.[0]) setNewImageUrl(""); }}
               className="w-full text-sm text-gray-500 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
             />
           </div>

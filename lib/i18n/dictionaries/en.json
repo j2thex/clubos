@@ -360,6 +360,16 @@
   "admin.telegramTestSent": "Test message sent! Check your Telegram group.",
   "admin.telegramTest": "Test",
 
+  "admin.telegramBotDesc": "Configure how this club appears in the external Telegram registration bot.",
+  "admin.telegramBotEnabled": "Enable for Telegram bot",
+  "admin.telegramBotReferralName": "Referral contact name",
+  "admin.telegramBotReferralNameHint": "Name shown as the referral contact in the bot",
+  "admin.telegramBotRegPrice": "Registration price",
+  "admin.telegramBotRegPriceHint": "Price displayed by the bot for new registrations",
+  "admin.telegramBotWelcome": "Welcome message",
+  "admin.telegramBotWelcomeHint": "Greeting shown to users when they interact with the bot",
+  "admin.telegramBotSaved": "Telegram bot config saved",
+
   "admin.memberLogin": "Member Login",
   "admin.codeOnly": "Member code only",
   "admin.codeOnlyDesc": "Members log in with just their unique code",

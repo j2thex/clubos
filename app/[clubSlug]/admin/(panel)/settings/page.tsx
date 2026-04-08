@@ -6,6 +6,7 @@ import { MembershipPeriodManager } from "../../membership-period-manager";
 import { BrandingManager } from "../../branding-manager";
 import { GalleryManager } from "../../gallery-manager";
 import { TelegramConfigManager } from "../../telegram-config-manager";
+import { TelegramBotManager } from "../../telegram-bot-manager";
 import { WheelManager } from "../../wheel-manager";
 import { NotificationLightManager } from "../../notification-light-manager";
 import { TagManager } from "../../tag-manager";
@@ -26,7 +27,7 @@ export default async function SettingsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, login_mode, invite_only, invite_mode, hide_member_login, preregistration_enabled, auto_registration, tags, telegram_bot_token, telegram_chat_id, notification_secret, latitude, longitude, address, city, country, spin_enabled, working_hours, spin_display_decimals, spin_cost")
+    .select("id, login_mode, invite_only, invite_mode, hide_member_login, preregistration_enabled, auto_registration, tags, telegram_bot_token, telegram_chat_id, notification_secret, latitude, longitude, address, city, country, spin_enabled, working_hours, spin_display_decimals, spin_cost, telegram_bot_enabled, telegram_bot_referral_name, telegram_bot_registration_price, telegram_bot_welcome_message")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -182,6 +183,16 @@ export default async function SettingsPage({
         <TelegramConfigManager
           botToken={club.telegram_bot_token ?? null}
           chatId={club.telegram_chat_id ?? null}
+          clubId={club.id}
+          clubSlug={clubSlug}
+        />
+      </CollapsibleSection>
+      <CollapsibleSection title="Telegram Bot">
+        <TelegramBotManager
+          enabled={club.telegram_bot_enabled ?? false}
+          referralName={club.telegram_bot_referral_name ?? null}
+          registrationPrice={club.telegram_bot_registration_price ?? null}
+          welcomeMessage={club.telegram_bot_welcome_message ?? null}
           clubId={club.id}
           clubSlug={clubSlug}
         />

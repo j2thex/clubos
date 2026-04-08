@@ -354,6 +354,94 @@ export async function setupStandardContent(
   return { ok: true, questCount: questRows.length, eventCount: eventRows.length };
 }
 
+export async function bulkImportQuests(
+  clubId: string,
+  quests: Array<{
+    title: string;
+    description: string;
+    icon: string;
+    link: string | null;
+    reward_spins: number;
+    active: boolean;
+    multi_use: boolean;
+    is_public: boolean;
+    proof_mode: string;
+    quest_type: string;
+    deadline: string | null;
+    create_badge: boolean;
+  }>,
+  secret: string,
+): Promise<{ error: string } | { ok: true; questCount: number; badgeCount: number }> {
+  if (secret !== process.env.PLATFORM_ADMIN_SECRET) {
+    return { error: "Unauthorized" };
+  }
+
+  if (!quests.length) return { error: "No quests to import" };
+
+  const supabase = createAdminClient();
+
+  // Get existing quest count for display_order offset
+  const { count: existingCount } = await supabase
+    .from("quests")
+    .select("*", { count: "exact", head: true })
+    .eq("club_id", clubId);
+
+  let questOrder = existingCount ?? 0;
+
+  // Create badges for quests that need them
+  const badgeQuests = quests.filter((q) => q.create_badge);
+  const badgeIdMap = new Map<number, string>();
+
+  if (badgeQuests.length > 0) {
+    const badgeRows = badgeQuests.map((q) => ({
+      club_id: clubId,
+      name: q.title,
+      description: `Awarded for completing: ${q.title}`,
+      icon: q.icon,
+    }));
+
+    const { data: badges, error: badgeError } = await supabase
+      .from("badges")
+      .insert(badgeRows)
+      .select("id");
+
+    if (badgeError) return { error: `Failed to create badges: ${badgeError.message}` };
+
+    // Map badge IDs back to quest indices
+    let badgeIdx = 0;
+    quests.forEach((q, i) => {
+      if (q.create_badge && badges?.[badgeIdx]) {
+        badgeIdMap.set(i, badges[badgeIdx].id);
+        badgeIdx++;
+      }
+    });
+  }
+
+  // Build quest rows
+  const questRows = quests.map((q, i) => ({
+    club_id: clubId,
+    title: q.title,
+    description: q.description || null,
+    icon: q.icon || null,
+    link: q.link || null,
+    reward_spins: q.reward_spins,
+    active: q.active,
+    multi_use: q.multi_use,
+    is_public: q.is_public,
+    proof_mode: q.proof_mode,
+    quest_type: q.quest_type,
+    deadline: q.deadline || null,
+    badge_id: badgeIdMap.get(i) ?? null,
+    display_order: questOrder++,
+  }));
+
+  const { error: questError } = await supabase.from("quests").insert(questRows);
+  if (questError) return { error: `Failed to create quests: ${questError.message}` };
+
+  revalidatePath("/platform-admin");
+  return { ok: true, questCount: questRows.length, badgeCount: badgeIdMap.size };
+}
+
 export async function loginAsClubAdmin(
   clubId: string,
   clubSlug: string,
