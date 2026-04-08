@@ -518,6 +518,7 @@ export async function addQuest(
   const icon = (formData.get("icon") as string)?.trim() || null;
   const awardBadge = formData.get("award_badge") === "1";
   const imageFile = formData.get("image") as File | null;
+  const imageUrlInput = (formData.get("image_url") as string)?.trim() || null;
   const titleEs = (formData.get("title_es") as string)?.trim() || null;
   const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
   const deadlineRaw = (formData.get("deadline") as string)?.trim() || null;
@@ -548,6 +549,8 @@ export async function addQuest(
     const result = await uploadClubImage(clubId, imageFile);
     if ("error" in result) return { error: result.error };
     imageUrl = result.url;
+  } else if (imageUrlInput) {
+    imageUrl = imageUrlInput;
   }
 
   const { data: quest, error } = await supabase.from("quests").insert({
@@ -609,6 +612,7 @@ export async function updateQuest(
   const icon = (formData.get("icon") as string)?.trim() || null;
   const awardBadge = formData.get("award_badge") === "1";
   const imageFile = formData.get("image") as File | null;
+  const imageUrlInput = (formData.get("image_url") as string)?.trim() || null;
   const titleEs = (formData.get("title_es") as string)?.trim() || null;
   const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
   const deadlineRaw = (formData.get("deadline") as string)?.trim() || null;
@@ -673,6 +677,12 @@ export async function updateQuest(
     const result = await uploadClubImage(currentQuest?.club_id ?? "", imageFile);
     if ("error" in result) return { error: result.error };
     updates.image_url = result.url;
+  } else if (imageUrlInput && imageUrlInput !== currentQuest?.image_url) {
+    if (currentQuest?.image_url) {
+      const { deleteClubImage } = await import("@/lib/supabase/storage");
+      await deleteClubImage(currentQuest.image_url);
+    }
+    updates.image_url = imageUrlInput;
   }
 
   const { error } = await supabase
