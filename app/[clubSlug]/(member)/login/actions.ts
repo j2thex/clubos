@@ -62,7 +62,7 @@ export async function loginMember(clubSlug: string, locale: Locale, formData: Fo
     }
   }
 
-  const token = await createMemberToken(member.id, club.id);
+  const token = await createMemberToken(member.id, club.id, member.valid_till);
   await setMemberCookie(token);
 
   redirect(`/${clubSlug}`);

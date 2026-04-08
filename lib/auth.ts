@@ -16,8 +16,8 @@ export function verifyPin(pin: string, hash: string): boolean {
 
 // --- Member auth (code only, no PIN) ---
 
-export async function createMemberToken(memberId: string, clubId: string): Promise<string> {
-  return new SignJWT({ member_id: memberId, club_id: clubId })
+export async function createMemberToken(memberId: string, clubId: string, validTill?: string | null): Promise<string> {
+  return new SignJWT({ member_id: memberId, club_id: clubId, ...(validTill && { valid_till: validTill }) })
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("7d")
     .sign(secret);
