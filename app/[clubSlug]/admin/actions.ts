@@ -149,6 +149,34 @@ export async function updateClubTags(
   return { ok: true };
 }
 
+export async function updateTelegramBotConfig(
+  clubId: string,
+  config: {
+    telegram_bot_enabled: boolean;
+    telegram_bot_referral_name: string | null;
+    telegram_bot_registration_price: number | null;
+    telegram_bot_welcome_message: string | null;
+  },
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({
+      telegram_bot_enabled: config.telegram_bot_enabled,
+      telegram_bot_referral_name: config.telegram_bot_referral_name || null,
+      telegram_bot_registration_price: config.telegram_bot_registration_price,
+      telegram_bot_welcome_message: config.telegram_bot_welcome_message || null,
+    })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to save Telegram bot config" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
 export async function updateTelegramConfig(
   clubId: string,
   botToken: string,
