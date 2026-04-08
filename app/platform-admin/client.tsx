@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { createUnclaimedClub, createClubFromGoogleMaps, approveCustomOffer, approveClub, rejectClub, loginAsClubAdmin, setupStandardContent } from "./actions";
+import { createUnclaimedClub, createClubFromGoogleMaps, approveCustomOffer, approveClub, rejectClub, loginAsClubAdmin, setupStandardContent, bulkImportQuests } from "./actions";
 
 interface ClubInfo {
   id: string;
@@ -95,6 +95,105 @@ function timeAgo(iso: string): string {
   return `${days}d ago`;
 }
 
+interface ParsedQuest {
+  title: string;
+  description: string;
+  icon: string;
+  link: string | null;
+  reward_spins: number;
+  active: boolean;
+  multi_use: boolean;
+  is_public: boolean;
+  proof_mode: string;
+  quest_type: string;
+  deadline: string | null;
+  create_badge: boolean;
+  category: string;
+}
+
+function parseCsvLine(line: string): string[] {
+  const fields: string[] = [];
+  let current = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"' && line[i + 1] === '"') { current += '"'; i++; }
+      else if (ch === '"') { inQuotes = false; }
+      else { current += ch; }
+    } else {
+      if (ch === '"') { inQuotes = true; }
+      else if (ch === ',') { fields.push(current.trim()); current = ""; }
+      else { current += ch; }
+    }
+  }
+  fields.push(current.trim());
+  return fields;
+}
+
+function parseQuestCsv(raw: string): { quests: ParsedQuest[]; error: string | null } {
+  const lines = raw.split(/\r?\n/).filter((l) => l.trim());
+  if (lines.length < 2) return { quests: [], error: "CSV must have a header row and at least one data row" };
+
+  const headers = parseCsvLine(lines[0]).map((h) => h.toLowerCase().trim());
+  const col = (name: string) => headers.indexOf(name);
+
+  // Find column indices
+  const iTitle = col("title");
+  const iDesc = col("description");
+  const iIcon = col("icon");
+  const iLink = headers.findIndex((h) => h.includes("link (optional)") || h === "link");
+  const iSpins = col("spins");
+  const iActive = col("on/off");
+  const iType = col("quest type");
+  const iRepeat = headers.findIndex((h) => h.startsWith("repeatable"));
+  const iPublic = headers.findIndex((h) => h.includes("public profile"));
+  const iProof = headers.findIndex((h) => h.includes("proof"));
+  const iBadge = col("badge");
+  const iDeadline = col("deadline");
+  const iCategory = col("category");
+
+  if (iTitle === -1) return { quests: [], error: "Missing 'Title' column" };
+
+  const quests: ParsedQuest[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const fields = parseCsvLine(lines[i]);
+    const title = fields[iTitle]?.trim();
+    if (!title) continue; // skip empty rows
+
+    const rawType = (fields[iType] || "default").toLowerCase().trim();
+    const questType = (rawType === "system" || rawType === "seasonal") ? "default" : rawType;
+
+    const rawProof = (fields[iProof] || "none").toLowerCase().trim();
+    const proofMode = rawProof === "not needed" ? "none" : (rawProof === "optional" || rawProof === "required" ? rawProof : "none");
+
+    const deadlineRaw = fields[iDeadline]?.trim();
+    let deadline: string | null = null;
+    if (deadlineRaw) {
+      const d = new Date(deadlineRaw);
+      if (!isNaN(d.getTime())) deadline = d.toISOString();
+    }
+
+    quests.push({
+      title,
+      description: fields[iDesc]?.trim() || "",
+      icon: fields[iIcon]?.trim() || "",
+      link: fields[iLink]?.trim() || null,
+      reward_spins: parseFloat(fields[iSpins] || "0") || 0,
+      active: (fields[iActive] || "TRUE").toUpperCase() === "TRUE",
+      multi_use: (fields[iRepeat] || "No").toLowerCase() === "yes",
+      is_public: (fields[iPublic] || "FALSE").toUpperCase() === "TRUE",
+      proof_mode: proofMode,
+      quest_type: questType,
+      deadline,
+      create_badge: (fields[iBadge] || "No").toLowerCase() === "yes",
+      category: fields[iCategory]?.trim() || "",
+    });
+  }
+
+  return { quests, error: null };
+}
+
 export function PlatformAdminClient({
   secret,
   stats,
@@ -124,6 +223,11 @@ export function PlatformAdminClient({
   const [isPending, startTransition] = useTransition();
   const [setupClubId, setSetupClubId] = useState<string | null>(null);
   const [setupType, setSetupType] = useState("general");
+  const [showBulkImport, setShowBulkImport] = useState(false);
+  const [bulkClubId, setBulkClubId] = useState("");
+  const [csvText, setCsvText] = useState("");
+  const [parsedQuests, setParsedQuests] = useState<ParsedQuest[] | null>(null);
+  const [parseError, setParseError] = useState<string | null>(null);
 
   function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -161,6 +265,28 @@ export function PlatformAdminClient({
   function handleApproveOffer(offerId: string) {
     startTransition(async () => {
       await approveCustomOffer(offerId, secret);
+    });
+  }
+
+  function handleParseCsv() {
+    setParseError(null);
+    const { quests, error: err } = parseQuestCsv(csvText);
+    if (err) { setParseError(err); setParsedQuests(null); return; }
+    if (quests.length === 0) { setParseError("No valid quest rows found"); setParsedQuests(null); return; }
+    setParsedQuests(quests);
+  }
+
+  function handleBulkImport() {
+    if (!bulkClubId || !parsedQuests?.length) return;
+    startTransition(async () => {
+      const res = await bulkImportQuests(bulkClubId, parsedQuests, secret);
+      if ("error" in res) setError(res.error);
+      else {
+        setSuccess(`Imported ${res.questCount} quests, ${res.badgeCount} badges`);
+        setParsedQuests(null);
+        setCsvText("");
+        setTimeout(() => setSuccess(null), 5000);
+      }
     });
   }
 
@@ -455,6 +581,101 @@ export function PlatformAdminClient({
                 {isPending ? "Creating..." : "Create from Maps"}
               </button>
             </form>
+          )}
+        </div>
+
+        {/* Bulk Import Quests (collapsible) */}
+        <div className="bg-landing-surface rounded-xl border border-blue-200 overflow-hidden">
+          <button onClick={() => setShowBulkImport(!showBulkImport)} className="w-full px-5 py-3 flex items-center justify-between text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors">
+            <span>📋 Bulk Import Quests from CSV</span>
+            <svg className={`w-4 h-4 transition-transform ${showBulkImport ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          {showBulkImport && (
+            <div className="px-5 pb-5 space-y-3 border-t border-landing-border-subtle pt-4">
+              {error && <p className="text-xs text-red-600">{error}</p>}
+              {success && <p className="text-xs text-green-600">{success}</p>}
+
+              <div className="flex gap-3 items-end">
+                <div className="flex-1">
+                  <label className="text-xs text-landing-text-tertiary block mb-1">Target Club</label>
+                  <select
+                    value={bulkClubId}
+                    onChange={(e) => setBulkClubId(e.target.value)}
+                    className="w-full rounded-lg bg-landing-surface border border-landing-border px-3 py-2 text-sm text-landing-text focus:outline-none focus:border-blue-500/30"
+                  >
+                    <option value="">Select a club...</option>
+                    {clubs.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name} ({c.slug})</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs text-landing-text-tertiary block mb-1">Paste CSV data</label>
+                <textarea
+                  value={csvText}
+                  onChange={(e) => { setCsvText(e.target.value); setParsedQuests(null); setParseError(null); }}
+                  rows={6}
+                  placeholder="ID,Category,Quest Type,automatization,Title,on/off,Description,Icon,Link (optional),Spins,..."
+                  className="w-full rounded-lg bg-landing-surface border border-landing-border px-3 py-2 text-xs text-landing-text font-mono placeholder:text-landing-text-tertiary focus:outline-none focus:border-blue-500/30"
+                />
+              </div>
+
+              {parseError && <p className="text-xs text-red-500">{parseError}</p>}
+
+              <button onClick={handleParseCsv} disabled={!csvText.trim()} className="rounded-lg bg-blue-100 text-blue-700 px-4 py-2 text-sm font-semibold hover:bg-blue-200 disabled:opacity-50 transition-colors">
+                Parse CSV
+              </button>
+
+              {parsedQuests && (
+                <div className="space-y-3">
+                  <p className="text-xs text-landing-text-secondary">
+                    {parsedQuests.length} quests parsed ({parsedQuests.filter((q) => q.active).length} active, {parsedQuests.filter((q) => !q.active).length} inactive, {parsedQuests.filter((q) => q.create_badge).length} with badges)
+                  </p>
+                  <div className="max-h-60 overflow-y-auto rounded-lg border border-landing-border-subtle">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="text-landing-text-tertiary uppercase tracking-wide sticky top-0 bg-landing-surface">
+                          <th className="text-left px-2 py-1">#</th>
+                          <th className="text-left px-2 py-1">Title</th>
+                          <th className="text-left px-2 py-1">Cat</th>
+                          <th className="text-left px-2 py-1">Type</th>
+                          <th className="text-right px-2 py-1">Spins</th>
+                          <th className="text-center px-2 py-1">Badge</th>
+                          <th className="text-center px-2 py-1">Proof</th>
+                          <th className="text-center px-2 py-1">Active</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-landing-border-subtle">
+                        {parsedQuests.map((q, i) => (
+                          <tr key={i} className={q.active ? "" : "opacity-40"}>
+                            <td className="px-2 py-1 text-landing-text-tertiary">{i + 1}</td>
+                            <td className="px-2 py-1 text-landing-text">{q.icon} {q.title}</td>
+                            <td className="px-2 py-1 text-landing-text-tertiary">{q.category}</td>
+                            <td className="px-2 py-1 text-landing-text-tertiary">{q.quest_type}</td>
+                            <td className="px-2 py-1 text-right font-mono text-landing-text">{q.reward_spins}</td>
+                            <td className="px-2 py-1 text-center">{q.create_badge ? "🏅" : ""}</td>
+                            <td className="px-2 py-1 text-center text-landing-text-tertiary">{q.proof_mode}</td>
+                            <td className="px-2 py-1 text-center">{q.active ? "✓" : "✗"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <button
+                    onClick={handleBulkImport}
+                    disabled={isPending || !bulkClubId}
+                    className="rounded-lg bg-green-100 text-green-700 px-4 py-2 text-sm font-semibold hover:bg-green-200 disabled:opacity-50 transition-colors"
+                  >
+                    {isPending ? "Importing..." : `Import ${parsedQuests.length} Quests`}
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
 
