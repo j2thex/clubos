@@ -156,6 +156,8 @@ export async function updateTelegramBotConfig(
     telegram_bot_referral_name: string | null;
     telegram_bot_registration_price: number | null;
     telegram_bot_welcome_message: string | null;
+    telegram_bot_keywords: string[];
+    telegram_bot_age_restricted: boolean;
   },
   clubSlug: string,
 ): Promise<{ error: string } | { ok: true }> {
@@ -168,6 +170,8 @@ export async function updateTelegramBotConfig(
       telegram_bot_referral_name: config.telegram_bot_referral_name || null,
       telegram_bot_registration_price: config.telegram_bot_registration_price,
       telegram_bot_welcome_message: config.telegram_bot_welcome_message || null,
+      telegram_bot_keywords: config.telegram_bot_keywords,
+      telegram_bot_age_restricted: config.telegram_bot_age_restricted,
     })
     .eq("id", clubId);
 
