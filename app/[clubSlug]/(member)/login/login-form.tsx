@@ -29,7 +29,7 @@ export function LoginForm({ loginMode }: { loginMode: string }) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--club-primary, #16a34a) 8%, white), white, color-mix(in srgb, var(--club-primary, #16a34a) 12%, white))" }}>
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ colorScheme: "light", background: "linear-gradient(135deg, color-mix(in srgb, var(--club-primary, #16a34a) 8%, white), white, color-mix(in srgb, var(--club-primary, #16a34a) 12%, white))" }}>
       <div className="w-full max-w-sm">
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">

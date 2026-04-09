@@ -61,7 +61,7 @@ export async function createClubFromGoogleMaps(
   const clubName = parsed.name;
   const slug = generateSlug(clubName);
   const emailPrefix = slug.replace(/-/g, "");
-  const email = `${emailPrefix}@osocios.com`;
+  const email = `${emailPrefix}@osocios.club`;
   const password = "q1234567";
 
   const supabase = createAdminClient();
