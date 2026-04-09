@@ -26,7 +26,7 @@ export default function StaffLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-gray-50" style={{ colorScheme: "light" }}>
       <div className="w-full max-w-sm">
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">

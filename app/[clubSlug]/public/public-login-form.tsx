@@ -29,7 +29,7 @@ export function PublicLoginForm({
   }
 
   return (
-    <form action={handleSubmit} className="space-y-3">
+    <form action={handleSubmit} className="space-y-3" style={{ colorScheme: "light" }}>
       {error && (
         <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
           {error}
@@ -43,7 +43,7 @@ export function PublicLoginForm({
         autoCapitalize="characters"
         autoComplete="off"
         placeholder={t("login.memberCodePlaceholder")}
-        className="club-ring block w-full rounded-lg border border-gray-300 px-4 py-3 text-center text-2xl font-mono tracking-[0.2em] uppercase placeholder:text-gray-400 placeholder:tracking-[0.2em] placeholder:text-base transition"
+        className="club-ring block w-full rounded-lg border border-gray-300 px-4 py-3 text-center text-2xl font-mono tracking-[0.2em] uppercase text-gray-900 placeholder:text-gray-400 placeholder:tracking-[0.2em] placeholder:text-base transition"
         onChange={(e) => {
           e.target.value = e.target.value.toUpperCase();
         }}
@@ -57,7 +57,7 @@ export function PublicLoginForm({
           inputMode="numeric"
           autoComplete="off"
           placeholder="DDMM"
-          className="club-ring block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-lg font-mono tracking-widest placeholder:text-gray-400 placeholder:tracking-widest transition"
+          className="club-ring block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-lg font-mono tracking-widest text-gray-900 placeholder:text-gray-400 placeholder:tracking-widest transition"
           onChange={(e) => {
             e.target.value = e.target.value.replace(/\D/g, "").slice(0, 4);
           }}
