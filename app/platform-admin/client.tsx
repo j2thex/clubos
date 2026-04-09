@@ -576,7 +576,7 @@ export function PlatformAdminClient({
                 required
                 className="w-full rounded-lg bg-landing-surface border border-landing-border px-3 py-2 text-sm text-landing-text placeholder:text-landing-text-tertiary focus:outline-none focus:border-emerald-500/30"
               />
-              <p className="text-[10px] text-landing-text-tertiary">Owner login: [slug]@osocios.com / q1234567</p>
+              <p className="text-[10px] text-landing-text-tertiary">Owner login: [slug]@osocios.club / q1234567</p>
               <button type="submit" disabled={isPending} className="rounded-lg bg-emerald-100 text-emerald-700 px-4 py-2 text-sm font-semibold hover:bg-emerald-200 disabled:opacity-50 transition-colors">
                 {isPending ? "Creating..." : "Create from Maps"}
               </button>
