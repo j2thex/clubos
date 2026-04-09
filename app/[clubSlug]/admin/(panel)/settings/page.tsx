@@ -16,6 +16,7 @@ import { CollapsibleSection } from "@/components/collapsible-section";
 import { EmailCampaignManager } from "../../email-campaign-manager";
 import { getCampaignHistory, getEmailStats } from "../../email-actions";
 import { getOwnerFromCookie } from "@/lib/auth";
+import { QrCodesManager } from "../../qr-codes-manager";
 
 export default async function SettingsPage({
   params,
@@ -119,6 +120,9 @@ export default async function SettingsPage({
           clubSlug={clubSlug}
           initialHours={club.working_hours as Record<string, { open: string; close: string } | null> | null}
         />
+      </CollapsibleSection>
+      <CollapsibleSection title="QR Codes">
+        <QrCodesManager clubSlug={clubSlug} />
       </CollapsibleSection>
       <LoginModeManager
         loginMode={club.login_mode ?? "code_only"}
