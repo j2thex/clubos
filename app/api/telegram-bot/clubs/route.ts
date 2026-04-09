@@ -17,8 +17,7 @@ export async function GET(request: NextRequest) {
       "id, slug, name, currency, latitude, longitude, telegram_bot_referral_name, telegram_bot_registration_price, telegram_bot_welcome_message, telegram_bot_keywords, telegram_bot_age_restricted"
     )
     .eq("telegram_bot_enabled", true)
-    .eq("active", true)
-    .eq("invite_only", true);
+    .eq("active", true);
 
   if (error) {
     return NextResponse.json({ error: "Database error" }, { status: 500 });
