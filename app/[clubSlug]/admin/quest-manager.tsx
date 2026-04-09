@@ -8,6 +8,16 @@ import { IconPicker } from "@/components/icon-picker";
 import { LanguageTabs } from "@/components/language-tabs";
 import { DynamicIcon } from "@/components/dynamic-icon";
 
+const CATEGORIES = ["social", "activity", "boost", "level_up"] as const;
+type Category = (typeof CATEGORIES)[number];
+
+const CATEGORY_LABELS: Record<Category, string> = {
+  social: "Social",
+  activity: "Activity",
+  boost: "Boost",
+  level_up: "Level Up",
+};
+
 interface Quest {
   id: string;
   title: string;
@@ -28,22 +38,23 @@ interface Quest {
   tutorial_steps: string[] | null;
   badge_id: string | null;
   deadline: string | null;
+  category: string;
 }
 
 const TEMPLATES = [
-  { titleKey: "admin.quickFollowInstagram", descKey: "admin.quickFollowInstagramDesc", link: "", rewardSpins: 1, questType: "default", icon: "instagram", proofMode: "none" },
-  { titleKey: "admin.quickFollowTiktok", descKey: "admin.quickFollowTiktokDesc", link: "", rewardSpins: 1, questType: "default", icon: "music-2", proofMode: "none" },
-  { titleKey: "admin.quickFollowYoutube", descKey: "admin.quickFollowYoutubeDesc", link: "", rewardSpins: 1, questType: "default", icon: "youtube", proofMode: "none" },
-  { titleKey: "admin.quickJoinWhatsapp", descKey: "admin.quickJoinWhatsappDesc", link: "", rewardSpins: 1, questType: "default", icon: "message-circle", proofMode: "none" },
-  { titleKey: "admin.quickGoogleReview", descKey: "admin.quickGoogleReviewDesc", link: "", rewardSpins: 2, questType: "default", icon: "star", proofMode: "none" },
-  { titleKey: "admin.quickPostPhoto", descKey: "admin.quickPostPhotoDesc", link: "", rewardSpins: 1, questType: "default", icon: "camera", proofMode: "optional" },
-  { titleKey: "admin.quickAttendEvent", descKey: "admin.quickAttendEventDesc", link: "", rewardSpins: 1, questType: "default", icon: "calendar-check", proofMode: "none" },
-  { titleKey: "admin.quickCheckIn", descKey: "admin.quickCheckInDesc", link: "", rewardSpins: 1, questType: "default", icon: "map-pin", proofMode: "none" },
-  { titleKey: "admin.quickVisitWebsite", descKey: "admin.quickVisitWebsiteDesc", link: "", rewardSpins: 1, questType: "default", icon: "globe", proofMode: "none" },
-  { titleKey: "admin.quickReferFriend", descKey: "admin.quickReferFriendDesc", link: "", rewardSpins: 2, questType: "referral", icon: "user-plus", proofMode: "none" },
-  { titleKey: "admin.quickFeedback", descKey: "admin.quickFeedbackDesc", link: "", rewardSpins: 1, questType: "feedback", icon: "message-square", proofMode: "required" },
-  { titleKey: "admin.quickTutorial", descKey: "admin.quickTutorialDesc", link: "", rewardSpins: 1, questType: "tutorial", icon: "book-open", proofMode: "none" },
-  { titleKey: "admin.quickShareEmail", descKey: "admin.quickShareEmailDesc", link: "", rewardSpins: 1, questType: "email_collect", icon: "mail", proofMode: "none" },
+  { titleKey: "admin.quickFollowInstagram", descKey: "admin.quickFollowInstagramDesc", link: "", rewardSpins: 1, questType: "default", icon: "instagram", proofMode: "none", category: "social" as Category },
+  { titleKey: "admin.quickFollowTiktok", descKey: "admin.quickFollowTiktokDesc", link: "", rewardSpins: 1, questType: "default", icon: "music-2", proofMode: "none", category: "social" as Category },
+  { titleKey: "admin.quickFollowYoutube", descKey: "admin.quickFollowYoutubeDesc", link: "", rewardSpins: 1, questType: "default", icon: "youtube", proofMode: "none", category: "social" as Category },
+  { titleKey: "admin.quickJoinWhatsapp", descKey: "admin.quickJoinWhatsappDesc", link: "", rewardSpins: 1, questType: "default", icon: "message-circle", proofMode: "none", category: "social" as Category },
+  { titleKey: "admin.quickGoogleReview", descKey: "admin.quickGoogleReviewDesc", link: "", rewardSpins: 2, questType: "default", icon: "star", proofMode: "none", category: "social" as Category },
+  { titleKey: "admin.quickPostPhoto", descKey: "admin.quickPostPhotoDesc", link: "", rewardSpins: 1, questType: "default", icon: "camera", proofMode: "optional", category: "social" as Category },
+  { titleKey: "admin.quickAttendEvent", descKey: "admin.quickAttendEventDesc", link: "", rewardSpins: 1, questType: "default", icon: "calendar-check", proofMode: "none", category: "activity" as Category },
+  { titleKey: "admin.quickCheckIn", descKey: "admin.quickCheckInDesc", link: "", rewardSpins: 1, questType: "default", icon: "map-pin", proofMode: "none", category: "activity" as Category },
+  { titleKey: "admin.quickVisitWebsite", descKey: "admin.quickVisitWebsiteDesc", link: "", rewardSpins: 1, questType: "default", icon: "globe", proofMode: "none", category: "social" as Category },
+  { titleKey: "admin.quickReferFriend", descKey: "admin.quickReferFriendDesc", link: "", rewardSpins: 2, questType: "referral", icon: "user-plus", proofMode: "none", category: "social" as Category },
+  { titleKey: "admin.quickFeedback", descKey: "admin.quickFeedbackDesc", link: "", rewardSpins: 1, questType: "feedback", icon: "message-square", proofMode: "required", category: "level_up" as Category },
+  { titleKey: "admin.quickTutorial", descKey: "admin.quickTutorialDesc", link: "", rewardSpins: 1, questType: "tutorial", icon: "book-open", proofMode: "none", category: "level_up" as Category },
+  { titleKey: "admin.quickShareEmail", descKey: "admin.quickShareEmailDesc", link: "", rewardSpins: 1, questType: "email_collect", icon: "mail", proofMode: "none", category: "social" as Category },
 ];
 
 // Templates that get bulk-created with "Add All Common"
@@ -85,6 +96,7 @@ export function QuestManager({
   const [editTitleEs, setEditTitleEs] = useState("");
   const [editDescEs, setEditDescEs] = useState("");
   const [editDeadline, setEditDeadline] = useState("");
+  const [editCategory, setEditCategory] = useState<Category>("social");
 
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
@@ -104,7 +116,9 @@ export function QuestManager({
   const [newTitleEs, setNewTitleEs] = useState("");
   const [newDescEs, setNewDescEs] = useState("");
   const [newDeadline, setNewDeadline] = useState("");
+  const [newCategory, setNewCategory] = useState<Category>("social");
 
+  const [activeTab, setActiveTab] = useState<Category>("social");
   const [showForm, setShowForm] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -122,6 +136,7 @@ export function QuestManager({
     setNewQuestType(tmpl.questType);
     setNewIcon(tmpl.icon);
     setNewProofMode(tmpl.proofMode);
+    setNewCategory(tmpl.category);
     // Auto-fill Google Review link if available
     if (tmpl.titleKey === "admin.quickGoogleReview" && googleReviewUrl) {
       setNewLink(googleReviewUrl);
@@ -189,6 +204,7 @@ export function QuestManager({
     setEditTitleEs(q.title_es ?? "");
     setEditDescEs(q.description_es ?? "");
     setEditDeadline(q.deadline ? q.deadline.slice(0, 16) : "");
+    setEditCategory((q.category ?? "social") as Category);
     setEditLang("en");
     setEditImage(null);
     setEditImageUrl(q.image_url ?? "");
@@ -221,6 +237,7 @@ export function QuestManager({
       fd.set("title_es", editTitleEs);
       fd.set("description_es", editDescEs);
       fd.set("deadline", editDeadline);
+      fd.set("category", editCategory);
       if (editImage) fd.set("image", editImage);
       fd.set("image_url", editImageUrl);
 
@@ -263,6 +280,7 @@ export function QuestManager({
       fd.set("title_es", newTitleEs);
       fd.set("description_es", newDescEs);
       fd.set("deadline", newDeadline);
+      fd.set("category", newCategory);
       if (newImage) fd.set("image", newImage);
       fd.set("image_url", newImageUrl);
 
@@ -288,6 +306,7 @@ export function QuestManager({
         setNewTitleEs("");
         setNewDescEs("");
         setNewDeadline("");
+        setNewCategory("social");
         setNewLang("en");
         setSuccessMsg(t("admin.questCreated", { title: createdTitle }));
         setShowForm(false);
@@ -324,6 +343,7 @@ export function QuestManager({
         fd.set("icon", tmpl.icon);
         fd.set("award_badge", "0");
         fd.set("proof_placeholder", "");
+        fd.set("category", tmpl.category);
         const result = await addQuest(clubId, fd, clubSlug);
         if ("error" in result) {
           setError(result.error);
@@ -458,16 +478,33 @@ export function QuestManager({
           </div>
         )}
 
-        <div className="px-5 py-2 bg-gray-50 border-b border-gray-100">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-            {t("admin.activeQuestsCount", { count: quests.length })}
-          </p>
+        {/* Category tabs */}
+        <div className="px-5 py-3 border-b border-gray-100">
+          <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5 overflow-x-auto">
+            {CATEGORIES.map((cat) => {
+              const count = quests.filter((q) => q.category === cat).length;
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => { setActiveTab(cat); setEditingId(null); }}
+                  className={`shrink-0 px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+                    activeTab === cat
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  {CATEGORY_LABELS[cat]} ({count})
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Quest list */}
-        {quests.length > 0 && (
+        {quests.filter((q) => q.category === activeTab).length > 0 && (
           <div className="divide-y divide-gray-100">
-            {quests.map((q) => (
+            {quests.filter((q) => q.category === activeTab).map((q) => (
               <div key={q.id}>
                 {editingId === q.id ? (
                   <div className="px-5 py-3 space-y-3 bg-gray-50">
@@ -590,18 +627,32 @@ export function QuestManager({
                       />
                       <span className="text-xs text-gray-600">{t("admin.questShowPublic")}</span>
                     </label>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questType")}</label>
-                      <select
-                        value={editQuestType}
-                        onChange={(e) => handleEditQuestTypeChange(e.target.value)}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
-                      >
-                        <option value="default">{t("admin.questTypeDefault")}</option>
-                        <option value="referral">{t("admin.questTypeReferral")}</option>
-                        <option value="feedback">{t("admin.questTypeFeedback")}</option>
-                        <option value="tutorial">{t("admin.questTypeTutorial")}</option>
-                      </select>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questType")}</label>
+                        <select
+                          value={editQuestType}
+                          onChange={(e) => handleEditQuestTypeChange(e.target.value)}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                        >
+                          <option value="default">{t("admin.questTypeDefault")}</option>
+                          <option value="referral">{t("admin.questTypeReferral")}</option>
+                          <option value="feedback">{t("admin.questTypeFeedback")}</option>
+                          <option value="tutorial">{t("admin.questTypeTutorial")}</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Category</label>
+                        <select
+                          value={editCategory}
+                          onChange={(e) => setEditCategory(e.target.value as Category)}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                        >
+                          {CATEGORIES.map((c) => (
+                            <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                     {renderQuestTypeFields(editQuestType, editProofMode, setEditProofMode, editProofPlaceholder, setEditProofPlaceholder, editTutorialSteps, setEditTutorialSteps)}
                     <label className="flex items-center gap-2 cursor-pointer">
@@ -854,18 +905,32 @@ export function QuestManager({
             />
             <span className="text-xs text-gray-600">{t("admin.questShowPublic")}</span>
           </label>
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questType")}</label>
-            <select
-              value={newQuestType}
-              onChange={(e) => handleNewQuestTypeChange(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
-            >
-              <option value="default">{t("admin.questTypeDefault")}</option>
-              <option value="referral">{t("admin.questTypeReferral")}</option>
-              <option value="feedback">{t("admin.questTypeFeedback")}</option>
-              <option value="tutorial">{t("admin.questTypeTutorial")}</option>
-            </select>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questType")}</label>
+              <select
+                value={newQuestType}
+                onChange={(e) => handleNewQuestTypeChange(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+              >
+                <option value="default">{t("admin.questTypeDefault")}</option>
+                <option value="referral">{t("admin.questTypeReferral")}</option>
+                <option value="feedback">{t("admin.questTypeFeedback")}</option>
+                <option value="tutorial">{t("admin.questTypeTutorial")}</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Category</label>
+              <select
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value as Category)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+              >
+                {CATEGORIES.map((c) => (
+                  <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>
+                ))}
+              </select>
+            </div>
           </div>
           {renderQuestTypeFields(newQuestType, newProofMode, setNewProofMode, newProofPlaceholder, setNewProofPlaceholder, newTutorialSteps, setNewTutorialSteps)}
           <label className="flex items-center gap-2 cursor-pointer">

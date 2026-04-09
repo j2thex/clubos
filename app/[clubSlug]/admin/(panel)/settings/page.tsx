@@ -16,6 +16,7 @@ import { CollapsibleSection } from "@/components/collapsible-section";
 import { EmailCampaignManager } from "../../email-campaign-manager";
 import { getCampaignHistory, getEmailStats } from "../../email-actions";
 import { getOwnerFromCookie } from "@/lib/auth";
+import { QrCodesManager } from "../../qr-codes-manager";
 
 export default async function SettingsPage({
   params,
@@ -27,7 +28,7 @@ export default async function SettingsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, login_mode, invite_only, invite_mode, hide_member_login, preregistration_enabled, auto_registration, tags, telegram_bot_token, telegram_chat_id, notification_secret, latitude, longitude, address, city, country, spin_enabled, working_hours, spin_display_decimals, spin_cost, telegram_bot_enabled, telegram_bot_referral_name, telegram_bot_registration_price, telegram_bot_welcome_message")
+    .select("id, login_mode, invite_only, invite_mode, hide_member_login, preregistration_enabled, auto_registration, tags, telegram_bot_token, telegram_chat_id, notification_secret, latitude, longitude, address, city, country, spin_enabled, working_hours, spin_display_decimals, spin_cost, telegram_bot_enabled, telegram_bot_referral_name, telegram_bot_registration_price, telegram_bot_welcome_message, telegram_bot_keywords, telegram_bot_age_restricted")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -120,6 +121,9 @@ export default async function SettingsPage({
           initialHours={club.working_hours as Record<string, { open: string; close: string } | null> | null}
         />
       </CollapsibleSection>
+      <CollapsibleSection title="QR Codes">
+        <QrCodesManager clubSlug={clubSlug} />
+      </CollapsibleSection>
       <LoginModeManager
         loginMode={club.login_mode ?? "code_only"}
         inviteOnly={club.invite_only ?? false}
@@ -193,6 +197,8 @@ export default async function SettingsPage({
           referralName={club.telegram_bot_referral_name ?? null}
           registrationPrice={club.telegram_bot_registration_price ?? null}
           welcomeMessage={club.telegram_bot_welcome_message ?? null}
+          keywords={club.telegram_bot_keywords ?? []}
+          ageRestricted={club.telegram_bot_age_restricted ?? true}
           clubId={club.id}
           clubSlug={clubSlug}
         />

@@ -142,22 +142,13 @@ export async function middleware(request: NextRequest) {
   try {
     const { payload } = await jwtVerify(token, secret);
 
-    // Check DB for membership expiry on page loads (skip server actions)
-    const isServerAction = request.headers.has("next-action");
-    if (!isServerAction) {
-      const { data: member } = await supabaseAdmin
-        .from("members")
-        .select("status, valid_till")
-        .eq("id", payload.member_id as string)
-        .single();
-
-      if (member?.valid_till) {
-        const expiry = new Date(member.valid_till + "T00:00:00");
-        if (expiry < new Date()) {
-          const res = NextResponse.redirect(new URL(`/${clubSlug}/login?expired=1`, request.url));
-          res.cookies.delete(MEMBER_COOKIE);
-          return res;
-        }
+    // Check membership expiry from JWT claim (no DB query needed)
+    if (payload.valid_till) {
+      const expiry = new Date((payload.valid_till as string) + "T00:00:00");
+      if (expiry < new Date()) {
+        const res = NextResponse.redirect(new URL(`/${clubSlug}/login?expired=1`, request.url));
+        res.cookies.delete(MEMBER_COOKIE);
+        return res;
       }
     }
 

@@ -23,6 +23,26 @@ interface Quest {
   proof_placeholder: string | null;
   tutorial_steps: string[] | null;
   deadline: string | null;
+  category: string | null;
+}
+
+const CATEGORY_LABELS: Record<string, { en: string; es: string }> = {
+  social: { en: "Social", es: "Social" },
+  activity: { en: "Activities", es: "Actividades" },
+  boost: { en: "Boost", es: "Boost" },
+  level_up: { en: "Level Up", es: "Sube de Nivel" },
+};
+
+const CATEGORY_ORDER = ["social", "activity", "boost", "level_up"];
+
+function groupByCategory(quests: Quest[]) {
+  const groups: Record<string, Quest[]> = {};
+  for (const q of quests) {
+    const key = q.category || "social";
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(q);
+  }
+  return groups;
 }
 
 function deadlineBadge(deadline: string | null, locale: Locale) {
@@ -381,7 +401,22 @@ export function QuestList({
           {hideCompleted ? t("quests.showCompleted") : t("quests.hideCompleted")}
         </button>
       )}
-      {filteredQuests.map((q) => {
+      {(() => {
+        const groups = groupByCategory(filteredQuests);
+        const sortedKeys = Object.keys(groups).sort(
+          (a, b) => (CATEGORY_ORDER.indexOf(a) === -1 ? 99 : CATEGORY_ORDER.indexOf(a)) - (CATEGORY_ORDER.indexOf(b) === -1 ? 99 : CATEGORY_ORDER.indexOf(b)),
+        );
+        const multipleCategories = sortedKeys.length > 1;
+        return sortedKeys.map((cat) => (
+          <div key={cat} className="space-y-3">
+            {multipleCategories && (
+              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wide px-1">
+                {locale === "es"
+                  ? (CATEGORY_LABELS[cat]?.es ?? cat)
+                  : (CATEGORY_LABELS[cat]?.en ?? cat)}
+              </h3>
+            )}
+            {groups[cat].map((q) => {
         const count = completionCounts[q.id] ?? 0;
         const done = count > 0;
         const isMultiUse = q.multi_use ?? false;
@@ -531,6 +566,9 @@ export function QuestList({
           </div>
         );
       })}
+          </div>
+        ));
+      })()}
 
       {/* Copied toast */}
       {copiedToast && (

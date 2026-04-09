@@ -106,7 +106,7 @@ export default async function PublicProfilePage({
         .order("date", { ascending: true }),
       supabase
         .from("quests")
-        .select("id, title, description, title_es, description_es, image_url, link, reward_spins")
+        .select("id, title, description, title_es, description_es, image_url, link, reward_spins, category")
         .eq("club_id", club.id)
         .eq("active", true)
         .eq("is_public", true)
@@ -320,22 +320,51 @@ export default async function PublicProfilePage({
                   </p>
                 </div>
               )}
-              {(quests ?? []).map((q) => (
-                <PublicQuestCard
-                  key={q.id}
-                  quest={{
-                    id: q.id,
-                    title: q.title,
-                    description: q.description,
-                    title_es: q.title_es,
-                    description_es: q.description_es,
-                    image_url: q.image_url,
-                    link: q.link,
-                    reward_spins: q.reward_spins,
-                  }}
-                  clubSlug={clubSlug}
-                />
-              ))}
+              {(() => {
+                const questList = quests ?? [];
+                const catOrder = ["social", "activity", "boost", "level_up"];
+                const catLabels: Record<string, { en: string; es: string }> = {
+                  social: { en: "Social", es: "Social" },
+                  activity: { en: "Activities", es: "Actividades" },
+                  boost: { en: "Boost", es: "Boost" },
+                  level_up: { en: "Level Up", es: "Sube de Nivel" },
+                };
+                const groups: Record<string, typeof questList> = {};
+                for (const q of questList) {
+                  const key = q.category || "social";
+                  if (!groups[key]) groups[key] = [];
+                  groups[key].push(q);
+                }
+                const sortedKeys = Object.keys(groups).sort(
+                  (a, b) => (catOrder.indexOf(a) === -1 ? 99 : catOrder.indexOf(a)) - (catOrder.indexOf(b) === -1 ? 99 : catOrder.indexOf(b)),
+                );
+                const multiCat = sortedKeys.length > 1;
+                return sortedKeys.map((cat) => (
+                  <div key={cat} className="space-y-3">
+                    {multiCat && (
+                      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1">
+                        {locale === "es" ? (catLabels[cat]?.es ?? cat) : (catLabels[cat]?.en ?? cat)}
+                      </h3>
+                    )}
+                    {groups[cat].map((q) => (
+                      <PublicQuestCard
+                        key={q.id}
+                        quest={{
+                          id: q.id,
+                          title: q.title,
+                          description: q.description,
+                          title_es: q.title_es,
+                          description_es: q.description_es,
+                          image_url: q.image_url,
+                          link: q.link,
+                          reward_spins: q.reward_spins,
+                        }}
+                        clubSlug={clubSlug}
+                      />
+                    ))}
+                  </div>
+                ));
+              })()}
               <MembersOnlyTeaser count={hiddenQuestsCount ?? 0} locale={locale} />
             </div>
           </div>

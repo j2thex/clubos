@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/provider";
@@ -59,6 +60,12 @@ const navItems = [
 export function MemberNav({ clubSlug }: MemberNavProps) {
   const pathname = usePathname();
   const { t } = useLanguage();
+  const [pendingPath, setPendingPath] = useState<string | null>(null);
+
+  // Clear pending state when navigation completes
+  useEffect(() => {
+    setPendingPath(null);
+  }, [pathname]);
 
   // Hide nav on the login page
   if (pathname.endsWith("/login")) {
@@ -70,16 +77,18 @@ export function MemberNav({ clubSlug }: MemberNavProps) {
       <div className="mx-auto flex max-w-md items-center justify-around pb-2 pt-2">
         {navItems.map((item) => {
           const href = `/${clubSlug}${item.path}`;
+          const activePath = pendingPath ?? pathname;
           const isActive =
             item.path === ""
-              ? pathname === `/${clubSlug}` || pathname === `/${clubSlug}/`
-              : pathname.startsWith(href);
+              ? activePath === `/${clubSlug}` || activePath === `/${clubSlug}/`
+              : activePath.startsWith(href);
 
           return (
             <Link
               key={item.labelKey}
               href={href}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1 text-xs transition-colors ${
+              onClick={() => setPendingPath(href)}
+              className={`flex flex-col items-center gap-0.5 px-3 py-1 text-xs transition-all active:scale-95 ${
                 isActive ? "club-primary" : "text-gray-400 hover:text-gray-600"
               }`}
             >

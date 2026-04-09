@@ -20,7 +20,7 @@ export function WelcomeOverlay({ clubName }: { clubName: string }) {
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 pb-24">
       <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full max-h-[90svh] overflow-y-auto p-6 space-y-4 animate-in slide-in-from-bottom-4 duration-300">
         <div className="text-center">
           <p className="text-2xl mb-1">👋</p>

@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   const { data: clubs, error } = await supabase
     .from("clubs")
     .select(
-      "id, slug, name, currency, telegram_bot_referral_name, telegram_bot_registration_price, telegram_bot_welcome_message"
+      "id, slug, name, currency, latitude, longitude, telegram_bot_referral_name, telegram_bot_registration_price, telegram_bot_welcome_message, telegram_bot_keywords, telegram_bot_age_restricted"
     )
     .eq("telegram_bot_enabled", true)
     .eq("active", true)
@@ -44,13 +44,17 @@ export async function GET(request: NextRequest) {
   }
 
   const result = clubs.map((c) => ({
-    slug: c.slug,
     name: c.name,
+    keywords: c.telegram_bot_keywords ?? [],
+    inviter: c.telegram_bot_referral_name,
+    ageRestricted: c.telegram_bot_age_restricted ?? true,
+    lat: c.latitude ?? undefined,
+    lng: c.longitude ?? undefined,
+    slug: c.slug,
     currency: c.currency,
-    referral_name: c.telegram_bot_referral_name,
-    registration_price: c.telegram_bot_registration_price,
-    welcome_message: c.telegram_bot_welcome_message,
-    membership_periods: (periodsByClub.get(c.id) ?? []).map((p) => ({
+    registrationPrice: c.telegram_bot_registration_price,
+    welcomeMessage: c.telegram_bot_welcome_message,
+    membershipPeriods: (periodsByClub.get(c.id) ?? []).map((p) => ({
       name: p.name,
       duration_months: p.duration_months,
       price: p.price,

@@ -1,4 +1,238 @@
-# ClubOS Architecture Reference
+# ClubOS — Architecture & Feature Reference
+
+> Last updated: 2026-04-08
+> Purpose: Single source of truth for all platform capabilities AND implementation details. Used by the `/document` skill, website copy, tutorials, documentation, and sales materials.
+
+---
+
+## Platform Feature Inventory
+
+### A. MEMBER PORTAL (what end users get)
+
+| # | Feature | Description |
+|---|---------|-------------|
+| 1 | **Member Code Login** | Code-only or code+expiry (DDMM) authentication |
+| 2 | **Personalized Dashboard** | Club-branded hero, stats (spins remaining, completed, level), quests, gallery |
+| 3 | **Welcome Overlay** | First-visit tutorial explaining quests, spin wheel, and events |
+| 4 | **Spin the Wheel** | Weighted probability wheel with configurable segments, confetti on win, result overlay |
+| 5 | **Spin Balance & History** | Track remaining spins, full history with outcomes, dedicated history page |
+| 6 | **Quests — Default** | Simple task tracking, staff validates completion |
+| 7 | **Quests — Tutorial** | Step-by-step guides with checkboxes (progress saved locally) |
+| 8 | **Quests — Feedback** | Text submission/feedback collection from members |
+| 9 | **Quests — Referral** | Share link via WhatsApp/Telegram/Instagram/TikTok, auto-complete on new signup |
+| 10 | **Quests — Email Collect** | Members enter email to complete quest and earn spins; email saved to profile |
+| 11 | **Quest Proof Modes** | None (trust), Optional (can attach), Required (must attach URL/text) |
+| 12 | **Quest Deadlines** | Auto-expire with countdown badge ("Until Apr 10"), red if <=3 days |
+| 13 | **Optimistic Quest UI** | Instant "Pending" badge on submission before server confirms; error rollback |
+| 14 | **Badge Collection** | Earn badges from quests, see locked vs unlocked badges with unlock hints |
+| 15 | **Events — List View** | Browse upcoming events with images, dates, times, prices, RSVP button |
+| 16 | **Events — Calendar View** | Month navigator, day grid with event dots, date selection |
+| 17 | **Events — Detail Page** | Full image, description, location, RSVP/cancel, check-in status, reward spins |
+| 18 | **Events — RSVP** | Sign up / cancel for events, prevented for past events or if already checked in |
+| 19 | **Event End Time** | Optional end time for events, shows duration |
+| 20 | **Offers** | Browse club offers grouped by subtype, request/cancel orders |
+| 21 | **Referral System** | Shareable link, track referred members, WhatsApp/Telegram/Instagram/TikTok buttons |
+| 22 | **Member Profile** | QR code, member code, validity dates, badges, spin history, referrals, logout |
+| 23 | **Profile Email Field** | Members can add/update their email directly on profile page |
+| 24 | **Photo Gallery** | Horizontal scroll with lightbox zoom and captions |
+| 25 | **Social Links** | Instagram, WhatsApp, Telegram, Google Maps, Website — auto-formatted |
+| 26 | **Membership Expiry** | Color-coded validity (green/amber/red), auto-check on login, expired redirect |
+| 27 | **Level System** | Level 1-10 based on total spin count (1 level per 5 spins) |
+| 28 | **Bilingual UI** | Full EN/ES with cookie-based switching on all pages |
+| 29 | **Mobile-First Design** | Bottom nav (5 tabs), safe area insets, touch-friendly 44px+ targets |
+
+### B. STAFF CONSOLE (what staff members get)
+
+| # | Feature | Description |
+|---|---------|-------------|
+| 1 | **Spin Wheel for Members** | Look up member by code, spin on their behalf, see balance |
+| 2 | **Prize Fulfillment Queue** | Pending prizes from member self-spins, mark as fulfilled |
+| 3 | **Quest Validation** | Approve/decline pending quest submissions, view proof URLs |
+| 4 | **Manual Quest Completion** | Complete any quest for a member directly, award spins instantly |
+| 5 | **Event Check-In** | Check in members by code or from RSVP list, award event spins |
+| 6 | **Offer Order Fulfillment** | Process pending offer orders, create walk-in orders |
+| 7 | **Member Creation** | Add new members with codes, roles, membership periods, referral tracking |
+| 8 | **Staff Account Creation** | Create staff with 4-digit PIN authentication |
+| 9 | **Referral Rewards** | Auto-complete referral quests when new member signs up with referral code |
+| 10 | **Activity Logging** | All actions logged with timestamps, actor, target, and details |
+| 11 | **Telegram Notifications** | Real-time alerts for RSVPs, quest submissions, offer orders, spin wins, email collections |
+
+### C. ADMIN PANEL (what club owners get)
+
+| # | Feature | Description |
+|---|---------|-------------|
+| 1 | **People Manager** | CRUD members, staff, referral sources; role assignment; premium referrer config |
+| 2 | **Quest Builder** | Create/edit quests: 5 types, 3 proof modes, icons (100+), images, deadlines, badges |
+| 3 | **Quest Templates** | Quick-add: Instagram, TikTok, YouTube, WhatsApp, Google Review, Photo, Event, Check-In, Referral, Feedback, Tutorial, Email Collect |
+| 4 | **Event Manager** | Create/edit events: bilingual content, pricing, images, icons, recurring (RRULE), location, rewards, end time |
+| 5 | **Offer Manager** | Two-tier catalog (platform + club-specific), per-club pricing, 7 subtypes, archiving |
+| 6 | **Badge Manager** | Create badges with icons/images/colors, auto-award from quest completion |
+| 7 | **Spin Wheel Config** | Segments: colors, probabilities, bilingual labels, spin cost, display decimals |
+| 8 | **Branding Manager** | Logo, cover image, primary/secondary colors, hero text, social links, Google Place ID |
+| 9 | **Gallery Manager** | Upload/order/delete club images with captions |
+| 10 | **Login Mode Config** | Code-only vs code+expiry, invite-only toggle, hide member login option |
+| 11 | **Invite Button Builder** | Custom invite buttons: WhatsApp, Telegram, direct link, form — with labels, URLs, icons |
+| 12 | **Role Manager** | Custom member roles with display order |
+| 13 | **Membership Periods** | Duration-based plans (monthly, annual, custom) |
+| 14 | **Working Hours** | Per-day open/close times, timezone-aware display |
+| 15 | **Location Manager** | Address, city, country, lat/lng, Google Maps URL parser |
+| 16 | **Tags/Categories** | 15 predefined tags: bar, restaurant, coffee-shop, nightclub, coworking, sports-club, smoking-club, rooftop, salon, dentist, photographer, tour-guide, gym, events, community |
+| 17 | **Telegram Config** | Bot token + chat ID setup, test notification |
+| 18 | **Notification Light** | Hardware webhook integration (ESP32) with regenerable secret |
+| 19 | **Activity Log Viewer** | Full audit trail: member creation, spins, check-ins, quest validation, orders, email collections |
+| 20 | **Referral Tree** | Visualize referral chains, premium referrer management with custom reward amounts |
+| 21 | **Email Campaign Manager** | Compose & send branded HTML emails to segmented audiences via Resend |
+| 22 | **Audience Segmentation** | Filter recipients by status, membership expiry, role, quest completion, event attendance, offer interest, spin count |
+| 23 | **Campaign History** | Track sent campaigns with subject, date, recipient count |
+| 24 | **Unsubscribe Management** | JWT-signed unsubscribe links, per-member opt-out tracking |
+| 25 | **Telegram Bot Integration** | Configure club for external Telegram registration bot: enable/disable, referral contact name, registration price, welcome message |
+
+### D. PLATFORM ADMIN / TOWER (what we control)
+
+| # | Feature | Description |
+|---|---------|-------------|
+| 1 | **Dashboard Metrics** | Total clubs/members/spins/quests/events, growth (today/week/month), expiring memberships |
+| 2 | **Club Management** | View all clubs with metrics, approve/reject, per-club analytics |
+| 3 | **AI Club Parser** | Create club from Google Maps URL — auto-extract name, coordinates, resolve shortened URLs |
+| 4 | **Manual Club Creation** | Name, slug, colors, logo, cover upload |
+| 5 | **Login as Admin** | One-click impersonation into any club's admin panel (JWT cookie) |
+| 6 | **Standard Content Setup** | Seed quests + events by club type: smoke, bar, sports, coworking, coffee, general |
+| 7 | **Offer Approval** | Approve/reject custom catalog offers submitted by clubs |
+| 8 | **Activity Feed** | Recent 50 actions across all clubs |
+| 9 | **Invite Request Queue** | Pending club join requests with contact info |
+| 10 | **Bulk Quest Import** | Paste CSV from quest planning spreadsheets, preview parsed quests in table, bulk-import into any club with auto badge creation |
+| 11 | **Telegram Bot API** | Bearer-auth endpoint serving invite-only club configs to external Telegram registration bot |
+
+### E. PUBLIC & DISCOVERY
+
+| # | Feature | Description |
+|---|---------|-------------|
+| 1 | **Homepage** | Map hero + tab navigation + curated sections (events, offers, quests, clubs, memberships) |
+| 2 | **Discover Page** | Full interactive map + tabs (clubs/events/offers/quests) + filters + collapsible search + near-me |
+| 3 | **Deep-Link Offers** | Homepage offer tiles link to /discover#offers:Name with filter pre-selected |
+| 4 | **Public Club Page** | Gallery, public quests, events, offers, login form, invite flow, working hours, social links |
+| 5 | **Examples (10 verticals)** | Sports, coworking, coffee, tours, regional tours, bars, nightclubs, events calendar + more |
+| 6 | **Onboarding (3 steps)** | Create club + tags -> branding + colors -> done. Under 2 minutes. |
+| 7 | **SEO** | JSON-LD (Organization, Website, Club, ItemList), OpenGraph, canonical URLs, sitemap |
+| 8 | **Legal** | Privacy policy + Terms of Use, bilingual EN/ES, GDPR-compliant, data processor listing |
+| 9 | **Pre-registration** | Email-based pre-registration with optional auto-registration (auto-creates inactive member) |
+| 10 | **Light/Dark Mode** | Theme toggle with next-themes, persistent preference, auto-detect from OS |
+| 11 | **Theme-Aware Map** | Map switches between CARTO Voyager (light) and Dark Matter (dark) basemaps |
+| 12 | **Feedback Widget** | Floating feedback button on all pages; categories (bug/idea/question), screenshot upload, sends to Trello |
+
+### F. DESIGN SYSTEM & INFRASTRUCTURE
+
+| # | Feature | Description |
+|---|---------|-------------|
+| 1 | **OKLch Color System** | Perceptually uniform color space for landing page theming (light/dark) |
+| 2 | **Semantic CSS Tokens** | `landing-surface`, `landing-text`, `landing-border` etc. — 7 variables with light/dark variants |
+| 3 | **SVG Icon System** | Lucide icons replacing emojis on discover tabs (Building2, CalendarDays, Gift, Target) |
+| 4 | **Landing Animations** | 15+ animations: float, rotate, particle, breathe, pulse, twinkle, morph-blob, smoke, spark-ray |
+| 5 | **Active Club Filtering** | All public content queries filter by active/approved club IDs — no deactivated club content leaks |
+
+### Technical Feature Counts (for marketing)
+
+- **100+ features** across 5 portals + design system
+- **5 quest types** (default, tutorial, feedback, referral, email collect) with 3 proof modes
+- **12+ quest templates** (Instagram, TikTok, Google Review, Email Collect, etc.)
+- **15 club categories** supported
+- **10 example verticals** showcased
+- **7 offer subtypes** (food, drink, merch, service, experience, discount, digital)
+- **6 club type templates** for instant content setup
+- **2 languages** (English + Spanish)
+- **2 themes** (Light + Dark mode with OS auto-detect)
+- **3-step onboarding** (under 2 minutes)
+- **Email marketing** with audience segmentation and branded templates
+- **Real-time notifications** via Telegram
+- **Feedback widget** with Trello integration
+- **Hardware integration** (ESP32 notification light)
+- **GDPR-compliant** with full privacy policy + unsubscribe management
+
+---
+
+## Website Content Plan
+
+### Presentation Comparison (Trello card #72)
+Source: https://docs.google.com/presentation/d/17VyCeXqLptlNuuYKUXI75EEZtw2242Noz0CYC3kAh4I/edit
+
+| Slide | Theme | Built? | On Website? | Gap |
+|-------|-------|--------|-------------|-----|
+| 1 | Hook: "Your members walked in today" | N/A | No storytelling hook | **Need compelling hero copy** |
+| 2 | Problem: "No names. No data. No way back." | N/A | No pain-point framing | **Need problem statement** |
+| 3 | Shift: "They build a loop" | Built | Loop not visualized | **Need engagement loop diagram** |
+| 4 | Meet osocios: Three pillars | Built | PlatformOverview | Could be stronger |
+| 5 | Loyalty: "Spin. Win. Return." | Built | Mentioned in FeatureGrid | **Need dedicated showcase** |
+| 6 | Quests: "Members = marketing team" | Built | Mentioned in features | **Need quest showcase** |
+| 7 | Branding: "Looks like you, not us" | Built | /examples shows this | Covered |
+| 8 | Events & Services | Built | Mentioned in features | **Need visual showcase** |
+| 9 | Three Portals | Built | PlatformOverview with mockups | Covered |
+| 10 | Smoking Clubs | Built | /examples has vertical | Covered |
+| 11 | Any Club: Vertical grid | Built | /examples page | Covered well |
+| 12 | Onboarding: "2 minutes" | Built | HowItWorks section | Covered |
+| 13 | Social Proof: Live stats | Built | Hero stats | Covered |
+| 14 | CTA: "Your members are waiting" | N/A | FinalCta component | Covered |
+| Bonus | Contact | Feedback widget | Floating button | **Still need dedicated contact page** |
+
+### Gaps & Recommendations
+
+**HIGH:** Storytelling on /for-clubs (pain-point hook, engagement loop), feature deep-dives (spin/quests/events/email), contact page, pricing page
+**MEDIUM:** Homepage hero tagline, testimonials, getting-started tutorials, documentation site
+**LOW:** Blog, API docs, video walkthrough
+
+### Website Structure
+
+```
+/ — Map hero + curated sections (events, offers, quests, clubs, memberships)
+/for-clubs — B2B landing (NEEDS REWORK: storytelling, feature showcases, pricing, contact)
+/discover — Full map experience
+/examples — 10 vertical showcases
+/onboarding — 3-step club creation
+/privacy + /terms
+```
+
+### Content Matrix (/for-clubs)
+
+| Section | Copy | Visual |
+|---------|------|--------|
+| Hero hook | "Your members walked in. You don't know their names." | Dark hero |
+| Problem | No data, no retention, no way back | Illustrations |
+| The Loop | Visit -> Quest -> Spin -> Return | Animated diagram |
+| Spin Wheel | Config, segments, psychology | Wheel animation |
+| Quests | 5 types, referral growth, email collect | Card mockups |
+| Events | Calendar, RSVP, check-in, rewards | Screenshots |
+| Email Marketing | Campaigns, segmentation, templates | Composer screenshot |
+| White Label | "Looks like you, not us" | Branded examples |
+| Three Portals | Capabilities list | Mockups (exist) |
+| Verticals | 10+ club types | UseCases component |
+| Pricing | Free tier? Contact? | Pricing table/CTA |
+| CTA + Contact | "Your members are waiting" | Form/WhatsApp |
+
+### Tutorials to Write
+
+| Tutorial | Audience |
+|----------|----------|
+| Getting Started | Club owners — create club, set branding, add members |
+| Quest Setup | Club owners — all 5 types, proof modes, badges |
+| Spin Wheel Config | Club owners — segments, probabilities, colors |
+| Event Management | Club owners — create, RSVPs, check-in |
+| Offer Catalog | Club owners — browse, enable, price |
+| Email Campaigns | Club owners — compose, segment, track |
+| Staff Training | Staff — spin, validate, check-in, fulfill |
+| Member Guide | Members — quests, spin, RSVP, email |
+
+---
+
+## Changelog
+
+| Date | Changes |
+|------|---------|
+| 2026-04-05 | Initial audit — 80+ features across 5 portals |
+| 2026-04-07 | Added: email marketing, email collect quest, profile email, light/dark theme, OKLch tokens, feedback widget, optimistic quest UI, collapsible search, map theming, event end time, shortened URL resolver. 100+ features. |
+| 2026-04-08 | Added: Telegram bot integration, bulk quest import, auto-registration. Merged master-feature-audit.md into this file. |
+
+---
+
+# Implementation Details
 
 ## Membership Expiration System
 

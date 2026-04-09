@@ -9,6 +9,8 @@ export function TelegramBotManager({
   referralName,
   registrationPrice,
   welcomeMessage,
+  keywords,
+  ageRestricted,
   clubId,
   clubSlug,
 }: {
@@ -16,6 +18,8 @@ export function TelegramBotManager({
   referralName: string | null;
   registrationPrice: number | null;
   welcomeMessage: string | null;
+  keywords: string[];
+  ageRestricted: boolean;
   clubId: string;
   clubSlug: string;
 }) {
@@ -23,6 +27,8 @@ export function TelegramBotManager({
   const [name, setName] = useState(referralName ?? "");
   const [price, setPrice] = useState(registrationPrice?.toString() ?? "");
   const [welcome, setWelcome] = useState(welcomeMessage ?? "");
+  const [keywordsText, setKeywordsText] = useState(keywords.join(", "));
+  const [isAgeRestricted, setIsAgeRestricted] = useState(ageRestricted);
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const { t } = useLanguage();
@@ -30,6 +36,11 @@ export function TelegramBotManager({
   function handleSave() {
     setMessage(null);
     startTransition(async () => {
+      const parsedKeywords = keywordsText
+        .split(",")
+        .map((k) => k.trim().toLowerCase())
+        .filter(Boolean);
+
       const result = await updateTelegramBotConfig(
         clubId,
         {
@@ -37,6 +48,8 @@ export function TelegramBotManager({
           telegram_bot_referral_name: name.trim() || null,
           telegram_bot_registration_price: price ? parseFloat(price) : null,
           telegram_bot_welcome_message: welcome.trim() || null,
+          telegram_bot_keywords: parsedKeywords,
+          telegram_bot_age_restricted: isAgeRestricted,
         },
         clubSlug,
       );
@@ -77,11 +90,27 @@ export function TelegramBotManager({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Juan"
+              placeholder="Valentina"
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
             />
             <p className="text-[10px] text-gray-400 mt-1">
               {t("admin.telegramBotReferralNameHint")}
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">
+              {t("admin.telegramBotKeywords")}
+            </label>
+            <input
+              type="text"
+              value={keywordsText}
+              onChange={(e) => setKeywordsText(e.target.value)}
+              placeholder="eleve, élevé, lev, elevé"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+            />
+            <p className="text-[10px] text-gray-400 mt-1">
+              {t("admin.telegramBotKeywordsHint")}
             </p>
           </div>
 
@@ -102,6 +131,21 @@ export function TelegramBotManager({
               {t("admin.telegramBotRegPriceHint")}
             </p>
           </div>
+
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isAgeRestricted}
+              onChange={(e) => setIsAgeRestricted(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-gray-800 focus:ring-gray-400"
+            />
+            <span className="text-sm font-medium text-gray-700">
+              {t("admin.telegramBotAgeRestricted")}
+            </span>
+          </label>
+          <p className="text-[10px] text-gray-400 -mt-1 ml-7">
+            {t("admin.telegramBotAgeRestrictedHint")}
+          </p>
 
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">
