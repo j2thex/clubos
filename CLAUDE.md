@@ -4,6 +4,15 @@
 
 Multi-tenant club operating system (SaaS) branded as **osocios.club**. White-label membership portals for independent clubs.
 
+## Architecture Reference
+
+**`architecture-work-done.md`** (project root) is the single source of truth for:
+- Complete feature inventory (100+ features across 5 portals)
+- Implementation details (how each feature was built, key files, migrations)
+- Website content plan (gaps, recommendations, presentation comparison)
+
+**Read this file first** when studying the codebase or planning new work. It's maintained by the `/document` skill and updated after each development session.
+
 ## Tech Stack
 
 - **Framework**: Next.js 16 (App Router), React 19, TypeScript
