@@ -78,7 +78,7 @@ export default function AdminLoginPage() {
                 required
                 autoComplete="email"
                 placeholder={t("login.emailPlaceholder")}
-                className="block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm placeholder:text-gray-400 transition focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400"
+                className="block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 transition focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400"
               />
             </div>
 
@@ -97,7 +97,7 @@ export default function AdminLoginPage() {
                 minLength={8}
                 autoComplete="current-password"
                 placeholder={t("login.passwordPlaceholder")}
-                className="block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm placeholder:text-gray-400 transition focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400"
+                className="block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 transition focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400"
               />
             </div>
 

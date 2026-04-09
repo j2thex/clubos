@@ -74,7 +74,7 @@ export default function StaffLoginPage() {
                 autoCapitalize="characters"
                 autoComplete="off"
                 placeholder={t("login.staffCodePlaceholder")}
-                className="block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-lg font-mono tracking-widest uppercase placeholder:text-gray-400 placeholder:tracking-widest transition focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400"
+                className="block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-lg font-mono tracking-widest uppercase text-gray-900 placeholder:text-gray-400 placeholder:tracking-widest transition focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400"
                 onChange={(e) => {
                   e.target.value = e.target.value.toUpperCase();
                 }}
@@ -98,7 +98,7 @@ export default function StaffLoginPage() {
                 pattern="[0-9]{4}"
                 autoComplete="off"
                 placeholder={t("login.pinPlaceholder")}
-                className="block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-lg tracking-[0.5em] placeholder:tracking-[0.5em] placeholder:text-gray-400 transition focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400"
+                className="block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-lg tracking-[0.5em] text-gray-900 placeholder:tracking-[0.5em] placeholder:text-gray-400 transition focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400"
               />
             </div>
 
