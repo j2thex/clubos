@@ -551,6 +551,7 @@ export async function addQuest(
   const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
   const deadlineRaw = (formData.get("deadline") as string)?.trim() || null;
   const deadline = deadlineRaw ? new Date(deadlineRaw).toISOString() : null;
+  const category = (formData.get("category") as string) || "social";
 
   // Enforce type-specific defaults
   const effectiveMultiUse = questType === "feedback" ? true : questType === "tutorial" ? false : multiUse;
@@ -600,6 +601,7 @@ export async function addQuest(
     title_es: titleEs,
     description_es: descriptionEs,
     deadline,
+    category,
   }).select("id").single();
 
   if (error) return { error: "Failed to add quest" };
@@ -645,6 +647,7 @@ export async function updateQuest(
   const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
   const deadlineRaw = (formData.get("deadline") as string)?.trim() || null;
   const deadline = deadlineRaw ? new Date(deadlineRaw).toISOString() : null;
+  const category = (formData.get("category") as string) || "social";
 
   // Enforce type-specific defaults
   const effectiveMultiUse = questType === "feedback" ? true : questType === "tutorial" ? false : multiUse;
@@ -693,6 +696,7 @@ export async function updateQuest(
     title_es: titleEs,
     description_es: descriptionEs,
     deadline,
+    category,
   };
 
   if (imageFile && imageFile.size > 0) {

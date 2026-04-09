@@ -693,6 +693,11 @@
   "quest.emailPlaceholder": "tu@correo.com",
   "quest.emailSubmit": "Enviar",
 
+  "questCategory.social": "Social",
+  "questCategory.activity": "Actividades",
+  "questCategory.boost": "Boost",
+  "questCategory.level_up": "Sube de Nivel",
+
   "admin.quickShareEmail": "Comparte tu correo",
   "admin.quickShareEmailDesc": "Recopilar correos de los socios",
 

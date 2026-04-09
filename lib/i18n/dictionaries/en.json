@@ -693,6 +693,11 @@
   "quest.emailPlaceholder": "your@email.com",
   "quest.emailSubmit": "Submit",
 
+  "questCategory.social": "Social",
+  "questCategory.activity": "Activities",
+  "questCategory.boost": "Boost",
+  "questCategory.level_up": "Level Up",
+
   "admin.quickShareEmail": "Share your email",
   "admin.quickShareEmailDesc": "Collect member email addresses",
 

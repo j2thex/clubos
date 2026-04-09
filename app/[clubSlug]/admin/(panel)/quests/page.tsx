@@ -28,7 +28,7 @@ export default async function QuestsPage({
     supabase
       .from("quests")
       .select(
-        "id, title, description, link, image_url, icon, badge_id, reward_spins, display_order, active, multi_use, is_public, quest_type, proof_mode, proof_placeholder, tutorial_steps, title_es, description_es, deadline"
+        "id, title, description, link, image_url, icon, badge_id, reward_spins, display_order, active, multi_use, is_public, quest_type, proof_mode, proof_placeholder, tutorial_steps, title_es, description_es, deadline, category"
       )
       .eq("club_id", club.id)
       .eq("active", true)
@@ -73,6 +73,7 @@ export default async function QuestsPage({
     title_es: q.title_es ?? null,
     description_es: q.description_es ?? null,
     deadline: q.deadline ?? null,
+    category: q.category ?? "social",
   }));
 
   const googleReviewUrl = branding?.google_place_id ? getReviewUrl(branding.google_place_id) : null;
