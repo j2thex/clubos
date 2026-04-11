@@ -291,15 +291,16 @@ export default async function Home() {
 
       {/* Upcoming Events */}
       {upcomingEvents.length > 0 && (
-        <section className="px-6 py-12 border-t border-landing-border-subtle">
-          <div className="max-w-5xl mx-auto">
+        <section className="py-12 border-t border-landing-border-subtle">
+          <div className="max-w-5xl mx-auto px-6">
             <h2 className="text-lg font-bold text-landing-text mb-1">
               {localized("Upcoming Events", "Próximos Eventos", locale)}
             </h2>
             <p className="text-xs text-landing-text-tertiary mb-6">
               {localized("Don't miss what's happening near you", "No te pierdas lo que pasa cerca de ti", locale)}
             </p>
-            <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
+          </div>
+            <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide px-6">
               {upcomingEvents.map((ev) => {
                 const dateObj = new Date(ev.date + "T00:00:00");
                 const month = dateObj.toLocaleDateString(locale === "es" ? "es-ES" : "en-US", { month: "short" });
@@ -336,7 +337,6 @@ export default async function Home() {
                 );
               })}
             </div>
-          </div>
         </section>
       )}
 

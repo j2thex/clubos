@@ -8,10 +8,11 @@ import { IconPicker } from "@/components/icon-picker";
 import { LanguageTabs } from "@/components/language-tabs";
 import { DynamicIcon } from "@/components/dynamic-icon";
 
-const CATEGORIES = ["social", "activity", "boost", "level_up"] as const;
+const CATEGORIES = ["all", "social", "activity", "boost", "level_up"] as const;
 type Category = (typeof CATEGORIES)[number];
 
 const CATEGORY_LABELS: Record<Category, string> = {
+  all: "All",
   social: "Social",
   activity: "Activity",
   boost: "Boost",
@@ -118,7 +119,7 @@ export function QuestManager({
   const [newDeadline, setNewDeadline] = useState("");
   const [newCategory, setNewCategory] = useState<Category>("social");
 
-  const [activeTab, setActiveTab] = useState<Category>("social");
+  const [activeTab, setActiveTab] = useState<Category>("all");
   const [showForm, setShowForm] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -482,7 +483,7 @@ export function QuestManager({
         <div className="px-5 py-3 border-b border-gray-100">
           <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5 overflow-x-auto">
             {CATEGORIES.map((cat) => {
-              const count = quests.filter((q) => q.category === cat).length;
+              const count = cat === "all" ? quests.length : quests.filter((q) => q.category === cat).length;
               return (
                 <button
                   key={cat}
@@ -502,9 +503,16 @@ export function QuestManager({
         </div>
 
         {/* Quest list */}
-        {quests.filter((q) => q.category === activeTab).length > 0 && (
+        {quests.filter((q) => activeTab === "all" || q.category === activeTab).length > 0 && (
           <div className="divide-y divide-gray-100">
-            {quests.filter((q) => q.category === activeTab).map((q) => (
+            {quests
+              .filter((q) => activeTab === "all" || q.category === activeTab)
+              .toSorted((a, b) => {
+                const aFeedback = a.quest_type === "feedback" ? 1 : 0;
+                const bFeedback = b.quest_type === "feedback" ? 1 : 0;
+                return aFeedback - bFeedback;
+              })
+              .map((q) => (
               <div key={q.id}>
                 {editingId === q.id ? (
                   <div className="px-5 py-3 space-y-3 bg-gray-50">
@@ -648,7 +656,7 @@ export function QuestManager({
                           onChange={(e) => setEditCategory(e.target.value as Category)}
                           className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
                         >
-                          {CATEGORIES.map((c) => (
+                          {CATEGORIES.filter((c) => c !== "all").map((c) => (
                             <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>
                           ))}
                         </select>
@@ -926,7 +934,7 @@ export function QuestManager({
                 onChange={(e) => setNewCategory(e.target.value as Category)}
                 className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
               >
-                {CATEGORIES.map((c) => (
+                {CATEGORIES.filter((c) => c !== "all").map((c) => (
                   <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>
                 ))}
               </select>

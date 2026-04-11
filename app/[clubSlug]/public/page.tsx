@@ -198,7 +198,18 @@ export default async function PublicProfilePage({
             : undefined
         }
       >
-        {/* Language Switcher */}
+        {/* Top bar */}
+        <div className="absolute top-3 left-3 z-20">
+          <Link
+            href="/discover"
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-black/30 text-white/90 text-xs font-medium backdrop-blur-sm hover:bg-black/40 transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+            Discover
+          </Link>
+        </div>
         <div className="absolute top-3 right-3 z-20">
           <LanguageSwitcher variant="light" />
         </div>
