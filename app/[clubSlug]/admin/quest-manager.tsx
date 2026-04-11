@@ -292,7 +292,7 @@ export function QuestManager({
         setNewTitle("");
         setNewDesc("");
         setNewLink("");
-        setNewReward("1");
+        setNewReward("0");
         setNewMultiUse(false);
         setNewIsPublic(false);
         setNewQuestType("default");
