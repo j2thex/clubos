@@ -37,8 +37,6 @@ export default async function CompletePage({
 
   const clubSlug = club?.slug ?? "";
   const adminUrl = clubSlug ? `/${clubSlug}/admin` : "/";
-  const staffUrl = clubSlug ? `/${clubSlug}/staff/login` : "/";
-  const memberUrl = clubSlug ? `/${clubSlug}/login` : "/";
 
   return (
     <div className="space-y-6">
