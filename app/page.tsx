@@ -396,6 +396,61 @@ export default async function Home() {
         </section>
       )}
 
+      {/* How to get membership */}
+      <section className="px-6 py-14 border-t border-landing-border-subtle">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-lg font-bold text-landing-text mb-1">
+            {localized("How to get a club membership", "Cómo obtener una membresía de club", locale)}
+          </h2>
+          <p className="text-xs text-landing-text-tertiary mb-8">
+            {localized(
+              "Three simple steps to join a club on osocios.club",
+              "Tres pasos simples para unirte a un club en osocios.club",
+              locale,
+            )}
+          </p>
+          <ol className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              {
+                title: localized("Find a club near you", "Encuentra un club cerca de ti", locale),
+                body: localized(
+                  "Use the map above or browse the club directory to find one that fits your interests.",
+                  "Usa el mapa de arriba o explora el directorio para encontrar un club que se ajuste a tus intereses.",
+                  locale,
+                ),
+              },
+              {
+                title: localized("Visit or contact the club", "Visita o contacta al club", locale),
+                body: localized(
+                  "Open the club's public page to see its location, events, and contact details. Drop by or message them directly.",
+                  "Abre la página pública del club para ver su ubicación, eventos y contacto. Pásate o escríbeles directamente.",
+                  locale,
+                ),
+              },
+              {
+                title: localized("Get your member code", "Obtén tu código de miembro", locale),
+                body: localized(
+                  "The club will give you a personal member code. Use it on their portal to unlock events, offers, and rewards.",
+                  "El club te dará un código de miembro personal. Úsalo en su portal para desbloquear eventos, ofertas y recompensas.",
+                  locale,
+                ),
+              },
+            ].map((step, i) => (
+              <li
+                key={i}
+                className="bg-landing-surface rounded-xl p-5 flex flex-col gap-2"
+              >
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-landing-surface-hover text-xs font-bold text-landing-text">
+                  {i + 1}
+                </span>
+                <p className="text-sm font-semibold text-landing-text">{step.title}</p>
+                <p className="text-xs text-landing-text-tertiary leading-relaxed">{step.body}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
       {/* Clubs */}
       <ClubDirectory t={tr} clubs={clubsForDirectory} />
 
