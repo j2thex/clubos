@@ -3,8 +3,10 @@ import { hashSync, compareSync } from "bcryptjs";
 import { cookies } from "next/headers";
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
-const MEMBER_COOKIE = "clubos-member-token";
+export const MEMBER_COOKIE = "clubos-member-token";
 const STAFF_COOKIE = "clubos-staff-token";
+
+export const MEMBER_TOKEN_MAX_AGE = 60 * 60 * 24 * 365;
 
 export function hashPin(pin: string): string {
   return hashSync(pin, 10);
@@ -19,7 +21,7 @@ export function verifyPin(pin: string, hash: string): boolean {
 export async function createMemberToken(memberId: string, clubId: string, validTill?: string | null): Promise<string> {
   return new SignJWT({ member_id: memberId, club_id: clubId, ...(validTill && { valid_till: validTill }) })
     .setProtectedHeader({ alg: "HS256" })
-    .setExpirationTime("7d")
+    .setExpirationTime("365d")
     .sign(secret);
 }
 
@@ -38,7 +40,7 @@ export async function setMemberCookie(token: string) {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 7,
+    maxAge: MEMBER_TOKEN_MAX_AGE,
     path: "/",
   });
 }
