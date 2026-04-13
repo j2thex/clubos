@@ -5,12 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { createOrgAndClub } from "./actions";
+import { createOrgAndClub, type CreateOrgAndClubState } from "./actions";
 import { useLanguage } from "@/lib/i18n/provider";
 
 const DEFAULT_CLUB_TAGS = ["smoking-club"];
 
-function formAction(_prev: { error: string } | undefined, formData: FormData) {
+function formAction(_prev: CreateOrgAndClubState | undefined, formData: FormData) {
   return createOrgAndClub(formData);
 }
 
@@ -62,6 +62,7 @@ export default function OnboardingPage() {
                 name="clubName"
                 placeholder={t("onboarding.clubNamePlaceholder")}
                 required
+                defaultValue={state?.values?.clubName ?? ""}
                 className="focus-visible:border-green-500 focus-visible:ring-green-500/30"
               />
             </div>
@@ -77,6 +78,7 @@ export default function OnboardingPage() {
                 type="email"
                 placeholder={t("onboarding.emailPlaceholder")}
                 required
+                defaultValue={state?.values?.email ?? ""}
                 className="focus-visible:border-green-500 focus-visible:ring-green-500/30"
               />
             </div>
@@ -110,6 +112,7 @@ export default function OnboardingPage() {
                 name="googleMapsUrl"
                 type="url"
                 placeholder={t("onboarding.googleMapsPlaceholder")}
+                defaultValue={state?.values?.googleMapsUrl ?? ""}
                 className="focus-visible:border-green-500 focus-visible:ring-green-500/30"
               />
               <p className="text-xs text-gray-400">{t("onboarding.googleMapsHint")}</p>

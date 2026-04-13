@@ -7,7 +7,16 @@ import { generateSlug } from "@/lib/utils";
 import { RESERVED_SLUGS } from "@/lib/reserved-slugs";
 import { redirect } from "next/navigation";
 
-export async function createOrgAndClub(formData: FormData) {
+export type CreateOrgAndClubState = {
+  error?: string;
+  values?: {
+    clubName: string;
+    email: string;
+    googleMapsUrl: string;
+  };
+};
+
+export async function createOrgAndClub(formData: FormData): Promise<CreateOrgAndClubState | never> {
   const clubName = formData.get("clubName") as string;
   const email = (formData.get("email") as string)?.toLowerCase().trim();
   const password = formData.get("password") as string;
@@ -15,22 +24,29 @@ export async function createOrgAndClub(formData: FormData) {
   const currency = (formData.get("currency") as string) || "EUR";
   const tagsJson = formData.get("tags") as string;
   const tags: string[] = tagsJson ? JSON.parse(tagsJson) : [];
+  const googleMapsUrlInput = ((formData.get("googleMapsUrl") as string) ?? "").trim();
+
+  const values = {
+    clubName: clubName ?? "",
+    email: email ?? "",
+    googleMapsUrl: googleMapsUrlInput,
+  };
 
   if (!clubName) {
-    return { error: "Club name is required" };
+    return { error: "Club name is required", values };
   }
   if (!email) {
-    return { error: "Email is required" };
+    return { error: "Email is required", values };
   }
   if (!password || password.length < 8) {
-    return { error: "Password must be at least 8 characters" };
+    return { error: "Password must be at least 8 characters", values };
   }
 
   const supabase = createAdminClient();
   const slug = generateSlug(clubName);
 
   if (RESERVED_SLUGS.has(slug)) {
-    return { error: "This name is reserved. Please choose a different club name." };
+    return { error: "This name is reserved. Please choose a different club name.", values };
   }
 
   // Pre-validate: check for duplicate email before creating anything
@@ -40,7 +56,7 @@ export async function createOrgAndClub(formData: FormData) {
     .ilike("email", email);
 
   if ((emailCount ?? 0) > 0) {
-    return { error: "An account with this email already exists" };
+    return { error: "An account with this email already exists", values };
   }
 
   // Pre-validate: check for duplicate club/org slug before creating anything
@@ -50,7 +66,7 @@ export async function createOrgAndClub(formData: FormData) {
     .eq("slug", slug);
 
   if ((slugCount ?? 0) > 0) {
-    return { error: "A club with this name already exists. Please choose a different name." };
+    return { error: "A club with this name already exists. Please choose a different name.", values };
   }
 
   const { count: orgSlugCount } = await supabase
@@ -59,7 +75,7 @@ export async function createOrgAndClub(formData: FormData) {
     .eq("slug", slug);
 
   if ((orgSlugCount ?? 0) > 0) {
-    return { error: "A club with this name already exists. Please choose a different name." };
+    return { error: "A club with this name already exists. Please choose a different name.", values };
   }
 
   // All validation passed — now create entities
@@ -72,7 +88,7 @@ export async function createOrgAndClub(formData: FormData) {
     .single();
 
   if (orgError) {
-    return { error: `Failed to create organization: ${orgError.message}` };
+    return { error: `Failed to create organization: ${orgError.message}`, values };
   }
 
   // Create club
@@ -90,11 +106,11 @@ export async function createOrgAndClub(formData: FormData) {
     .single();
 
   if (clubError) {
-    return { error: `Failed to create club: ${clubError.message}` };
+    return { error: `Failed to create club: ${clubError.message}`, values };
   }
 
   // Create default branding
-  const googleMapsUrl = (formData.get("googleMapsUrl") as string)?.trim() || null;
+  const googleMapsUrl = googleMapsUrlInput || null;
   await supabase.from("club_branding").insert({
     club_id: club.id,
     social_google_maps: googleMapsUrl,
@@ -111,7 +127,7 @@ export async function createOrgAndClub(formData: FormData) {
     .single();
 
   if (ownerError) {
-    return { error: "Failed to create owner account" };
+    return { error: "Failed to create owner account", values };
   }
 
   // Link owner to club
