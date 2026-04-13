@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { MessageSquare, X, ImagePlus } from "lucide-react";
+import { MessageSquare, X, ImagePlus, Sparkles, Undo2 } from "lucide-react";
 import { toast } from "sonner";
-import { submitFeedback } from "@/lib/feedback-action";
+import { submitFeedback, improveFeedback } from "@/lib/feedback-action";
 import { useLanguage } from "@/lib/i18n/provider";
 
 type Category = "bug" | "idea" | "question";
@@ -21,6 +21,8 @@ export function FeedbackWidget() {
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [improving, setImproving] = useState(false);
+  const [undoText, setUndoText] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const { locale } = useLanguage();
@@ -60,6 +62,40 @@ export function FeedbackWidget() {
   function clearScreenshot() {
     handleFile(null);
     if (fileRef.current) fileRef.current.value = "";
+  }
+
+  async function handleImprove() {
+    if (improving || text.trim().length < 10) return;
+    setImproving(true);
+    const original = text;
+    try {
+      const formData = new FormData();
+      formData.set("text", text);
+      formData.set("category", category);
+      formData.set("pageUrl", window.location.href);
+      formData.set("locale", locale);
+      if (screenshot) formData.set("screenshot", screenshot);
+
+      const result = await improveFeedback(formData);
+      if ("error" in result) {
+        toast.error(result.error);
+      } else {
+        setUndoText(original);
+        setText(result.improved);
+        toast.success(locale === "es" ? "Mejorado con IA" : "Improved with AI");
+      }
+    } catch (err) {
+      console.error("Improve feedback error:", err);
+      toast.error(locale === "es" ? "Error al mejorar" : "Failed to improve");
+    } finally {
+      setImproving(false);
+    }
+  }
+
+  function handleUndo() {
+    if (undoText === null) return;
+    setText(undoText);
+    setUndoText(null);
   }
 
   async function handleSubmit() {
@@ -173,14 +209,18 @@ export function FeedbackWidget() {
               {/* Textarea */}
               <textarea
                 value={text}
-                onChange={(e) => setText(e.target.value)}
+                onChange={(e) => {
+                  setText(e.target.value);
+                  if (undoText !== null) setUndoText(null);
+                }}
                 placeholder={locale === "es" ? "Cuéntanos qué piensas..." : "Tell us what you think..."}
-                className="w-full h-24 px-3 py-2 text-sm rounded-lg border border-input bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
+                className="w-full h-24 px-3 py-2 text-sm rounded-lg border border-input bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground disabled:opacity-60"
+                disabled={improving}
                 autoFocus
               />
 
-              {/* Screenshot */}
-              <div className="flex items-center gap-2">
+              {/* Screenshot + Improve */}
+              <div className="flex items-center justify-between gap-2">
                 <input
                   ref={fileRef}
                   type="file"
@@ -196,6 +236,28 @@ export function FeedbackWidget() {
                   <ImagePlus className="w-4 h-4" />
                   {locale === "es" ? "Adjuntar, pegar o soltar" : "Attach, paste or drop"}
                 </button>
+                {undoText !== null ? (
+                  <button
+                    type="button"
+                    onClick={handleUndo}
+                    className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <Undo2 className="w-3.5 h-3.5" />
+                    {locale === "es" ? "Deshacer" : "Undo"}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleImprove}
+                    disabled={improving || text.trim().length < 10}
+                    className="flex items-center gap-1 text-xs font-medium text-primary hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                  >
+                    <Sparkles className={`w-3.5 h-3.5 ${improving ? "animate-pulse" : ""}`} />
+                    {improving
+                      ? (locale === "es" ? "Mejorando..." : "Improving...")
+                      : (locale === "es" ? "Mejorar con IA" : "Improve with AI")}
+                  </button>
+                )}
               </div>
 
               {/* Screenshot preview */}

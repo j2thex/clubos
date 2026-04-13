@@ -1,9 +1,65 @@
 "use server";
 
+import { generateText } from "ai";
 import { getMemberFromCookie, getStaffFromCookie, getOwnerFromCookie } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const TRELLO_FEEDBACK_LIST_ID = "69d3be8d8dfac139e7641bf8";
+
+export async function improveFeedback(
+  formData: FormData,
+): Promise<{ error: string } | { improved: string }> {
+  const text = (formData.get("text") as string)?.trim();
+  const category = (formData.get("category") as string) || "idea";
+  const pageUrl = (formData.get("pageUrl") as string) || "";
+  const locale = (formData.get("locale") as string) || "en";
+  const screenshot = formData.get("screenshot") as File | null;
+
+  if (!text || text.length < 3) {
+    return { error: "Too short to improve" };
+  }
+
+  const categoryLabel = category === "bug" ? "bug report" : category === "idea" ? "feature idea" : "question";
+  const language = locale === "es" ? "Spanish" : "English";
+
+  const system = `You rewrite rough user feedback into a clear, well-structured ${categoryLabel}.
+Rules:
+- Write in ${language}, matching the user's original language if they wrote in another.
+- Keep the user's voice and intent — do not invent facts.
+- Be concise: 2-4 short sentences or a short bulleted list. Max ~120 words.
+- For bugs, prefer: what happened / what was expected (only if inferable).
+- For ideas, prefer: what they want / why it matters (only if inferable).
+- No preamble, no sign-off, no markdown headers. Just the rewritten text.`;
+
+  const userContent: Array<
+    | { type: "text"; text: string }
+    | { type: "image"; image: Uint8Array; mediaType: string }
+  > = [
+    {
+      type: "text",
+      text: `Page: ${pageUrl}\n\nOriginal feedback:\n${text}`,
+    },
+  ];
+
+  if (screenshot && screenshot.size > 0 && screenshot.type.startsWith("image/")) {
+    const bytes = new Uint8Array(await screenshot.arrayBuffer());
+    userContent.push({ type: "image", image: bytes, mediaType: screenshot.type });
+  }
+
+  try {
+    const { text: improved } = await generateText({
+      model: "anthropic/claude-opus-4.6",
+      system,
+      messages: [{ role: "user", content: userContent }],
+    });
+    const trimmed = improved.trim();
+    if (!trimmed) return { error: "Empty AI response" };
+    return { improved: trimmed };
+  } catch (err) {
+    console.error("improveFeedback error:", err);
+    return { error: "AI improvement failed" };
+  }
+}
 
 export async function submitFeedback(
   formData: FormData,
