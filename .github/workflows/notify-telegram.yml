@@ -21,15 +21,22 @@ jobs:
             core.setOutput('message', data.commit.message);
             core.setOutput('author', data.commit.author.name);
       - name: Send Telegram notification
-        uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.TELEGRAM_CHAT_ID }}
-          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          message_thread_id: ${{ github.event.deployment.environment == 'Production' && secrets.TELEGRAM_THREAD_PROD || secrets.TELEGRAM_THREAD_STAGING }}
-          message: |
-            ${{ github.event.deployment.environment == 'Production' && '🚀 Production' || '🧪 Staging' }} Deploy ready
+        env:
+          BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          THREAD_ID: ${{ github.event.deployment.environment == 'Production' && secrets.TELEGRAM_THREAD_PROD || secrets.TELEGRAM_THREAD_STAGING }}
+          HEADER: ${{ github.event.deployment.environment == 'Production' && '🚀 Production' || '🧪 Staging' }}
+          COMMIT_MSG: ${{ steps.commit.outputs.message }}
+          AUTHOR: ${{ steps.commit.outputs.author }}
+          URL: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
+        run: |
+          TEXT="$HEADER Deploy ready
 
-            ${{ steps.commit.outputs.message }}
+          $COMMIT_MSG
 
-            by ${{ steps.commit.outputs.author }}
-            ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
+          by $AUTHOR
+          $URL"
+          curl -sS -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${CHAT_ID}" \
+            --data-urlencode "message_thread_id=${THREAD_ID}" \
+            --data-urlencode "text=${TEXT}"
