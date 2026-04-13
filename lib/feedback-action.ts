@@ -1,6 +1,7 @@
 "use server";
 
 import { generateText } from "ai";
+import { anthropic } from "@ai-sdk/anthropic";
 import { getMemberFromCookie, getStaffFromCookie, getOwnerFromCookie } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -17,6 +18,9 @@ export async function improveFeedback(
 
   if (!text || text.length < 3) {
     return { error: "Too short to improve" };
+  }
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return { error: "AI not configured (missing key)" };
   }
 
   const categoryLabel = category === "bug" ? "bug report" : category === "idea" ? "feature idea" : "question";
@@ -48,7 +52,7 @@ Rules:
 
   try {
     const { text: improved } = await generateText({
-      model: "anthropic/claude-opus-4.6",
+      model: anthropic("claude-opus-4-5"),
       system,
       messages: [{ role: "user", content: userContent }],
     });
@@ -57,7 +61,8 @@ Rules:
     return { improved: trimmed };
   } catch (err) {
     console.error("improveFeedback error:", err);
-    return { error: "AI improvement failed" };
+    const msg = err instanceof Error ? err.message : "unknown";
+    return { error: `AI improvement failed: ${msg.slice(0, 140)}` };
   }
 }
 
