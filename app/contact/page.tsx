@@ -4,6 +4,7 @@ import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 import { LandingFooter } from "../_landing/landing-footer";
 import { ContactForm } from "../_landing/contact-form";
+import { TopNav } from "../_landing/top-nav";
 
 export const metadata: Metadata = {
   title: "Contact — osocios.club",
@@ -24,6 +25,7 @@ export default async function ContactPage() {
 
   return (
     <div className="min-h-screen landing-dark">
+      <TopNav />
       <section className="mx-auto max-w-3xl px-6 py-20 sm:py-28">
         <h1 className="text-4xl sm:text-5xl font-extralight tracking-tight">
           {tr("contact.title")}

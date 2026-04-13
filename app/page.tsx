@@ -4,7 +4,7 @@ import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getOrganizationJsonLd, getWebSiteJsonLd } from "@/lib/structured-data";
-import { LanguageSwitcher } from "@/lib/i18n/switcher";
+import { TopNav } from "./_landing/top-nav";
 import { HomepageMap } from "./_landing/homepage-client";
 import { MembershipExplorer } from "./_landing/membership-explorer";
 import { ClubDirectory } from "./_landing/club-directory";
@@ -12,7 +12,6 @@ import { LandingFooter } from "./_landing/landing-footer";
 import type { DiscoverClub, DiscoverEvent, DiscoverOffer, DiscoverQuest } from "./discover/lib/types";
 import { localized } from "@/lib/i18n";
 import { DynamicIcon } from "@/components/dynamic-icon";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 export const metadata: Metadata = {
   title: "osocios.club — Discover clubs, events & offers near you",
@@ -257,28 +256,7 @@ export default async function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(getWebSiteJsonLd()) }}
       />
 
-      {/* Header */}
-      <header className="relative z-20 flex items-center justify-between px-4 sm:px-6 py-4 border-b border-landing-border">
-        <Link href="/" className="text-xs font-mono tracking-widest uppercase opacity-80 hover:opacity-100 transition-opacity shrink-0">
-          {tr("landing.brandName")}
-        </Link>
-        <div className="flex items-center gap-2 sm:gap-4">
-          <Link
-            href="/onboarding"
-            className="text-xs opacity-60 hover:opacity-100 transition-opacity hidden sm:inline"
-          >
-            {localized("For Clubs", "Para Clubes", locale)}
-          </Link>
-          <Link
-            href="/discover"
-            className="text-xs opacity-60 hover:opacity-100 transition-opacity"
-          >
-            {localized("Discover", "Descubrir", locale)}
-          </Link>
-          <ThemeToggle />
-          <LanguageSwitcher variant="auto" />
-        </div>
-      </header>
+      <TopNav />
 
       {/* Map Hero + Tabs */}
       <HomepageMap

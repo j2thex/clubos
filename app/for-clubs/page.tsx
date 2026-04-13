@@ -11,6 +11,7 @@ import { PortalsOverview } from "../_landing/portals-overview";
 import { PricingTeaser } from "../_landing/pricing-teaser";
 import { FinalCta } from "../_landing/final-cta";
 import { LandingFooter } from "../_landing/landing-footer";
+import { TopNav } from "../_landing/top-nav";
 
 export const metadata: Metadata = {
   title: "For Clubs — osocios.club",
@@ -47,6 +48,7 @@ export default async function ForClubsPage() {
 
   return (
     <div className="min-h-screen">
+      <TopNav />
       <SalesHero t={tr} stats={stats} />
       <TheLoop t={tr} />
       <QuestsPitch t={tr} />
