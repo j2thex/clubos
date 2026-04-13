@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 import { MemberSpinClient } from "./spin-client";
+import { QuestList } from "../quest-list";
 import { CircleSlash } from "lucide-react";
 
 function WheelPreload() {
@@ -30,33 +31,69 @@ export default async function MemberSpinPage({
   const supabase = createAdminClient();
 
   // Fetch all data in parallel
-  const [{ data: club }, { data: member }, { data: segments }, { data: recentSpins }, locale] =
-    await Promise.all([
-      supabase
-        .from("clubs")
-        .select("spin_enabled, spin_display_decimals, spin_cost")
-        .eq("id", session.club_id)
-        .single(),
-      supabase
-        .from("members")
-        .select("spin_balance")
-        .eq("id", session.member_id)
-        .single(),
-      supabase
-        .from("wheel_configs")
-        .select("label, label_es, color, label_color, probability")
-        .eq("club_id", session.club_id)
-        .eq("active", true)
-        .order("display_order", { ascending: true }),
-      supabase
-        .from("spins")
-        .select("id, outcome_label, outcome_value, created_at")
-        .eq("member_id", session.member_id)
-        .eq("club_id", session.club_id)
-        .order("created_at", { ascending: false })
-        .limit(10),
-      getServerLocale(),
-    ]);
+  const [
+    { data: club },
+    { data: member },
+    { data: segments },
+    { data: recentSpins },
+    { count: spinsDone },
+    { data: quests },
+    { data: completedQuests },
+    locale,
+  ] = await Promise.all([
+    supabase
+      .from("clubs")
+      .select("id, name, spin_enabled, spin_display_decimals, spin_cost")
+      .eq("id", session.club_id)
+      .single(),
+    supabase
+      .from("members")
+      .select("spin_balance, full_name, member_code")
+      .eq("id", session.member_id)
+      .single(),
+    supabase
+      .from("wheel_configs")
+      .select("label, label_es, color, label_color, probability")
+      .eq("club_id", session.club_id)
+      .eq("active", true)
+      .order("display_order", { ascending: true }),
+    supabase
+      .from("spins")
+      .select("id, outcome_label, outcome_value, created_at")
+      .eq("member_id", session.member_id)
+      .eq("club_id", session.club_id)
+      .order("created_at", { ascending: false })
+      .limit(10),
+    supabase
+      .from("spins")
+      .select("*", { count: "exact", head: true })
+      .eq("member_id", session.member_id),
+    supabase
+      .from("quests")
+      .select("id, title, description, title_es, description_es, link, image_url, icon, reward_spins, multi_use, quest_type, proof_mode, proof_placeholder, tutorial_steps, deadline, category")
+      .eq("club_id", session.club_id)
+      .eq("active", true)
+      .order("display_order", { ascending: true }),
+    supabase
+      .from("member_quests")
+      .select("quest_id, status")
+      .eq("member_id", session.member_id),
+    getServerLocale(),
+  ]);
+
+  const totalSpins = spinsDone ?? 0;
+  const level = Math.min(10, Math.floor(totalSpins / 5) + 1);
+
+  const questCompletionCounts: Record<string, number> = {};
+  const pendingQuestIds: string[] = [];
+  for (const c of completedQuests ?? []) {
+    if (c.status === "pending") {
+      if (!pendingQuestIds.includes(c.quest_id)) pendingQuestIds.push(c.quest_id);
+    } else {
+      questCompletionCounts[c.quest_id] = (questCompletionCounts[c.quest_id] ?? 0) + 1;
+    }
+  }
+  const activeQuests = quests ?? [];
 
   if (club?.spin_enabled === false) {
     return (
@@ -99,6 +136,8 @@ export default async function MemberSpinPage({
     <MemberSpinClient
       clubSlug={clubSlug}
       balance={member?.spin_balance ?? 0}
+      totalSpins={totalSpins}
+      level={level}
       segments={segments.map((s) => ({
         label: locale === "es" && s.label_es ? s.label_es : s.label,
         color: s.color ?? "#16a34a",
@@ -115,6 +154,26 @@ export default async function MemberSpinPage({
       }
       displayDecimals={club?.spin_display_decimals ?? 0}
       spinCost={club?.spin_cost ?? 1}
+      questsSection={
+        activeQuests.length > 0 ? (
+          <div className="space-y-2">
+            <h2 className="text-sm font-semibold text-white/80 uppercase tracking-wide px-1">
+              {t(locale, "dashboard.quests")}
+            </h2>
+            <QuestList
+              quests={activeQuests}
+              completionCounts={questCompletionCounts}
+              pendingQuestIds={pendingQuestIds}
+              memberId={session.member_id}
+              memberCode={member?.member_code ?? ""}
+              clubId={session.club_id}
+              clubName={club?.name ?? ""}
+              clubSlug={clubSlug}
+              locale={locale}
+            />
+          </div>
+        ) : null
+      }
     />
     </>
   );

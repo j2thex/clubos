@@ -229,6 +229,8 @@
   "staff.walkinCheckIn": "Walk-in Check-In",
   "staff.noQuests": "No quests yet",
   "staff.questsFromAdmin": "Quests will appear here once created by admin.",
+  "staff.approvedByYou": "Approved by you",
+  "staff.spinsAwarded": "Spins awarded",
   "staff.pendingValidations": "Pending Validations ({count})",
   "staff.questApproved": "Approved {message}",
   "staff.questDeclined": "Declined — member can re-submit",

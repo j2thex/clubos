@@ -23,7 +23,7 @@ export default async function StaffQuestsPage({
 
   if (!club) notFound();
 
-  const [{ data: quests }, { data: pendingRaw }] = await Promise.all([
+  const [{ data: quests }, { data: pendingRaw }, { data: approvedByMe }] = await Promise.all([
     supabase
       .from("quests")
       .select("id, title, reward_spins, quest_type")
@@ -36,7 +36,21 @@ export default async function StaffQuestsPage({
       .eq("status", "pending")
       .eq("quests.club_id", club.id)
       .order("completed_at", { ascending: true }),
+    session?.member_id
+      ? supabase
+          .from("member_quests")
+          .select("quests!inner(reward_spins, club_id)")
+          .eq("verified_by", session.member_id)
+          .eq("status", "verified")
+          .eq("quests.club_id", club.id)
+      : Promise.resolve({ data: [] as { quests: { reward_spins: number } | { reward_spins: number }[] }[] }),
   ]);
+
+  const approvedCount = approvedByMe?.length ?? 0;
+  const approvedSpins = (approvedByMe ?? []).reduce((sum, row) => {
+    const q = Array.isArray(row.quests) ? row.quests[0] : row.quests;
+    return sum + (q?.reward_spins ?? 0);
+  }, 0);
 
   const pendingQuests = (pendingRaw ?? []).map((p: Record<string, unknown>) => {
     const quest = (Array.isArray(p.quests) ? p.quests[0] : p.quests) as { title: string; reward_spins: number; quest_type: string };
@@ -56,18 +70,34 @@ export default async function StaffQuestsPage({
   const locale = await getServerLocale();
 
   return quests && quests.length > 0 ? (
-    <StaffQuestClient
-      clubId={club.id}
-      clubSlug={clubSlug}
-      quests={quests.map((q) => ({
-        id: q.id,
-        title: q.title,
-        reward_spins: q.reward_spins,
-        quest_type: q.quest_type ?? "default",
-      }))}
-      staffMemberId={session?.member_id ?? ""}
-      pendingQuests={pendingQuests}
-    />
+    <div className="space-y-4">
+      <div className="bg-white rounded-2xl shadow-sm p-4 flex items-center justify-between">
+        <div>
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+            {t(locale, "staff.approvedByYou")}
+          </p>
+          <p className="mt-1 text-2xl font-bold text-gray-900">{approvedCount}</p>
+        </div>
+        <div className="text-right">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+            {t(locale, "staff.spinsAwarded")}
+          </p>
+          <p className="mt-1 text-2xl font-bold text-gray-900">{approvedSpins}</p>
+        </div>
+      </div>
+      <StaffQuestClient
+        clubId={club.id}
+        clubSlug={clubSlug}
+        quests={quests.map((q) => ({
+          id: q.id,
+          title: q.title,
+          reward_spins: q.reward_spins,
+          quest_type: q.quest_type ?? "default",
+        }))}
+        staffMemberId={session?.member_id ?? ""}
+        pendingQuests={pendingQuests}
+      />
+    </div>
   ) : (
     <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
       <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">

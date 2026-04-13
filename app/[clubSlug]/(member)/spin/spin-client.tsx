@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { memberSpin } from "./actions";
 import { useLanguage } from "@/lib/i18n/provider";
@@ -37,17 +37,23 @@ function formatBalance(value: number, decimals: number): string {
 export function MemberSpinClient({
   clubSlug,
   balance,
+  totalSpins,
+  level,
   segments,
   recentSpins: initialSpins,
   displayDecimals,
   spinCost,
+  questsSection,
 }: {
   clubSlug: string;
   balance: number;
+  totalSpins: number;
+  level: number;
   segments: Segment[];
   recentSpins: SpinRecord[];
   displayDecimals: number;
   spinCost: number;
+  questsSection?: ReactNode;
 }) {
   const { t } = useLanguage();
   const [currentBalance, setCurrentBalance] = useState(balance);
@@ -87,19 +93,46 @@ export function MemberSpinClient({
   return (
     <div className="min-h-screen club-page-bg">
       {/* Header */}
-      <div className="club-hero px-6 pt-10 pb-12 text-center">
+      <div className="club-hero px-6 pt-10 pb-16 text-center">
         <h1 className="text-2xl font-bold text-white">{t("spin.title")}</h1>
-        <div className="mt-3 inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-5 py-2">
-          <span className="text-3xl font-bold text-white">{formatBalance(currentBalance, displayDecimals)}</span>
-          <span className="text-sm club-light-text">{t("spin.balance")}</span>
-        </div>
         {spinCost > 1 && (
-          <p className="mt-1 text-xs club-light-text">Cost: {formatBalance(spinCost, displayDecimals)} per spin</p>
+          <p className="mt-2 text-xs club-light-text">Cost: {formatBalance(spinCost, displayDecimals)} per spin</p>
         )}
       </div>
 
       {/* Wheel */}
-      <div className="px-4 -mt-6 pb-20 max-w-md mx-auto space-y-4">
+      <div className="relative z-10 px-4 -mt-8 pb-20 max-w-md mx-auto space-y-4">
+        {/* Stats row */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-white rounded-2xl shadow-lg p-4 text-center">
+            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+              {t("dashboard.remaining")}
+            </p>
+            <p className="mt-1 text-3xl font-extrabold club-primary">
+              {formatBalance(currentBalance, displayDecimals)}
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5">{t("dashboard.spinsLabel")}</p>
+          </div>
+          <div className="bg-white rounded-2xl shadow-lg p-4 text-center">
+            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+              {t("dashboard.completed")}
+            </p>
+            <p className="mt-1 text-3xl font-extrabold club-primary">
+              {totalSpins}
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5">{t("dashboard.spinsLabel")}</p>
+          </div>
+          <div className="bg-white rounded-2xl shadow-lg p-4 text-center">
+            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+              {t("dashboard.level")}
+            </p>
+            <p className="mt-1 text-3xl font-extrabold club-primary">
+              {level}
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5">/ 10</p>
+          </div>
+        </div>
+
         <div className="bg-white rounded-2xl shadow-lg p-2">
           <SpinWheel
             segments={segments}
@@ -108,6 +141,8 @@ export function MemberSpinClient({
             onSpin={handleSpin}
           />
         </div>
+
+        {questsSection}
 
         {/* No spins message */}
         {currentBalance < spinCost && (
