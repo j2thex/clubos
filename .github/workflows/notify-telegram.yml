@@ -5,7 +5,7 @@ jobs:
   notify:
     if: >
       github.event.deployment_status.state == 'success' &&
-      (github.event.deployment.ref == 'main' || github.event.deployment.ref == 'develop')
+      (github.event.deployment.environment == 'Production' || github.event.deployment.environment == 'Preview')
     runs-on: ubuntu-latest
     steps:
       - name: Fetch commit message
@@ -25,9 +25,9 @@ jobs:
         with:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          message_thread_id: ${{ github.event.deployment.ref == 'main' && secrets.TELEGRAM_THREAD_PROD || secrets.TELEGRAM_THREAD_STAGING }}
+          message_thread_id: ${{ github.event.deployment.environment == 'Production' && secrets.TELEGRAM_THREAD_PROD || secrets.TELEGRAM_THREAD_STAGING }}
           message: |
-            ${{ github.event.deployment.ref == 'main' && '🚀 Production' || '🧪 Staging' }} Deploy ready
+            ${{ github.event.deployment.environment == 'Production' && '🚀 Production' || '🧪 Staging' }} Deploy ready
 
             ${{ steps.commit.outputs.message }}
 
