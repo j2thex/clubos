@@ -26,7 +26,9 @@ export default async function StaffOffersPage({
   // Get orderable offers for this club
   const { data: offers } = await supabase
     .from("club_offers")
-    .select("id, orderable, offer_catalog(id, name, name_es)")
+    .select(
+      "id, orderable, price, description, description_es, image_url, icon, offer_catalog(id, name, name_es, subtype, icon)",
+    )
     .eq("club_id", club.id)
     .eq("orderable", true)
     .eq("archived", false)
@@ -37,6 +39,16 @@ export default async function StaffOffersPage({
     return {
       id: a.id,
       title: catalog?.name ?? "",
+      name: catalog?.name ?? "",
+      name_es: catalog?.name_es ?? null,
+      subtype: catalog?.subtype ?? "service",
+      icon: catalog?.icon ?? null,
+      club_icon: a.icon ?? null,
+      description: a.description ?? null,
+      description_es: a.description_es ?? null,
+      image_url: a.image_url ?? null,
+      orderable: a.orderable ?? false,
+      price: a.price != null ? Number(a.price) : null,
     };
   });
 
