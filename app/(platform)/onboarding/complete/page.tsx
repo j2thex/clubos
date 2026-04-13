@@ -80,31 +80,13 @@ export default async function CompletePage({
             {t(locale, "onboarding.completeCtaHint")}
           </p>
 
-          <div className="space-y-3">
-            <Link
-              href={adminUrl}
-              target="_blank"
-              className="block rounded-md bg-green-600 px-4 py-4 text-center text-base font-semibold text-white shadow-sm hover:bg-green-500 transition-colors"
-            >
-              {t(locale, "onboarding.adminPanel")} →
-            </Link>
-            <div className="grid grid-cols-2 gap-3">
-              <Link
-                href={staffUrl}
-                target="_blank"
-                className="block rounded-md border border-gray-300 bg-white px-3 py-2.5 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                {t(locale, "onboarding.staffConsole")}
-              </Link>
-              <Link
-                href={memberUrl}
-                target="_blank"
-                className="block rounded-md border border-gray-300 bg-white px-3 py-2.5 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                {t(locale, "onboarding.memberPortal")}
-              </Link>
-            </div>
-          </div>
+          <Link
+            href={adminUrl}
+            target="_blank"
+            className="block rounded-md bg-green-600 px-4 py-4 text-center text-base font-semibold text-white shadow-sm hover:bg-green-500 transition-colors"
+          >
+            {t(locale, "onboarding.adminPanel")} →
+          </Link>
         </CardContent>
       </Card>
     </div>
