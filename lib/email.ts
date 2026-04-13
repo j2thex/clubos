@@ -1,7 +1,18 @@
 import { Resend } from "resend";
 import { SignJWT, jwtVerify } from "jose";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let _resend: Resend | null = null;
+function getResend(): Resend {
+  if (!_resend) {
+    const key = process.env.RESEND_API_KEY;
+    if (!key) {
+      throw new Error("RESEND_API_KEY is not set");
+    }
+    _resend = new Resend(key);
+  }
+  return _resend;
+}
+
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
 export async function sendPasswordResetEmail(
@@ -9,7 +20,7 @@ export async function sendPasswordResetEmail(
   resetUrl: string,
   clubName: string,
 ) {
-  await resend.emails.send({
+  await getResend().emails.send({
     from: "osocios.club <noreply@osocios.club>",
     to,
     subject: `Reset your password — ${clubName}`,
@@ -41,7 +52,7 @@ export async function sendPreregistrationConfirmation(
     ? `<p style="font-size: 14px; color: #333; margin: 0;"><strong>Address:</strong> ${clubAddress}</p>`
     : "";
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: "osocios.club <noreply@osocios.club>",
     to,
     subject: `Pre-registration confirmed — ${clubName}`,
@@ -81,7 +92,7 @@ export async function sendAutoRegistrationEmail(
     ? `<p style="font-size: 14px; color: #333; margin: 0;"><strong>Address:</strong> ${clubAddress}</p>`
     : "";
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: "osocios.club <noreply@osocios.club>",
     to,
     subject: `Welcome to ${clubName} — Your member code`,
@@ -177,7 +188,7 @@ export async function sendCampaignEmail(
   `;
 
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: "osocios.club <noreply@osocios.club>",
       to,
       subject,
