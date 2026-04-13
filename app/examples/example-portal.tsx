@@ -13,7 +13,7 @@ export function ExamplePortal({ vertical }: { vertical: VerticalExample }) {
         <p className="text-xs text-white/80">
           This is an example portal.{" "}
           <a href="/onboarding" className="text-white font-semibold underline underline-offset-2 hover:text-white/90">
-            Create yours free &rarr;
+            Get started &rarr;
           </a>
         </p>
       </div>
@@ -130,7 +130,7 @@ export function ExamplePortal({ vertical }: { vertical: VerticalExample }) {
             className="inline-block rounded-full px-8 py-3 text-sm font-semibold text-white shadow-lg transition-transform hover:scale-105"
             style={{ backgroundColor: vertical.primaryColor }}
           >
-            Create your portal like this &rarr;
+            Get started &rarr;
           </a>
           <p className="text-xs text-gray-400 mt-3">Free to get started. No credit card required.</p>
         </div>

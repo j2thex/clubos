@@ -34,7 +34,7 @@ export default async function MemberLayout({
   }
 
   return (
-    <div className="pb-20">
+    <div className="pb-20 member-portal">
       <div className="absolute top-2 right-4 z-50">
         <LanguageSwitcher />
       </div>

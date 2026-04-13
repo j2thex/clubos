@@ -278,22 +278,25 @@ export function DiscoverClient({
   return (
     <div className="flex flex-col">
       <AgeGate />
-      {/* Filter controls — above the map for clubs/events */}
-      {activeTab !== "offers" && (
-        <FilterControls
-          activeTab={activeTab}
-          selectedTags={selectedTagFilters}
-          onTagsChange={setSelectedTagFilters}
-          popularOffers={popularOffers}
-          selectedOfferNames={selectedOfferNames}
-          onOfferNamesChange={setSelectedOfferNames}
-          offerSearch={offerSearch}
-          onOfferSearchChange={setOfferSearch}
-          dateFilter={dateFilter}
-          onDateFilterChange={setDateFilter}
-          locale={locale}
-        />
-      )}
+      {/* Filter controls — above the map. Reserve a stable min-height so the
+          map position doesn't jump when switching between tabs with/without filters. */}
+      <div className="min-h-[56px]">
+        {activeTab !== "offers" && (
+          <FilterControls
+            activeTab={activeTab}
+            selectedTags={selectedTagFilters}
+            onTagsChange={setSelectedTagFilters}
+            popularOffers={popularOffers}
+            selectedOfferNames={selectedOfferNames}
+            onOfferNamesChange={setSelectedOfferNames}
+            offerSearch={offerSearch}
+            onOfferSearchChange={setOfferSearch}
+            dateFilter={dateFilter}
+            onDateFilterChange={setDateFilter}
+            locale={locale}
+          />
+        )}
+      </div>
 
       {/* Section 1: Map */}
       <section ref={mapSectionRef} className="relative h-[75svh] md:h-[70vh]">

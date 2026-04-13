@@ -210,7 +210,7 @@ export default async function SettingsPage({
           currentSecret={club.notification_secret ?? null}
         />
       </CollapsibleSection>
-      <CollapsibleSection title="Spin Wheel">
+      <CollapsibleSection id="spin-wheel" title="Spin Wheel">
         <WheelManager
           segments={(segments ?? []).map((s) => ({
             id: s.id,

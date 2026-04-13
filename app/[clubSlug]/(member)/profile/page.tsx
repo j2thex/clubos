@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getMemberFromCookie } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -283,6 +284,14 @@ export default async function ProfilePage({
             </div>
           </div>
         )}
+
+        {/* Back to global map */}
+        <Link
+          href="/discover"
+          className="block w-full rounded-2xl bg-white hover:bg-gray-50 active:bg-gray-100 border border-gray-200 text-gray-900 font-semibold py-3.5 text-center transition-colors shadow-sm"
+        >
+          {t(locale, "profile.backToDiscover")}
+        </Link>
 
         {/* Logout */}
         <form action={logoutWithSlug}>

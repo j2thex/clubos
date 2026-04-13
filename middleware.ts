@@ -13,6 +13,7 @@ const MEMBER_COOKIE = "clubos-member-token";
 const STAFF_COOKIE = "clubos-staff-token";
 const OWNER_COOKIE = "clubos-owner-token";
 const LOCALE_COOKIE = "clubos-lang";
+const MEMBER_TOKEN_MAX_AGE = 60 * 60 * 24 * 365;
 
 // Routes that are not club-scoped
 const PLATFORM_PATHS = ["/onboarding", "/privacy", "/terms", "/platform-admin", "/examples", "/discover", "/for-clubs", "/contact"];
@@ -155,6 +156,14 @@ export async function middleware(request: NextRequest) {
     const response = applyLocale(request, NextResponse.next());
     response.headers.set("x-member-id", payload.member_id as string);
     response.headers.set("x-club-id", payload.club_id as string);
+    // Sliding session: refresh cookie maxAge on each request so active members stay logged in.
+    response.cookies.set(MEMBER_COOKIE, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: MEMBER_TOKEN_MAX_AGE,
+      path: "/",
+    });
     return response;
   } catch {
     return NextResponse.redirect(new URL(`/${clubSlug}/login`, request.url));

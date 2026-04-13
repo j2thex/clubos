@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { setPremiumReferrer } from "./actions";
 
-interface ReferrerSummary {
+export interface ReferrerSummary {
   code: string;
   name: string | null;
   memberId: string;
@@ -12,7 +12,7 @@ interface ReferrerSummary {
   referrals: { code: string; name: string | null; date: string }[];
 }
 
-interface MemberOption {
+export interface MemberOption {
   id: string;
   code: string;
   name: string | null;

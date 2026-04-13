@@ -18,8 +18,8 @@ export async function SetupChecklist({
 
   const [
     { data: branding },
+    { data: clubRow },
     { count: questCount },
-    { count: wheelCount },
     { count: eventCount },
     { count: memberCount },
   ] = await Promise.all([
@@ -29,21 +29,14 @@ export async function SetupChecklist({
       .eq("club_id", clubId)
       .maybeSingle(),
     supabase
+      .from("clubs")
+      .select("spin_enabled")
+      .eq("id", clubId)
+      .maybeSingle(),
+    supabase
       .from("quests")
       .select("id", { count: "exact", head: true })
       .eq("club_id", clubId),
-    // wheel_configs has one row per segment (not jsonb). Seed always inserts 8
-    // default segments, so any club post-onboarding already has rows. We count
-    // rows with reward_type != 'nothing' to distinguish a real prize config
-    // from the bare minimum — but since seed includes real prizes too, any
-    // post-onboarding club will pass. This is intentional: the wheel IS
-    // configured out of the box and the admin only needs to customise labels.
-    // The check therefore functions as "wheel not accidentally empty".
-    supabase
-      .from("wheel_configs")
-      .select("id", { count: "exact", head: true })
-      .eq("club_id", clubId)
-      .neq("reward_type", "nothing"),
     supabase
       .from("events")
       .select("id", { count: "exact", head: true })
@@ -75,8 +68,8 @@ export async function SetupChecklist({
       key: "wheel",
       label: tr("adminSetup.wheel"),
       ctaLabel: tr("adminSetup.wheelCta"),
-      href: `/${clubSlug}/admin/settings`,
-      done: (wheelCount ?? 0) > 0,
+      href: `/${clubSlug}/admin/settings#spin-wheel`,
+      done: clubRow?.spin_enabled === true,
     },
     {
       key: "event",

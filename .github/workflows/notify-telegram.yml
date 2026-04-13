@@ -5,7 +5,9 @@ jobs:
   notify:
     if: >
       github.event.deployment_status.state == 'success' &&
-      (github.event.deployment.environment == 'Production' || github.event.deployment.environment == 'Preview')
+      (startsWith(github.event.deployment.environment, 'Production') ||
+       startsWith(github.event.deployment.environment, 'Preview')) &&
+      !contains(github.event.deployment.environment, 'clubos01')
     runs-on: ubuntu-latest
     steps:
       - name: Fetch commit message
@@ -24,8 +26,8 @@ jobs:
         env:
           BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          THREAD_ID: ${{ github.event.deployment.environment == 'Production' && secrets.TELEGRAM_THREAD_PROD || secrets.TELEGRAM_THREAD_STAGING }}
-          HEADER: ${{ github.event.deployment.environment == 'Production' && '🚀 Production' || '🧪 Staging' }}
+          THREAD_ID: ${{ startsWith(github.event.deployment.environment, 'Production') && secrets.TELEGRAM_THREAD_PROD || secrets.TELEGRAM_THREAD_STAGING }}
+          HEADER: ${{ startsWith(github.event.deployment.environment, 'Production') && '🚀 Production' || '🧪 Staging' }}
           COMMIT_MSG: ${{ steps.commit.outputs.message }}
           AUTHOR: ${{ steps.commit.outputs.author }}
           URL: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}

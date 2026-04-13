@@ -4,7 +4,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { QuestList } from "./quest-list";
 import { SocialLinks } from "@/components/club/social-links";
 import { PhotoGallery } from "@/components/club/photo-gallery";
-import { WelcomeOverlay } from "@/components/club/welcome-overlay";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 
@@ -22,7 +21,7 @@ export default async function MemberDashboard({
 
   const supabase = createAdminClient();
 
-  const [{ data: member }, { data: club }, { count: spinsDone }, { data: quests }, { data: completedQuests }, { data: galleryImages }] = await Promise.all([
+  const [{ data: member }, { data: club }, { data: quests }, { data: completedQuests }, { data: galleryImages }] = await Promise.all([
     supabase
       .from("members")
       .select("full_name, spin_balance, member_code")
@@ -33,10 +32,6 @@ export default async function MemberDashboard({
       .select("id, name, club_branding(logo_url, cover_url, hero_content, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website)")
       .eq("id", session.club_id)
       .single(),
-    supabase
-      .from("spins")
-      .select("*", { count: "exact", head: true })
-      .eq("member_id", session.member_id),
     supabase
       .from("quests")
       .select("id, title, description, title_es, description_es, link, image_url, icon, reward_spins, multi_use, quest_type, proof_mode, proof_placeholder, tutorial_steps, deadline, category")
@@ -56,7 +51,6 @@ export default async function MemberDashboard({
 
   const locale = await getServerLocale();
   const displayName = member?.full_name || "Member";
-  const spinBalance = member?.spin_balance ?? 0;
   const clubName = club?.name ?? "";
   const branding = Array.isArray(club?.club_branding)
     ? club.club_branding[0]
@@ -64,8 +58,6 @@ export default async function MemberDashboard({
   const logoUrl = branding?.logo_url ?? null;
   const coverUrl = branding?.cover_url ?? null;
   const heroContent = branding?.hero_content ?? null;
-  const totalSpins = spinsDone ?? 0;
-  const level = Math.min(10, Math.floor(totalSpins / 5) + 1);
 
   // Count verified completions per quest, track pending ones
   const questCompletionCounts: Record<string, number> = {};
@@ -81,7 +73,6 @@ export default async function MemberDashboard({
 
   return (
     <div className="min-h-screen club-page-bg">
-      <WelcomeOverlay clubName={clubName} />
       {/* Hero area */}
       <div
         className="relative px-6 pt-10 pb-16 text-center bg-cover bg-center overflow-hidden"
@@ -126,58 +117,6 @@ export default async function MemberDashboard({
 
       {/* Content cards */}
       <div className="relative z-10 px-4 -mt-8 pb-10 max-w-md mx-auto space-y-4">
-        {/* Stats row */}
-        <div className="grid grid-cols-3 gap-3">
-          {/* Remaining Spins */}
-          <div className="bg-white rounded-2xl shadow-lg p-4 text-center">
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
-              {t(locale, "dashboard.remaining")}
-            </p>
-            <p className="mt-1 text-3xl font-extrabold club-primary">
-              {spinBalance}
-            </p>
-            <p className="text-xs text-gray-400 mt-0.5">{t(locale, "dashboard.spinsLabel")}</p>
-          </div>
-
-          {/* Spins Done */}
-          <div className="bg-white rounded-2xl shadow-lg p-4 text-center">
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
-              {t(locale, "dashboard.completed")}
-            </p>
-            <p className="mt-1 text-3xl font-extrabold club-primary">
-              {totalSpins}
-            </p>
-            <p className="text-xs text-gray-400 mt-0.5">{t(locale, "dashboard.spinsLabel")}</p>
-          </div>
-
-          {/* Level */}
-          <div className="bg-white rounded-2xl shadow-lg p-4 text-center">
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
-              {t(locale, "dashboard.level")}
-            </p>
-            <p className="mt-1 text-3xl font-extrabold club-primary">
-              {level}
-            </p>
-            <p className="text-xs text-gray-400 mt-0.5">/ 10</p>
-          </div>
-        </div>
-
-        {/* Gallery */}
-        {galleryImages && galleryImages.length > 0 && (
-          <div className="space-y-2">
-            <h2 className="text-sm font-semibold text-white/80 uppercase tracking-wide px-1">
-              {t(locale, "dashboard.gallery")}
-            </h2>
-            <PhotoGallery
-              images={galleryImages.map((g) => ({
-                id: g.id,
-                image_url: g.image_url,
-                caption: g.caption,
-              }))}
-            />
-          </div>
-        )}
-
         {/* Quests */}
         {activeQuests.length > 0 && (
           <div className="space-y-2">
@@ -194,6 +133,22 @@ export default async function MemberDashboard({
               clubName={clubName}
               clubSlug={clubSlug}
               locale={locale}
+            />
+          </div>
+        )}
+
+        {/* Gallery */}
+        {galleryImages && galleryImages.length > 0 && (
+          <div className="space-y-2">
+            <h2 className="text-sm font-semibold text-white/80 uppercase tracking-wide px-1">
+              {t(locale, "dashboard.gallery")}
+            </h2>
+            <PhotoGallery
+              images={galleryImages.map((g) => ({
+                id: g.id,
+                image_url: g.image_url,
+                caption: g.caption,
+              }))}
             />
           </div>
         )}

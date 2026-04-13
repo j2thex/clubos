@@ -81,7 +81,7 @@ export function LoginForm({ loginMode }: { loginMode: string }) {
                 required
                 maxLength={8}
                 autoCapitalize="characters"
-                autoComplete="off"
+                autoComplete="username"
                 placeholder={t("login.memberCodePlaceholder")}
                 className="club-ring block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-lg font-mono tracking-widest uppercase text-gray-900 placeholder:text-gray-400 placeholder:tracking-widest transition"
                 onChange={(e) => {

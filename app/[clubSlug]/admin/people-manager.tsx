@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { createMember, createStaffMember, toggleMemberStatus, deleteMember, createReferralSource, deleteReferralSource } from "./actions";
 import { useLanguage } from "@/lib/i18n/provider";
+import { ReferralTree, type ReferrerSummary, type MemberOption } from "./referral-tree";
 
 interface Member {
   id: string;
@@ -30,14 +31,19 @@ export function PeopleManager({
   members,
   staff,
   referralSources = [],
+  referralTree = [],
+  referralMemberOptions = [],
 }: {
   clubId: string;
   clubSlug: string;
   members: Member[];
   staff: Member[];
   referralSources?: Member[];
+  referralTree?: ReferrerSummary[];
+  referralMemberOptions?: MemberOption[];
 }) {
-  const [tab, setTab] = useState<"members" | "staff" | "referrals">("members");
+  const [tab, setTab] = useState<"members" | "staff" | "referrals" | "tree">("members");
+  const totalReferrals = referralTree.reduce((sum, r) => sum + r.referrals.length, 0);
   const [code, setCode] = useState("");
   const [pin, setPin] = useState("");
   const [referralName, setReferralName] = useState("");
@@ -135,12 +141,32 @@ export function PeopleManager({
                 : "text-gray-400 hover:text-gray-600"
             }`}
           >
-            Referral Sources ({referralSources.length})
+            Sources ({referralSources.length})
+          </button>
+          <button
+            onClick={() => { setTab("tree"); setError(null); setSuccess(null); }}
+            className={`flex-1 py-3 text-sm font-semibold text-center transition-colors ${
+              tab === "tree"
+                ? "text-gray-900 border-b-2 border-gray-900"
+                : "text-gray-400 hover:text-gray-600"
+            }`}
+          >
+            Referrals ({totalReferrals})
           </button>
         </div>
 
+        {tab === "tree" && (
+          <div className="p-4">
+            <ReferralTree
+              referrers={referralTree}
+              clubSlug={clubSlug}
+              memberOptions={referralMemberOptions}
+            />
+          </div>
+        )}
+
         {/* Members / Staff create form */}
-        {tab !== "referrals" && (
+        {(tab === "members" || tab === "staff") && (
           <form onSubmit={handleCreate} className="px-4 py-4 border-b border-gray-100">
             <div className={`flex gap-3 items-end ${tab === "staff" ? "" : ""}`}>
               <div className="flex-1">
@@ -259,7 +285,7 @@ export function PeopleManager({
         )}
 
         {/* Members / Staff list */}
-        {tab !== "referrals" && (
+        {(tab === "members" || tab === "staff") && (
           <>
             {list.length > 0 ? (
               <div className="divide-y divide-gray-100">

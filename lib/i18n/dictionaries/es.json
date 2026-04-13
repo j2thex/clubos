@@ -189,6 +189,7 @@
   "staff.prizeFulfilled": "Premio entregado",
 
   "profile.title": "Tu perfil",
+  "profile.backToDiscover": "← Volver al mapa global",
   "profile.memberSince": "Socio desde",
   "profile.validTill": "Válido hasta",
   "profile.spinHistory": "Historial de tiradas",
@@ -229,6 +230,8 @@
   "staff.walkinCheckIn": "Registro sin cita",
   "staff.noQuests": "Aún no hay misiones",
   "staff.questsFromAdmin": "Las misiones aparecerán aquí una vez creadas por el administrador.",
+  "staff.approvedByYou": "Aprobadas por ti",
+  "staff.spinsAwarded": "Tiradas otorgadas",
   "staff.pendingValidations": "Validaciones pendientes ({count})",
   "staff.questApproved": "Aprobado {message}",
   "staff.questDeclined": "Rechazado — el socio puede re-enviar",

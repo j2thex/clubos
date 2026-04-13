@@ -54,6 +54,10 @@
   --radius-4xl: calc(var(--radius) + 16px);
 }
 
+.member-portal {
+  --radius: 0.25rem;
+}
+
 :root {
   --radius: 0.625rem;
   --background: oklch(0.98 0.005 150);

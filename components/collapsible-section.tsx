@@ -1,20 +1,32 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 export function CollapsibleSection({
+  id,
   title,
   defaultOpen = false,
   children,
 }: {
+  id?: string;
   title: string;
   defaultOpen?: boolean;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!id) return;
+    if (typeof window === "undefined") return;
+    if (window.location.hash === `#${id}`) {
+      setOpen(true);
+      ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [id]);
 
   return (
-    <div>
+    <div id={id} ref={ref}>
       <button
         type="button"
         onClick={() => setOpen(!open)}
