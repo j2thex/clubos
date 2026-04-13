@@ -2,10 +2,16 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { submitQuest, submitEmailQuest } from "./quest-actions";
+import {
+  submitQuest,
+  submitEmailQuest,
+  submitQuestInPerson,
+  submitQuestProofScreenshot,
+} from "./quest-actions";
 import { useLanguage } from "@/lib/i18n/provider";
 import { localized, type Locale } from "@/lib/i18n";
 import { DynamicIcon } from "@/components/dynamic-icon";
+import { QuestProofModal } from "./quest-proof-modal";
 
 interface Quest {
   id: string;
@@ -196,6 +202,7 @@ export function QuestList({
   pendingQuestIds,
   memberId,
   memberCode,
+  clubId,
   clubName,
   clubSlug,
   locale,
@@ -205,6 +212,7 @@ export function QuestList({
   pendingQuestIds: string[];
   memberId: string;
   memberCode: string;
+  clubId: string;
   clubName: string;
   clubSlug: string;
   locale: Locale;
@@ -212,6 +220,7 @@ export function QuestList({
   const [isPending, startTransition] = useTransition();
   const [proofUrls, setProofUrls] = useState<Record<string, string>>({});
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [proofModalQuest, setProofModalQuest] = useState<Quest | null>(null);
   const [optimisticPending, setOptimisticPending] = useState<Set<string>>(new Set());
   const pendingSet = new Set([...pendingQuestIds, ...optimisticPending]);
   const { t } = useLanguage();
@@ -260,21 +269,64 @@ export function QuestList({
       return;
     }
     // Feedback quests always expand for text input
-    if (qType === "feedback" || (mode !== "none" && qType !== "tutorial")) {
+    if (qType === "feedback") {
       setExpandedId(quest.id);
-    } else {
-      // No proof needed — submit immediately
-      setOptimisticPending((prev) => new Set(prev).add(quest.id));
-      startTransition(async () => {
-        const result = await submitQuest(memberId, quest.id, clubSlug);
-        if ("error" in result) {
-          setOptimisticPending((prev) => { const next = new Set(prev); next.delete(quest.id); return next; });
-          toast.error(result.error);
-        } else {
-          toast.success(t("quest.submittedToast"));
-        }
-      });
+      return;
     }
+    // Default quests with proof mode → open the proof modal (upload / ask staff)
+    if (mode !== "none" && qType !== "tutorial") {
+      setProofModalQuest(quest);
+      return;
+    }
+    // No proof needed — submit immediately
+    setOptimisticPending((prev) => new Set(prev).add(quest.id));
+    startTransition(async () => {
+      const result = await submitQuest(memberId, quest.id, clubSlug);
+      if ("error" in result) {
+        setOptimisticPending((prev) => { const next = new Set(prev); next.delete(quest.id); return next; });
+        toast.error(result.error);
+      } else {
+        toast.success(t("quest.submittedToast"));
+      }
+    });
+  }
+
+  function handleProofUpload(file: File) {
+    if (!proofModalQuest) return;
+    const quest = proofModalQuest;
+    setOptimisticPending((prev) => new Set(prev).add(quest.id));
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set("memberId", memberId);
+      fd.set("questId", quest.id);
+      fd.set("clubSlug", clubSlug);
+      fd.set("clubId", clubId);
+      fd.set("file", file);
+      const result = await submitQuestProofScreenshot(fd);
+      if ("error" in result) {
+        setOptimisticPending((prev) => { const next = new Set(prev); next.delete(quest.id); return next; });
+        toast.error(result.error);
+      } else {
+        setProofModalQuest(null);
+        toast.success(t("quest.submittedToast"));
+      }
+    });
+  }
+
+  function handleProofAskStaff() {
+    if (!proofModalQuest) return;
+    const quest = proofModalQuest;
+    setOptimisticPending((prev) => new Set(prev).add(quest.id));
+    startTransition(async () => {
+      const result = await submitQuestInPerson(memberId, quest.id, clubSlug);
+      if ("error" in result) {
+        setOptimisticPending((prev) => { const next = new Set(prev); next.delete(quest.id); return next; });
+        toast.error(result.error);
+      } else {
+        setProofModalQuest(null);
+        toast.success(t("quests.proof.inPersonPending"));
+      }
+    });
   }
 
   function handleEmailSubmit(quest: Quest) {
@@ -576,6 +628,19 @@ export function QuestList({
           {t("quests.linkCopied")}
         </div>
       )}
+
+      <QuestProofModal
+        open={!!proofModalQuest}
+        questTitle={
+          proofModalQuest
+            ? localized(proofModalQuest.title, proofModalQuest.title_es, locale)
+            : ""
+        }
+        onClose={() => setProofModalQuest(null)}
+        onUpload={handleProofUpload}
+        onAskStaff={handleProofAskStaff}
+        isPending={isPending}
+      />
     </div>
   );
 }

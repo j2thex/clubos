@@ -12,7 +12,7 @@ const ICONS = [SocialClubIcon, CannabisClubIcon, BarsClubIcon, SportsClubIcon, C
 
 export function UseCases({ t }: { t: (key: string) => string }) {
   const cases = [
-    { title: t("landing.useCaseSocial"), desc: t("landing.useCaseSocialDesc"), example: "/examples/bars" },
+    { title: t("landing.useCaseSocial"), desc: t("landing.useCaseSocialDesc"), example: "/examples/nightclubs" },
     { title: t("landing.useCaseCannabis"), desc: t("landing.useCaseCannabisDesc"), example: "/examples/coffee-shops" },
     { title: t("landing.useCaseBars"), desc: t("landing.useCaseBarsDesc"), example: "/examples/bars" },
     { title: t("landing.useCaseSports"), desc: t("landing.useCaseSportsDesc"), example: "/examples/sports-clubs" },
@@ -67,6 +67,15 @@ export function UseCases({ t }: { t: (key: string) => string }) {
               );
             })}
           </div>
+        </div>
+
+        <div className="mt-10 text-center">
+          <Link
+            href="/examples"
+            className="inline-flex items-center gap-2 rounded-full border border-landing-border-subtle px-5 py-2.5 text-sm font-medium hover:bg-landing-surface-hover transition-colors"
+          >
+            {t("sales.useCasesBrowseAll")} →
+          </Link>
         </div>
       </div>
     </section>

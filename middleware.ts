@@ -15,7 +15,7 @@ const OWNER_COOKIE = "clubos-owner-token";
 const LOCALE_COOKIE = "clubos-lang";
 
 // Routes that are not club-scoped
-const PLATFORM_PATHS = ["/onboarding", "/privacy", "/terms", "/platform-admin", "/examples", "/discover"];
+const PLATFORM_PATHS = ["/onboarding", "/privacy", "/terms", "/platform-admin", "/examples", "/discover", "/for-clubs", "/contact"];
 
 function applyLocale(request: NextRequest, response: NextResponse) {
   const cookieValue = request.cookies.get(LOCALE_COOKIE)?.value;

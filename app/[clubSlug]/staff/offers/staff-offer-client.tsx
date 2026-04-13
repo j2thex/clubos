@@ -3,6 +3,9 @@
 import { useState, useTransition } from "react";
 import { fulfillOfferOrder, addWalkinOfferOrder } from "./actions";
 import { useLanguage } from "@/lib/i18n/provider";
+import { localized } from "@/lib/i18n";
+import { DynamicIcon } from "@/components/dynamic-icon";
+import { OfferDetailModal, type OfferDetail } from "../../(member)/offers/offer-detail-modal";
 
 interface Order {
   id: string;
@@ -18,6 +21,16 @@ interface Order {
 interface Offer {
   id: string;
   title: string;
+  name: string;
+  name_es: string | null;
+  subtype: string;
+  icon: string | null;
+  club_icon: string | null;
+  description: string | null;
+  description_es: string | null;
+  image_url: string | null;
+  orderable: boolean;
+  price: number | null;
 }
 
 export function StaffOfferClient({
@@ -37,9 +50,27 @@ export function StaffOfferClient({
   const [memberCode, setMemberCode] = useState("");
   const [walkinOfferId, setWalkinOfferId] = useState(offers[0]?.id ?? "");
   const [isPending, startTransition] = useTransition();
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [selectedOfferId, setSelectedOfferId] = useState<string | null>(null);
+
+  const selectedOffer = offers.find((o) => o.id === selectedOfferId) ?? null;
+  const selectedOfferDetail: OfferDetail | null = selectedOffer
+    ? {
+        id: selectedOffer.id,
+        name: selectedOffer.name,
+        name_es: selectedOffer.name_es,
+        subtype: selectedOffer.subtype,
+        icon: selectedOffer.icon,
+        club_icon: selectedOffer.club_icon,
+        description: selectedOffer.description,
+        description_es: selectedOffer.description_es,
+        image_url: selectedOffer.image_url,
+        orderable: selectedOffer.orderable,
+        price: selectedOffer.price,
+      }
+    : null;
 
   const pendingOrders = orders.filter((o) => o.status === "pending");
   const fulfilledOrders = orders.filter((o) => o.status === "fulfilled").slice(0, 20);
@@ -216,6 +247,53 @@ export function StaffOfferClient({
           </div>
         </div>
       )}
+
+      {/* Offer Catalog Browser */}
+      {offers.length > 0 && (
+        <div className="space-y-2">
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-1">
+            {t("offers.detail.staffBrowseTitle")}
+          </h2>
+          <div className="bg-white rounded-2xl shadow-lg p-3">
+            <div className="grid grid-cols-3 gap-2">
+              {offers.map((a) => {
+                const displayIcon = a.club_icon || a.icon;
+                return (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => setSelectedOfferId(a.id)}
+                    className="flex flex-col items-center text-center p-2 rounded-xl border border-gray-100 hover:border-gray-300 active:scale-95 transition-all"
+                  >
+                    {a.image_url ? (
+                      <img src={a.image_url} alt="" className="w-10 h-10 rounded-full object-cover mb-1" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center mb-1 bg-gray-100 text-gray-500">
+                        {displayIcon ? (
+                          <DynamicIcon name={displayIcon} className="w-5 h-5" />
+                        ) : (
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                          </svg>
+                        )}
+                      </div>
+                    )}
+                    <span className="text-[11px] font-medium text-gray-800 leading-tight line-clamp-2">
+                      {localized(a.name, a.name_es, locale)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <OfferDetailModal
+        offer={selectedOfferDetail}
+        onClose={() => setSelectedOfferId(null)}
+        mode={{ kind: "staff" }}
+      />
 
       {error && (
         <div className="rounded-2xl px-4 py-2.5 text-xs text-red-600 bg-red-50 border border-red-100">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { MessageSquare, X, ImagePlus } from "lucide-react";
 import { toast } from "sonner";
 import { submitFeedback } from "@/lib/feedback-action";
@@ -21,8 +21,30 @@ export function FeedbackWidget() {
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const { locale } = useLanguage();
+
+  useEffect(() => {
+    if (!open) return;
+    function onPaste(e: ClipboardEvent) {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.kind === "file" && item.type.startsWith("image/")) {
+          const file = item.getAsFile();
+          if (file) {
+            e.preventDefault();
+            handleFile(file);
+            return;
+          }
+        }
+      }
+    }
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   function handleFile(file: File | null) {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -85,7 +107,40 @@ export function FeedbackWidget() {
       {open && (
         <>
           <div className="fixed inset-0 z-[998] bg-black/30" onClick={() => setOpen(false)} />
-          <div className="fixed bottom-20 right-4 z-[999] w-80 rounded-2xl bg-card text-card-foreground border border-border shadow-2xl overflow-hidden">
+          <div
+            className="fixed bottom-20 right-4 z-[999] w-80 rounded-2xl bg-card text-card-foreground border border-border shadow-2xl overflow-hidden"
+            onDragEnter={(e) => {
+              e.preventDefault();
+              setDragging(true);
+            }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              if (!dragging) setDragging(true);
+            }}
+            onDragLeave={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+                setDragging(false);
+              }
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragging(false);
+              const file = e.dataTransfer.files?.[0];
+              if (!file) return;
+              if (!file.type.startsWith("image/")) {
+                toast.error(locale === "es" ? "Solo imágenes" : "Images only");
+                return;
+              }
+              handleFile(file);
+            }}
+          >
+            {dragging && (
+              <div className="pointer-events-none absolute inset-0 z-10 m-2 rounded-xl border-2 border-dashed border-primary bg-primary/5 flex items-center justify-center">
+                <span className="text-xs font-medium text-primary">
+                  {locale === "es" ? "Suelta la imagen aquí" : "Drop image here"}
+                </span>
+              </div>
+            )}
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
               <span className="text-sm font-semibold">
@@ -139,7 +194,7 @@ export function FeedbackWidget() {
                   className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <ImagePlus className="w-4 h-4" />
-                  {locale === "es" ? "Adjuntar captura" : "Attach screenshot"}
+                  {locale === "es" ? "Adjuntar, pegar o soltar" : "Attach, paste or drop"}
                 </button>
               </div>
 

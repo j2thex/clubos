@@ -43,8 +43,12 @@ export function MembershipPeriodManager({
   }
 
   function handleDelete(periodId: string) {
+    setError(null);
     startTransition(async () => {
-      await deleteMembershipPeriod(periodId, clubSlug);
+      const result = await deleteMembershipPeriod(periodId, clubSlug);
+      if ("error" in result) {
+        setError(result.error);
+      }
     });
   }
 

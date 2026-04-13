@@ -16,6 +16,9 @@ export function LandingFooter({ t }: { t: (key: string) => string }) {
           <Link href="/onboarding" className="text-xs opacity-40 hover:opacity-70 transition-opacity">
             For Clubs
           </Link>
+          <Link href="/contact" className="text-xs opacity-40 hover:opacity-70 transition-opacity">
+            {t("contact.title")}
+          </Link>
           <Link href="/examples" className="text-xs opacity-40 hover:opacity-70 transition-opacity">
             Examples
           </Link>

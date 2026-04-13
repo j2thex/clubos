@@ -2,21 +2,22 @@ import type { Metadata } from "next";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Hero } from "../_landing/hero";
-import { PlatformOverview } from "../_landing/platform-overview";
-import { FeatureGrid } from "../_landing/feature-grid";
-import { HowItWorks } from "../_landing/how-it-works";
+import { SalesHero } from "../_landing/sales-hero";
+import { TheLoop } from "../_landing/the-loop";
+import { QuestsPitch } from "../_landing/quests-pitch";
+import { FeatureShowcases } from "../_landing/feature-showcases";
 import { UseCases } from "../_landing/use-cases";
+import { PortalsOverview } from "../_landing/portals-overview";
+import { PricingTeaser } from "../_landing/pricing-teaser";
 import { FinalCta } from "../_landing/final-cta";
 import { LandingFooter } from "../_landing/landing-footer";
+import { TopNav } from "../_landing/top-nav";
 
 export const metadata: Metadata = {
   title: "For Clubs — osocios.club",
   description:
-    "Turn every visit into loyalty. Manage members, gamify engagement with spin-the-wheel rewards and quests, run events, and operate your club — all under your brand.",
-  alternates: {
-    canonical: "/for-clubs",
-  },
+    "Spin. Win. Return. Turn every visit into loyalty with gamified quests, spin-the-wheel rewards, events, and member management — all under your brand.",
+  alternates: { canonical: "/for-clubs" },
 };
 
 export const revalidate = 3600;
@@ -42,17 +43,19 @@ async function getLandingStats() {
 export default async function ForClubsPage() {
   const locale = await getServerLocale();
   const stats = await getLandingStats();
-
   const tr = (key: string, params?: Record<string, string | number>) =>
     t(locale, key, params);
 
   return (
     <div className="min-h-screen">
-      <Hero t={tr} stats={stats} />
-      <PlatformOverview t={tr} />
-      <FeatureGrid t={tr} />
-      <HowItWorks t={tr} />
+      <TopNav />
+      <SalesHero t={tr} stats={stats} />
+      <TheLoop t={tr} />
+      <QuestsPitch t={tr} />
+      <FeatureShowcases t={tr} />
       <UseCases t={tr} />
+      <PortalsOverview t={tr} />
+      <PricingTeaser t={tr} />
       <FinalCta t={tr} />
       <LandingFooter t={tr} />
     </div>

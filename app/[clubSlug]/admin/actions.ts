@@ -1134,6 +1134,15 @@ export async function deleteMembershipPeriod(
 ): Promise<{ error: string } | { ok: true }> {
   const supabase = createAdminClient();
 
+  const { count } = await supabase
+    .from("members")
+    .select("id", { count: "exact", head: true })
+    .eq("membership_period_id", periodId);
+
+  if (count && count > 0) {
+    return { error: `Cannot delete: ${count} member${count === 1 ? "" : "s"} assigned to this plan. Reassign them first.` };
+  }
+
   const { error } = await supabase
     .from("membership_periods")
     .delete()

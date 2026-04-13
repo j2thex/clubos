@@ -1,10 +1,11 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { requestOffer, cancelOfferRequest } from "./actions";
 import { useLanguage } from "@/lib/i18n/provider";
 import { localized } from "@/lib/i18n";
 import { DynamicIcon } from "@/components/dynamic-icon";
+import { OfferDetailModal } from "./offer-detail-modal";
 
 interface OfferItem {
   id: string;
@@ -49,16 +50,24 @@ export function OfferListClient({
 }) {
   const [isPending, startTransition] = useTransition();
   const { t, locale } = useLanguage();
+  const [selectedOfferId, setSelectedOfferId] = useState<string | null>(null);
+
+  const selectedOffer = offers.find((o) => o.id === selectedOfferId) ?? null;
+  const selectedOfferDetail = selectedOffer
+    ? { ...selectedOffer, hasPendingOrder: !!selectedOffer.order }
+    : null;
 
   function handleRequest(clubOfferId: string) {
     startTransition(async () => {
       await requestOffer(clubOfferId, memberId, clubSlug);
+      setSelectedOfferId(null);
     });
   }
 
   function handleCancel(orderId: string) {
     startTransition(async () => {
       await cancelOfferRequest(orderId, memberId, clubSlug);
+      setSelectedOfferId(null);
     });
   }
 
@@ -97,17 +106,8 @@ export function OfferListClient({
               return (
                 <div
                   key={a.id}
-                  className={`bg-white rounded-xl shadow p-3 flex flex-col items-center text-center relative ${
-                    a.orderable ? "cursor-pointer active:scale-95 transition-transform" : ""
-                  }`}
-                  onClick={() => {
-                    if (!a.orderable || isPending) return;
-                    if (a.order) {
-                      handleCancel(a.order.id);
-                    } else {
-                      handleRequest(a.id);
-                    }
-                  }}
+                  className="bg-white rounded-xl shadow p-3 flex flex-col items-center text-center relative cursor-pointer active:scale-95 transition-transform"
+                  onClick={() => setSelectedOfferId(a.id)}
                 >
                   {/* Price badge */}
                   {a.orderable && (
@@ -149,6 +149,18 @@ export function OfferListClient({
           </div>
         </div>
       ))}
+      <OfferDetailModal
+        offer={selectedOfferDetail}
+        onClose={() => setSelectedOfferId(null)}
+        mode={{
+          kind: "member",
+          isPending,
+          onRequest: () => selectedOffer && handleRequest(selectedOffer.id),
+          onCancel: () => {
+            if (selectedOffer?.order) handleCancel(selectedOffer.order.id);
+          },
+        }}
+      />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { PeopleManager } from "../people-manager";
+import { SetupChecklist } from "./setup-checklist";
 
 export default async function PeoplePage({
   params,
@@ -91,12 +92,15 @@ export default async function PeoplePage({
   }));
 
   return (
-    <PeopleManager
-      clubId={club.id}
-      clubSlug={clubSlug}
-      members={memberList}
-      staff={staffList}
-      referralSources={referralList}
-    />
+    <>
+      <SetupChecklist clubId={club.id} clubSlug={clubSlug} />
+      <PeopleManager
+        clubId={club.id}
+        clubSlug={clubSlug}
+        members={memberList}
+        staff={staffList}
+        referralSources={referralList}
+      />
+    </>
   );
 }

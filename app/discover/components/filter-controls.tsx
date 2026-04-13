@@ -38,43 +38,7 @@ export function FilterControls({
   locale: Locale;
 }) {
   if (activeTab === "clubs") {
-    return (
-      <div className="px-4 py-2 border-b border-landing-border">
-        <p className="text-[10px] uppercase tracking-wider text-landing-text-tertiary font-medium mb-1.5">{t(locale, "discover.filterByType")}</p>
-        <div className="flex flex-wrap gap-1.5">
-        {PREDEFINED_TAGS.slice(0, 10).map((tag) => {
-          const active = selectedTags.includes(tag.value);
-          return (
-            <button
-              key={tag.value}
-              onClick={() => {
-                if (active) {
-                  onTagsChange(selectedTags.filter((t) => t !== tag.value));
-                } else {
-                  onTagsChange([...selectedTags, tag.value]);
-                }
-              }}
-              className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
-                active
-                  ? "bg-landing-surface-hover text-landing-text"
-                  : "bg-landing-surface text-landing-text-secondary hover:text-landing-text hover:bg-landing-surface-hover"
-              }`}
-            >
-              {getTagLabel(tag.value, locale)}
-            </button>
-          );
-        })}
-        {selectedTags.length > 0 && (
-          <button
-            onClick={() => onTagsChange([])}
-            className="px-2 py-1 text-xs text-landing-text-secondary hover:text-landing-text transition-colors"
-          >
-            Clear
-          </button>
-        )}
-        </div>
-      </div>
-    );
+    return null;
   }
 
   if (activeTab === "events") {

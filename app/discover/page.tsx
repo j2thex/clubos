@@ -2,13 +2,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 import { LandingFooter } from "../_landing/landing-footer";
-import { LanguageSwitcher } from "@/lib/i18n/switcher";
-import Link from "next/link";
+import { TopNav } from "../_landing/top-nav";
 import { DiscoverClient } from "./discover-client";
 import type { DiscoverClub, DiscoverEvent, DiscoverOffer, DiscoverQuest } from "./lib/types";
 import type { Metadata } from "next";
 import { getItemListJsonLd } from "@/lib/structured-data";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 export const revalidate = 300; // 5-minute ISR
 
@@ -204,22 +202,7 @@ export default async function DiscoverPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(clubListJsonLd) }}
       />
-      {/* Header */}
-      <header className="relative z-20 flex items-center justify-between px-6 py-4 border-b border-landing-border">
-        <Link href="/" className="text-xs font-mono tracking-widest uppercase opacity-80 hover:opacity-100 transition-opacity">
-          {tr("landing.brandName")}
-        </Link>
-        <div className="flex items-center gap-4">
-          <Link
-            href="/onboarding"
-            className="text-xs opacity-70 hover:opacity-100 transition-opacity hidden sm:inline"
-          >
-            {tr("landing.heroPrimaryCta")}
-          </Link>
-          <ThemeToggle />
-          <LanguageSwitcher variant="auto" />
-        </div>
-      </header>
+      <TopNav />
 
       {/* Main content */}
       <main className="flex-1 flex flex-col">
