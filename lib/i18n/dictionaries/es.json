@@ -89,6 +89,15 @@
 
   "quests.inviteFriend": "Invitar a un amigo",
   "quests.linkCopied": "¡Enlace copiado!",
+  "quests.proof.chooseTitle": "Prueba tu reseña",
+  "quests.proof.intro": "Tu reseña se publicará pronto. Elige una de las opciones para que podamos confirmarla.",
+  "quests.proof.upload": "Subir captura de pantalla",
+  "quests.proof.uploadHint": "JPG o PNG, hasta 5 MB.",
+  "quests.proof.askStaff": "Mostrársela al staff",
+  "quests.proof.askStaffHint": "El staff la verificará la próxima vez que te vean.",
+  "quests.proof.inPersonPending": "El staff verificará tu reseña en persona.",
+  "quests.proof.verifyInPerson": "Verificar en persona",
+  "common.or": "o",
   "quests.shareText": "¡Únete a {clubName}!",
 
   "events.title": "Eventos",

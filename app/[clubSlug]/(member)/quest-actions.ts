@@ -3,6 +3,9 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyStaff } from "@/lib/staff-notify";
 import { logActivity } from "@/lib/activity-log";
+import { uploadQuestProof } from "@/lib/supabase/storage";
+
+const IN_PERSON_PROOF_SENTINEL = "in_person";
 
 export async function submitQuest(
   memberId: string,
@@ -62,6 +65,39 @@ export async function submitQuest(
   );
 
   return { ok: true };
+}
+
+export async function submitQuestProofScreenshot(
+  formData: FormData,
+): Promise<{ error: string } | { ok: true }> {
+  const memberId = String(formData.get("memberId") ?? "");
+  const questId = String(formData.get("questId") ?? "");
+  const clubSlug = String(formData.get("clubSlug") ?? "");
+  const clubId = String(formData.get("clubId") ?? "");
+  const file = formData.get("file");
+
+  if (!memberId || !questId || !clubId || !(file instanceof File)) {
+    return { error: "Missing upload data" };
+  }
+  if (file.size === 0) {
+    return { error: "Empty file" };
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    return { error: "Image must be under 5 MB" };
+  }
+
+  const uploaded = await uploadQuestProof(clubId, file);
+  if ("error" in uploaded) return { error: uploaded.error };
+
+  return submitQuest(memberId, questId, clubSlug, uploaded.url);
+}
+
+export async function submitQuestInPerson(
+  memberId: string,
+  questId: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  return submitQuest(memberId, questId, clubSlug, IN_PERSON_PROOF_SENTINEL);
 }
 
 export async function submitEmailQuest(

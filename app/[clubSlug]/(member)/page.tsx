@@ -190,6 +190,7 @@ export default async function MemberDashboard({
               pendingQuestIds={pendingQuestIds}
               memberId={session.member_id}
               memberCode={member?.member_code ?? ""}
+              clubId={session.club_id}
               clubName={clubName}
               clubSlug={clubSlug}
               locale={locale}

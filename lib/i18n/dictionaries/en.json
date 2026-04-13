@@ -89,6 +89,15 @@
 
   "quests.inviteFriend": "Invite a Friend",
   "quests.linkCopied": "Link copied!",
+  "quests.proof.chooseTitle": "Prove your review",
+  "quests.proof.intro": "Your review will be published soon. Pick one of the options below so we can confirm it.",
+  "quests.proof.upload": "Upload screenshot",
+  "quests.proof.uploadHint": "JPG or PNG, up to 5 MB.",
+  "quests.proof.askStaff": "Show it to staff",
+  "quests.proof.askStaffHint": "Staff will verify it next time they see you.",
+  "quests.proof.inPersonPending": "Staff will verify your review in person.",
+  "quests.proof.verifyInPerson": "Verify in person",
+  "common.or": "or",
   "quests.shareText": "Join me at {clubName}!",
 
   "events.title": "Events",

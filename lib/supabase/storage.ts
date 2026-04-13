@@ -26,6 +26,15 @@ export async function deleteClubImage(imageUrl: string): Promise<void> {
   return deleteFromBucket("club-images", imageUrl);
 }
 
+// --- Quest proof screenshots (bucket: quest-proofs) ---
+
+export async function uploadQuestProof(
+  clubId: string,
+  file: File,
+): Promise<{ url: string } | { error: string }> {
+  return uploadToBucket("quest-proofs", clubId, file);
+}
+
 // --- Feedback screenshots (bucket: feedback) ---
 
 export async function uploadFeedbackImage(
