@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { uploadClubImage } from "@/lib/supabase/storage";
 import { hashPassword, createOwnerToken, setOwnerCookie } from "@/lib/auth";
 import { generateSlug } from "@/lib/utils";
+import { RESERVED_SLUGS } from "@/lib/reserved-slugs";
 import { redirect } from "next/navigation";
 
 export async function createOrgAndClub(formData: FormData) {
@@ -27,6 +28,10 @@ export async function createOrgAndClub(formData: FormData) {
 
   const supabase = createAdminClient();
   const slug = generateSlug(clubName);
+
+  if (RESERVED_SLUGS.has(slug)) {
+    return { error: "This name is reserved. Please choose a different club name." };
+  }
 
   // Pre-validate: check for duplicate email before creating anything
   const { count: emailCount } = await supabase
