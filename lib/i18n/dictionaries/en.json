@@ -840,5 +840,7 @@
   "adminSetup.member": "Invite your first member",
   "adminSetup.memberCta": "Open members",
 
-  "sales.useCasesBrowseAll": "Browse all verticals"
+  "sales.useCasesBrowseAll": "Browse all verticals",
+
+  "onboarding.completeCtaHint": "We've prepped a 5-step setup checklist inside your admin panel. Jump in and you'll be live in minutes."
 }

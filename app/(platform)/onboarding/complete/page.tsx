@@ -76,47 +76,34 @@ export default async function CompletePage({
           </div>
         </CardHeader>
         <CardContent className="space-y-5">
-          {/* Next steps */}
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-5 space-y-3">
-            <h3 className="text-sm font-semibold text-gray-900">{t(locale, "onboarding.nextSteps")}</h3>
-            <ol className="space-y-2 text-sm text-gray-600">
-              <li className="flex gap-2">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-800 text-[10px] font-bold text-white">1</span>
-                {t(locale, "onboarding.nextStep1")}
-              </li>
-              <li className="flex gap-2">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-800 text-[10px] font-bold text-white">2</span>
-                {t(locale, "onboarding.nextStep2")}
-              </li>
-              <li className="flex gap-2">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-800 text-[10px] font-bold text-white">3</span>
-                {t(locale, "onboarding.nextStep3")}
-              </li>
-            </ol>
-          </div>
+          <p className="rounded-lg border border-gray-200 bg-gray-50 p-5 text-sm text-gray-600">
+            {t(locale, "onboarding.completeCtaHint")}
+          </p>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="space-y-3">
             <Link
               href={adminUrl}
               target="_blank"
-              className="block rounded-md bg-gray-800 px-3 py-3 text-center text-sm font-semibold text-white shadow-sm hover:bg-gray-700 transition-colors"
+              className="block rounded-md bg-green-600 px-4 py-4 text-center text-base font-semibold text-white shadow-sm hover:bg-green-500 transition-colors"
             >
-              {t(locale, "onboarding.adminPanel")}
+              {t(locale, "onboarding.adminPanel")} →
             </Link>
-            <Link
-              href={staffUrl}
-              target="_blank"
-              className="block rounded-md bg-gray-600 px-3 py-3 text-center text-sm font-semibold text-white shadow-sm hover:bg-gray-500 transition-colors"
-            >
-              {t(locale, "onboarding.staffConsole")}
-            </Link>
-            <Link
-              href={memberUrl}
-              target="_blank"
-              className="block rounded-md bg-green-600 px-3 py-3 text-center text-sm font-semibold text-white shadow-sm hover:bg-green-700 transition-colors"
-            >
-              {t(locale, "onboarding.memberPortal")}
-            </Link>
+            <div className="grid grid-cols-2 gap-3">
+              <Link
+                href={staffUrl}
+                target="_blank"
+                className="block rounded-md border border-gray-300 bg-white px-3 py-2.5 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                {t(locale, "onboarding.staffConsole")}
+              </Link>
+              <Link
+                href={memberUrl}
+                target="_blank"
+                className="block rounded-md border border-gray-300 bg-white px-3 py-2.5 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                {t(locale, "onboarding.memberPortal")}
+              </Link>
+            </div>
           </div>
         </CardContent>
       </Card>

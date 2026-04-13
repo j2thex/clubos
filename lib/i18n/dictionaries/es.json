@@ -840,5 +840,7 @@
   "adminSetup.member": "Invita a tu primer socio",
   "adminSetup.memberCta": "Abrir socios",
 
-  "sales.useCasesBrowseAll": "Ver todos los verticales"
+  "sales.useCasesBrowseAll": "Ver todos los verticales",
+
+  "onboarding.completeCtaHint": "Hemos preparado una lista de 5 pasos dentro del panel admin. Entra y estarás listo en minutos."
 }
