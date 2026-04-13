@@ -838,5 +838,7 @@
   "adminSetup.event": "Crea tu primer evento",
   "adminSetup.eventCta": "Abrir eventos",
   "adminSetup.member": "Invita a tu primer socio",
-  "adminSetup.memberCta": "Abrir socios"
+  "adminSetup.memberCta": "Abrir socios",
+
+  "sales.useCasesBrowseAll": "Ver todos los verticales"
 }
