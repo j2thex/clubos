@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Target, Gift } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/provider";
 
 interface MemberNavProps {
@@ -11,13 +12,9 @@ interface MemberNavProps {
 
 const navItems = [
   {
-    labelKey: "nav.dashboard" as const,
+    labelKey: "nav.quests" as const,
     path: "",
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-      </svg>
-    ),
+    icon: <Target className="h-6 w-6" strokeWidth={2} />,
   },
   {
     labelKey: "nav.events" as const,
@@ -29,13 +26,9 @@ const navItems = [
     ),
   },
   {
-    labelKey: "nav.spin" as const,
+    labelKey: "nav.bonuses" as const,
     path: "/spin",
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-      </svg>
-    ),
+    icon: <Gift className="h-6 w-6" strokeWidth={2} />,
   },
   {
     labelKey: "nav.offers" as const,
