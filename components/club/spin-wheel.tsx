@@ -50,13 +50,11 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
     const segmentsRef = useRef(segments);
 
     useEffect(() => {
-      if (spinningRef.current) {
-        setCurrentBalance(balance);
-        return;
-      }
+      // Sync balance only — do NOT clear result/error here. The parent
+      // updates balance ~200ms AFTER the spin animation ends, and we must
+      // not wipe the just-rendered result badge. The badge is dismissed
+      // by user click or by the next spin starting (animateSpin clears it).
       setCurrentBalance(balance);
-      setResult(null);
-      setError(null);
     }, [balance]);
 
     useEffect(() => {
