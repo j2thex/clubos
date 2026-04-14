@@ -140,7 +140,7 @@ export default async function ProfilePage({
         <section
           className="relative overflow-hidden"
           style={{
-            borderRadius: "var(--m-radius-lg)",
+            borderRadius: "var(--m-radius-sm)",
             boxShadow: "var(--m-elev-raised)",
             border: "1px solid var(--m-border)",
             background: "var(--m-ink)",
@@ -176,7 +176,7 @@ export default async function ProfilePage({
               </p>
             </div>
             <div
-              className="flex items-center justify-center rounded-[var(--m-radius-lg)] p-4"
+              className="flex items-center justify-center rounded-[var(--m-radius-sm)] p-4"
               style={{ background: "rgba(255,255,255,0.95)" }}
             >
               <MemberQrCard memberCode={memberCode} />

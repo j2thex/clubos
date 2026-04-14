@@ -39,10 +39,7 @@ export function BadgeCollection({
       {earned.length > 0 && (
         <div className="grid grid-cols-3 gap-3">
           {earned.map((badge) => (
-            <div
-              key={badge.id}
-              className="bg-white rounded-2xl shadow-lg p-4 text-center"
-            >
+            <div key={badge.id} className="m-card p-4 text-center">
               {badge.imageUrl ? (
                 <img src={badge.imageUrl} alt="" className="w-12 h-12 rounded-full mx-auto object-cover" />
               ) : (
@@ -72,10 +69,7 @@ export function BadgeCollection({
       {locked.length > 0 && (
         <div className="grid grid-cols-3 gap-3">
           {locked.map((badge) => (
-            <div
-              key={badge.id}
-              className="bg-white/60 rounded-2xl shadow p-4 text-center opacity-50"
-            >
+            <div key={badge.id} className="m-card p-4 text-center opacity-60">
               <div className="relative mx-auto w-12 h-12">
                 {badge.imageUrl ? (
                   <img src={badge.imageUrl} alt="" className="w-12 h-12 rounded-full object-cover grayscale" />
