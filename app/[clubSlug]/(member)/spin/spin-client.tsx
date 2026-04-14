@@ -61,14 +61,11 @@ export function MemberSpinClient({
 }) {
   const { t } = useLanguage();
 
-  // DIAGNOSTIC: track segments prop reference identity across renders
-  const segmentsPrevRef = useRef(segments);
-  if (segmentsPrevRef.current !== segments) {
-    console.warn(
-      `[SPIN ${performance.now().toFixed(0)}] segments prop REFERENCE CHANGED — SpinWheel will remount`,
-    );
-    segmentsPrevRef.current = segments;
-  }
+  // Freeze the segments reference seen by <SpinWheel> so RSC refreshes
+  // triggered by server actions (which re-run the server page and produce
+  // a fresh segments.map(...) array) don't leak a new reference into the
+  // wheel and cause its init effect to tear down the canvas mid-spin.
+  const stableSegments = useRef(segments).current;
 
   const [currentBalance, setCurrentBalance] = useState(balance);
   const [recentSpins, setRecentSpins] = useState(initialSpins);
@@ -81,8 +78,6 @@ export function MemberSpinClient({
   const wheelRef = useRef<SpinWheelHandle>(null);
 
   function handleSpinClick() {
-    const tClick = performance.now().toFixed(0);
-    console.log(`[SPIN ${tClick}] handleSpinClick fired`);
     if (isSpinning || currentBalance < spinCost) return;
     if (wheelRef.current?.isSpinning()) return;
 
@@ -90,9 +85,7 @@ export function MemberSpinClient({
     setIsSpinning(true);
 
     startTransition(async () => {
-      console.log(`[SPIN ${performance.now().toFixed(0)}] awaiting memberSpin()...`);
       const res = await memberSpin(clubSlug);
-      console.log(`[SPIN ${performance.now().toFixed(0)}] memberSpin() returned, wheelRef=${wheelRef.current ? "alive" : "DEAD"}`);
 
       if ("error" in res) {
         setSpinError(res.error);
@@ -105,7 +98,6 @@ export function MemberSpinClient({
       const newSpinId = crypto.randomUUID();
 
       // Kick off the wheel animation imperatively — no prop/callback churn.
-      console.log(`[SPIN ${performance.now().toFixed(0)}] calling wheelRef.current.spin()`);
       wheelRef.current?.spin({
         ...res,
         outcome: { ...res.outcome, label: localizedLabel },
@@ -198,7 +190,7 @@ export function MemberSpinClient({
         <div className="m-card p-2">
           <SpinWheel
             ref={wheelRef}
-            segments={segments}
+            segments={stableSegments}
             balance={currentBalance}
             spinCost={spinCost}
             hideButton

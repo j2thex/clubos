@@ -44,10 +44,12 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
     const containerRef = useRef<HTMLDivElement>(null);
     const wheelRef = useRef<import("spin-wheel").Wheel | null>(null);
     const spinningRef = useRef(false);
+    // Segment config is captured on mount. Server actions trigger RSC refreshes
+    // that re-pass a fresh segments array; we intentionally ignore those to
+    // keep the canvas alive. Callers that need new segments must remount via key.
+    const segmentsRef = useRef(segments);
 
     useEffect(() => {
-      const t = performance.now().toFixed(0);
-      console.log(`[SPIN ${t}] balance effect fired, balance=${balance}, spinning=${spinningRef.current}`);
       if (spinningRef.current) {
         setCurrentBalance(balance);
         return;
@@ -59,20 +61,15 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
 
     useEffect(() => {
       let mounted = true;
-      const tStart = performance.now().toFixed(0);
-      console.log(`[SPIN ${tStart}] INIT effect RUN (segments ref changed), segments.length=${segments.length}`);
 
       async function initWheel() {
         if (!containerRef.current) return;
 
         const { Wheel } = await import("spin-wheel");
 
-        if (!mounted || !containerRef.current) {
-          console.log(`[SPIN ${performance.now().toFixed(0)}] init ABORTED (unmounted during library import)`);
-          return;
-        }
+        if (!mounted || !containerRef.current) return;
 
-        const items = segments.map((seg) => ({
+        const items = segmentsRef.current.map((seg) => ({
           label: seg.label.toUpperCase(),
           backgroundColor: seg.color,
           labelColor: seg.labelColor ?? "#ffffff",
@@ -92,10 +89,7 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
           loadImage("/wheel/overlay.svg"),
         ]);
 
-        if (!mounted || !containerRef.current) {
-          console.log(`[SPIN ${performance.now().toFixed(0)}] init ABORTED (unmounted during image load)`);
-          return;
-        }
+        if (!mounted || !containerRef.current) return;
 
         const wheel = new Wheel(containerRef.current, {
           items,
@@ -117,19 +111,16 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
         });
 
         wheelRef.current = wheel;
-        console.log(`[SPIN ${performance.now().toFixed(0)}] wheel INITIALIZED and attached`);
       }
 
       initWheel();
 
       return () => {
-        const tEnd = performance.now().toFixed(0);
-        console.warn(`[SPIN ${tEnd}] INIT effect CLEANUP — wheel.remove() called, spinning=${spinningRef.current}`);
         mounted = false;
         wheelRef.current?.remove();
         wheelRef.current = null;
       };
-    }, [segments]);
+    }, []);
 
     const fireConfetti = useCallback(() => {
       confetti({
@@ -145,12 +136,7 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
     }, []);
 
     const animateSpin = useCallback((spinResult: SpinResult) => {
-      const t = performance.now().toFixed(0);
-      if (!wheelRef.current) {
-        console.error(`[SPIN ${t}] animateSpin called but wheelRef is NULL — wheel was unmounted before animation could start`);
-        return;
-      }
-      console.log(`[SPIN ${t}] animateSpin START, segmentIndex=${spinResult.segmentIndex}`);
+      if (!wheelRef.current) return;
 
       spinningRef.current = true;
       setSpinning(true);
@@ -161,8 +147,6 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
       wheelRef.current.spinToItem(spinResult.segmentIndex, duration, true, 2, 1);
 
       setTimeout(() => {
-        const tEnd = performance.now().toFixed(0);
-        console.log(`[SPIN ${tEnd}] animateSpin setTimeout FIRED after ${duration}ms, wheelRef=${wheelRef.current ? "alive" : "DEAD"}`);
         spinningRef.current = false;
         setResult(spinResult.outcome);
         setCurrentBalance(spinResult.newBalance);
