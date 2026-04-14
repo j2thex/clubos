@@ -181,6 +181,12 @@
   "spin.noSpins": "No spins available",
   "spin.earnMore": "Complete quests and attend events to earn spins!",
   "spin.recentSpins": "Recent Spins",
+  "spin.unclaimedPrizes": "Unclaimed Prizes",
+  "spin.getBonus": "Get Bonus",
+  "spin.claiming": "Claiming...",
+  "spin.claimed": "Claimed!",
+  "spin.pending": "Pending",
+  "spin.fulfilled": "Received",
 
   "staff.pendingPrizes": "Pending Prizes ({count})",
   "staff.noPendingPrizes": "No pending prizes",

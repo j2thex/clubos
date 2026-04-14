@@ -37,6 +37,7 @@ export default async function MemberSpinPage({
     { data: segments },
     { data: recentSpins },
     { count: spinsDone },
+    { data: pendingPrizes },
     { data: quests },
     { data: completedQuests },
     locale,
@@ -59,7 +60,7 @@ export default async function MemberSpinPage({
       .order("display_order", { ascending: true }),
     supabase
       .from("spins")
-      .select("id, outcome_label, outcome_value, created_at")
+      .select("id, outcome_label, outcome_value, status, created_at")
       .eq("member_id", session.member_id)
       .eq("club_id", session.club_id)
       .order("created_at", { ascending: false })
@@ -68,6 +69,13 @@ export default async function MemberSpinPage({
       .from("spins")
       .select("*", { count: "exact", head: true })
       .eq("member_id", session.member_id),
+    supabase
+      .from("spins")
+      .select("id, outcome_label, outcome_value, created_at")
+      .eq("member_id", session.member_id)
+      .eq("club_id", session.club_id)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false }),
     supabase
       .from("quests")
       .select("id, title, description, title_es, description_es, link, image_url, icon, reward_spins, multi_use, quest_type, proof_mode, proof_placeholder, tutorial_steps, deadline, category")
@@ -144,11 +152,20 @@ export default async function MemberSpinPage({
         labelColor: s.label_color ?? "#ffffff",
         probability: Number(s.probability),
       }))}
+      pendingPrizes={
+        pendingPrizes?.map((s) => ({
+          id: s.id,
+          outcomeLabel: s.outcome_label,
+          outcomeValue: s.outcome_value,
+          createdAt: s.created_at,
+        })) ?? []
+      }
       recentSpins={
         recentSpins?.map((s) => ({
           id: s.id,
           outcomeLabel: s.outcome_label,
           outcomeValue: s.outcome_value,
+          status: s.status as "pending" | "fulfilled",
           createdAt: s.created_at,
         })) ?? []
       }

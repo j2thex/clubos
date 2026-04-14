@@ -181,6 +181,12 @@
   "spin.noSpins": "Sin tiradas disponibles",
   "spin.earnMore": "¡Completa misiones y asiste a eventos para ganar tiradas!",
   "spin.recentSpins": "Tiradas Recientes",
+  "spin.unclaimedPrizes": "Premios Sin Reclamar",
+  "spin.getBonus": "Reclamar",
+  "spin.claiming": "Reclamando...",
+  "spin.claimed": "¡Reclamado!",
+  "spin.pending": "Pendiente",
+  "spin.fulfilled": "Recibido",
 
   "staff.pendingPrizes": "Premios Pendientes ({count})",
   "staff.noPendingPrizes": "No hay premios pendientes",

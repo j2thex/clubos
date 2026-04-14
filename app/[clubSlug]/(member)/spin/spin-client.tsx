@@ -2,7 +2,7 @@
 
 import { useState, useTransition, type ReactNode } from "react";
 import dynamic from "next/dynamic";
-import { memberSpin } from "./actions";
+import { memberSpin, claimSpinPrize } from "./actions";
 import { useLanguage } from "@/lib/i18n/provider";
 
 const SpinWheel = dynamic(() => import("@/components/club/spin-wheel"), {
@@ -13,6 +13,14 @@ const SpinWheel = dynamic(() => import("@/components/club/spin-wheel"), {
 });
 
 interface SpinRecord {
+  id: string;
+  outcomeLabel: string;
+  outcomeValue: number;
+  status?: "pending" | "fulfilled";
+  createdAt: string;
+}
+
+interface PendingPrize {
   id: string;
   outcomeLabel: string;
   outcomeValue: number;
@@ -40,6 +48,7 @@ export function MemberSpinClient({
   totalSpins,
   level,
   segments,
+  pendingPrizes: initialPending,
   recentSpins: initialSpins,
   displayDecimals,
   spinCost,
@@ -50,6 +59,7 @@ export function MemberSpinClient({
   totalSpins: number;
   level: number;
   segments: Segment[];
+  pendingPrizes: PendingPrize[];
   recentSpins: SpinRecord[];
   displayDecimals: number;
   spinCost: number;
@@ -58,6 +68,9 @@ export function MemberSpinClient({
   const { t } = useLanguage();
   const [currentBalance, setCurrentBalance] = useState(balance);
   const [recentSpins, setRecentSpins] = useState(initialSpins);
+  const [pendingPrizes, setPendingPrizes] = useState(initialPending);
+  const [claimedIds, setClaimedIds] = useState<Set<string>>(new Set());
+  const [claimingId, setClaimingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   async function handleSpin() {
@@ -69,25 +82,53 @@ export function MemberSpinClient({
 
     // Use the localized segment label for display
     const localizedLabel = segments[res.segmentIndex]?.label ?? res.outcome.label;
+    const isWin = res.outcome.rewardType !== "nothing" && res.outcome.value > 0;
 
     setCurrentBalance(res.newBalance);
+
+    const newSpinId = crypto.randomUUID();
 
     // Prepend new spin to history
     setRecentSpins((prev) => [
       {
-        id: crypto.randomUUID(),
+        id: newSpinId,
         outcomeLabel: localizedLabel,
         outcomeValue: res.outcome.value,
+        status: isWin ? "pending" : "fulfilled",
         createdAt: new Date().toISOString(),
       },
       ...prev.slice(0, 9),
     ]);
+
+    // Add to unclaimed prizes if it's a win
+    if (isWin) {
+      setPendingPrizes((prev) => [
+        {
+          id: newSpinId,
+          outcomeLabel: localizedLabel,
+          outcomeValue: res.outcome.value,
+          createdAt: new Date().toISOString(),
+        },
+        ...prev,
+      ]);
+    }
 
     // Return with localized label for the wheel result overlay
     return {
       ...res,
       outcome: { ...res.outcome, label: localizedLabel },
     };
+  }
+
+  function handleClaim(prizeId: string) {
+    setClaimingId(prizeId);
+    startTransition(async () => {
+      const res = await claimSpinPrize(prizeId);
+      if (!("error" in res)) {
+        setClaimedIds((prev) => new Set(prev).add(prizeId));
+      }
+      setClaimingId(null);
+    });
   }
 
   return (
@@ -142,6 +183,53 @@ export function MemberSpinClient({
           />
         </div>
 
+        {/* Unclaimed prizes */}
+        {pendingPrizes.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-100">
+              <h2 className="text-sm font-semibold text-gray-700">
+                {t("spin.unclaimedPrizes")}
+              </h2>
+            </div>
+            <div className="divide-y divide-gray-50">
+              {pendingPrizes.map((prize) => {
+                const isClaimed = claimedIds.has(prize.id);
+                const isClaiming = claimingId === prize.id;
+                return (
+                  <div key={prize.id} className="px-4 py-3 flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-gray-900">{prize.outcomeLabel}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {new Date(prize.createdAt).toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleClaim(prize.id)}
+                      disabled={isClaiming || isClaimed}
+                      className={`rounded-lg px-4 py-2 text-xs font-semibold transition-colors shrink-0 ${
+                        isClaimed
+                          ? "bg-green-100 text-green-700"
+                          : "club-btn text-white"
+                      } disabled:opacity-60 disabled:cursor-not-allowed`}
+                    >
+                      {isClaimed
+                        ? t("spin.claimed")
+                        : isClaiming
+                          ? t("spin.claiming")
+                          : t("spin.getBonus")}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {questsSection}
 
         {/* No spins message */}
@@ -190,13 +278,25 @@ export function MemberSpinClient({
                         </p>
                       </div>
                     </div>
-                    <span
-                      className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                        isWin ? "club-tint-bg club-tint-text" : "bg-gray-100 text-gray-500"
-                      }`}
-                    >
-                      {isWin ? `+${spin.outcomeValue}` : t("common.noWin")}
-                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {isWin && spin.status === "pending" && (
+                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                          {t("spin.pending")}
+                        </span>
+                      )}
+                      {isWin && spin.status === "fulfilled" && (
+                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-green-100 text-green-700">
+                          {t("spin.fulfilled")}
+                        </span>
+                      )}
+                      <span
+                        className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                          isWin ? "club-tint-bg club-tint-text" : "bg-gray-100 text-gray-500"
+                        }`}
+                      >
+                        {isWin ? `+${spin.outcomeValue}` : t("common.noWin")}
+                      </span>
+                    </div>
                   </div>
                 );
               })}

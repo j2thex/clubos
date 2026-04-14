@@ -120,3 +120,36 @@ export async function memberSpin(
     segmentIndex: segments.indexOf(selected),
   };
 }
+
+export async function claimSpinPrize(
+  spinId: string,
+): Promise<{ error: string } | { success: true }> {
+  const session = await getMemberFromCookie();
+  if (!session) return { error: "Not logged in" };
+
+  const supabase = createAdminClient();
+
+  const { data: spin } = await supabase
+    .from("spins")
+    .select("id, status, outcome_label, member_id, club_id")
+    .eq("id", spinId)
+    .eq("member_id", session.member_id)
+    .eq("club_id", session.club_id)
+    .single();
+
+  if (!spin) return { error: "Spin not found" };
+  if (spin.status !== "pending") return { error: "Already fulfilled" };
+
+  const { data: member } = await supabase
+    .from("members")
+    .select("member_code")
+    .eq("id", session.member_id)
+    .single();
+
+  notifyStaff(
+    session.club_id,
+    `🎁 Prize claim\n<b>${spin.outcome_label}</b>\nMember: ${member?.member_code ?? "unknown"}`,
+  );
+
+  return { success: true };
+}
