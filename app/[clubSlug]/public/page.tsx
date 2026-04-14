@@ -184,62 +184,96 @@ export default async function PublicProfilePage({
   });
 
   return (
-    <div className="min-h-screen club-page-bg">
+    <div className="clubos-ui min-h-screen" style={{ background: "var(--m-surface-sunken)" }}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(clubJsonLd) }}
       />
-      {/* Hero */}
-      <div
-        className="relative px-6 pt-12 pb-16 text-center bg-cover bg-center overflow-hidden"
+      {/* Editorial hero — photo-forward with gradient fallback for clubs without a cover */}
+      <section
+        className="relative h-[300px] w-full overflow-hidden bg-cover bg-center"
         style={
           branding?.cover_url
             ? { backgroundImage: `url(${branding.cover_url})` }
             : undefined
         }
       >
-        {/* Top bar */}
-        <div className="absolute top-3 left-3 z-20">
+        {!branding?.cover_url && (
+          <div className="absolute inset-0 club-hero" aria-hidden />
+        )}
+        {/* Dark gradient for editorial legibility */}
+        <div
+          aria-hidden
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.30) 45%, rgba(0,0,0,0.80) 100%)",
+          }}
+        />
+
+        {/* Top row — discover back button (left) + language switcher (right) */}
+        <div
+          className="absolute inset-x-0 top-0 z-20 flex items-center justify-between px-4"
+          style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}
+        >
           <Link
             href="/discover"
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-black/30 text-white/90 text-xs font-medium backdrop-blur-sm hover:bg-black/40 transition-colors"
+            className="inline-flex min-h-[40px] items-center gap-1 rounded-[var(--m-radius-sm)] bg-black/35 px-3 py-2 text-xs font-semibold text-white backdrop-blur-sm transition-colors hover:bg-black/50"
           >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <svg
+              className="h-3.5 w-3.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+            >
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
             Discover
           </Link>
-        </div>
-        <div className="absolute top-3 right-3 z-20">
           <LanguageSwitcher variant="light" />
         </div>
-        {branding?.cover_url && (
-          <div className="absolute inset-0 bg-black/50" />
-        )}
-        {!branding?.cover_url && (
-          <div className="absolute inset-0 club-hero" />
-        )}
 
-        <div className="relative z-10">
-          {branding?.logo_url && (
-            <img
-              src={branding.logo_url}
-              alt={club.name}
-              className="w-20 h-20 rounded-2xl object-cover mx-auto mb-4 shadow-lg border-2 border-white/20"
-            />
-          )}
-          <h1 className="text-2xl font-bold text-white">{club.name}</h1>
+        {/* Bottom — logo + caption + display title + tags + social */}
+        <div className="absolute inset-x-0 bottom-0 z-10 px-5 pb-6">
+          <div className="flex items-end gap-4">
+            {branding?.logo_url && (
+              <img
+                src={branding.logo_url}
+                alt={club.name}
+                className="h-14 w-14 shrink-0 rounded-[var(--m-radius-sm)] border border-white/30 object-cover"
+              />
+            )}
+            <div className="min-w-0 flex-1">
+              <p
+                className="text-[11px] font-semibold uppercase leading-none text-white/85"
+                style={{ letterSpacing: "0.08em" }}
+              >
+                CLUB
+              </p>
+              <h1 className="m-display mt-1.5 text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.35)]">
+                {club.name}
+              </h1>
+            </div>
+          </div>
           {club.tags && club.tags.length > 0 && (
-            <div className="mt-2 flex flex-wrap justify-center gap-1.5">
+            <div className="mt-3 flex flex-wrap gap-1.5">
               {club.tags.map((tag: string) => (
-                <span key={tag} className="px-2.5 py-0.5 text-xs font-medium rounded-full bg-white/20 text-white/90">
+                <span
+                  key={tag}
+                  className="inline-flex rounded-[var(--m-radius-xs)] bg-white/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/95 backdrop-blur-sm"
+                >
                   {getTagLabel(tag, locale)}
                 </span>
               ))}
             </div>
           )}
-          {(branding?.social_instagram || branding?.social_whatsapp || branding?.social_telegram || branding?.social_google_maps || branding?.social_website) && (
-            <div className="mt-4 flex justify-center">
+          {(branding?.social_instagram ||
+            branding?.social_whatsapp ||
+            branding?.social_telegram ||
+            branding?.social_google_maps ||
+            branding?.social_website) && (
+            <div className="mt-3">
               <SocialLinks
                 instagram={branding?.social_instagram}
                 whatsapp={branding?.social_whatsapp}
@@ -251,9 +285,9 @@ export default async function PublicProfilePage({
             </div>
           )}
         </div>
-      </div>
+      </section>
 
-      <div className="max-w-lg mx-auto px-4 -mt-6 relative z-10 space-y-6 pb-12">
+      <div className="relative z-10 mx-auto max-w-lg space-y-6 px-5 pb-12 pt-6">
         {/* Gallery */}
         {galleryImages && galleryImages.length > 0 && (
           <PhotoGallery
@@ -276,12 +310,12 @@ export default async function PublicProfilePage({
 
         {/* Referral banner (non-invite-only clubs) */}
         {referrerCode && !club.invite_only && (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center">
-            <p className="text-sm font-medium text-amber-800">
+          <div className="m-card border-amber-200 bg-amber-50 p-4 text-center">
+            <p className="text-sm font-semibold text-amber-800">
               {localized(
                 `Mention referral code ${referrerCode} when you sign up!`,
                 `¡Menciona el código de referencia ${referrerCode} al registrarte!`,
-                locale
+                locale,
               )}
             </p>
           </div>
@@ -289,9 +323,17 @@ export default async function PublicProfilePage({
 
         {/* Member Login — inline form */}
         {!(club.invite_only && club.hide_member_login) && (
-          <div className="bg-white rounded-2xl shadow-lg p-5 ring-2 ring-[var(--club-primary,#16a34a)]/20">
-            <p className="text-sm font-semibold text-gray-700 mb-1 text-center">{localized("Have a member code?", "¿Tienes un código de socio?", locale)}</p>
-            <p className="text-xs text-gray-400 mb-3 text-center">{localized("Enter it below to access your portal", "Ingrésalo abajo para acceder a tu portal", locale)}</p>
+          <div className="m-card p-5">
+            <p className="m-caption mb-1 text-center">
+              {localized("Have a member code?", "¿Tienes un código de socio?", locale)}
+            </p>
+            <p className="mb-3 text-center text-xs text-[color:var(--m-ink-muted)]">
+              {localized(
+                "Enter it below to access your portal",
+                "Ingrésalo abajo para acceder a tu portal",
+                locale,
+              )}
+            </p>
             <PublicLoginForm loginMode={club.login_mode ?? "code_only"} clubSlug={clubSlug} />
           </div>
         )}
@@ -304,7 +346,7 @@ export default async function PublicProfilePage({
         {/* Quests */}
         {(hasQuests || club.invite_only) && (
           <div>
-            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-2">
+            <h2 className="m-caption mb-3 px-1">
               {localized("Quests", "Misiones", locale)}
             </h2>
             <div className="space-y-3">
@@ -321,12 +363,12 @@ export default async function PublicProfilePage({
               ))}
               {/* Referral banner for social-mode invite clubs */}
               {club.invite_only && club.invite_mode === "social" && referrerCode && (
-                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center">
-                  <p className="text-sm font-medium text-amber-800">
+                <div className="m-card border-amber-200 bg-amber-50 p-4 text-center">
+                  <p className="text-sm font-semibold text-amber-800">
                     {localized(
                       `Mention referral code ${referrerCode} when you sign up!`,
                       `¡Menciona el código de referencia ${referrerCode} al registrarte!`,
-                      locale
+                      locale,
                     )}
                   </p>
                 </div>
@@ -353,7 +395,7 @@ export default async function PublicProfilePage({
                 return sortedKeys.map((cat) => (
                   <div key={cat} className="space-y-3">
                     {multiCat && (
-                      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1">
+                      <h3 className="m-caption px-1">
                         {locale === "es" ? (catLabels[cat]?.es ?? cat) : (catLabels[cat]?.en ?? cat)}
                       </h3>
                     )}
@@ -384,7 +426,7 @@ export default async function PublicProfilePage({
         {/* Events */}
         {hasEvents && (
           <div>
-            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-2">
+            <h2 className="m-caption mb-3 px-1">
               {localized("Upcoming Events", "Próximos Eventos", locale)}
             </h2>
             <PublicEventsClient
@@ -410,36 +452,46 @@ export default async function PublicProfilePage({
         {/* Offers */}
         {hasOffers && (
           <div>
-            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-2">
+            <h2 className="m-caption mb-3 px-1">
               {localized("Offers", "Ofertas", locale)}
             </h2>
-            <div className="space-y-4">
+            <div className="space-y-5">
               {Object.entries(offersBySubtype).map(([subtype, items]) => (
-                <div key={subtype}>
-                  <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-wider px-1 mb-1.5">
-                    {subtype}
-                  </p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <div key={subtype} className="space-y-2">
+                  <p className="m-caption px-1">{subtype}</p>
+                  <div className="grid grid-cols-3 gap-2">
                     {items.map((item) => {
                       const displayIcon = item.club_icon || item.icon;
                       return (
-                        <div key={item.id} className="bg-white rounded-xl shadow p-3 flex flex-col items-center text-center">
-                          {item.image_url ? (
-                            <img
-                              src={item.image_url}
-                              alt=""
-                              className="w-10 h-10 rounded-full object-cover mb-1.5"
-                            />
-                          ) : displayIcon ? (
-                            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mb-1.5">
-                              <DynamicIcon name={displayIcon} className="w-5 h-5 text-gray-500" />
-                            </div>
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mb-1.5">
-                              <span className="text-gray-300 text-lg">+</span>
-                            </div>
-                          )}
-                          <span className="text-xs font-medium text-gray-900 leading-tight">{localized(item.name, item.name_es, locale)}</span>
+                        <div
+                          key={item.id}
+                          className="m-card relative flex min-h-[112px] flex-col overflow-hidden"
+                        >
+                          <div
+                            className="relative h-16 w-full"
+                            style={{ background: "var(--m-surface-sunken)" }}
+                          >
+                            {item.image_url ? (
+                              <img
+                                src={item.image_url}
+                                alt=""
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-[color:var(--m-ink-muted)]">
+                                {displayIcon ? (
+                                  <DynamicIcon name={displayIcon} className="h-6 w-6" />
+                                ) : (
+                                  <span className="text-lg">+</span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex flex-1 items-center p-2">
+                            <p className="line-clamp-2 text-[11px] font-semibold leading-tight text-[color:var(--m-ink)]">
+                              {localized(item.name, item.name_es, locale)}
+                            </p>
+                          </div>
                         </div>
                       );
                     })}
@@ -452,12 +504,24 @@ export default async function PublicProfilePage({
         )}
 
         {/* Footer */}
-        <div className="text-center text-xs text-gray-300 pt-4 space-y-1">
-          <p>© {new Date().getFullYear()} {club.name} · Powered by osocios</p>
+        <div className="space-y-1 pt-4 text-center text-xs text-[color:var(--m-ink-muted)]">
           <p>
-            <a href="/privacy" className="underline hover:text-gray-500 transition-colors">{localized("Privacy Policy", "Pol\u00edtica de Privacidad", locale)}</a>
+            © {new Date().getFullYear()} {club.name} · Powered by osocios
+          </p>
+          <p>
+            <a
+              href="/privacy"
+              className="underline transition-colors hover:text-[color:var(--m-ink)]"
+            >
+              {localized("Privacy Policy", "Pol\u00edtica de Privacidad", locale)}
+            </a>
             {" · "}
-            <a href="/terms" className="underline hover:text-gray-500 transition-colors">{localized("Terms of Use", "Condiciones de Uso", locale)}</a>
+            <a
+              href="/terms"
+              className="underline transition-colors hover:text-[color:var(--m-ink)]"
+            >
+              {localized("Terms of Use", "Condiciones de Uso", locale)}
+            </a>
           </p>
         </div>
       </div>

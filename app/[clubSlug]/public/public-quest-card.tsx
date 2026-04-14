@@ -46,37 +46,47 @@ export function PublicQuestCard({ quest, clubSlug }: { quest: Quest; clubSlug: s
     : null;
 
   return (
-    <div className="bg-white rounded-2xl shadow p-4">
+    <div className="m-card p-4">
       <div className="flex items-center gap-4">
-        {/* Clickable checkbox circle */}
+        {/* Clickable checkbox circle — round is fine, it's avatar-sized */}
         <button
           onClick={handleCheck}
-          className="w-10 h-10 rounded-full border-2 border-gray-300 flex items-center justify-center shrink-0 hover:border-[var(--club-primary,#16a34a)] hover:bg-[var(--club-primary,#16a34a)]/10 transition-colors cursor-pointer"
+          className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-gray-300 transition-colors hover:border-[var(--club-primary,#16a34a)] hover:bg-[var(--club-primary,#16a34a)]/10"
           aria-label={localized("Complete quest", "Completar misión", locale)}
         >
-          <svg className="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+          <svg
+            className="h-5 w-5 text-gray-300"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            strokeWidth={2.5}
+          >
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         </button>
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-gray-900 text-sm">{localized(q.title, q.title_es, locale)}</p>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-[color:var(--m-ink)]">
+            {localized(q.title, q.title_es, locale)}
+          </p>
           {q.description && (
-            <p className="text-xs text-gray-400">{localized(q.description, q.description_es, locale)}</p>
+            <p className="text-xs text-[color:var(--m-ink-muted)]">
+              {localized(q.description, q.description_es, locale)}
+            </p>
           )}
           {q.link && href && display && (
             <a
               href={href}
               target={isEmail ? undefined : "_blank"}
               rel={isEmail ? undefined : "noopener noreferrer"}
-              className="inline-block mt-1 text-xs font-medium club-primary underline truncate max-w-[200px]"
+              className="club-primary mt-1 inline-block max-w-[200px] truncate text-xs font-medium underline"
             >
               {display.length > 40 ? `${display.slice(0, 37)}...` : display}
             </a>
           )}
         </div>
         {q.reward_spins > 0 && (
-          <span className="shrink-0 text-xs club-tint-text font-medium px-2 py-0.5 club-tint-bg rounded-full">
-            +{q.reward_spins} spin{q.reward_spins === 1 ? "" : "s"}
+          <span className="club-tint-text club-tint-bg shrink-0 rounded-[var(--m-radius-xs)] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide">
+            +{q.reward_spins} SPIN{q.reward_spins === 1 ? "" : "S"}
           </span>
         )}
       </div>

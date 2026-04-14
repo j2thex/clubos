@@ -54,8 +54,9 @@
   --radius-4xl: calc(var(--radius) + 16px);
 }
 
-/* ── Member portal design tokens (editorial premium + gamified zones) ── */
-.member-portal {
+/* ── Editorial design tokens (used by member portal + public club page) ── */
+.member-portal,
+.clubos-ui {
   --radius: 0.25rem;
 
   /* Radius scale */
@@ -77,7 +78,8 @@
 }
 
 /* Uppercase editorial caption — strongest "not Twitter" signal */
-.member-portal .m-caption {
+.member-portal .m-caption,
+.clubos-ui .m-caption {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   font-weight: 500;
   font-size: 11px;
@@ -88,7 +90,8 @@
 }
 
 /* Display type for hero greetings and large titles */
-.member-portal .m-display {
+.member-portal .m-display,
+.clubos-ui .m-display {
   font-weight: 700;
   letter-spacing: -0.02em;
   font-size: clamp(28px, 7vw, 36px);
@@ -96,7 +99,8 @@
 }
 
 /* Headline for section and card titles */
-.member-portal .m-headline {
+.member-portal .m-headline,
+.clubos-ui .m-headline {
   font-weight: 600;
   font-size: 18px;
   line-height: 1.22;
@@ -104,7 +108,8 @@
 }
 
 /* Editorial card — white surface, hairline border, raised elevation */
-.member-portal .m-card {
+.member-portal .m-card,
+.clubos-ui .m-card {
   background: var(--m-surface);
   border: 1px solid var(--m-border);
   border-radius: var(--m-radius-sm);
@@ -112,16 +117,20 @@
 }
 
 /* Ink button — full black CTA for editorial zones */
-.member-portal .m-btn-ink {
+.member-portal .m-btn-ink,
+.clubos-ui .m-btn-ink {
   background: var(--m-ink);
   color: var(--m-surface);
   border-radius: var(--m-radius-sm);
   font-weight: 600;
   transition: transform 0.1s, filter 0.15s;
 }
-.member-portal .m-btn-ink:hover { filter: brightness(0.88); }
-.member-portal .m-btn-ink:active { transform: scale(0.98); }
-.member-portal .m-btn-ink:disabled { opacity: 0.4; }
+.member-portal .m-btn-ink:hover,
+.clubos-ui .m-btn-ink:hover { filter: brightness(0.88); }
+.member-portal .m-btn-ink:active,
+.clubos-ui .m-btn-ink:active { transform: scale(0.98); }
+.member-portal .m-btn-ink:disabled,
+.clubos-ui .m-btn-ink:disabled { opacity: 0.4; }
 
 :root {
   --radius: 0.625rem;

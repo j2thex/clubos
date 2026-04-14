@@ -85,16 +85,30 @@ export function InviteSocialButtons({ buttons }: { buttons: InviteButton[] }) {
   const { t } = useLanguage();
 
   return (
-    <div className="bg-white rounded-2xl shadow p-4">
-      <div className="flex items-center gap-4 mb-4">
-        <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 club-tint-bg club-primary">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+    <div className="m-card p-4">
+      <div className="mb-4 flex items-center gap-4">
+        <div className="club-tint-bg club-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
+          <svg
+            className="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+            />
           </svg>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-gray-900 text-sm">{t("public.joinClub")}</p>
-          <p className="text-xs text-gray-400">{t("public.contactThrough")}</p>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-[color:var(--m-ink)]">
+            {t("public.joinClub")}
+          </p>
+          <p className="text-xs text-[color:var(--m-ink-muted)]">
+            {t("public.contactThrough")}
+          </p>
         </div>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -107,10 +121,14 @@ export function InviteSocialButtons({ buttons }: { buttons: InviteButton[] }) {
               href={normalizeUrl(button)}
               target="_blank"
               rel="noopener noreferrer"
-              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${style.bg} ${style.text}`}
+              className={`inline-flex items-center gap-2 rounded-[var(--m-radius-sm)] px-4 py-2 text-sm font-semibold transition-colors ${style.bg} ${style.text}`}
             >
               {button.icon_url ? (
-                <img src={button.icon_url} alt="" className="w-4 h-4 rounded-full object-cover" />
+                <img
+                  src={button.icon_url}
+                  alt=""
+                  className="h-4 w-4 rounded-full object-cover"
+                />
               ) : (
                 style.icon
               )}

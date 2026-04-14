@@ -39,75 +39,91 @@ export function PreregistrationForm({ clubId, clubName }: { clubId: string; club
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow p-4">
+    <div className="m-card p-4">
       <div className="flex items-center gap-4">
-        <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-blue-50 text-blue-600">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+          <svg
+            className="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+            />
           </svg>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-gray-900 text-sm">{t("public.preregTitle")}</p>
-          <p className="text-xs text-gray-400">{t("public.preregDesc")}</p>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-[color:var(--m-ink)]">
+            {t("public.preregTitle")}
+          </p>
+          <p className="text-xs text-[color:var(--m-ink-muted)]">
+            {t("public.preregDesc")}
+          </p>
         </div>
         {!sent && !expanded && (
           <button
             onClick={() => setExpanded(true)}
-            className="shrink-0 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 rounded-full px-4 py-1.5 transition-colors"
+            className="m-btn-ink shrink-0 rounded-[var(--m-radius-sm)] px-4 py-2 text-xs font-semibold"
           >
             {t("public.preregButton")}
           </button>
         )}
         {sent && (
-          <span className="shrink-0 text-xs font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">
+          <span className="shrink-0 rounded-[var(--m-radius-xs)] bg-green-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-green-800">
             {t("public.preregSent")}
           </span>
         )}
       </div>
 
       {sent && (
-        <p className="mt-2 text-xs text-gray-400">{t("public.preregSentDesc")}</p>
+        <p className="mt-2 text-xs text-[color:var(--m-ink-muted)]">
+          {t("public.preregSentDesc")}
+        </p>
       )}
 
       {expanded && !sent && (
         <form onSubmit={handleSubmit} className="mt-3 space-y-2">
-          {error && (
-            <p className="text-xs text-red-600">{error}</p>
-          )}
+          {error && <p className="text-xs text-red-600">{error}</p>}
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">{t("public.preregVisitDate")}</label>
+            <label className="m-caption mb-1 block">{t("public.preregVisitDate")}</label>
             <input
               type="date"
               value={visitDate}
               onChange={(e) => setVisitDate(e.target.value)}
               min={today}
               required
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+              className="w-full rounded-[var(--m-radius-sm)] border border-gray-200 px-3 py-2 text-sm text-[color:var(--m-ink)] transition focus:border-[color:var(--m-ink)] focus:outline-none"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">{t("public.preregEmail")}</label>
+            <label className="m-caption mb-1 block">{t("public.preregEmail")}</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+              className="w-full rounded-[var(--m-radius-sm)] border border-gray-200 px-3 py-2 text-sm text-[color:var(--m-ink)] transition placeholder:text-gray-400 focus:border-[color:var(--m-ink)] focus:outline-none"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">{t("public.preregNumVisitors")}</label>
+            <label className="m-caption mb-1 block">
+              {t("public.preregNumVisitors")}
+            </label>
             <div className="flex gap-2">
               {[1, 2, 3, 4].map((n) => (
                 <button
                   key={n}
                   type="button"
                   onClick={() => setNumVisitors(n)}
-                  className={`flex-1 rounded-lg border py-2 text-sm font-medium transition-colors ${
+                  className={`flex-1 rounded-[var(--m-radius-sm)] border py-2 text-sm font-medium transition-colors ${
                     numVisitors === n
-                      ? "border-blue-600 bg-blue-600 text-white"
-                      : "border-gray-200 text-gray-700 hover:border-blue-300"
+                      ? "border-[color:var(--m-ink)] bg-[color:var(--m-ink)] text-white"
+                      : "border-gray-200 text-[color:var(--m-ink)] hover:border-gray-400"
                   }`}
                 >
                   {n}
@@ -115,38 +131,42 @@ export function PreregistrationForm({ clubId, clubName }: { clubId: string; club
               ))}
             </div>
           </div>
-          <label className="flex items-start gap-2 cursor-pointer">
+          <label className="flex cursor-pointer items-start gap-2">
             <input
               type="checkbox"
               checked={ageConfirmed}
               onChange={(e) => setAgeConfirmed(e.target.checked)}
               required
-              className="mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-400"
+              className="mt-0.5 rounded border-gray-300 text-[color:var(--m-ink)]"
             />
-            <span className="text-xs text-gray-500">{t("public.preregAgeConfirm")}</span>
+            <span className="text-xs text-[color:var(--m-ink-muted)]">
+              {t("public.preregAgeConfirm")}
+            </span>
           </label>
-          <label className="flex items-start gap-2 cursor-pointer">
+          <label className="flex cursor-pointer items-start gap-2">
             <input
               type="checkbox"
               checked={disclaimerAccepted}
               onChange={(e) => setDisclaimerAccepted(e.target.checked)}
               required
-              className="mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-400"
+              className="mt-0.5 rounded border-gray-300 text-[color:var(--m-ink)]"
             />
-            <span className="text-xs text-gray-500">{t("public.preregDisclaimer")}</span>
+            <span className="text-xs text-[color:var(--m-ink-muted)]">
+              {t("public.preregDisclaimer")}
+            </span>
           </label>
           <div className="flex gap-2">
             <button
               type="submit"
               disabled={isPending || !ageConfirmed || !disclaimerAccepted}
-              className="flex-1 rounded-lg bg-blue-600 text-white py-2 text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              className="m-btn-ink flex-1 rounded-[var(--m-radius-sm)] py-2.5 text-sm font-semibold disabled:opacity-50"
             >
               {isPending ? t("public.preregSubmitting") : t("public.preregSubmit")}
             </button>
             <button
               type="button"
               onClick={() => setExpanded(false)}
-              className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-500 hover:bg-gray-50 transition-colors"
+              className="rounded-[var(--m-radius-sm)] border border-gray-200 px-4 py-2.5 text-sm text-[color:var(--m-ink-muted)] transition-colors hover:bg-gray-50"
             >
               {t("common.cancel")}
             </button>
