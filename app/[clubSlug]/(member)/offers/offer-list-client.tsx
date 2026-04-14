@@ -106,11 +106,11 @@ export function OfferListClient({
                   key={a.id}
                   type="button"
                   onClick={() => setSelectedOfferId(a.id)}
-                  className="m-card relative flex min-h-[160px] flex-col overflow-hidden text-left transition-transform active:scale-[0.98]"
+                  className="m-card relative flex min-h-[128px] flex-col overflow-hidden text-left transition-transform active:scale-[0.98]"
                 >
                   {/* Cover image or icon block */}
                   <div
-                    className="relative h-24 w-full"
+                    className="relative h-20 w-full"
                     style={{ background: "var(--m-surface-sunken)" }}
                   >
                     {a.image_url ? (
@@ -161,8 +161,8 @@ export function OfferListClient({
                     )}
                   </div>
                   {/* Text */}
-                  <div className="flex flex-1 flex-col justify-between gap-1 p-3">
-                    <p className="m-headline line-clamp-2 text-[color:var(--m-ink)]">
+                  <div className="flex flex-1 flex-col justify-between gap-1 p-2.5">
+                    <p className="line-clamp-2 text-[13px] font-semibold leading-tight text-[color:var(--m-ink)]">
                       {localized(a.name, a.name_es, locale)}
                     </p>
                     {isRequested && (

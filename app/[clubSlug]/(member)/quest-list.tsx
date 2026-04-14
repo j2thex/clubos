@@ -478,7 +478,7 @@ export function QuestList({
         const isTutorial = qType === "tutorial";
 
         return (
-          <div key={q.id} className="bg-white rounded-2xl shadow p-4 space-y-2">
+          <div key={q.id} className="m-card p-4 space-y-2">
             <div className="flex items-center gap-4">
               {renderIcon(q, done, isPendingQuest)}
               <div className="flex-1 min-w-0">
@@ -507,20 +507,26 @@ export function QuestList({
                 })()}
               </div>
               <div className="shrink-0 flex flex-col items-end gap-1">
+                {/* Reward chip — always show if the quest awards spins */}
+                {q.reward_spins > 0 && !done && !isPendingQuest && (
+                  <span className="text-[10px] font-bold tracking-wide px-1.5 py-0.5 rounded-[var(--m-radius-xs)] club-tint-bg club-tint-text">
+                    +{q.reward_spins} {q.reward_spins === 1 ? t("common.spin").toUpperCase() : t("common.spins").toUpperCase()}
+                  </span>
+                )}
                 {/* Completion badges */}
                 {done && !isMultiUse && qType !== "referral" && (
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full club-tint-bg club-tint-text">
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-[var(--m-radius-xs)] club-tint-bg club-tint-text">
                     {t("quest.done")}
                   </span>
                 )}
                 {isPendingQuest && (
                   <>
                     {isMultiUse && count > 0 && (
-                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full club-tint-bg club-tint-text">
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-[var(--m-radius-xs)] club-tint-bg club-tint-text">
                         {t("quest.doneCount", { count })}
                       </span>
                     )}
-                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-yellow-50 text-yellow-600">
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-[var(--m-radius-xs)] bg-yellow-50 text-yellow-700">
                       {t("quest.pending")}
                     </span>
                   </>
@@ -528,7 +534,7 @@ export function QuestList({
 
                 {/* Referral quest — show done count (share UI renders below the card) */}
                 {qType === "referral" && !isPendingQuest && count > 0 && (
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full club-tint-bg club-tint-text">
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-[var(--m-radius-xs)] club-tint-bg club-tint-text">
                     {isMultiUse ? t("quest.doneCount", { count }) : t("quest.done")}
                   </span>
                 )}
@@ -537,14 +543,14 @@ export function QuestList({
                 {qType !== "referral" && !isPendingQuest && !(done && !isMultiUse) && (
                   <>
                     {isMultiUse && count > 0 && (
-                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full club-tint-bg club-tint-text">
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-[var(--m-radius-xs)] club-tint-bg club-tint-text">
                         {t("quest.doneCount", { count })}
                       </span>
                     )}
                     <button
                       onClick={() => handleMarkDone(q)}
                       disabled={isPending}
-                      className="text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50 transition-colors"
+                      className="text-xs font-semibold px-3 py-1.5 rounded-[var(--m-radius-sm)] bg-[color:var(--m-ink,#0a0a0a)] text-white hover:brightness-90 disabled:opacity-50 transition"
                     >
                       {isFeedback ? t("quest.shareFeedback") : qType === "email_collect" ? t("quest.shareEmail") : t("quest.markDone")}
                     </button>
@@ -572,12 +578,12 @@ export function QuestList({
                   onChange={(e) => setProofUrls((prev) => ({ ...prev, [q.id]: e.target.value }))}
                   placeholder={t("quest.emailPlaceholder")}
                   autoFocus
-                  className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-700 placeholder:text-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300 transition"
+                  className="flex-1 rounded-[var(--m-radius-sm)] border border-gray-200 px-3 py-2 text-xs text-gray-700 placeholder:text-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300 transition"
                 />
                 <button
                   onClick={() => handleEmailSubmit(q)}
                   disabled={isPending || !proofUrls[q.id]?.trim()}
-                  className="text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-50 transition-colors shrink-0 self-end"
+                  className="text-xs font-semibold px-3 py-1.5 rounded-[var(--m-radius-sm)] bg-[color:var(--m-ink,#0a0a0a)] text-white hover:brightness-90 disabled:opacity-50 transition shrink-0 self-end"
                 >
                   {isPending ? "..." : t("quest.emailSubmit")}
                 </button>
@@ -594,7 +600,7 @@ export function QuestList({
                     placeholder={q.proof_placeholder || t("quest.feedbackPlaceholder")}
                     autoFocus
                     rows={3}
-                    className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-700 placeholder:text-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300 transition resize-none"
+                    className="flex-1 rounded-[var(--m-radius-sm)] border border-gray-200 px-3 py-2 text-xs text-gray-700 placeholder:text-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300 transition resize-none"
                   />
                 ) : (
                   <input
@@ -603,13 +609,13 @@ export function QuestList({
                     onChange={(e) => setProofUrls((prev) => ({ ...prev, [q.id]: e.target.value }))}
                     placeholder={q.proof_placeholder || t("quest.proofPlaceholder")}
                     autoFocus
-                    className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-700 placeholder:text-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300 transition"
+                    className="flex-1 rounded-[var(--m-radius-sm)] border border-gray-200 px-3 py-2 text-xs text-gray-700 placeholder:text-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300 transition"
                   />
                 )}
                 <button
                   onClick={() => handleSubmit(q)}
                   disabled={isPending || ((isFeedback || q.proof_mode === "required") && !proofUrls[q.id]?.trim())}
-                  className="text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-50 transition-colors shrink-0 self-end"
+                  className="text-xs font-semibold px-3 py-1.5 rounded-[var(--m-radius-sm)] bg-[color:var(--m-ink,#0a0a0a)] text-white hover:brightness-90 disabled:opacity-50 transition shrink-0 self-end"
                 >
                   {isPending ? "..." : t("common.submit")}
                 </button>

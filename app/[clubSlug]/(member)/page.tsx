@@ -8,13 +8,12 @@ import { BentoStatTile } from "@/components/club/bento-stat-tile";
 import { t, type Locale } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 
-function pickGreeting(locale: Locale): string {
+function pickGreeting(locale: Locale, hasName: boolean): string {
   const hour = new Date().getHours();
-  if (hour < 5) return t(locale, "dashboard.greetingNight");
-  if (hour < 12) return t(locale, "dashboard.greetingMorning");
-  if (hour < 18) return t(locale, "dashboard.greetingAfternoon");
-  if (hour < 22) return t(locale, "dashboard.greetingEvening");
-  return t(locale, "dashboard.greetingNight");
+  const slot =
+    hour < 5 ? "Night" : hour < 12 ? "Morning" : hour < 18 ? "Afternoon" : hour < 22 ? "Evening" : "Night";
+  const key = `dashboard.greeting${slot}${hasName ? "" : "Anon"}`;
+  return t(locale, key);
 }
 
 function daysUntil(dateStr: string): number {
@@ -84,7 +83,7 @@ export default async function QuestsLanding({
   ] = await Promise.all([
     supabase
       .from("members")
-      .select("full_name, spin_balance, member_code, valid_till, created_at")
+      .select("full_name, member_code, valid_till, created_at")
       .eq("id", session.member_id)
       .single(),
     supabase
@@ -122,7 +121,7 @@ export default async function QuestsLanding({
   ]);
 
   const locale = await getServerLocale();
-  const firstName = (member?.full_name ?? "Member").split(" ")[0];
+  const firstName = member?.full_name ? member.full_name.split(" ")[0] : null;
   const clubName = club?.name ?? "";
   const branding = Array.isArray(club?.club_branding)
     ? club.club_branding[0]
@@ -159,13 +158,12 @@ export default async function QuestsLanding({
 
   // Validity
   const validity = formatValidity(member?.valid_till ?? null, locale);
-  const spinBalance = member?.spin_balance ?? 0;
 
   return (
     <div className="min-h-screen" style={{ background: "var(--m-surface-sunken)" }}>
       <MemberHero
         displayName={firstName}
-        greeting={pickGreeting(locale)}
+        greeting={pickGreeting(locale, !!firstName)}
         caption={heroCaption}
         coverUrl={coverUrl}
         logoUrl={logoUrl}
@@ -179,8 +177,8 @@ export default async function QuestsLanding({
         }}
       />
 
-      <div className="relative z-10 mx-auto -mt-10 max-w-md px-5">
-        {/* Bento stat strip — 3 tiles, top tile double-wide */}
+      <div className="relative z-10 mx-auto -mt-6 max-w-md px-5">
+        {/* Bento stat strip — one row, next event double-wide + membership single-wide */}
         <div className="grid grid-cols-3 gap-3">
           <BentoStatTile
             span={2}
@@ -208,17 +206,9 @@ export default async function QuestsLanding({
             imageAlt={nextEventTitle ?? undefined}
           />
           <BentoStatTile
-            caption={t(locale, "dashboard.spinsAvailable")}
-            value={<span className="text-3xl font-bold tabular-nums">{spinBalance}</span>}
-            href={`/${clubSlug}/bonuses`}
-          />
-        </div>
-
-        <div className="mt-3 grid grid-cols-1">
-          <BentoStatTile
             caption={t(locale, "dashboard.membership")}
             value={
-              <span className={`text-base font-semibold ${validity.className}`}>
+              <span className={`text-[13px] font-semibold leading-tight ${validity.className}`}>
                 {validity.label}
               </span>
             }
