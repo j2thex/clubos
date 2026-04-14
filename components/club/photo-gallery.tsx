@@ -115,7 +115,11 @@ function LightboxOverlay({
         <img
           src={image.image_url}
           alt={image.caption ?? ""}
-          className="w-full rounded-[var(--m-radius-sm)] object-contain max-h-[80vh]"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (hasNext) onNext();
+          }}
+          className="w-full rounded-[var(--m-radius-sm)] object-contain max-h-[80vh] cursor-pointer select-none"
         />
         {image.caption && (
           <p className="text-white/70 text-sm text-center mt-3">{image.caption}</p>
