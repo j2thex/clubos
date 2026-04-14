@@ -1,18 +1,58 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition, type ReactNode } from "react";
 import dynamic from "next/dynamic";
-import { memberSpin } from "./actions";
+import { memberSpin, claimSpinPrize } from "./actions";
 import { useLanguage } from "@/lib/i18n/provider";
 
 const SpinWheel = dynamic(() => import("@/components/club/spin-wheel"), {
   ssr: false,
   loading: () => (
-    <div className="w-full max-w-[480px] aspect-square mx-auto bg-gray-100 rounded-full animate-pulse" />
+    <div className="mx-auto aspect-square w-full max-w-[480px] animate-pulse">
+      <svg viewBox="0 0 200 200" className="h-full w-full">
+        <defs>
+          <clipPath id="wheel-clip">
+            <circle cx="100" cy="100" r="96" />
+          </clipPath>
+        </defs>
+        <g clipPath="url(#wheel-clip)">
+          {Array.from({ length: 8 }).map((_, i) => {
+            const start = (i * Math.PI) / 4;
+            const end = ((i + 1) * Math.PI) / 4;
+            const x1 = 100 + 96 * Math.cos(start);
+            const y1 = 100 + 96 * Math.sin(start);
+            const x2 = 100 + 96 * Math.cos(end);
+            const y2 = 100 + 96 * Math.sin(end);
+            const d = `M100,100 L${x1},${y1} A96,96 0 0,1 ${x2},${y2} Z`;
+            return (
+              <path
+                key={i}
+                d={d}
+                fill={i % 2 === 0 ? "#e5e7eb" : "#eef0f2"}
+                stroke="#f3f4f6"
+                strokeWidth="0.5"
+              />
+            );
+          })}
+        </g>
+        <circle cx="100" cy="100" r="96" fill="none" stroke="#d1d5db" strokeWidth="2" />
+        <circle cx="100" cy="100" r="18" fill="#d1d5db" />
+        <circle cx="100" cy="100" r="6" fill="#f9fafb" />
+      </svg>
+    </div>
   ),
 });
 
 interface SpinRecord {
+  id: string;
+  outcomeLabel: string;
+  outcomeValue: number;
+  status?: "pending" | "fulfilled";
+  createdAt: string;
+}
+
+interface PendingPrize {
   id: string;
   outcomeLabel: string;
   outcomeValue: number;
@@ -40,6 +80,7 @@ export function MemberSpinClient({
   totalSpins,
   level,
   segments,
+  pendingPrizes: initialPending,
   recentSpins: initialSpins,
   displayDecimals,
   spinCost,
@@ -50,6 +91,7 @@ export function MemberSpinClient({
   totalSpins: number;
   level: number;
   segments: Segment[];
+  pendingPrizes: PendingPrize[];
   recentSpins: SpinRecord[];
   displayDecimals: number;
   spinCost: number;
@@ -58,6 +100,9 @@ export function MemberSpinClient({
   const { t } = useLanguage();
   const [currentBalance, setCurrentBalance] = useState(balance);
   const [recentSpins, setRecentSpins] = useState(initialSpins);
+  const [pendingPrizes, setPendingPrizes] = useState(initialPending);
+  const [claimedIds, setClaimedIds] = useState<Set<string>>(new Set());
+  const [claimingId, setClaimingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   async function handleSpin() {
@@ -69,19 +114,36 @@ export function MemberSpinClient({
 
     // Use the localized segment label for display
     const localizedLabel = segments[res.segmentIndex]?.label ?? res.outcome.label;
+    const isWin = res.outcome.rewardType !== "nothing" && res.outcome.value > 0;
 
     setCurrentBalance(res.newBalance);
+
+    const newSpinId = crypto.randomUUID();
 
     // Prepend new spin to history
     setRecentSpins((prev) => [
       {
-        id: crypto.randomUUID(),
+        id: newSpinId,
         outcomeLabel: localizedLabel,
         outcomeValue: res.outcome.value,
+        status: isWin ? "pending" : "fulfilled",
         createdAt: new Date().toISOString(),
       },
       ...prev.slice(0, 9),
     ]);
+
+    // Add to unclaimed prizes if it's a win
+    if (isWin) {
+      setPendingPrizes((prev) => [
+        {
+          id: newSpinId,
+          outcomeLabel: localizedLabel,
+          outcomeValue: res.outcome.value,
+          createdAt: new Date().toISOString(),
+        },
+        ...prev,
+      ]);
+    }
 
     // Return with localized label for the wheel result overlay
     return {
@@ -90,50 +152,61 @@ export function MemberSpinClient({
     };
   }
 
-  return (
-    <div className="min-h-screen club-page-bg">
-      {/* Header */}
-      <div className="club-hero px-6 pt-10 pb-16 text-center">
-        <h1 className="text-2xl font-bold text-white">{t("spin.title")}</h1>
-        {spinCost > 1 && (
-          <p className="mt-2 text-xs club-light-text">Cost: {formatBalance(spinCost, displayDecimals)} per spin</p>
-        )}
-      </div>
+  function handleClaim(prizeId: string) {
+    setClaimingId(prizeId);
+    startTransition(async () => {
+      const res = await claimSpinPrize(prizeId);
+      if (!("error" in res)) {
+        setClaimedIds((prev) => new Set(prev).add(prizeId));
+      }
+      setClaimingId(null);
+    });
+  }
 
-      {/* Wheel */}
-      <div className="relative z-10 px-4 -mt-8 pb-20 max-w-md mx-auto space-y-4">
-        {/* Stats row */}
+  return (
+    <div className="min-h-screen" style={{ background: "var(--m-surface-sunken)" }}>
+      {/* Editorial top bar */}
+      <header
+        className="border-b px-5 pt-12 pb-5"
+        style={{
+          background: "var(--m-surface)",
+          borderColor: "var(--m-border)",
+          paddingTop: "calc(env(safe-area-inset-top) + 2.5rem)",
+        }}
+      >
+        <p className="m-caption">BONUSES</p>
+        <h1 className="m-display mt-1 text-[color:var(--m-ink)]">{t("spin.title")}</h1>
+        {spinCost > 1 && (
+          <p className="mt-2 text-xs text-[color:var(--m-ink-muted)]">
+            Cost: {formatBalance(spinCost, displayDecimals)} per spin
+          </p>
+        )}
+      </header>
+
+      <div className="mx-auto max-w-md space-y-5 px-5 pb-10 pt-5">
+        {/* Stats row — editorial */}
         <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white rounded-2xl shadow-lg p-4 text-center">
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
-              {t("dashboard.remaining")}
-            </p>
-            <p className="mt-1 text-3xl font-extrabold club-primary">
+          <div className="m-card p-3 text-center">
+            <p className="m-caption">{t("spin.statsRemaining")}</p>
+            <p className="mt-1 text-2xl font-bold tabular-nums club-primary">
               {formatBalance(currentBalance, displayDecimals)}
             </p>
-            <p className="text-xs text-gray-400 mt-0.5">{t("dashboard.spinsLabel")}</p>
           </div>
-          <div className="bg-white rounded-2xl shadow-lg p-4 text-center">
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
-              {t("dashboard.completed")}
-            </p>
-            <p className="mt-1 text-3xl font-extrabold club-primary">
-              {totalSpins}
-            </p>
-            <p className="text-xs text-gray-400 mt-0.5">{t("dashboard.spinsLabel")}</p>
+          <div className="m-card p-3 text-center">
+            <p className="m-caption">{t("spin.statsCompleted")}</p>
+            <p className="mt-1 text-2xl font-bold tabular-nums club-primary">{totalSpins}</p>
           </div>
-          <div className="bg-white rounded-2xl shadow-lg p-4 text-center">
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
-              {t("dashboard.level")}
-            </p>
-            <p className="mt-1 text-3xl font-extrabold club-primary">
+          <div className="m-card p-3 text-center">
+            <p className="m-caption">{t("spin.statsLevel")}</p>
+            <p className="mt-1 text-2xl font-bold tabular-nums club-primary">
               {level}
+              <span className="text-sm font-medium text-[color:var(--m-ink-muted)]">/10</span>
             </p>
-            <p className="text-xs text-gray-400 mt-0.5">/ 10</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-2">
+        {/* Wheel card */}
+        <div className="m-card p-2">
           <SpinWheel
             segments={segments}
             balance={currentBalance}
@@ -142,46 +215,34 @@ export function MemberSpinClient({
           />
         </div>
 
-        {questsSection}
+        {/* Earn more spins → Quests link */}
+        <Link
+          href={`/${clubSlug}`}
+          className="m-card flex items-center justify-center gap-2 px-4 py-3 text-center text-sm font-semibold text-[color:var(--m-ink)] transition-transform active:scale-[0.98]"
+        >
+          <span>{t("spin.goToQuests")}</span>
+        </Link>
 
-        {/* No spins message */}
-        {currentBalance < spinCost && (
-          <div className="bg-white rounded-2xl shadow p-4 text-center">
-            <p className="text-sm text-gray-500">{t("spin.earnMore")}</p>
-          </div>
-        )}
-
-        {/* Recent spins */}
-        {recentSpins.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-100">
-              <h2 className="text-sm font-semibold text-gray-700">{t("spin.recentSpins")}</h2>
-            </div>
-            <div className="divide-y divide-gray-50">
-              {recentSpins.map((spin) => {
-                const isWin = spin.outcomeValue > 0;
-                return (
-                  <div key={spin.id} className="px-4 py-3 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                          isWin ? "club-tint-bg club-primary" : "bg-gray-100 text-gray-400"
-                        }`}
-                      >
-                        {isWin ? (
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                        ) : (
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
-                          </svg>
-                        )}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{spin.outcomeLabel}</p>
-                        <p className="text-xs text-gray-400">
-                          {new Date(spin.createdAt).toLocaleDateString(undefined, {
+        {/* Unclaimed prizes */}
+        {pendingPrizes.length > 0 && (
+          <section className="space-y-2">
+            <h2 className="m-caption px-1">{t("spin.unclaimedPrizes")}</h2>
+            <div className="m-card overflow-hidden">
+              <div className="divide-y" style={{ borderColor: "var(--m-border)" }}>
+                {pendingPrizes.map((prize) => {
+                  const isClaimed = claimedIds.has(prize.id);
+                  const isClaiming = claimingId === prize.id;
+                  return (
+                    <div
+                      key={prize.id}
+                      className="flex items-center justify-between gap-3 px-4 py-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-[color:var(--m-ink)]">
+                          {prize.outcomeLabel}
+                        </p>
+                        <p className="mt-0.5 text-[11px] text-[color:var(--m-ink-muted)]">
+                          {new Date(prize.createdAt).toLocaleDateString(undefined, {
                             month: "short",
                             day: "numeric",
                             hour: "numeric",
@@ -189,19 +250,128 @@ export function MemberSpinClient({
                           })}
                         </p>
                       </div>
+                      <button
+                        onClick={() => handleClaim(prize.id)}
+                        disabled={isClaiming || isClaimed}
+                        className={`shrink-0 rounded-[var(--m-radius-sm)] px-4 py-2 text-xs font-semibold transition ${
+                          isClaimed
+                            ? "bg-green-100 text-green-800"
+                            : "m-btn-ink"
+                        } disabled:cursor-not-allowed disabled:opacity-60`}
+                      >
+                        {isClaimed
+                          ? t("spin.claimed")
+                          : isClaiming
+                            ? t("spin.claiming")
+                            : t("spin.getBonus")}
+                      </button>
                     </div>
-                    <span
-                      className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                        isWin ? "club-tint-bg club-tint-text" : "bg-gray-100 text-gray-500"
-                      }`}
-                    >
-                      {isWin ? `+${spin.outcomeValue}` : t("common.noWin")}
-                    </span>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
+          </section>
+        )}
+
+        {questsSection}
+
+        {/* No spins message */}
+        {currentBalance < spinCost && (
+          <div className="m-card p-4 text-center">
+            <p className="text-sm text-[color:var(--m-ink-muted)]">{t("spin.earnMore")}</p>
           </div>
+        )}
+
+        {/* Prize history (was recent spins) */}
+        {recentSpins.length > 0 && (
+          <section className="space-y-2">
+            <h2 className="m-caption px-1">{t("spin.prizeHistory")}</h2>
+            <div className="m-card overflow-hidden">
+              <div className="divide-y" style={{ borderColor: "var(--m-border)" }}>
+                {recentSpins.map((spin) => {
+                  const isWin = spin.outcomeValue > 0;
+                  return (
+                    <div
+                      key={spin.id}
+                      className="flex items-center justify-between px-4 py-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`flex h-8 w-8 items-center justify-center rounded-full ${
+                            isWin ? "club-tint-bg club-primary" : "bg-gray-100 text-gray-400"
+                          }`}
+                        >
+                          {isWin ? (
+                            <svg
+                              className="h-4 w-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                              strokeWidth={2}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                          ) : (
+                            <svg
+                              className="h-4 w-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                              strokeWidth={2}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M20 12H4"
+                              />
+                            </svg>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-[color:var(--m-ink)]">
+                            {spin.outcomeLabel}
+                          </p>
+                          <p className="text-[11px] text-[color:var(--m-ink-muted)]">
+                            {new Date(spin.createdAt).toLocaleDateString(undefined, {
+                              month: "short",
+                              day: "numeric",
+                              hour: "numeric",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        {isWin && spin.status === "pending" && (
+                          <span className="rounded-[var(--m-radius-xs)] bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
+                            {t("spin.pending")}
+                          </span>
+                        )}
+                        {isWin && spin.status === "fulfilled" && (
+                          <span className="rounded-[var(--m-radius-xs)] bg-green-100 px-1.5 py-0.5 text-[10px] font-semibold text-green-800">
+                            {t("spin.fulfilled")}
+                          </span>
+                        )}
+                        <span
+                          className={`rounded-[var(--m-radius-xs)] px-2 py-0.5 text-xs font-semibold ${
+                            isWin
+                              ? "club-tint-bg club-tint-text"
+                              : "bg-gray-100 text-gray-500"
+                          }`}
+                        >
+                          {isWin ? `+${spin.outcomeValue}` : t("common.noWin")}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
         )}
       </div>
     </div>

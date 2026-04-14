@@ -26,7 +26,7 @@ export function PhotoGallery({ images }: { images: GalleryImage[] }) {
             <button
               key={img.id}
               onClick={() => setExpandedIdx(idx)}
-              className="snap-start shrink-0 w-32 h-32 rounded-xl overflow-hidden"
+              className="snap-start shrink-0 w-32 h-32 rounded-[var(--m-radius-sm)] overflow-hidden"
             >
               <img
                 src={img.image_url}
@@ -115,7 +115,11 @@ function LightboxOverlay({
         <img
           src={image.image_url}
           alt={image.caption ?? ""}
-          className="w-full rounded-xl object-contain max-h-[80vh]"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (hasNext) onNext();
+          }}
+          className="w-full rounded-[var(--m-radius-sm)] object-contain max-h-[80vh] cursor-pointer select-none"
         />
         {image.caption && (
           <p className="text-white/70 text-sm text-center mt-3">{image.caption}</p>

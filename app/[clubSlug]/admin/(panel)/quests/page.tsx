@@ -31,7 +31,6 @@ export default async function QuestsPage({
         "id, title, description, link, image_url, icon, badge_id, reward_spins, display_order, active, multi_use, is_public, quest_type, proof_mode, proof_placeholder, tutorial_steps, title_es, description_es, deadline, category"
       )
       .eq("club_id", club.id)
-      .eq("active", true)
       .order("display_order", { ascending: true }),
     supabase
       .from("member_quests")
@@ -74,6 +73,7 @@ export default async function QuestsPage({
     description_es: q.description_es ?? null,
     deadline: q.deadline ?? null,
     category: q.category ?? "social",
+    active: q.active ?? true,
   }));
 
   const googleReviewUrl = branding?.google_place_id ? getReviewUrl(branding.google_place_id) : null;

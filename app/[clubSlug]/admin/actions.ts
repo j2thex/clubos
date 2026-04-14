@@ -732,6 +732,28 @@ export async function updateQuest(
   return { ok: true };
 }
 
+export async function toggleQuestActive(
+  questId: string,
+  active: boolean,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("quests")
+    .update({ active })
+    .eq("id", questId);
+
+  if (error) return { error: "Failed to update quest" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/quests`);
+  revalidatePath(`/${clubSlug}/bonuses`);
+  revalidatePath(`/${clubSlug}/public`);
+  revalidatePath(`/${clubSlug}/staff`, "layout");
+  return { ok: true };
+}
+
 export async function deleteQuest(
   questId: string,
   clubSlug: string,
@@ -1363,23 +1385,40 @@ export async function toggleOffer(
   const supabase = createAdminClient();
 
   if (enabled) {
-    // Get next display_order
-    const { data: existing } = await supabase
+    // If a row already exists (e.g. archived from a prior session), un-archive
+    // it rather than inserting — otherwise the unique (club_id, offer_id)
+    // constraint fires, we silently swallow 23505, and the offer stays hidden
+    // from members.
+    const { data: existingRow } = await supabase
       .from("club_offers")
-      .select("display_order")
+      .select("id, archived")
       .eq("club_id", clubId)
-      .order("display_order", { ascending: false })
-      .limit(1);
-    const nextOrder = existing && existing.length > 0 ? existing[0].display_order + 1 : 0;
+      .eq("offer_id", offerId)
+      .maybeSingle();
 
-    const { error } = await supabase.from("club_offers").insert({
-      club_id: clubId,
-      offer_id: offerId,
-      display_order: nextOrder,
-    });
-    if (error) {
-      if (error.code === "23505") return { ok: true }; // Already exists
-      return { error: "Failed to enable offer" };
+    if (existingRow) {
+      if (existingRow.archived) {
+        const { error } = await supabase
+          .from("club_offers")
+          .update({ archived: false })
+          .eq("id", existingRow.id);
+        if (error) return { error: "Failed to enable offer" };
+      }
+    } else {
+      const { data: last } = await supabase
+        .from("club_offers")
+        .select("display_order")
+        .eq("club_id", clubId)
+        .order("display_order", { ascending: false })
+        .limit(1);
+      const nextOrder = last && last.length > 0 ? last[0].display_order + 1 : 0;
+
+      const { error } = await supabase.from("club_offers").insert({
+        club_id: clubId,
+        offer_id: offerId,
+        display_order: nextOrder,
+      });
+      if (error) return { error: "Failed to enable offer" };
     }
   } else {
     const { error } = await supabase
@@ -1391,6 +1430,9 @@ export async function toggleOffer(
   }
 
   revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/offers`);
+  revalidatePath(`/${clubSlug}/public`);
+  revalidatePath(`/${clubSlug}/staff`, "layout");
   return { ok: true };
 }
 

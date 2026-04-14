@@ -32,16 +32,20 @@ export async function submitContact(
 
   try {
     const resend = new Resend(apiKey);
-    await resend.emails.send({
-      from: "osocios.club <no-reply@osocios.club>",
+    const { error } = await resend.emails.send({
+      from: "osocios.club <noreply@osocios.club>",
       to: inbox,
       replyTo: email,
       subject: `Contact form: ${name}${club ? ` (${club})` : ""}`,
       text: `From: ${name} <${email}>\nClub: ${club || "—"}\n\n${message}`,
     });
+    if (error) {
+      console.error("[contact] resend error", error);
+      return { status: "error", message: "send-failed" };
+    }
     return { status: "success" };
   } catch (err) {
-    console.error("[contact] resend failed", err);
+    console.error("[contact] resend threw", err);
     return { status: "error", message: "send-failed" };
   }
 }

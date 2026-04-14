@@ -69,7 +69,10 @@ export default async function StaffQuestsPage({
 
   const locale = await getServerLocale();
 
-  return quests && quests.length > 0 ? (
+  const hasQuests = (quests?.length ?? 0) > 0;
+  const hasPending = pendingQuests.length > 0;
+
+  return hasQuests || hasPending ? (
     <div className="space-y-4">
       <div className="bg-white rounded-2xl shadow-sm p-4 flex items-center justify-between">
         <div>
@@ -88,7 +91,7 @@ export default async function StaffQuestsPage({
       <StaffQuestClient
         clubId={club.id}
         clubSlug={clubSlug}
-        quests={quests.map((q) => ({
+        quests={(quests ?? []).map((q) => ({
           id: q.id,
           title: q.title,
           reward_spins: q.reward_spins,

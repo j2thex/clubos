@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { addQuest, updateQuest, deleteQuest } from "./actions";
+import { addQuest, updateQuest, deleteQuest, toggleQuestActive } from "./actions";
 import { useLanguage } from "@/lib/i18n/provider";
 import { t as translate } from "@/lib/i18n";
 import { IconPicker } from "@/components/icon-picker";
@@ -40,6 +40,7 @@ interface Quest {
   badge_id: string | null;
   deadline: string | null;
   category: string;
+  active: boolean;
 }
 
 const TEMPLATES = [
@@ -255,6 +256,14 @@ export function QuestManager({
     setError(null);
     startTransition(async () => {
       const result = await deleteQuest(questId, clubSlug);
+      if ("error" in result) setError(result.error);
+    });
+  }
+
+  function handleToggleActive(questId: string, active: boolean) {
+    setError(null);
+    startTransition(async () => {
+      const result = await toggleQuestActive(questId, active, clubSlug);
       if ("error" in result) setError(result.error);
     });
   }
@@ -689,7 +698,7 @@ export function QuestManager({
                     </div>
                   </div>
                 ) : (
-                  <div className="px-5 py-3 flex items-center gap-3">
+                  <div className={`px-5 py-3 flex items-center gap-3 ${q.active ? "" : "opacity-50"}`}>
                     {q.icon && !q.image_url && (
                       <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
                         <DynamicIcon name={q.icon} className="w-5 h-5 text-gray-500" />
@@ -726,7 +735,24 @@ export function QuestManager({
                         )}
                       </div>
                     </div>
-                    <div className="flex gap-2 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={q.active}
+                        aria-label={q.active ? "Disable quest" : "Enable quest"}
+                        disabled={isPending}
+                        onClick={() => handleToggleActive(q.id, !q.active)}
+                        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:opacity-50 ${
+                          q.active ? "bg-gray-800" : "bg-gray-200"
+                        }`}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                            q.active ? "translate-x-4" : "translate-x-0"
+                          }`}
+                        />
+                      </button>
                       <button
                         onClick={() => startEdit(q)}
                         className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
