@@ -242,6 +242,7 @@ export async function seedClubDefaults(clubId: string) {
       const { data: catalogOffers } = await supabase
         .from("offer_catalog")
         .select("id, name")
+        .eq("is_approved", true)
         .in("name", Array.from(suggestedNames));
 
       if (catalogOffers && catalogOffers.length > 0) {
