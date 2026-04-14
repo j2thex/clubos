@@ -6,8 +6,7 @@ jobs:
     if: >
       github.event.deployment_status.state == 'success' &&
       (startsWith(github.event.deployment.environment, 'Production') ||
-       startsWith(github.event.deployment.environment, 'Preview')) &&
-      !contains(github.event.deployment.environment, 'clubos01')
+       startsWith(github.event.deployment.environment, 'Preview'))
     runs-on: ubuntu-latest
     steps:
       - name: Fetch commit message
