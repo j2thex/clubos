@@ -54,9 +54,74 @@
   --radius-4xl: calc(var(--radius) + 16px);
 }
 
+/* ── Member portal design tokens (editorial premium + gamified zones) ── */
 .member-portal {
   --radius: 0.25rem;
+
+  /* Radius scale */
+  --m-radius-xs: 2px;
+  --m-radius-sm: 4px;
+  --m-radius-md: 8px;
+  --m-radius-lg: 12px;
+
+  /* Elevation layers */
+  --m-elev-raised: 0 1px 2px rgb(0 0 0 / 0.04), 0 1px 3px rgb(0 0 0 / 0.06);
+  --m-elev-overlay: 0 10px 30px rgb(0 0 0 / 0.12);
+
+  /* Ink & surfaces */
+  --m-ink: #0a0a0a;
+  --m-ink-muted: #525252;
+  --m-surface: #ffffff;
+  --m-surface-sunken: #f5f5f5;
+  --m-border: rgba(10, 10, 10, 0.08);
 }
+
+/* Uppercase editorial caption — strongest "not Twitter" signal */
+.member-portal .m-caption {
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-weight: 500;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--m-ink-muted);
+}
+
+/* Display type for hero greetings and large titles */
+.member-portal .m-display {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-size: clamp(28px, 7vw, 36px);
+  line-height: 1.05;
+}
+
+/* Headline for section and card titles */
+.member-portal .m-headline {
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.22;
+  letter-spacing: -0.01em;
+}
+
+/* Editorial card — white surface, hairline border, raised elevation */
+.member-portal .m-card {
+  background: var(--m-surface);
+  border: 1px solid var(--m-border);
+  border-radius: var(--m-radius-sm);
+  box-shadow: var(--m-elev-raised);
+}
+
+/* Ink button — full black CTA for editorial zones */
+.member-portal .m-btn-ink {
+  background: var(--m-ink);
+  color: var(--m-surface);
+  border-radius: var(--m-radius-sm);
+  font-weight: 600;
+  transition: transform 0.1s, filter 0.15s;
+}
+.member-portal .m-btn-ink:hover { filter: brightness(0.88); }
+.member-portal .m-btn-ink:active { transform: scale(0.98); }
+.member-portal .m-btn-ink:disabled { opacity: 0.4; }
 
 :root {
   --radius: 0.625rem;

@@ -11,6 +11,9 @@ importers:
       '@ai-sdk/anthropic':
         specifier: ^3.0.69
         version: 3.0.69(zod@4.3.6)
+      '@chenglou/pretext':
+        specifier: ^0.0.5
+        version: 0.0.5
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.71.2(react@19.2.3))
@@ -306,6 +309,9 @@ packages:
   '@babel/types@7.29.0':
     resolution: {integrity: sha512-LwdZHpScM4Qz8Xw2iKSzS+cfglZzJGvofQICy7W7v4caru4EaAmyUuO6BGrbyQ2mYV11W0U8j5mBhd14dd3B0A==}
     engines: {node: '>=6.9.0'}
+
+  '@chenglou/pretext@0.0.5':
+    resolution: {integrity: sha512-A8GZN10REdFGsyuiUgLV8jjPDDFMg5GmgxGWV0I3igxBOnzj+jgz2VMmVD7g+SFyoctfeqHFxbNatKSzVRWtRg==}
 
   '@dotenvx/dotenvx@1.53.0':
     resolution: {integrity: sha512-OnsVuJ5O2WCUMXBnyuYah08/I6Tnt1FEZ2PGH9skSRuRh3LK5UoGa6Bzi5Toj/F/0mbeFfv+eNKTsYRoGgRh3Q==}
@@ -4698,6 +4704,8 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
+
+  '@chenglou/pretext@0.0.5': {}
 
   '@dotenvx/dotenvx@1.53.0':
     dependencies:

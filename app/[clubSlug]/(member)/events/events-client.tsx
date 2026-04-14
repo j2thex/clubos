@@ -22,6 +22,18 @@ interface Event {
   checkedIn: boolean;
 }
 
+type View = "list" | "calendar";
+
+function groupByDate(events: Event[]): { date: string; items: Event[] }[] {
+  const groups = new Map<string, Event[]>();
+  for (const ev of events) {
+    const bucket = groups.get(ev.date) ?? [];
+    bucket.push(ev);
+    groups.set(ev.date, bucket);
+  }
+  return Array.from(groups.entries()).map(([date, items]) => ({ date, items }));
+}
+
 export function EventsClient({
   events,
   memberId,
@@ -32,21 +44,32 @@ export function EventsClient({
   clubSlug: string;
 }) {
   const { t, locale } = useLanguage();
-  const [view, setView] = useState<"list" | "calendar">("list");
+  const [view, setView] = useState<View>("list");
+  const [showPast, setShowPast] = useState(false);
   const [rsvpState, setRsvpState] = useState<Record<string, boolean>>(
     Object.fromEntries(events.map((e) => [e.id, e.hasRsvp])),
   );
   const [isPending, startTransition] = useTransition();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
-  // Client-side date split using browser timezone
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
-  const upcomingEvents = useMemo(() => events.filter((e) => e.date >= todayStr), [events, todayStr]);
-  const pastEvents = useMemo(() => events.filter((e) => e.date < todayStr).reverse(), [events, todayStr]);
+  const upcomingEvents = useMemo(
+    () => events.filter((e) => e.date >= todayStr),
+    [events, todayStr],
+  );
+  const pastEvents = useMemo(
+    () => events.filter((e) => e.date < todayStr).reverse(),
+    [events, todayStr],
+  );
+  const upcomingGroups = useMemo(() => groupByDate(upcomingEvents), [upcomingEvents]);
+  const pastGroups = useMemo(() => groupByDate(pastEvents), [pastEvents]);
 
-  const checkedInSet = useMemo(() => new Set(events.filter((e) => e.checkedIn).map((e) => e.id)), [events]);
+  const checkedInSet = useMemo(
+    () => new Set(events.filter((e) => e.checkedIn).map((e) => e.id)),
+    [events],
+  );
 
   function handleRsvp(eventId: string) {
     if (checkedInSet.has(eventId)) return;
@@ -66,12 +89,14 @@ export function EventsClient({
     });
   }
 
-  function formatDate(d: string) {
-    return new Date(d + "T00:00:00").toLocaleDateString(getDateLocale(locale), {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-    });
+  function formatDateHeader(d: string) {
+    return new Date(d + "T00:00:00")
+      .toLocaleDateString(getDateLocale(locale), {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      })
+      .toUpperCase();
   }
 
   function formatTime(t: string) {
@@ -82,24 +107,24 @@ export function EventsClient({
     return `${h12}:${m} ${ampm}`;
   }
 
-  // Calendar logic
+  // Calendar state
   const [calMonth, setCalMonth] = useState(today.getMonth());
   const [calYear, setCalYear] = useState(today.getFullYear());
-
   const eventDates = new Set(events.map((e) => e.date));
   const upcomingEventDates = new Set(upcomingEvents.map((e) => e.date));
 
   function getDaysInMonth(year: number, month: number) {
     return new Date(year, month + 1, 0).getDate();
   }
-
   function getFirstDayOfWeek(year: number, month: number) {
     return new Date(year, month, 1).getDay();
   }
-
   const daysInMonth = getDaysInMonth(calYear, calMonth);
   const firstDay = getFirstDayOfWeek(calYear, calMonth);
-  const monthName = new Date(calYear, calMonth).toLocaleDateString(getDateLocale(locale), { month: "long", year: "numeric" });
+  const monthName = new Date(calYear, calMonth).toLocaleDateString(getDateLocale(locale), {
+    month: "long",
+    year: "numeric",
+  });
 
   function prevMonth() {
     setSelectedDate(null);
@@ -110,7 +135,6 @@ export function EventsClient({
       setCalMonth(calMonth - 1);
     }
   }
-
   function nextMonth() {
     setSelectedDate(null);
     if (calMonth === 11) {
@@ -120,20 +144,21 @@ export function EventsClient({
       setCalMonth(calMonth + 1);
     }
   }
-
   function getInitialSelectedDate() {
-    const upcoming = upcomingEvents[0];
-    return upcoming?.date ?? null;
+    return upcomingEvents[0]?.date ?? null;
   }
 
-  function renderRsvpButton(ev: Event) {
+  function renderRsvpPill(ev: Event) {
     if (checkedInSet.has(ev.id)) {
       return (
-        <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-green-100 text-green-700">
+        <span
+          className="inline-flex items-center rounded-[var(--m-radius-sm)] bg-green-600/10 px-2.5 py-1 text-[11px] font-semibold text-green-700"
+        >
           {t("events.checkedIn")}
         </span>
       );
     }
+    const signed = rsvpState[ev.id];
     return (
       <button
         onClick={(e) => {
@@ -141,40 +166,96 @@ export function EventsClient({
           handleRsvp(ev.id);
         }}
         disabled={isPending}
-        className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
-          rsvpState[ev.id]
-            ? "bg-gray-100 text-gray-500 hover:bg-gray-200"
-            : "club-primary-bg text-white hover:opacity-90"
-        } disabled:opacity-50`}
+        className={`inline-flex items-center rounded-[var(--m-radius-sm)] px-3 py-1.5 text-[11px] font-semibold transition-colors disabled:opacity-50 ${
+          signed
+            ? "border text-[color:var(--m-ink-muted)]"
+            : "m-btn-ink"
+        }`}
+        style={
+          signed
+            ? { borderColor: "var(--m-border)", background: "var(--m-surface)" }
+            : undefined
+        }
       >
-        {rsvpState[ev.id] ? t("events.signedUp") : t("events.signUp")}
+        {signed ? t("events.signedUp") : t("events.signUp")}
       </button>
     );
   }
 
+  function EventRow({ ev, isPast }: { ev: Event; isPast?: boolean }) {
+    return (
+      <a
+        href={`/${clubSlug}/events/${ev.id}`}
+        className={`m-card block overflow-hidden transition-transform active:scale-[0.99] ${isPast ? "opacity-70" : ""}`}
+      >
+        <div className="flex items-stretch gap-3 p-3">
+          {ev.image_url ? (
+            <img
+              src={ev.image_url}
+              alt=""
+              className="h-20 w-20 shrink-0 rounded-[var(--m-radius-sm)] object-cover"
+            />
+          ) : (
+            <div
+              className="h-20 w-20 shrink-0 rounded-[var(--m-radius-sm)]"
+              style={{ background: "var(--m-surface-sunken)" }}
+            />
+          )}
+          <div className="flex min-w-0 flex-1 flex-col justify-between">
+            <div>
+              <p className="m-headline line-clamp-2 text-[color:var(--m-ink)]">
+                {localized(ev.title, ev.title_es, locale)}
+              </p>
+              <p className="mt-0.5 text-[11px] text-[color:var(--m-ink-muted)]">
+                {ev.time
+                  ? `${formatTime(ev.time)}${ev.end_time ? ` – ${formatTime(ev.end_time)}` : ""}`
+                  : t("events.allDay")}
+                {ev.price != null
+                  ? ` · $${Number(ev.price).toFixed(2)}`
+                  : ` · ${t("common.free")}`}
+              </p>
+            </div>
+            <div className="mt-2 flex items-center justify-between gap-2">
+              {ev.reward_spins > 0 ? (
+                <span className="club-tint-text club-tint-bg inline-flex items-center rounded-[var(--m-radius-xs)] px-1.5 py-0.5 text-[10px] font-semibold">
+                  +{ev.reward_spins}{" "}
+                  {ev.reward_spins === 1 ? t("common.spin") : t("common.spins")}
+                </span>
+              ) : (
+                <span />
+              )}
+              {!isPast && renderRsvpPill(ev)}
+            </div>
+          </div>
+        </div>
+      </a>
+    );
+  }
+
   return (
-    <div className="space-y-4">
-      {/* View toggle */}
-      <div className="flex gap-2 justify-center">
+    <div className="space-y-5">
+      {/* View toggle — editorial ink pill group */}
+      <div
+        className="inline-flex rounded-[var(--m-radius-sm)] border p-0.5"
+        style={{ borderColor: "var(--m-border)", background: "var(--m-surface)" }}
+      >
         <button
+          type="button"
           onClick={() => setView("list")}
-          className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-            view === "list"
-              ? "bg-white text-gray-900 shadow"
-              : "text-white/70 hover:text-white"
+          className={`min-h-[40px] rounded-[calc(var(--m-radius-sm)-1px)] px-4 text-[12px] font-semibold transition-colors ${
+            view === "list" ? "m-btn-ink" : "text-[color:var(--m-ink-muted)]"
           }`}
         >
           {t("events.viewList")}
         </button>
         <button
+          type="button"
           onClick={() => {
             setView("calendar");
             setSelectedDate(getInitialSelectedDate());
           }}
-          className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-            view === "calendar"
-              ? "bg-white text-gray-900 shadow"
-              : "text-white/70 hover:text-white"
+          className={`min-h-[40px] rounded-[calc(var(--m-radius-sm)-1px)] px-4 text-[12px] font-semibold transition-colors ${
+            view === "calendar" ? "m-btn-ink" : "text-[color:var(--m-ink-muted)]"
           }`}
         >
           {t("events.viewCalendar")}
@@ -182,168 +263,165 @@ export function EventsClient({
       </div>
 
       {view === "list" ? (
-        <div className="space-y-3">
-          {upcomingEvents.length === 0 && (
-            <div className="bg-white rounded-2xl shadow-lg p-10 text-center">
-              <p className="text-gray-700 font-semibold text-lg">{t("events.noUpcoming")}</p>
-              <p className="text-gray-400 text-sm mt-1">{t("events.checkBackSoon")}</p>
+        <div className="space-y-5">
+          {upcomingGroups.length === 0 && (
+            <div className="m-card p-8 text-center">
+              <p className="m-headline text-[color:var(--m-ink)]">
+                {t("events.noUpcoming")}
+              </p>
+              <p className="mt-1 text-sm text-[color:var(--m-ink-muted)]">
+                {t("events.checkBackSoon")}
+              </p>
             </div>
           )}
-          {upcomingEvents.map((ev) => (
-            <a
-              key={ev.id}
-              href={`/${clubSlug}/events/${ev.id}`}
-              className="block bg-white rounded-2xl shadow overflow-hidden"
-            >
-              {ev.image_url && (
-                <img
-                  src={ev.image_url}
-                  alt=""
-                  className="w-full h-36 object-cover"
-                />
-              )}
-              <div className="p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900">{localized(ev.title, ev.title_es, locale)}</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {formatDate(ev.date)}
-                      {ev.time && ` at ${formatTime(ev.time)}${ev.end_time ? ` – ${formatTime(ev.end_time)}` : ""}`}
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    {ev.price != null ? (
-                      <span className="text-sm font-bold text-gray-900">${Number(ev.price).toFixed(2)}</span>
-                    ) : (
-                      <span className="text-sm font-bold text-green-600">{t("common.free")}</span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center justify-between mt-3">
-                  <span className="text-xs club-tint-text font-medium px-2 py-0.5 club-tint-bg rounded-full">
-                    +{ev.reward_spins} {ev.reward_spins === 1 ? t("common.spin") : t("common.spins")}
-                  </span>
-                  {renderRsvpButton(ev)}
-                </div>
+
+          {upcomingGroups.map((group) => (
+            <div key={group.date} className="space-y-2">
+              <p className="m-caption px-1">{formatDateHeader(group.date)}</p>
+              <div className="space-y-2">
+                {group.items.map((ev) => (
+                  <EventRow key={ev.id} ev={ev} />
+                ))}
               </div>
-            </a>
+            </div>
           ))}
+
+          {pastGroups.length > 0 && (
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setShowPast((v) => !v)}
+                className="inline-flex min-h-[44px] items-center gap-2 text-[12px] font-semibold text-[color:var(--m-ink-muted)] transition-colors hover:text-[color:var(--m-ink)]"
+              >
+                <span>{showPast ? t("events.hidePast") : t("events.showPast")}</span>
+                <svg
+                  className={`h-4 w-4 transition-transform ${showPast ? "rotate-180" : ""}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {showPast && (
+                <div className="mt-3 space-y-5">
+                  {pastGroups.map((group) => (
+                    <div key={group.date} className="space-y-2">
+                      <p className="m-caption px-1">{formatDateHeader(group.date)}</p>
+                      <div className="space-y-2">
+                        {group.items.map((ev) => (
+                          <EventRow key={ev.id} ev={ev} isPast />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-lg p-4">
-          {/* Calendar header */}
-          <div className="flex items-center justify-between mb-4">
-            <button onClick={prevMonth} className="p-1 text-gray-400 hover:text-gray-600">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <p className="text-sm font-semibold text-gray-900">{monthName}</p>
-            <button onClick={nextMonth} className="p-1 text-gray-400 hover:text-gray-600">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
+        <div className="space-y-4">
+          <div className="m-card p-4">
+            {/* Calendar header */}
+            <div className="mb-4 flex items-center justify-between">
+              <button
+                onClick={prevMonth}
+                className="flex h-11 w-11 items-center justify-center text-[color:var(--m-ink-muted)] transition-colors hover:text-[color:var(--m-ink)]"
+                aria-label="Previous month"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <p className="m-headline text-[color:var(--m-ink)]">{monthName}</p>
+              <button
+                onClick={nextMonth}
+                className="flex h-11 w-11 items-center justify-center text-[color:var(--m-ink-muted)] transition-colors hover:text-[color:var(--m-ink)]"
+                aria-label="Next month"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="mb-1 grid grid-cols-7 gap-1 text-center">
+              {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
+                <span key={d} className="m-caption">
+                  {d}
+                </span>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7 gap-1">
+              {Array.from({ length: firstDay }).map((_, i) => (
+                <div key={`empty-${i}`} />
+              ))}
+              {Array.from({ length: daysInMonth }).map((_, i) => {
+                const day = i + 1;
+                const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+                const hasEvent = eventDates.has(dateStr);
+                const isSelected = dateStr === selectedDate;
+                const isToday =
+                  day === today.getDate() &&
+                  calMonth === today.getMonth() &&
+                  calYear === today.getFullYear();
+
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    disabled={!hasEvent}
+                    onClick={hasEvent ? () => setSelectedDate(isSelected ? null : dateStr) : undefined}
+                    className={`relative flex h-10 items-center justify-center rounded-[var(--m-radius-sm)] text-sm transition-colors ${
+                      isSelected
+                        ? "m-btn-ink"
+                        : isToday
+                          ? "font-bold text-[color:var(--m-ink)]"
+                          : "text-[color:var(--m-ink-muted)]"
+                    } ${hasEvent ? "cursor-pointer" : ""}`}
+                    style={
+                      isToday && !isSelected
+                        ? { background: "var(--m-surface-sunken)" }
+                        : undefined
+                    }
+                  >
+                    {day}
+                    {hasEvent && (
+                      <span
+                        className={`absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full ${
+                          isSelected
+                            ? "bg-white"
+                            : upcomingEventDates.has(dateStr)
+                              ? "club-primary-bg"
+                              : "bg-gray-300"
+                        }`}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Day headers */}
-          <div className="grid grid-cols-7 gap-1 text-center mb-1">
-            {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
-              <span key={d} className="text-xs font-medium text-gray-400">{d}</span>
-            ))}
-          </div>
-
-          {/* Days grid */}
-          <div className="grid grid-cols-7 gap-1">
-            {Array.from({ length: firstDay }).map((_, i) => (
-              <div key={`empty-${i}`} />
-            ))}
-            {Array.from({ length: daysInMonth }).map((_, i) => {
-              const day = i + 1;
-              const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-              const hasEvent = eventDates.has(dateStr);
-              const isSelected = dateStr === selectedDate;
-              const isToday =
-                day === today.getDate() &&
-                calMonth === today.getMonth() &&
-                calYear === today.getFullYear();
-
-              return (
-                <div
-                  key={day}
-                  onClick={hasEvent ? () => setSelectedDate(isSelected ? null : dateStr) : undefined}
-                  className={`relative h-9 flex items-center justify-center rounded-lg text-sm transition-colors ${
-                    isSelected
-                      ? "club-primary-bg text-white font-semibold"
-                      : isToday
-                        ? "font-bold text-gray-900 bg-gray-100"
-                        : "text-gray-700"
-                  } ${hasEvent ? "cursor-pointer" : ""}`}
-                >
-                  {day}
-                  {hasEvent && (
-                    <span
-                      className={`absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full ${
-                        isSelected
-                          ? "bg-white"
-                          : upcomingEventDates.has(dateStr)
-                            ? "club-primary-bg"
-                            : "bg-gray-300"
-                      }`}
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Event panel for selected date */}
+          {/* Agenda for selected date (Fantastical pattern — month + agenda in one view) */}
           {selectedDate && (() => {
             const dayEvents = events.filter((e) => e.date === selectedDate);
             const isPastDate = !upcomingEventDates.has(selectedDate);
             if (dayEvents.length === 0) return null;
             return (
-              <div className="mt-3 pt-3 border-t border-gray-100 space-y-2">
-                <p className="text-xs font-medium text-gray-400 px-1">
-                  {formatDate(selectedDate)}
-                  {isPastDate && <span className="ml-1 text-gray-300">&middot; {t("events.past")}</span>}
+              <div className="space-y-2">
+                <p className="m-caption px-1">
+                  {formatDateHeader(selectedDate)}
+                  {isPastDate && ` · ${t("events.past")}`}
                 </p>
-                {dayEvents.map((ev) => (
-                  <a
-                    key={ev.id}
-                    href={`/${clubSlug}/events/${ev.id}`}
-                    className={`block rounded-xl bg-gray-50 p-3 hover:bg-gray-100 transition-colors ${isPastDate ? "opacity-70" : ""}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      {ev.image_url && (
-                        <img
-                          src={ev.image_url}
-                          alt=""
-                          className={`w-12 h-12 rounded-lg object-cover shrink-0 ${isPastDate ? "grayscale-[30%]" : ""}`}
-                        />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className={`font-semibold text-sm truncate ${isPastDate ? "text-gray-600" : "text-gray-900"}`}>
-                          {localized(ev.title, ev.title_es, locale)}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {ev.time ? `${formatTime(ev.time)}${ev.end_time ? ` – ${formatTime(ev.end_time)}` : ""}` : t("events.allDay")}
-                          {ev.price != null
-                            ? ` · $${Number(ev.price).toFixed(2)}`
-                            : ` · ${t("common.free")}`}
-                        </p>
-                      </div>
-                      {!isPastDate && (
-                        <div className="shrink-0 flex flex-col items-end gap-1">
-                          <span className="text-xs club-tint-text font-medium px-2 py-0.5 club-tint-bg rounded-full">
-                            +{ev.reward_spins}
-                          </span>
-                          {renderRsvpButton(ev)}
-                        </div>
-                      )}
-                    </div>
-                  </a>
-                ))}
+                <div className="space-y-2">
+                  {dayEvents.map((ev) => (
+                    <EventRow key={ev.id} ev={ev} isPast={isPastDate} />
+                  ))}
+                </div>
               </div>
             );
           })()}

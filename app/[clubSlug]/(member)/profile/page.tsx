@@ -5,26 +5,40 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logout } from "./actions";
 import { MemberQrCard } from "@/components/club/member-qr-card";
 import { EmailField } from "./email-field";
-
+import { BentoStatTile } from "@/components/club/bento-stat-tile";
 import { BadgeCollection } from "../badge-collection";
 import { t, getDateLocale } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 import type { Locale } from "@/lib/i18n";
 
-function formatTimestamp(iso: string, locale: Locale): string {
-  const dl = getDateLocale(locale);
-  const date = new Date(iso);
-  return date.toLocaleDateString(dl, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }) +
-    " " +
-    date.toLocaleTimeString(dl, {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
+function daysUntil(dateStr: string): number {
+  const target = new Date(`${dateStr}T00:00:00`);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function formatValidity(
+  validTill: string | null,
+  locale: Locale,
+): { label: string; className: string } {
+  if (!validTill) {
+    return {
+      label: t(locale, "dashboard.validUnlimited"),
+      className: "text-[color:var(--m-ink)]",
+    };
+  }
+  const days = daysUntil(validTill);
+  if (days < 0) {
+    return { label: t(locale, "dashboard.expired"), className: "text-red-600" };
+  }
+  if (days === 0) {
+    return { label: t(locale, "dashboard.today"), className: "text-amber-600" };
+  }
+  return {
+    label: t(locale, "dashboard.validDays", { days }),
+    className: days <= 14 ? "text-amber-600" : "text-[color:var(--m-ink)]",
+  };
 }
 
 export default async function ProfilePage({
@@ -41,22 +55,32 @@ export default async function ProfilePage({
 
   const supabase = createAdminClient();
 
-  const [{ data: member }, { data: spins }, { data: branding }, { data: clubBadges }, { data: memberBadges }] = await Promise.all([
+  const [
+    { data: member },
+    { count: totalSpinsCount },
+    { count: eventCheckinsCount },
+    { data: branding },
+    { data: clubBadges },
+    { data: memberBadges },
+  ] = await Promise.all([
     supabase
       .from("members")
-      .select("member_code, spin_balance, valid_till, created_at, email")
+      .select("member_code, full_name, spin_balance, valid_till, created_at, email")
       .eq("id", session.member_id)
       .single(),
     supabase
       .from("spins")
-      .select("id, outcome_label, outcome_value, created_at")
+      .select("*", { count: "exact", head: true })
       .eq("member_id", session.member_id)
       .eq("club_id", session.club_id)
-      .order("created_at", { ascending: false })
-      .limit(20),
+      .gt("outcome_value", 0),
+    supabase
+      .from("event_checkins")
+      .select("*", { count: "exact", head: true })
+      .eq("member_id", session.member_id),
     supabase
       .from("club_branding")
-      .select("logo_url")
+      .select("cover_url, logo_url")
       .eq("club_id", session.club_id)
       .single(),
     supabase
@@ -71,7 +95,6 @@ export default async function ProfilePage({
       .eq("member_id", session.member_id),
   ]);
 
-  // Fetch referrals (members referred by this member's code)
   const { data: referrals } = member?.member_code
     ? await supabase
         .from("members")
@@ -81,87 +104,122 @@ export default async function ProfilePage({
         .order("created_at", { ascending: false })
     : { data: [] };
 
-  const logoUrl = branding?.logo_url ?? null;
   const locale = await getServerLocale();
-
+  const coverUrl = branding?.cover_url ?? null;
   const memberCode = member?.member_code ?? "";
-  const spinBalance = member?.spin_balance ?? 0;
+  const fullName = member?.full_name ?? "";
   const memberSince = member?.created_at
     ? new Date(member.created_at).toLocaleDateString(getDateLocale(locale), {
-        year: "numeric",
         month: "long",
-        day: "numeric",
+        year: "numeric",
       })
-    : "Unknown";
-
-  const hasSpins = spins && spins.length > 0;
+    : "";
+  const validity = formatValidity(member?.valid_till ?? null, locale);
   const logoutWithSlug = logout.bind(null, clubSlug);
+  const earnedBadgesCount = (memberBadges ?? []).length;
+  const totalBadgesCount = (clubBadges ?? []).length;
 
   return (
-    <div className="min-h-screen club-page-bg">
-      {/* Header */}
-      <div className="club-hero px-6 pt-10 pb-16 text-center">
-        {logoUrl && (
-          <img src={logoUrl} alt="Club logo" className="w-10 h-10 rounded-lg object-cover mx-auto mb-2 shadow ring-2 ring-white/20" />
-        )}
-        <h1 className="text-2xl font-bold text-white">{t(locale, "profile.title")}</h1>
-        <p className="club-light-text text-sm mt-1">{memberCode}</p>
-      </div>
+    <div className="min-h-screen" style={{ background: "var(--m-surface-sunken)" }}>
+      <header
+        className="border-b px-5 pt-12 pb-5"
+        style={{
+          background: "var(--m-surface)",
+          borderColor: "var(--m-border)",
+          paddingTop: "calc(env(safe-area-inset-top) + 2.5rem)",
+        }}
+      >
+        <p className="m-caption">{t(locale, "profile.caption")}</p>
+        <h1 className="m-display mt-1 text-[color:var(--m-ink)]">
+          {t(locale, "profile.title")}
+        </h1>
+      </header>
 
-      {/* Profile card */}
-      <div className="px-4 -mt-8 pb-10 max-w-md mx-auto space-y-4">
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-          {/* QR Code & Member Code */}
-          <div className="club-tint-bg border-b club-tint-border px-6 py-8 text-center">
-            <MemberQrCard memberCode={memberCode} />
-          </div>
-
-          {/* Info fields */}
-          <div className="divide-y divide-gray-100">
-            {/* Dates row */}
-            <div className={`px-6 py-4 grid ${member?.valid_till ? "grid-cols-2 gap-4" : ""}`}>
-              <div>
-                <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-                  {t(locale, "profile.memberSince")}
-                </p>
-                <p className="mt-1 text-sm font-semibold text-gray-900">
-                  {memberSince}
-                </p>
-              </div>
-              {member?.valid_till && (() => {
-                const validDate = new Date(member.valid_till + "T00:00:00");
-                const now = new Date();
-                const daysLeft = Math.ceil((validDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-                const isExpired = daysLeft < 0;
-                const isExpiringSoon = daysLeft >= 0 && daysLeft <= 30;
-                const formatted = validDate.toLocaleDateString(getDateLocale(locale), { month: "short", day: "numeric", year: "numeric" });
-                return (
-                  <div className="text-right">
-                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      {t(locale, "profile.validTill")}
-                    </p>
-                    <p className={`mt-1 text-sm font-semibold ${isExpired ? "text-red-500" : isExpiringSoon ? "text-amber-500" : "text-green-600"}`}>
-                      {formatted}
-                    </p>
-                  </div>
-                );
-              })()}
-            </div>
-
-            {/* Email */}
-            <EmailField
-              currentEmail={member?.email ?? null}
-              memberId={session.member_id}
+      <div className="mx-auto max-w-md space-y-6 px-5 py-5 pb-10">
+        {/* Identity card — photo bg, dark gradient, name + code + QR */}
+        <section
+          className="relative overflow-hidden"
+          style={{
+            borderRadius: "var(--m-radius-lg)",
+            boxShadow: "var(--m-elev-raised)",
+            border: "1px solid var(--m-border)",
+            background: "var(--m-ink)",
+          }}
+        >
+          {coverUrl && (
+            <div
+              className="absolute inset-0 opacity-40"
+              style={{
+                backgroundImage: `url(${coverUrl})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+              aria-hidden
             />
+          )}
+          <div
+            aria-hidden
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.25) 40%, rgba(0,0,0,0.85) 100%)",
+            }}
+          />
+          <div className="relative flex flex-col gap-4 p-5 pb-6 text-white">
+            <div>
+              <p className="m-caption text-white/60">
+                {t(locale, "profile.memberSince")} · {memberSince.toUpperCase()}
+              </p>
+              <h2 className="m-display mt-2 text-white">{fullName || "Member"}</h2>
+              <p className="mt-1 font-mono text-xs uppercase tracking-[0.1em] text-white/70">
+                {memberCode}
+              </p>
+            </div>
+            <div
+              className="flex items-center justify-center rounded-[var(--m-radius-lg)] p-4"
+              style={{ background: "rgba(255,255,255,0.95)" }}
+            >
+              <MemberQrCard memberCode={memberCode} />
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="m-caption text-white/60">
+                {t(locale, "profile.validTill")}
+              </span>
+              <span className={`text-sm font-semibold ${validity.className} text-white`}>
+                {validity.label}
+              </span>
+            </div>
           </div>
+        </section>
+
+        {/* Bento stat strip */}
+        <div className="grid grid-cols-3 gap-3">
+          <BentoStatTile
+            caption={t(locale, "dashboard.spinsLabel").toUpperCase()}
+            value={<span className="text-2xl font-bold tabular-nums">{totalSpinsCount ?? 0}</span>}
+          />
+          <BentoStatTile
+            caption={t(locale, "events.title").toUpperCase()}
+            value={<span className="text-2xl font-bold tabular-nums">{eventCheckinsCount ?? 0}</span>}
+            href={`/${clubSlug}/events`}
+          />
+          <BentoStatTile
+            caption={t(locale, "profile.badges").toUpperCase()}
+            value={
+              <span className="text-2xl font-bold tabular-nums">
+                {earnedBadgesCount}
+                <span className="text-sm font-medium text-[color:var(--m-ink-muted)]">
+                  /{totalBadgesCount}
+                </span>
+              </span>
+            }
+          />
         </div>
 
         {/* Badges */}
         {clubBadges && clubBadges.length > 0 && (
-          <div className="space-y-2">
-            <h2 className="text-sm font-semibold text-white/80 uppercase tracking-wide px-1">
-              {t(locale, "profile.badges")}
-            </h2>
+          <section className="space-y-3">
+            <h2 className="m-caption px-1">{t(locale, "profile.badges")}</h2>
             <BadgeCollection
               allBadges={(clubBadges ?? []).map((b) => {
                 const quest = Array.isArray(b.quests) ? b.quests[0] : b.quests;
@@ -180,124 +238,62 @@ export default async function ProfilePage({
                 earnedAt: mb.earned_at,
               }))}
             />
-          </div>
+          </section>
         )}
-
-        {/* Spin History */}
-        <div className="space-y-2">
-          <h2 className="text-sm font-semibold text-white/80 uppercase tracking-wide px-1">
-            {t(locale, "profile.spinHistory")}
-          </h2>
-          {hasSpins ? (
-            <div className="space-y-3">
-              {spins.map((spin) => {
-                const isWin = spin.outcome_value > 0;
-                return (
-                  <div
-                    key={spin.id}
-                    className="bg-white rounded-2xl shadow p-4 flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                          isWin
-                            ? "club-tint-bg club-primary"
-                            : "bg-gray-100 text-gray-400"
-                        }`}
-                      >
-                        {isWin ? (
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                        ) : (
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
-                          </svg>
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-900 text-sm">
-                          {spin.outcome_label}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          {formatTimestamp(spin.created_at, locale)}
-                        </p>
-                      </div>
-                    </div>
-                    <span
-                      className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                        isWin
-                          ? "club-tint-bg club-tint-text"
-                          : "bg-gray-100 text-gray-500"
-                      }`}
-                    >
-                      {isWin ? `+${spin.outcome_value}` : t(locale, "common.noWin")}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-              <p className="text-gray-400 text-sm">{t(locale, "profile.noSpins")}</p>
-            </div>
-          )}
-        </div>
 
         {/* Referrals */}
         {referrals && referrals.length > 0 && (
-          <div className="space-y-2">
-            <h2 className="text-sm font-semibold text-white/80 uppercase tracking-wide px-1">
-              {t(locale, "profile.referralsTitle")}
+          <section className="space-y-3">
+            <h2 className="m-caption px-1">
+              {t(locale, "profile.referralsTitle")} · {referrals.length}
             </h2>
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-              <div className="club-tint-bg px-5 py-3 flex items-center justify-between border-b club-tint-border">
-                <span className="text-sm font-semibold club-tint-text">
-                  {t(locale, "profile.referredPeople")}
-                </span>
-                <span className="text-xs font-bold club-tint-text px-2.5 py-1 rounded-full" style={{ backgroundColor: "color-mix(in srgb, var(--club-primary, #16a34a) 15%, white)" }}>
-                  {referrals.length}
-                </span>
-              </div>
-              <div className="divide-y divide-gray-100">
-                {referrals.map((ref) => (
-                  <div key={ref.member_code} className="px-5 py-3 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 font-mono tracking-wide">
-                        {ref.member_code}
-                      </p>
-                      {ref.full_name && (
-                        <p className="text-xs text-gray-400 truncate">{ref.full_name}</p>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-400 shrink-0">
-                      {new Date(ref.created_at).toLocaleDateString(getDateLocale(locale), { month: "short", day: "numeric" })}
+            <div className="m-card divide-y" style={{ borderColor: "var(--m-border)" }}>
+              {referrals.map((ref) => (
+                <div key={ref.member_code} className="flex items-center gap-3 px-4 py-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-mono text-sm font-semibold uppercase tracking-wide text-[color:var(--m-ink)]">
+                      {ref.member_code}
                     </p>
+                    {ref.full_name && (
+                      <p className="truncate text-xs text-[color:var(--m-ink-muted)]">
+                        {ref.full_name}
+                      </p>
+                    )}
                   </div>
-                ))}
-              </div>
+                  <p className="shrink-0 text-xs text-[color:var(--m-ink-muted)]">
+                    {new Date(ref.created_at).toLocaleDateString(getDateLocale(locale), {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </p>
+                </div>
+              ))}
             </div>
-          </div>
+          </section>
         )}
 
-        {/* Back to global map */}
+        {/* Account */}
+        <section className="space-y-3">
+          <h2 className="m-caption px-1">ACCOUNT</h2>
+          <div className="m-card overflow-hidden">
+            <EmailField
+              currentEmail={member?.email ?? null}
+              memberId={session.member_id}
+            />
+          </div>
+        </section>
+
         <Link
           href="/discover"
-          className="block w-full rounded-2xl bg-white hover:bg-gray-50 active:bg-gray-100 border border-gray-200 text-gray-900 font-semibold py-3.5 text-center transition-colors shadow-sm"
+          className="m-card block w-full px-4 py-3.5 text-center text-sm font-semibold text-[color:var(--m-ink)] transition-transform active:scale-[0.98]"
         >
           {t(locale, "profile.backToDiscover")}
         </Link>
 
-        {/* Logout */}
         <form action={logoutWithSlug}>
           <button
             type="submit"
-            className="w-full rounded-2xl bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-semibold py-3.5 text-center transition-colors shadow"
+            className="w-full rounded-[var(--m-radius-sm)] border border-red-200 bg-white py-3.5 text-center text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 active:bg-red-100"
           >
             {t(locale, "common.logout")}
           </button>

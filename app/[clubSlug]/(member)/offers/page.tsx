@@ -54,9 +54,21 @@ export default async function OffersPage({
   });
 
   return (
-    <div className="min-h-screen club-page-bg">
-      <div className="px-4 pt-6 pb-24 max-w-md mx-auto">
-        <h1 className="text-lg font-bold text-white mb-4">{t(locale, "nav.offers")}</h1>
+    <div className="min-h-screen" style={{ background: "var(--m-surface-sunken)" }}>
+      <header
+        className="border-b px-5 pt-12 pb-5"
+        style={{
+          background: "var(--m-surface)",
+          borderColor: "var(--m-border)",
+          paddingTop: "calc(env(safe-area-inset-top) + 2.5rem)",
+        }}
+      >
+        <p className="m-caption">{t(locale, "offers.caption")}</p>
+        <h1 className="m-display mt-1 text-[color:var(--m-ink)]">
+          {t(locale, "nav.offers")}
+        </h1>
+      </header>
+      <div className="mx-auto max-w-md px-5 pb-24 pt-5">
         <OfferListClient offers={offerList} memberId={session.member_id} clubSlug={clubSlug} />
       </div>
     </div>
