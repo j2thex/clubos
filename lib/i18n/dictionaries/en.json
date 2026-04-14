@@ -134,6 +134,8 @@
   "events.showPast": "Show past events",
   "events.hidePast": "Hide past events",
   "events.upcoming": "UPCOMING",
+  "offers.caption": "MARKETPLACE",
+  "profile.caption": "YOUR MEMBERSHIP",
   "events.cancelSignUp": "Cancel Sign Up",
   "events.repeat": "Repeat",
   "events.noRepeat": "Does not repeat",

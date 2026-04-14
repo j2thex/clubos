@@ -134,6 +134,8 @@
   "events.showPast": "Ver eventos pasados",
   "events.hidePast": "Ocultar eventos pasados",
   "events.upcoming": "PRÓXIMOS",
+  "offers.caption": "TIENDA",
+  "profile.caption": "TU MEMBRESÍA",
   "events.cancelSignUp": "Cancelar inscripción",
   "events.repeat": "Repetir",
   "events.noRepeat": "No se repite",
