@@ -98,8 +98,15 @@ export function MemberHero({
       </div>
 
       <div className="absolute inset-x-0 bottom-0 px-5 pb-7">
-        <p className="m-caption text-white/70">{caption}</p>
-        <h1 className="m-display mt-2 text-white">{resolvedGreeting}</h1>
+        <p
+          className="text-[11px] font-semibold uppercase leading-none text-white/85"
+          style={{ letterSpacing: "0.08em" }}
+        >
+          {caption}
+        </p>
+        <h1 className="m-display mt-2 text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.35)]">
+          {resolvedGreeting}
+        </h1>
       </div>
     </section>
   );
