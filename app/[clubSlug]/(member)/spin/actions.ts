@@ -151,5 +151,13 @@ export async function claimSpinPrize(
     `🎁 Prize claim\n<b>${spin.outcome_label}</b>\nMember: ${member?.member_code ?? "unknown"}`,
   );
 
+  await logActivity({
+    clubId: session.club_id,
+    staffMemberId: null,
+    action: "spin_claim",
+    targetMemberCode: member?.member_code ?? null,
+    details: spin.outcome_label,
+  });
+
   return { success: true };
 }
