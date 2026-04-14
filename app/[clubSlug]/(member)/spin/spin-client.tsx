@@ -1,48 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useState, useTransition, type ReactNode } from "react";
-import dynamic from "next/dynamic";
+import { useRef, useState, useTransition, type ReactNode } from "react";
+import SpinWheel, { type SpinWheelHandle } from "@/components/club/spin-wheel";
 import { memberSpin, claimSpinPrize } from "./actions";
 import { useLanguage } from "@/lib/i18n/provider";
-
-const SpinWheel = dynamic(() => import("@/components/club/spin-wheel"), {
-  ssr: false,
-  loading: () => (
-    <div className="mx-auto aspect-square w-full max-w-[480px] animate-pulse">
-      <svg viewBox="0 0 200 200" className="h-full w-full">
-        <defs>
-          <clipPath id="wheel-clip">
-            <circle cx="100" cy="100" r="96" />
-          </clipPath>
-        </defs>
-        <g clipPath="url(#wheel-clip)">
-          {Array.from({ length: 8 }).map((_, i) => {
-            const start = (i * Math.PI) / 4;
-            const end = ((i + 1) * Math.PI) / 4;
-            const x1 = 100 + 96 * Math.cos(start);
-            const y1 = 100 + 96 * Math.sin(start);
-            const x2 = 100 + 96 * Math.cos(end);
-            const y2 = 100 + 96 * Math.sin(end);
-            const d = `M100,100 L${x1},${y1} A96,96 0 0,1 ${x2},${y2} Z`;
-            return (
-              <path
-                key={i}
-                d={d}
-                fill={i % 2 === 0 ? "#e5e7eb" : "#eef0f2"}
-                stroke="#f3f4f6"
-                strokeWidth="0.5"
-              />
-            );
-          })}
-        </g>
-        <circle cx="100" cy="100" r="96" fill="none" stroke="#d1d5db" strokeWidth="2" />
-        <circle cx="100" cy="100" r="18" fill="#d1d5db" />
-        <circle cx="100" cy="100" r="6" fill="#f9fafb" />
-      </svg>
-    </div>
-  ),
-});
 
 interface SpinRecord {
   id: string;
@@ -103,51 +65,66 @@ export function MemberSpinClient({
   const [pendingPrizes, setPendingPrizes] = useState(initialPending);
   const [claimedIds, setClaimedIds] = useState<Set<string>>(new Set());
   const [claimingId, setClaimingId] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [spinError, setSpinError] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
+  const wheelRef = useRef<SpinWheelHandle>(null);
 
-  const handleSpin = useCallback(async () => {
-    const res = await memberSpin(clubSlug);
+  function handleSpinClick() {
+    if (isSpinning || currentBalance < spinCost) return;
+    if (wheelRef.current?.isSpinning()) return;
 
-    if ("error" in res) {
-      return res;
-    }
+    setSpinError(null);
+    setIsSpinning(true);
 
-    const localizedLabel = segments[res.segmentIndex]?.label ?? res.outcome.label;
-    const isWin = res.outcome.rewardType !== "nothing" && res.outcome.value > 0;
-    const newSpinId = crypto.randomUUID();
+    startTransition(async () => {
+      const res = await memberSpin(clubSlug);
 
-    // Defer parent state updates until after the wheel's 4s animation
-    // so the balance prop doesn't change mid-spin and reset SpinWheel state.
-    setTimeout(() => {
-      setCurrentBalance(res.newBalance);
-      setRecentSpins((prev) => [
-        {
-          id: newSpinId,
-          outcomeLabel: localizedLabel,
-          outcomeValue: res.outcome.value,
-          status: isWin ? "pending" : "fulfilled",
-          createdAt: new Date().toISOString(),
-        },
-        ...prev.slice(0, 9),
-      ]);
-      if (isWin) {
-        setPendingPrizes((prev) => [
+      if ("error" in res) {
+        setSpinError(res.error);
+        setIsSpinning(false);
+        return;
+      }
+
+      const localizedLabel = segments[res.segmentIndex]?.label ?? res.outcome.label;
+      const isWin = res.outcome.rewardType !== "nothing" && res.outcome.value > 0;
+      const newSpinId = crypto.randomUUID();
+
+      // Kick off the wheel animation imperatively — no prop/callback churn.
+      wheelRef.current?.spin({
+        ...res,
+        outcome: { ...res.outcome, label: localizedLabel },
+      });
+
+      // Defer parent state updates until after the ~4s wheel animation
+      // so the balance prop doesn't change mid-spin.
+      setTimeout(() => {
+        setCurrentBalance(res.newBalance);
+        setRecentSpins((prev) => [
           {
             id: newSpinId,
             outcomeLabel: localizedLabel,
             outcomeValue: res.outcome.value,
+            status: isWin ? "pending" : "fulfilled",
             createdAt: new Date().toISOString(),
           },
-          ...prev,
+          ...prev.slice(0, 9),
         ]);
-      }
-    }, 4200);
-
-    return {
-      ...res,
-      outcome: { ...res.outcome, label: localizedLabel },
-    };
-  }, [clubSlug, segments]);
+        if (isWin) {
+          setPendingPrizes((prev) => [
+            {
+              id: newSpinId,
+              outcomeLabel: localizedLabel,
+              outcomeValue: res.outcome.value,
+              createdAt: new Date().toISOString(),
+            },
+            ...prev,
+          ]);
+        }
+        setIsSpinning(false);
+      }, 4200);
+    });
+  }
 
   function handleClaim(prizeId: string) {
     setClaimingId(prizeId);
@@ -205,11 +182,30 @@ export function MemberSpinClient({
         {/* Wheel card */}
         <div className="m-card p-2">
           <SpinWheel
+            ref={wheelRef}
             segments={segments}
             balance={currentBalance}
             spinCost={spinCost}
-            onSpin={handleSpin}
+            hideButton
           />
+          <div className="mt-2 flex flex-col items-center gap-2 pb-2">
+            <button
+              onClick={handleSpinClick}
+              disabled={isSpinning || currentBalance < spinCost}
+              className="club-btn rounded-full px-8 py-3 text-lg font-bold shadow-lg disabled:cursor-not-allowed"
+            >
+              {isSpinning
+                ? "Spinning..."
+                : currentBalance < spinCost
+                  ? "No Spins Left"
+                  : "Spin the Wheel"}
+            </button>
+            {spinError && (
+              <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-center">
+                <p className="text-sm text-red-400">{spinError}</p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Earn more spins → Quests link */}
