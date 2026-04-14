@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition, type ReactNode } from "react";
+import { useCallback, useState, useTransition, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { memberSpin, claimSpinPrize } from "./actions";
 import { useLanguage } from "@/lib/i18n/provider";
@@ -105,52 +105,49 @@ export function MemberSpinClient({
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  async function handleSpin() {
+  const handleSpin = useCallback(async () => {
     const res = await memberSpin(clubSlug);
 
     if ("error" in res) {
       return res;
     }
 
-    // Use the localized segment label for display
     const localizedLabel = segments[res.segmentIndex]?.label ?? res.outcome.label;
     const isWin = res.outcome.rewardType !== "nothing" && res.outcome.value > 0;
-
-    setCurrentBalance(res.newBalance);
-
     const newSpinId = crypto.randomUUID();
 
-    // Prepend new spin to history
-    setRecentSpins((prev) => [
-      {
-        id: newSpinId,
-        outcomeLabel: localizedLabel,
-        outcomeValue: res.outcome.value,
-        status: isWin ? "pending" : "fulfilled",
-        createdAt: new Date().toISOString(),
-      },
-      ...prev.slice(0, 9),
-    ]);
-
-    // Add to unclaimed prizes if it's a win
-    if (isWin) {
-      setPendingPrizes((prev) => [
+    // Defer parent state updates until after the wheel's 4s animation
+    // so the balance prop doesn't change mid-spin and reset SpinWheel state.
+    setTimeout(() => {
+      setCurrentBalance(res.newBalance);
+      setRecentSpins((prev) => [
         {
           id: newSpinId,
           outcomeLabel: localizedLabel,
           outcomeValue: res.outcome.value,
+          status: isWin ? "pending" : "fulfilled",
           createdAt: new Date().toISOString(),
         },
-        ...prev,
+        ...prev.slice(0, 9),
       ]);
-    }
+      if (isWin) {
+        setPendingPrizes((prev) => [
+          {
+            id: newSpinId,
+            outcomeLabel: localizedLabel,
+            outcomeValue: res.outcome.value,
+            createdAt: new Date().toISOString(),
+          },
+          ...prev,
+        ]);
+      }
+    }, 4200);
 
-    // Return with localized label for the wheel result overlay
     return {
       ...res,
       outcome: { ...res.outcome, label: localizedLabel },
     };
-  }
+  }, [clubSlug, segments]);
 
   function handleClaim(prizeId: string) {
     setClaimingId(prizeId);

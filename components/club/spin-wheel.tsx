@@ -41,15 +41,19 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
     const [result, setResult] = useState<SpinResult["outcome"] | null>(null);
     const [error, setError] = useState<string | null>(null);
 
+    const containerRef = useRef<HTMLDivElement>(null);
+    const wheelRef = useRef<import("spin-wheel").Wheel | null>(null);
+    const spinningRef = useRef(false);
+
     useEffect(() => {
+      if (spinningRef.current) {
+        setCurrentBalance(balance);
+        return;
+      }
       setCurrentBalance(balance);
       setResult(null);
       setError(null);
     }, [balance]);
-
-    const containerRef = useRef<HTMLDivElement>(null);
-    const wheelRef = useRef<import("spin-wheel").Wheel | null>(null);
-    const spinningRef = useRef(false);
 
     useEffect(() => {
       let mounted = true;
@@ -155,7 +159,7 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
     }), [animateSpin]);
 
     const handleSpin = useCallback(async () => {
-      if (spinningRef.current || currentBalance < spinCost || !wheelRef.current || !onSpin) return;
+      if (spinningRef.current || balance < spinCost || !wheelRef.current || !onSpin) return;
 
       spinningRef.current = true;
       setSpinning(true);
@@ -172,7 +176,7 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
       }
 
       animateSpin(res as SpinResult);
-    }, [currentBalance, spinCost, onSpin, animateSpin]);
+    }, [balance, spinCost, onSpin, animateSpin]);
 
     return (
       <div className="flex flex-col items-center gap-6">
