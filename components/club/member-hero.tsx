@@ -2,7 +2,7 @@ import Image from "next/image";
 import { SocialLinks } from "@/components/club/social-links";
 
 interface MemberHeroProps {
-  displayName: string;
+  displayName: string | null;
   greeting: string;
   caption: string;
   coverUrl: string | null;
@@ -31,7 +31,9 @@ export function MemberHero({
   clubName,
   social,
 }: MemberHeroProps) {
-  const resolvedGreeting = greeting.replace("{name}", displayName);
+  const resolvedGreeting = displayName
+    ? greeting.replace("{name}", displayName)
+    : greeting.replace(/,\s*\{name\}/, "").replace("{name}", "");
 
   const hasSocial =
     social &&
@@ -42,10 +44,7 @@ export function MemberHero({
       social.website);
 
   return (
-    <section
-      className="relative h-[260px] w-full overflow-hidden"
-      style={{ paddingTop: "env(safe-area-inset-top)" }}
-    >
+    <section className="relative h-[288px] w-full overflow-hidden">
       {coverUrl ? (
         <Image
           src={coverUrl}
@@ -69,8 +68,12 @@ export function MemberHero({
         }}
       />
 
-      {logoUrl ? (
-        <div className="absolute left-5 top-5">
+      {/* Top row — logo left, social right, respects safe-area-inset-top */}
+      <div
+        className="absolute inset-x-0 top-0 flex items-center justify-between gap-3 px-5"
+        style={{ paddingTop: "calc(env(safe-area-inset-top) + 1rem)" }}
+      >
+        {logoUrl ? (
           <Image
             src={logoUrl}
             alt={`${clubName} logo`}
@@ -78,11 +81,11 @@ export function MemberHero({
             height={44}
             className="h-11 w-11 rounded-[var(--m-radius-sm)] object-cover ring-1 ring-white/30"
           />
-        </div>
-      ) : null}
+        ) : (
+          <span />
+        )}
 
-      {hasSocial ? (
-        <div className="absolute right-5 top-5">
+        {hasSocial ? (
           <SocialLinks
             instagram={social.instagram}
             whatsapp={social.whatsapp}
@@ -91,10 +94,10 @@ export function MemberHero({
             website={social.website}
             variant="light"
           />
-        </div>
-      ) : null}
+        ) : null}
+      </div>
 
-      <div className="absolute inset-x-0 bottom-0 px-5 pb-6">
+      <div className="absolute inset-x-0 bottom-0 px-5 pb-7">
         <p className="m-caption text-white/70">{caption}</p>
         <h1 className="m-display mt-2 text-white">{resolvedGreeting}</h1>
       </div>

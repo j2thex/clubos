@@ -8,7 +8,38 @@ import { useLanguage } from "@/lib/i18n/provider";
 const SpinWheel = dynamic(() => import("@/components/club/spin-wheel"), {
   ssr: false,
   loading: () => (
-    <div className="w-full max-w-[480px] aspect-square mx-auto bg-gray-100 rounded-full animate-pulse" />
+    <div className="mx-auto aspect-square w-full max-w-[480px] animate-pulse">
+      <svg viewBox="0 0 200 200" className="h-full w-full">
+        <defs>
+          <clipPath id="wheel-clip">
+            <circle cx="100" cy="100" r="96" />
+          </clipPath>
+        </defs>
+        <g clipPath="url(#wheel-clip)">
+          {Array.from({ length: 8 }).map((_, i) => {
+            const start = (i * Math.PI) / 4;
+            const end = ((i + 1) * Math.PI) / 4;
+            const x1 = 100 + 96 * Math.cos(start);
+            const y1 = 100 + 96 * Math.sin(start);
+            const x2 = 100 + 96 * Math.cos(end);
+            const y2 = 100 + 96 * Math.sin(end);
+            const d = `M100,100 L${x1},${y1} A96,96 0 0,1 ${x2},${y2} Z`;
+            return (
+              <path
+                key={i}
+                d={d}
+                fill={i % 2 === 0 ? "#e5e7eb" : "#eef0f2"}
+                stroke="#f3f4f6"
+                strokeWidth="0.5"
+              />
+            );
+          })}
+        </g>
+        <circle cx="100" cy="100" r="96" fill="none" stroke="#d1d5db" strokeWidth="2" />
+        <circle cx="100" cy="100" r="18" fill="#d1d5db" />
+        <circle cx="100" cy="100" r="6" fill="#f9fafb" />
+      </svg>
+    </div>
   ),
 });
 
