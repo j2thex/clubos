@@ -31,7 +31,7 @@ export function PublicLoginForm({
   return (
     <form action={handleSubmit} className="space-y-3" style={{ colorScheme: "light" }}>
       {error && (
-        <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
+        <div className="rounded-[var(--m-radius-sm)] border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
           {error}
         </div>
       )}
@@ -43,7 +43,7 @@ export function PublicLoginForm({
         autoCapitalize="characters"
         autoComplete="off"
         placeholder={t("login.memberCodePlaceholder")}
-        className="club-ring block w-full rounded-lg border border-gray-300 px-4 py-3 text-center text-2xl font-mono tracking-[0.2em] uppercase text-gray-900 placeholder:text-gray-400 placeholder:tracking-[0.2em] placeholder:text-base transition"
+        className="club-ring block w-full rounded-[var(--m-radius-sm)] border border-gray-300 px-4 py-3 text-center font-mono text-2xl uppercase tracking-[0.2em] text-gray-900 transition placeholder:text-base placeholder:tracking-[0.2em] placeholder:text-gray-400"
         onChange={(e) => {
           e.target.value = e.target.value.toUpperCase();
         }}
@@ -57,7 +57,7 @@ export function PublicLoginForm({
           inputMode="numeric"
           autoComplete="off"
           placeholder="DDMM"
-          className="club-ring block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-lg font-mono tracking-widest text-gray-900 placeholder:text-gray-400 placeholder:tracking-widest transition"
+          className="club-ring block w-full rounded-[var(--m-radius-sm)] border border-gray-300 px-4 py-2.5 text-center font-mono text-lg tracking-widest text-gray-900 transition placeholder:tracking-widest placeholder:text-gray-400"
           onChange={(e) => {
             e.target.value = e.target.value.replace(/\D/g, "").slice(0, 4);
           }}
@@ -66,7 +66,7 @@ export function PublicLoginForm({
       <button
         type="submit"
         disabled={isPending}
-        className="club-btn w-full rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        className="club-btn w-full rounded-[var(--m-radius-sm)] px-4 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isPending ? t("common.signingIn") : t("common.signIn")}
       </button>
