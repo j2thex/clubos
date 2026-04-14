@@ -97,7 +97,7 @@ export function OfferListClient({
               ? (SUBTYPE_LABELS[subtype]?.es ?? subtype)
               : (SUBTYPE_LABELS[subtype]?.en ?? subtype)}
           </h2>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-2">
             {groups[subtype].map((a) => {
               const displayIcon = a.club_icon || a.icon;
               const isRequested = a.orderable && !!a.order;
@@ -106,11 +106,11 @@ export function OfferListClient({
                   key={a.id}
                   type="button"
                   onClick={() => setSelectedOfferId(a.id)}
-                  className="m-card relative flex min-h-[128px] flex-col overflow-hidden text-left transition-transform active:scale-[0.98]"
+                  className="m-card relative flex min-h-[112px] flex-col overflow-hidden text-left transition-transform active:scale-[0.98]"
                 >
                   {/* Cover image or icon block */}
                   <div
-                    className="relative h-20 w-full"
+                    className="relative h-16 w-full"
                     style={{ background: "var(--m-surface-sunken)" }}
                   >
                     {a.image_url ? (
@@ -161,8 +161,8 @@ export function OfferListClient({
                     )}
                   </div>
                   {/* Text */}
-                  <div className="flex flex-1 flex-col justify-between gap-1 p-2.5">
-                    <p className="line-clamp-2 text-[13px] font-semibold leading-tight text-[color:var(--m-ink)]">
+                  <div className="flex flex-1 flex-col justify-between gap-1 p-2">
+                    <p className="line-clamp-2 text-[11px] font-semibold leading-tight text-[color:var(--m-ink)]">
                       {localized(a.name, a.name_es, locale)}
                     </p>
                     {isRequested && (
