@@ -263,8 +263,8 @@ export async function createMember(
 ) {
   const code = memberCode.trim().toUpperCase();
 
-  if (!code || code.length < 3 || code.length > 8) {
-    return { error: "Member code must be 3-8 characters" };
+  if (!code || code.length < 3 || code.length > 20) {
+    return { error: "Member code must be 3-20 characters" };
   }
   if (!/^[A-Z0-9]+$/.test(code)) {
     return { error: "Member code must be alphanumeric" };
@@ -315,8 +315,8 @@ export async function createStaffMember(
   const code = memberCode.trim().toUpperCase();
   const trimmedPin = pin.trim();
 
-  if (!code || code.length < 3 || code.length > 8) {
-    return { error: "Staff code must be 3-8 characters" };
+  if (!code || code.length < 3 || code.length > 20) {
+    return { error: "Staff code must be 3-20 characters" };
   }
   if (!/^[A-Z0-9]+$/.test(code)) {
     return { error: "Staff code must be alphanumeric" };
