@@ -234,7 +234,10 @@ export function MemberSpinClient({
                         <p className="text-sm font-semibold text-[color:var(--m-ink)]">
                           {prize.outcomeLabel}
                         </p>
-                        <p className="mt-0.5 text-[11px] text-[color:var(--m-ink-muted)]">
+                        <p
+                          className="mt-0.5 text-[11px] text-[color:var(--m-ink-muted)]"
+                          suppressHydrationWarning
+                        >
                           {new Date(prize.createdAt).toLocaleDateString(undefined, {
                             month: "short",
                             day: "numeric",
@@ -328,7 +331,10 @@ export function MemberSpinClient({
                           <p className="text-sm font-semibold text-[color:var(--m-ink)]">
                             {spin.outcomeLabel}
                           </p>
-                          <p className="text-[11px] text-[color:var(--m-ink-muted)]">
+                          <p
+                            className="text-[11px] text-[color:var(--m-ink-muted)]"
+                            suppressHydrationWarning
+                          >
                             {new Date(spin.createdAt).toLocaleDateString(undefined, {
                               month: "short",
                               day: "numeric",
