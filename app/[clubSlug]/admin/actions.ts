@@ -732,6 +732,28 @@ export async function updateQuest(
   return { ok: true };
 }
 
+export async function toggleQuestActive(
+  questId: string,
+  active: boolean,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("quests")
+    .update({ active })
+    .eq("id", questId);
+
+  if (error) return { error: "Failed to update quest" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/quests`);
+  revalidatePath(`/${clubSlug}/bonuses`);
+  revalidatePath(`/${clubSlug}/public`);
+  revalidatePath(`/${clubSlug}/staff`, "layout");
+  return { ok: true };
+}
+
 export async function deleteQuest(
   questId: string,
   clubSlug: string,
