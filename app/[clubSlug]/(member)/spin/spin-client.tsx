@@ -1,48 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition, type ReactNode } from "react";
-import dynamic from "next/dynamic";
+import { useRef, useState, useTransition, type ReactNode } from "react";
+import SpinWheel, { type SpinWheelHandle } from "@/components/club/spin-wheel";
 import { memberSpin, claimSpinPrize } from "./actions";
 import { useLanguage } from "@/lib/i18n/provider";
-
-const SpinWheel = dynamic(() => import("@/components/club/spin-wheel"), {
-  ssr: false,
-  loading: () => (
-    <div className="mx-auto aspect-square w-full max-w-[480px] animate-pulse">
-      <svg viewBox="0 0 200 200" className="h-full w-full">
-        <defs>
-          <clipPath id="wheel-clip">
-            <circle cx="100" cy="100" r="96" />
-          </clipPath>
-        </defs>
-        <g clipPath="url(#wheel-clip)">
-          {Array.from({ length: 8 }).map((_, i) => {
-            const start = (i * Math.PI) / 4;
-            const end = ((i + 1) * Math.PI) / 4;
-            const x1 = 100 + 96 * Math.cos(start);
-            const y1 = 100 + 96 * Math.sin(start);
-            const x2 = 100 + 96 * Math.cos(end);
-            const y2 = 100 + 96 * Math.sin(end);
-            const d = `M100,100 L${x1},${y1} A96,96 0 0,1 ${x2},${y2} Z`;
-            return (
-              <path
-                key={i}
-                d={d}
-                fill={i % 2 === 0 ? "#e5e7eb" : "#eef0f2"}
-                stroke="#f3f4f6"
-                strokeWidth="0.5"
-              />
-            );
-          })}
-        </g>
-        <circle cx="100" cy="100" r="96" fill="none" stroke="#d1d5db" strokeWidth="2" />
-        <circle cx="100" cy="100" r="18" fill="#d1d5db" />
-        <circle cx="100" cy="100" r="6" fill="#f9fafb" />
-      </svg>
-    </div>
-  ),
-});
 
 interface SpinRecord {
   id: string;
@@ -98,58 +60,77 @@ export function MemberSpinClient({
   questsSection?: ReactNode;
 }) {
   const { t } = useLanguage();
+
+  // Freeze the segments reference seen by <SpinWheel> so RSC refreshes
+  // triggered by server actions (which re-run the server page and produce
+  // a fresh segments.map(...) array) don't leak a new reference into the
+  // wheel and cause its init effect to tear down the canvas mid-spin.
+  const stableSegments = useRef(segments).current;
+
   const [currentBalance, setCurrentBalance] = useState(balance);
   const [recentSpins, setRecentSpins] = useState(initialSpins);
   const [pendingPrizes, setPendingPrizes] = useState(initialPending);
   const [claimedIds, setClaimedIds] = useState<Set<string>>(new Set());
   const [claimingId, setClaimingId] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [spinError, setSpinError] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
+  const wheelRef = useRef<SpinWheelHandle>(null);
 
-  async function handleSpin() {
-    const res = await memberSpin(clubSlug);
+  function handleSpinClick() {
+    if (isSpinning || currentBalance < spinCost) return;
+    if (wheelRef.current?.isSpinning()) return;
 
-    if ("error" in res) {
-      return res;
-    }
+    setSpinError(null);
+    setIsSpinning(true);
 
-    // Use the localized segment label for display
-    const localizedLabel = segments[res.segmentIndex]?.label ?? res.outcome.label;
-    const isWin = res.outcome.rewardType !== "nothing" && res.outcome.value > 0;
+    startTransition(async () => {
+      const res = await memberSpin(clubSlug);
 
-    setCurrentBalance(res.newBalance);
+      if ("error" in res) {
+        setSpinError(res.error);
+        setIsSpinning(false);
+        return;
+      }
 
-    const newSpinId = crypto.randomUUID();
+      const localizedLabel = segments[res.segmentIndex]?.label ?? res.outcome.label;
+      const isWin = res.outcome.rewardType !== "nothing" && res.outcome.value > 0;
+      const newSpinId = crypto.randomUUID();
 
-    // Prepend new spin to history
-    setRecentSpins((prev) => [
-      {
-        id: newSpinId,
-        outcomeLabel: localizedLabel,
-        outcomeValue: res.outcome.value,
-        status: isWin ? "pending" : "fulfilled",
-        createdAt: new Date().toISOString(),
-      },
-      ...prev.slice(0, 9),
-    ]);
+      // Kick off the wheel animation imperatively — no prop/callback churn.
+      wheelRef.current?.spin({
+        ...res,
+        outcome: { ...res.outcome, label: localizedLabel },
+      });
 
-    // Add to unclaimed prizes if it's a win
-    if (isWin) {
-      setPendingPrizes((prev) => [
-        {
-          id: newSpinId,
-          outcomeLabel: localizedLabel,
-          outcomeValue: res.outcome.value,
-          createdAt: new Date().toISOString(),
-        },
-        ...prev,
-      ]);
-    }
-
-    // Return with localized label for the wheel result overlay
-    return {
-      ...res,
-      outcome: { ...res.outcome, label: localizedLabel },
-    };
+      // Defer parent state updates until after the ~4s wheel animation
+      // so the balance prop doesn't change mid-spin.
+      setTimeout(() => {
+        setCurrentBalance(res.newBalance);
+        setRecentSpins((prev) => [
+          {
+            id: newSpinId,
+            outcomeLabel: localizedLabel,
+            outcomeValue: res.outcome.value,
+            status: isWin ? "pending" : "fulfilled",
+            createdAt: new Date().toISOString(),
+          },
+          ...prev.slice(0, 9),
+        ]);
+        if (isWin) {
+          setPendingPrizes((prev) => [
+            {
+              id: newSpinId,
+              outcomeLabel: localizedLabel,
+              outcomeValue: res.outcome.value,
+              createdAt: new Date().toISOString(),
+            },
+            ...prev,
+          ]);
+        }
+        setIsSpinning(false);
+      }, 4200);
+    });
   }
 
   function handleClaim(prizeId: string) {
@@ -208,11 +189,30 @@ export function MemberSpinClient({
         {/* Wheel card */}
         <div className="m-card p-2">
           <SpinWheel
-            segments={segments}
+            ref={wheelRef}
+            segments={stableSegments}
             balance={currentBalance}
             spinCost={spinCost}
-            onSpin={handleSpin}
+            hideButton
           />
+          <div className="mt-2 flex flex-col items-center gap-2 pb-2">
+            <button
+              onClick={handleSpinClick}
+              disabled={isSpinning || currentBalance < spinCost}
+              className="club-btn rounded-full px-8 py-3 text-lg font-bold shadow-lg disabled:cursor-not-allowed"
+            >
+              {isSpinning
+                ? "Spinning..."
+                : currentBalance < spinCost
+                  ? "No Spins Left"
+                  : "Spin the Wheel"}
+            </button>
+            {spinError && (
+              <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-center">
+                <p className="text-sm text-red-400">{spinError}</p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Earn more spins → Quests link */}
@@ -241,7 +241,10 @@ export function MemberSpinClient({
                         <p className="text-sm font-semibold text-[color:var(--m-ink)]">
                           {prize.outcomeLabel}
                         </p>
-                        <p className="mt-0.5 text-[11px] text-[color:var(--m-ink-muted)]">
+                        <p
+                          className="mt-0.5 text-[11px] text-[color:var(--m-ink-muted)]"
+                          suppressHydrationWarning
+                        >
                           {new Date(prize.createdAt).toLocaleDateString(undefined, {
                             month: "short",
                             day: "numeric",
@@ -335,7 +338,10 @@ export function MemberSpinClient({
                           <p className="text-sm font-semibold text-[color:var(--m-ink)]">
                             {spin.outcomeLabel}
                           </p>
-                          <p className="text-[11px] text-[color:var(--m-ink-muted)]">
+                          <p
+                            className="text-[11px] text-[color:var(--m-ink-muted)]"
+                            suppressHydrationWarning
+                          >
                             {new Date(spin.createdAt).toLocaleDateString(undefined, {
                               month: "short",
                               day: "numeric",

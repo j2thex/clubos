@@ -41,15 +41,21 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
     const [result, setResult] = useState<SpinResult["outcome"] | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-      setCurrentBalance(balance);
-      setResult(null);
-      setError(null);
-    }, [balance]);
-
     const containerRef = useRef<HTMLDivElement>(null);
     const wheelRef = useRef<import("spin-wheel").Wheel | null>(null);
     const spinningRef = useRef(false);
+    // Segment config is captured on mount. Server actions trigger RSC refreshes
+    // that re-pass a fresh segments array; we intentionally ignore those to
+    // keep the canvas alive. Callers that need new segments must remount via key.
+    const segmentsRef = useRef(segments);
+
+    useEffect(() => {
+      // Sync balance only — do NOT clear result/error here. The parent
+      // updates balance ~200ms AFTER the spin animation ends, and we must
+      // not wipe the just-rendered result badge. The badge is dismissed
+      // by user click or by the next spin starting (animateSpin clears it).
+      setCurrentBalance(balance);
+    }, [balance]);
 
     useEffect(() => {
       let mounted = true;
@@ -61,7 +67,7 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
 
         if (!mounted || !containerRef.current) return;
 
-        const items = segments.map((seg) => ({
+        const items = segmentsRef.current.map((seg) => ({
           label: seg.label.toUpperCase(),
           backgroundColor: seg.color,
           labelColor: seg.labelColor ?? "#ffffff",
@@ -112,7 +118,7 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
         wheelRef.current?.remove();
         wheelRef.current = null;
       };
-    }, [segments]);
+    }, []);
 
     const fireConfetti = useCallback(() => {
       confetti({
@@ -155,7 +161,7 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
     }), [animateSpin]);
 
     const handleSpin = useCallback(async () => {
-      if (spinningRef.current || currentBalance < spinCost || !wheelRef.current || !onSpin) return;
+      if (spinningRef.current || balance < spinCost || !wheelRef.current || !onSpin) return;
 
       spinningRef.current = true;
       setSpinning(true);
@@ -172,7 +178,7 @@ const SpinWheel = forwardRef<SpinWheelHandle, SpinWheelProps>(
       }
 
       animateSpin(res as SpinResult);
-    }, [currentBalance, spinCost, onSpin, animateSpin]);
+    }, [balance, spinCost, onSpin, animateSpin]);
 
     return (
       <div className="flex flex-col items-center gap-6">

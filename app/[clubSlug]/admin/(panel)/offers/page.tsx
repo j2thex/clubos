@@ -28,6 +28,7 @@ export default async function OffersPage({
     supabase
       .from("offer_catalog")
       .select("id, name, name_es, subtype, icon")
+      .eq("is_approved", true)
       .order("name", { ascending: true }),
     supabase
       .from("club_offers")
