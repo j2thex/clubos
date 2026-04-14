@@ -1,13 +1,17 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { createUnclaimedClub, createClubFromGoogleMaps, approveCustomOffer, approveClub, rejectClub, loginAsClubAdmin, setupStandardContent, bulkImportQuests } from "./actions";
+import { createUnclaimedClub, createClubFromGoogleMaps, approveCustomOffer, approveClub, rejectClub, setClubVisibility, loginAsClubAdmin, setupStandardContent, bulkImportQuests } from "./actions";
+
+type ClubVisibility = "public" | "unlisted" | "private";
 
 interface ClubInfo {
   id: string;
   name: string;
   slug: string;
   approved: boolean;
+  visibility: ClubVisibility;
+  requestedVisibility: ClubVisibility;
   claimed: boolean;
   inviteOnly: boolean;
   logoUrl: string | null;
@@ -412,13 +416,46 @@ export function PlatformAdminClient({
                           <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-300">Live</span>
                         )}
                         {c.inviteOnly && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300">invite-only</span>}
+                        <span
+                          className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                            c.visibility === "public"
+                              ? "bg-blue-500/20 text-blue-300"
+                              : c.visibility === "unlisted"
+                                ? "bg-orange-500/20 text-orange-300"
+                                : "bg-red-500/20 text-red-300"
+                          }`}
+                        >
+                          {c.visibility}
+                        </span>
+                        {c.requestedVisibility !== c.visibility && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300">
+                            req: {c.requestedVisibility}
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="text-right px-3 py-3">
-                      <div className="flex gap-1 justify-end">
+                      <div className="flex gap-1 justify-end items-center">
+                        <select
+                          value={c.visibility}
+                          disabled={isPending}
+                          onChange={(e) => {
+                            const next = e.target.value as ClubVisibility;
+                            startTransition(async () => {
+                              const res = await setClubVisibility(c.id, next);
+                              if ("error" in res) setError(res.error);
+                            });
+                          }}
+                          className="text-[10px] bg-landing-surface-hover text-landing-text rounded px-1 py-0.5 border border-landing-border"
+                          title="Force visibility"
+                        >
+                          <option value="public">public</option>
+                          <option value="unlisted">unlisted</option>
+                          <option value="private">private</option>
+                        </select>
                         {!c.approved ? (
                           <button
-                            onClick={() => startTransition(async () => { await approveClub(c.id); })}
+                            onClick={() => startTransition(async () => { await approveClub(c.id, c.requestedVisibility); })}
                             disabled={isPending}
                             className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-50 transition-colors"
                           >

@@ -59,7 +59,7 @@ export default async function PlatformAdminPage({
     // All clubs with branding
     supabase
       .from("clubs")
-      .select("id, name, slug, active, approved, claimed, invite_only, created_at, club_branding(logo_url, primary_color), club_owner_clubs(club_owners(email))")
+      .select("id, name, slug, active, approved, visibility, requested_visibility, claimed, invite_only, created_at, club_branding(logo_url, primary_color), club_owner_clubs(club_owners(email))")
       .order("created_at", { ascending: false }),
     // Recent activity
     supabase
@@ -148,6 +148,8 @@ export default async function PlatformAdminPage({
       name: c.name,
       slug: c.slug,
       approved: c.approved ?? true,
+      visibility: (c.visibility ?? "public") as "public" | "unlisted" | "private",
+      requestedVisibility: (c.requested_visibility ?? "public") as "public" | "unlisted" | "private",
       claimed: c.claimed,
       inviteOnly: c.invite_only,
       logoUrl: branding?.logo_url ?? null,

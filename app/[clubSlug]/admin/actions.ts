@@ -51,6 +51,56 @@ export async function toggleSpinEnabled(
   return { ok: true };
 }
 
+export type ClubVisibility = "public" | "unlisted" | "private";
+
+const VISIBILITY_RANK: Record<ClubVisibility, number> = {
+  public: 0,
+  unlisted: 1,
+  private: 2,
+};
+
+export async function updateClubVisibility(
+  clubId: string,
+  next: ClubVisibility,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true; applied: ClubVisibility; pending: boolean }> {
+  if (next !== "public" && next !== "unlisted" && next !== "private") {
+    return { error: "Invalid visibility" };
+  }
+
+  const supabase = createAdminClient();
+
+  const { data: current, error: loadError } = await supabase
+    .from("clubs")
+    .select("visibility")
+    .eq("id", clubId)
+    .single();
+
+  if (loadError || !current) return { error: "Club not found" };
+
+  const currentVis = (current.visibility ?? "public") as ClubVisibility;
+
+  // Same-or-more-private: auto-apply. More public: request pending tower admin approval.
+  const isMoreOrEqualPrivate = VISIBILITY_RANK[next] >= VISIBILITY_RANK[currentVis];
+
+  const update = isMoreOrEqualPrivate
+    ? { visibility: next, requested_visibility: next }
+    : { requested_visibility: next };
+
+  const { error } = await supabase.from("clubs").update(update).eq("id", clubId);
+  if (error) return { error: "Failed to update visibility" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/public`);
+  revalidatePath("/");
+  revalidatePath("/discover");
+  return {
+    ok: true,
+    applied: isMoreOrEqualPrivate ? next : currentVis,
+    pending: !isMoreOrEqualPrivate,
+  };
+}
+
 export async function updateInviteOnly(
   clubId: string,
   inviteOnly: boolean,

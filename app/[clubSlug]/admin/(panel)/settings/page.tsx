@@ -1,6 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { LoginModeManager } from "../../login-mode-manager";
+import { VisibilityManager } from "../../visibility-manager";
+import type { ClubVisibility } from "../../actions";
 import { RoleManager } from "../../role-manager";
 import { MembershipPeriodManager } from "../../membership-period-manager";
 import { BrandingManager } from "../../branding-manager";
@@ -28,7 +30,7 @@ export default async function SettingsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, login_mode, invite_only, invite_mode, hide_member_login, preregistration_enabled, auto_registration, tags, telegram_bot_token, telegram_chat_id, notification_secret, latitude, longitude, address, city, country, spin_enabled, working_hours, spin_display_decimals, spin_cost, telegram_bot_enabled, telegram_bot_referral_name, telegram_bot_registration_price, telegram_bot_welcome_message, telegram_bot_keywords, telegram_bot_age_restricted")
+    .select("id, login_mode, invite_only, invite_mode, hide_member_login, preregistration_enabled, auto_registration, tags, visibility, requested_visibility, telegram_bot_token, telegram_chat_id, notification_secret, latitude, longitude, address, city, country, spin_enabled, working_hours, spin_display_decimals, spin_cost, telegram_bot_enabled, telegram_bot_referral_name, telegram_bot_registration_price, telegram_bot_welcome_message, telegram_bot_keywords, telegram_bot_age_restricted")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -124,6 +126,12 @@ export default async function SettingsPage({
       <CollapsibleSection title="QR Codes">
         <QrCodesManager clubSlug={clubSlug} />
       </CollapsibleSection>
+      <VisibilityManager
+        visibility={(club.visibility ?? "public") as ClubVisibility}
+        requestedVisibility={(club.requested_visibility ?? "public") as ClubVisibility}
+        clubId={club.id}
+        clubSlug={clubSlug}
+      />
       <LoginModeManager
         loginMode={club.login_mode ?? "code_only"}
         inviteOnly={club.invite_only ?? false}
