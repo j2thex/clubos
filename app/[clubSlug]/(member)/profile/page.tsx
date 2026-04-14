@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getMemberFromCookie } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logout } from "./actions";
-import { MemberQrCard } from "@/components/club/member-qr-card";
+import { MemberIdCard } from "@/components/club/member-id-card";
 import { EmailField } from "./email-field";
 import { BentoStatTile } from "@/components/club/bento-stat-tile";
 import { BadgeCollection } from "../badge-collection";
@@ -167,22 +167,20 @@ export default async function ProfilePage({
           />
           <div className="relative flex flex-col gap-4 p-5 pb-6 text-white">
             <div>
-              <p className="m-caption text-white/60">
+              <p
+                className="text-[11px] font-semibold uppercase leading-none text-white/85"
+                style={{ letterSpacing: "0.08em" }}
+              >
                 {t(locale, "profile.memberSince")} · {memberSince.toUpperCase()}
               </p>
               <h2 className="m-display mt-2 text-white">{fullName || "Member"}</h2>
-              <p className="mt-1 font-mono text-xs uppercase tracking-[0.1em] text-white/70">
-                {memberCode}
-              </p>
             </div>
-            <div
-              className="flex items-center justify-center rounded-[var(--m-radius-sm)] p-4"
-              style={{ background: "rgba(255,255,255,0.95)" }}
-            >
-              <MemberQrCard memberCode={memberCode} />
-            </div>
+            <MemberIdCard memberCode={memberCode} />
             <div className="flex items-center justify-between">
-              <span className="m-caption text-white/60">
+              <span
+                className="text-[11px] font-semibold uppercase leading-none text-white/85"
+                style={{ letterSpacing: "0.08em" }}
+              >
                 {t(locale, "profile.validTill")}
               </span>
               <span className={`text-sm font-semibold ${validity.className} text-white`}>
