@@ -10,28 +10,45 @@ interface LanguageSwitcherProps {
 export function LanguageSwitcher({ variant = "light" }: LanguageSwitcherProps) {
   const { locale, setLocale } = useLanguage();
 
-  const baseStyles = "text-xs font-medium px-2 py-1 rounded-md transition-colors";
-  const activeLight = "bg-white/20 text-white";
-  const inactiveLight = "text-gray-400 hover:text-white";
-  const activeDark = "bg-gray-200 text-gray-900";
-  const inactiveDark = "text-gray-400 hover:text-gray-600";
-  const activeAuto = "bg-landing-surface-hover text-landing-text";
-  const inactiveAuto = "text-landing-text-tertiary hover:text-landing-text";
+  const containerStyles =
+    variant === "auto"
+      ? "bg-landing-surface border border-landing-border-subtle shadow-sm"
+      : variant === "light"
+      ? "bg-white/95 border border-gray-200 shadow-sm backdrop-blur"
+      : "bg-white border border-gray-200 shadow-sm";
 
-  const active = variant === "auto" ? activeAuto : variant === "light" ? activeLight : activeDark;
-  const inactive = variant === "auto" ? inactiveAuto : variant === "light" ? inactiveLight : inactiveDark;
+  const activeStyles =
+    variant === "auto"
+      ? "bg-landing-text text-landing-surface shadow-sm"
+      : "bg-gray-900 text-white shadow-sm";
+
+  const inactiveStyles =
+    variant === "auto"
+      ? "text-landing-text-tertiary hover:text-landing-text"
+      : "text-gray-500 hover:text-gray-900";
+
+  const buttonBase =
+    "min-w-[2.25rem] px-3 py-1 text-xs font-semibold tracking-wide rounded-full transition-colors";
 
   return (
-    <div className={`flex items-center gap-0.5 rounded-lg border p-0.5 ${variant === "auto" ? "border-landing-border-subtle" : "border-gray-600/30"}`}>
+    <div
+      className={`inline-flex items-center gap-1 rounded-full p-1 ${containerStyles}`}
+      role="group"
+      aria-label="Language"
+    >
       <button
+        type="button"
+        aria-pressed={locale === "en"}
         onClick={() => setLocale("en")}
-        className={`${baseStyles} ${locale === "en" ? active : inactive}`}
+        className={`${buttonBase} ${locale === "en" ? activeStyles : inactiveStyles}`}
       >
         EN
       </button>
       <button
+        type="button"
+        aria-pressed={locale === "es"}
         onClick={() => setLocale("es")}
-        className={`${baseStyles} ${locale === "es" ? active : inactive}`}
+        className={`${buttonBase} ${locale === "es" ? activeStyles : inactiveStyles}`}
       >
         ES
       </button>
