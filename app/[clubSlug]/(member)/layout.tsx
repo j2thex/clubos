@@ -15,7 +15,16 @@ export async function generateMetadata({
 
   return {
     title: club ? `Member | ${club.name}` : "Member Portal",
-    icons: { icon: "/favicon-member.svg" },
+    manifest: `/${clubSlug}/manifest.webmanifest`,
+    appleWebApp: {
+      capable: true,
+      title: club?.name ?? "Member Portal",
+      statusBarStyle: "default",
+    },
+    icons: {
+      icon: "/favicon-member.svg",
+      apple: [{ url: `/${clubSlug}/icon.png`, sizes: "180x180" }],
+    },
   };
 }
 
