@@ -30,19 +30,40 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || "/";
+  const rawUrl = (event.notification.data && event.notification.data.url) || "/";
+  // Resolve against the SW scope so relative paths become absolute same-origin URLs.
+  let target;
+  try {
+    target = new URL(rawUrl, self.registration.scope).href;
+  } catch {
+    target = self.registration.scope;
+  }
   event.waitUntil(
     (async () => {
-      const clients = await self.clients.matchAll({
+      const allClients = await self.clients.matchAll({
         type: "window",
         includeUncontrolled: true,
       });
-      for (const client of clients) {
-        if (client.url.includes(url) && "focus" in client) {
-          return client.focus();
+      const sameOrigin = allClients.filter((c) => {
+        try {
+          return new URL(c.url).origin === new URL(target).origin;
+        } catch {
+          return false;
         }
+      });
+      if (sameOrigin.length > 0) {
+        const client = sameOrigin[0];
+        try {
+          if ("navigate" in client) {
+            await client.navigate(target);
+          }
+        } catch {
+          // navigate can throw if the client is cross-origin or in a bad state;
+          // fall through to focus so the user at least sees the PWA.
+        }
+        if ("focus" in client) return client.focus();
       }
-      return self.clients.openWindow(url);
+      return self.clients.openWindow(target);
     })(),
   );
 });

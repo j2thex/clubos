@@ -74,7 +74,7 @@ export function PushForm({ clubSlug }: { clubSlug: string }) {
 
       <div>
         <label htmlFor="push-url" className="block text-sm font-medium text-gray-700 mb-1">
-          Link (optional)
+          Link (optional — path on this site)
         </label>
         <input
           id="push-url"
