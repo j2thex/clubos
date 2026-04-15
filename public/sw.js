@@ -1,4 +1,4 @@
-/* ClubOS service worker — web push */
+/* ClubOS service worker — web push (v3 2026-04-15) */
 
 self.addEventListener("install", () => {
   self.skipWaiting();
@@ -30,40 +30,13 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const rawUrl = (event.notification.data && event.notification.data.url) || "/";
-  // Resolve against the SW scope so relative paths become absolute same-origin URLs.
+  const rawUrl =
+    (event.notification.data && event.notification.data.url) || "/";
   let target;
   try {
     target = new URL(rawUrl, self.registration.scope).href;
   } catch {
     target = self.registration.scope;
   }
-  event.waitUntil(
-    (async () => {
-      const allClients = await self.clients.matchAll({
-        type: "window",
-        includeUncontrolled: true,
-      });
-      const sameOrigin = allClients.filter((c) => {
-        try {
-          return new URL(c.url).origin === new URL(target).origin;
-        } catch {
-          return false;
-        }
-      });
-      if (sameOrigin.length > 0) {
-        const client = sameOrigin[0];
-        try {
-          if ("navigate" in client) {
-            await client.navigate(target);
-          }
-        } catch {
-          // navigate can throw if the client is cross-origin or in a bad state;
-          // fall through to focus so the user at least sees the PWA.
-        }
-        if ("focus" in client) return client.focus();
-      }
-      return self.clients.openWindow(target);
-    })(),
-  );
+  event.waitUntil(self.clients.openWindow(target));
 });
