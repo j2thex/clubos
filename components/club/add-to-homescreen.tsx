@@ -93,6 +93,7 @@ export function AddToHomescreen({ clubSlug }: { clubSlug: string }) {
         return;
       }
       const result = await savePushSubscription({
+        clubSlug,
         endpoint: json.endpoint,
         keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
         userAgent: navigator.userAgent,
