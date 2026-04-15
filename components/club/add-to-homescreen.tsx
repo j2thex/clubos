@@ -1,48 +1,60 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Share } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/provider";
 
-export function AddToHomescreen() {
+// Set to `true` during QA: banner shows on every member-home load, ignoring
+// the once-only flag. Flip to `false` in a follow-up one-line PR once Mikita
+// signs off on staging.
+const A2HS_TEST_MODE = true;
+
+export function AddToHomescreen({ clubSlug }: { clubSlug: string }) {
   const [show, setShow] = useState(false);
-  const [platform, setPlatform] = useState<"ios" | "android" | null>(null);
   const { t } = useLanguage();
 
   useEffect(() => {
-    // Don't show if already dismissed or if running in standalone mode
-    if (localStorage.getItem("clubos-a2hs-dismissed")) return;
+    // Already installed → never show
     if (window.matchMedia("(display-mode: standalone)").matches) return;
-    if ((navigator as any).standalone) return; // iOS standalone check
+    // iOS-specific standalone flag (Safari sets this on home-screen launches)
+    if ((navigator as unknown as { standalone?: boolean }).standalone) return;
 
+    // iOS only — Android gets its own install prompt flow (future work)
     const ua = navigator.userAgent;
-    if (/iPhone|iPad|iPod/.test(ua)) {
-      setPlatform("ios");
+    const isIOS = /iPhone|iPad|iPod/.test(ua);
+    if (!isIOS) return;
+
+    if (A2HS_TEST_MODE) {
       setShow(true);
-    } else if (/Android/.test(ua)) {
-      setPlatform("android");
-      setShow(true);
+      return;
     }
-  }, []);
+
+    // Production: show once per club per device. Record the sighting
+    // immediately on mount so navigating away counts as "seen".
+    const key = `clubos-a2hs-${clubSlug}-seen`;
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, "1");
+    setShow(true);
+  }, [clubSlug]);
 
   function dismiss() {
-    localStorage.setItem("clubos-a2hs-dismissed", "1");
     setShow(false);
   }
 
   if (!show) return null;
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-4 flex items-start gap-3">
+    <div className="bg-white rounded-2xl shadow-lg p-4 flex items-start gap-3 relative overflow-hidden">
       <div className="shrink-0 w-9 h-9 rounded-full club-tint-bg flex items-center justify-center mt-0.5">
-        <svg className="w-5 h-5 club-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-        </svg>
+        <Share className="w-5 h-5 club-primary" strokeWidth={2} />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-gray-900">{t("a2hs.title")}</p>
-        <p className="text-xs text-gray-500 mt-0.5">
-          {platform === "ios" ? t("a2hs.ios") : t("a2hs.android")}
-        </p>
+        <p className="text-xs text-gray-500 mt-0.5">{t("a2hs.ios")}</p>
+        <div className="mt-2 flex items-center gap-1.5 text-[11px] font-medium club-primary">
+          <Share className="w-3.5 h-3.5 animate-a2hs-bounce" strokeWidth={2.5} />
+          <span className="animate-a2hs-bounce">↓</span>
+        </div>
       </div>
       <button
         onClick={dismiss}
