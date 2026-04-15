@@ -36,6 +36,33 @@ export async function sendTestPush(input: {
   if (url.length > MAX_URL)
     return { ok: false, error: `Link must be ${MAX_URL} characters or fewer` };
 
+  // Only same-origin links are supported. iOS standalone PWAs block cross-origin
+  // navigation from push taps, so an external URL silently fails to open.
+  if (url) {
+    if (url.startsWith("/")) {
+      // relative path — fine
+    } else if (/^https?:\/\//i.test(url)) {
+      try {
+        const parsed = new URL(url);
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://osocios.club";
+        const expectedHost = new URL(siteUrl).host;
+        if (parsed.host !== expectedHost) {
+          return {
+            ok: false,
+            error: "Link must be a path on this site (e.g. /events/123)",
+          };
+        }
+      } catch {
+        return { ok: false, error: "Invalid link" };
+      }
+    } else {
+      return {
+        ok: false,
+        error: "Link must start with / (e.g. /events/123)",
+      };
+    }
+  }
+
   // Resolve the club from the URL slug, NOT from the owner cookie's club_id.
   // The middleware doesn't enforce that the cookie's club matches the URL,
   // so cross-tenant cookies must not be trusted for tenancy decisions.
