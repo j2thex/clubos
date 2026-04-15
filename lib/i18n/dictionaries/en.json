@@ -882,7 +882,7 @@
   "contact.formSubmit": "Send message",
   "contact.formSending": "Sending…",
   "contact.formSuccess": "Thanks — we'll be in touch soon.",
-  "contact.formError": "Something went wrong. Please try WhatsApp instead.",
+  "contact.formError": "Something went wrong. Please try again.",
   "contact.location": "Based in Barcelona",
 
   "adminSetup.title": "Finish setting up your club",

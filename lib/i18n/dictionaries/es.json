@@ -882,7 +882,7 @@
   "contact.formSubmit": "Enviar mensaje",
   "contact.formSending": "Enviando…",
   "contact.formSuccess": "Gracias — nos pondremos en contacto pronto.",
-  "contact.formError": "Algo salió mal. Por favor intenta por WhatsApp.",
+  "contact.formError": "Algo salió mal. Por favor inténtalo de nuevo.",
   "contact.location": "Con base en Barcelona",
 
   "adminSetup.title": "Termina de configurar tu club",
