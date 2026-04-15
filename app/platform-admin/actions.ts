@@ -245,19 +245,56 @@ export async function approveCustomOffer(
   return { ok: true };
 }
 
+type ClubVisibility = "public" | "unlisted" | "private";
+
 export async function approveClub(
   clubId: string,
+  visibility: ClubVisibility = "public",
 ): Promise<{ error: string } | { ok: true }> {
+  if (visibility !== "public" && visibility !== "unlisted" && visibility !== "private") {
+    return { error: "Invalid visibility" };
+  }
+
   const supabase = createAdminClient();
 
   const { error } = await supabase
     .from("clubs")
-    .update({ approved: true, active: true })
+    .update({
+      approved: true,
+      active: true,
+      visibility,
+      requested_visibility: visibility,
+    })
     .eq("id", clubId);
 
   if (error) return { error: "Failed to approve club" };
 
   revalidatePath("/platform-admin");
+  revalidatePath("/");
+  revalidatePath("/discover");
+  return { ok: true };
+}
+
+export async function setClubVisibility(
+  clubId: string,
+  visibility: ClubVisibility,
+): Promise<{ error: string } | { ok: true }> {
+  if (visibility !== "public" && visibility !== "unlisted" && visibility !== "private") {
+    return { error: "Invalid visibility" };
+  }
+
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ visibility, requested_visibility: visibility })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to set visibility" };
+
+  revalidatePath("/platform-admin");
+  revalidatePath("/");
+  revalidatePath("/discover");
   return { ok: true };
 }
 

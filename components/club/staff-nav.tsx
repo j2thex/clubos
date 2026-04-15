@@ -6,15 +6,16 @@ import { useLanguage } from "@/lib/i18n/provider";
 
 interface StaffNavProps {
   clubSlug: string;
+  spinEnabled: boolean;
 }
 
 const navItems = [
   {
-    labelKey: "nav.spin",
+    labelKey: "nav.bonuses",
     path: "",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z" />
       </svg>
     ),
   },
@@ -65,7 +66,7 @@ const navItems = [
   },
 ];
 
-export function StaffNav({ clubSlug }: StaffNavProps) {
+export function StaffNav({ clubSlug, spinEnabled }: StaffNavProps) {
   const pathname = usePathname();
   const { t } = useLanguage();
   const basePath = `/${clubSlug}/staff`;
@@ -74,10 +75,14 @@ export function StaffNav({ clubSlug }: StaffNavProps) {
     return null;
   }
 
+  const visibleItems = spinEnabled
+    ? navItems
+    : navItems.filter((item) => item.labelKey !== "nav.bonuses");
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.08)]">
       <div className="mx-auto flex max-w-md items-center justify-around pb-2 pt-2">
-        {navItems.map((item) => {
+        {visibleItems.map((item) => {
           const href = `${basePath}${item.path}`;
           const isActive =
             item.path === ""

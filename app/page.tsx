@@ -31,7 +31,7 @@ async function getClubs(): Promise<(DiscoverClub & { cover_url: string | null })
     const { data } = await supabase
       .from("clubs")
       .select("id, name, slug, latitude, longitude, address, city, country, tags, club_branding(logo_url, cover_url, primary_color)")
-      .eq("active", true).eq("approved", true)
+      .eq("active", true).eq("approved", true).eq("visibility", "public")
       .order("created_at", { ascending: false });
 
     return (data ?? []).map((c) => {

@@ -52,7 +52,13 @@ export async function middleware(request: NextRequest) {
   const clubSlug = segments[0];
 
   // Skip static files and API routes
-  if (clubSlug.startsWith("_next") || clubSlug.startsWith("api") || clubSlug === "favicon.ico") {
+  if (
+    clubSlug.startsWith("_next") ||
+    clubSlug.startsWith("api") ||
+    clubSlug === "favicon.ico" ||
+    clubSlug === "a2hs" ||
+    clubSlug === "sw.js"
+  ) {
     return applyLocale(request, NextResponse.next());
   }
 
@@ -88,6 +94,12 @@ export async function middleware(request: NextRequest) {
 
   // Public club profile is public
   if (clubPath.startsWith("/public")) {
+    return applyLocale(request, NextResponse.next());
+  }
+
+  // Per-club PWA manifest and apple-touch-icon must be fetchable by iOS
+  // without a member cookie — iOS fetches them anonymously during A2HS.
+  if (clubPath === "/manifest.webmanifest" || clubPath.startsWith("/icon.png")) {
     return applyLocale(request, NextResponse.next());
   }
 

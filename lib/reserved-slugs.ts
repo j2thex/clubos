@@ -1,5 +1,6 @@
 export const RESERVED_SLUGS = new Set<string>([
   "_next",
+  "a2hs",
   "about",
   "admin",
   "api",

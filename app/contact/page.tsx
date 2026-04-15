@@ -18,10 +18,8 @@ export default async function ContactPage() {
   const tr = (key: string, params?: Record<string, string | number>) =>
     t(locale, key, params);
 
-  const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "";
-  const whatsappHref = whatsapp
-    ? `https://wa.me/${whatsapp}?text=${encodeURIComponent("Hola osocios.club!")}`
-    : "#";
+  const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "34607804509";
+  const whatsappHref = `https://wa.me/${whatsapp}?text=${encodeURIComponent("Hola osocios.club!")}`;
 
   return (
     <div className="min-h-screen landing-dark">

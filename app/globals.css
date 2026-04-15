@@ -219,6 +219,28 @@
   --sidebar-ring: oklch(0.65 0.19 150);
 }
 
+/* Force light theme on platform/onboarding flow regardless of html.dark */
+.platform-light {
+  --background: oklch(0.98 0.005 150);
+  --foreground: oklch(0.18 0.05 150);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.05 150);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.05 150);
+  --primary: oklch(0.55 0.17 150);
+  --primary-foreground: oklch(0.98 0.01 150);
+  --secondary: oklch(0.94 0.03 150);
+  --secondary-foreground: oklch(0.22 0.06 150);
+  --muted: oklch(0.95 0.02 150);
+  --muted-foreground: oklch(0.45 0.05 150);
+  --accent: oklch(0.92 0.04 150);
+  --accent-foreground: oklch(0.22 0.06 150);
+  --border: oklch(0.90 0.03 150);
+  --input: oklch(0.90 0.03 150);
+  --ring: oklch(0.55 0.17 150);
+  color-scheme: light;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -423,4 +445,11 @@
 @keyframes age-gate-wisp-3 {
   0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.10; }
   50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.18; }
+}
+@keyframes a2hs-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(4px); }
+}
+.animate-a2hs-bounce {
+  animation: a2hs-bounce 1.4s ease-in-out infinite;
 }

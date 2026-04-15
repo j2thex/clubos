@@ -1,6 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { LoginModeManager } from "../../login-mode-manager";
+import { VisibilityManager } from "../../visibility-manager";
+import type { ClubVisibility } from "../../actions";
 import { RoleManager } from "../../role-manager";
 import { MembershipPeriodManager } from "../../membership-period-manager";
 import { BrandingManager } from "../../branding-manager";
@@ -13,6 +15,7 @@ import { TagManager } from "../../tag-manager";
 import { LocationManager } from "../../location-manager";
 import { WorkingHoursManager } from "../../working-hours-manager";
 import { CollapsibleSection } from "@/components/collapsible-section";
+import Link from "next/link";
 import { EmailCampaignManager } from "../../email-campaign-manager";
 import { getCampaignHistory, getEmailStats } from "../../email-actions";
 import { getOwnerFromCookie } from "@/lib/auth";
@@ -28,7 +31,7 @@ export default async function SettingsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, login_mode, invite_only, invite_mode, hide_member_login, preregistration_enabled, auto_registration, tags, telegram_bot_token, telegram_chat_id, notification_secret, latitude, longitude, address, city, country, spin_enabled, working_hours, spin_display_decimals, spin_cost, telegram_bot_enabled, telegram_bot_referral_name, telegram_bot_registration_price, telegram_bot_welcome_message, telegram_bot_keywords, telegram_bot_age_restricted")
+    .select("id, login_mode, invite_only, invite_mode, hide_member_login, preregistration_enabled, auto_registration, tags, visibility, requested_visibility, telegram_bot_token, telegram_chat_id, notification_secret, latitude, longitude, address, city, country, spin_enabled, working_hours, spin_display_decimals, spin_cost, telegram_bot_enabled, telegram_bot_referral_name, telegram_bot_registration_price, telegram_bot_welcome_message, telegram_bot_keywords, telegram_bot_age_restricted")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -124,6 +127,12 @@ export default async function SettingsPage({
       <CollapsibleSection title="QR Codes">
         <QrCodesManager clubSlug={clubSlug} />
       </CollapsibleSection>
+      <VisibilityManager
+        visibility={(club.visibility ?? "public") as ClubVisibility}
+        requestedVisibility={(club.requested_visibility ?? "public") as ClubVisibility}
+        clubId={club.id}
+        clubSlug={clubSlug}
+      />
       <LoginModeManager
         loginMode={club.login_mode ?? "code_only"}
         inviteOnly={club.invite_only ?? false}
@@ -209,6 +218,17 @@ export default async function SettingsPage({
           clubSlug={clubSlug}
           currentSecret={club.notification_secret ?? null}
         />
+      </CollapsibleSection>
+      <CollapsibleSection title="Push Notifications">
+        <Link
+          href={`/${clubSlug}/admin/push`}
+          className="block rounded-lg border border-gray-200 bg-white p-4 hover:border-gray-300 transition-colors"
+        >
+          <h3 className="text-sm font-semibold text-gray-900">Send a test push</h3>
+          <p className="mt-1 text-xs text-gray-500">
+            Compose a title, body, and optional link. Sends to all members who have subscribed on this club.
+          </p>
+        </Link>
       </CollapsibleSection>
       <CollapsibleSection id="spin-wheel" title="Spin Wheel">
         <WheelManager

@@ -27,7 +27,7 @@ export default async function StaffOffersPage({
   const { data: offers } = await supabase
     .from("club_offers")
     .select(
-      "id, orderable, price, description, description_es, image_url, icon, offer_catalog(id, name, name_es, subtype, icon)",
+      "id, orderable, price, description, description_es, image_url, icon, link, offer_catalog(id, name, name_es, subtype, icon)",
     )
     .eq("club_id", club.id)
     .eq("orderable", true)
@@ -47,6 +47,7 @@ export default async function StaffOffersPage({
       description: a.description ?? null,
       description_es: a.description_es ?? null,
       image_url: a.image_url ?? null,
+      link: a.link ?? null,
       orderable: a.orderable ?? false,
       price: a.price != null ? Number(a.price) : null,
     };

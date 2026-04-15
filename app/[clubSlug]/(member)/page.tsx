@@ -5,6 +5,7 @@ import { QuestList } from "./quest-list";
 import { PhotoGallery } from "@/components/club/photo-gallery";
 import { MemberHero } from "@/components/club/member-hero";
 import { BentoStatTile } from "@/components/club/bento-stat-tile";
+import { AddToHomescreen } from "@/components/club/add-to-homescreen";
 import { t, type Locale } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 
@@ -178,6 +179,9 @@ export default async function QuestsLanding({
       />
 
       <div className="relative z-10 mx-auto -mt-6 max-w-md px-5">
+        <div className="mb-4">
+          <AddToHomescreen clubSlug={clubSlug} />
+        </div>
         {/* Bento stat strip — one row, next event double-wide + membership single-wide */}
         <div className="grid grid-cols-3 gap-3">
           <BentoStatTile

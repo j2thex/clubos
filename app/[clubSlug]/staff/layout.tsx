@@ -18,7 +18,10 @@ export async function generateMetadata({
 
   return {
     title: club ? `Staff | ${club.name}` : "Staff Console",
-    icons: { icon: "/favicon-staff.svg" },
+    icons: {
+      icon: "/favicon-staff.svg",
+      apple: [{ url: `/${clubSlug}/icon.png`, sizes: "180x180" }],
+    },
   };
 }
 
@@ -33,7 +36,7 @@ export default async function StaffLayout({
   const supabase = createAdminClient();
   const { data: club } = await supabase
     .from("clubs")
-    .select("name, approved")
+    .select("name, approved, spin_enabled")
     .eq("slug", clubSlug)
     .single();
 
@@ -44,7 +47,7 @@ export default async function StaffLayout({
   return (
     <div className="pb-20">
       {children}
-      <StaffNav clubSlug={clubSlug} />
+      <StaffNav clubSlug={clubSlug} spinEnabled={club?.spin_enabled ?? false} />
     </div>
   );
 }
