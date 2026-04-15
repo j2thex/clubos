@@ -22,7 +22,10 @@ export async function generateMetadata({
 
   return {
     title: club ? `Admin | ${club.name}` : "Club Admin",
-    icons: { icon: "/favicon-admin.svg" },
+    icons: {
+      icon: "/favicon-admin.svg",
+      apple: [{ url: `/${clubSlug}/icon.png`, sizes: "180x180" }],
+    },
   };
 }
 

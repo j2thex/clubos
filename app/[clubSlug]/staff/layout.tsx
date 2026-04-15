@@ -18,7 +18,10 @@ export async function generateMetadata({
 
   return {
     title: club ? `Staff | ${club.name}` : "Staff Console",
-    icons: { icon: "/favicon-staff.svg" },
+    icons: {
+      icon: "/favicon-staff.svg",
+      apple: [{ url: `/${clubSlug}/icon.png`, sizes: "180x180" }],
+    },
   };
 }
 
