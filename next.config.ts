@@ -4,6 +4,11 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       bodySizeLimit: "5mb",
+      allowedOrigins: [
+        "osocios.club",
+        "www.osocios.club",
+        "staging.osocios.club",
+      ],
     },
   },
   images: {
