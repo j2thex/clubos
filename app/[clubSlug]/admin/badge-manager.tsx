@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { addBadge, updateBadge, deleteBadge } from "./actions";
+import { generateBadgeDraftAction, generateBadgeImageAction } from "./ai-actions";
 import { IconPicker } from "@/components/icon-picker";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { useLanguage } from "@/lib/i18n/provider";
@@ -45,12 +46,88 @@ export function BadgeManager({
   const [newIcon, setNewIcon] = useState<string | null>(null);
   const [newColor, setNewColor] = useState("#6b7280");
   const [newImage, setNewImage] = useState<File | null>(null);
+  const [newImageUrl, setNewImageUrl] = useState<string>(""); // AI-generated URL
+  const [newImagePrompt, setNewImagePrompt] = useState<string>(""); // used to re-roll
 
   const [showForm, setShowForm] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const { t } = useLanguage();
+
+  // AI assist — text (prefill form fields)
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiDraftBanner, setAiDraftBanner] = useState(false);
+  const formRef = useRef<HTMLDivElement | null>(null);
+
+  // AI image gen (separate — can be triggered standalone on the form)
+  const [aiImageLoading, setAiImageLoading] = useState(false);
+  const [aiImageError, setAiImageError] = useState<string | null>(null);
+
+  function openAiModal() {
+    setAiError(null);
+    setAiPrompt("");
+    setAiOpen(true);
+  }
+
+  async function runAiTextAssist() {
+    if (aiLoading) return;
+    setAiError(null);
+    setAiLoading(true);
+    try {
+      const result = await generateBadgeDraftAction(clubId, aiPrompt);
+      if ("error" in result) {
+        setAiError(result.error);
+        return;
+      }
+      const d = result.draft;
+      setNewName(d.name ?? "");
+      setNewDesc(d.description ?? "");
+      setNewColor(d.color ?? "#6b7280");
+      setNewIcon(d.icon ?? null);
+      setNewImagePrompt(d.image_prompt ?? "");
+      setNewImage(null);
+      setNewImageUrl("");
+      setShowForm(true);
+      setAiOpen(false);
+      setAiDraftBanner(true);
+      setTimeout(() => {
+        formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 80);
+      setTimeout(() => setAiDraftBanner(false), 8000);
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
+  async function runAiImageGen() {
+    if (aiImageLoading) return;
+    setAiImageError(null);
+    setAiImageLoading(true);
+    try {
+      // Build a safe prompt. Use the AI-suggested one if present,
+      // otherwise compose one from the name/description/color.
+      const prompt =
+        newImagePrompt ||
+        `Flat vector badge icon, centered, circular frame, brand color ${newColor}, minimal, no text. Represents: ${newName}${newDesc ? " — " + newDesc : ""}`;
+      const result = await generateBadgeImageAction(clubId, prompt);
+      if ("error" in result) {
+        setAiImageError(result.error);
+        return;
+      }
+      setNewImageUrl(result.url);
+      setNewImage(null); // clear any file upload — URL takes precedence
+    } catch (err) {
+      setAiImageError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setAiImageLoading(false);
+    }
+  }
 
   function applyTemplate(t: typeof TEMPLATES[number]) {
     setNewName(t.name);
@@ -111,6 +188,7 @@ export function BadgeManager({
       fd.set("color", newColor);
       if (newIcon) fd.set("icon", newIcon);
       if (newImage) fd.set("image", newImage);
+      else if (newImageUrl) fd.set("image_url", newImageUrl);
 
       const result = await addBadge(clubId, fd, clubSlug);
       if ("error" in result) {
@@ -122,6 +200,9 @@ export function BadgeManager({
         setNewIcon(null);
         setNewColor("#6b7280");
         setNewImage(null);
+        setNewImageUrl("");
+        setNewImagePrompt("");
+        setAiImageError(null);
         setSuccessMsg(`"${createdName}"`);
         setShowForm(false);
         setTimeout(() => setSuccessMsg(null), 4000);
@@ -135,6 +216,13 @@ export function BadgeManager({
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
           {t("admin.badgesCount", { count: badges.length })}
         </h2>
+        <button
+          type="button"
+          onClick={openAiModal}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 px-2 py-1 rounded-md bg-gradient-to-r from-emerald-50 to-sky-50 hover:from-emerald-100 hover:to-sky-100 border border-gray-200 transition-colors"
+        >
+          ✨ AI assist
+        </button>
       </div>
 
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
@@ -283,7 +371,25 @@ export function BadgeManager({
 
         {/* Add new badge */}
         {showForm && (
-          <div>
+          <div ref={formRef}>
+            {aiDraftBanner && (
+              <div className="px-5 py-3 bg-gradient-to-r from-emerald-50 to-sky-50 border-t border-emerald-100 flex items-start gap-2">
+                <span className="text-base leading-none pt-0.5">✨</span>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-gray-800">AI draft ready</p>
+                  <p className="text-xs text-gray-600 mt-0.5">
+                    Name, description, color and icon are prefilled. Click <strong>✨ Generate image</strong> below to let the AI design the badge artwork, or upload your own.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAiDraftBanner(false)}
+                  className="text-gray-400 hover:text-gray-600 text-xs"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
             {/* Templates */}
             <div className="px-5 py-4 border-t border-gray-100 bg-gray-50">
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">{t("admin.quickAdd")}</p>
@@ -327,12 +433,57 @@ export function BadgeManager({
               <IconPicker value={newIcon} onChange={setNewIcon} />
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.badgeImage")}</label>
+                {newImageUrl && (
+                  <div className="mb-2 p-2 bg-white rounded-lg border border-gray-200 flex items-center gap-3">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={newImageUrl}
+                      alt="AI-generated badge"
+                      className="w-16 h-16 rounded-lg object-cover border border-gray-200"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-gray-700">AI-generated image</p>
+                      <p className="text-[10px] text-gray-400 truncate">{newImageUrl}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewImageUrl("");
+                        setAiImageError(null);
+                      }}
+                      className="text-xs text-red-500 hover:text-red-700 transition-colors shrink-0"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 mb-1">
+                  <button
+                    type="button"
+                    onClick={runAiImageGen}
+                    disabled={aiImageLoading || (!newName.trim() && !newImagePrompt)}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-700 hover:text-gray-900 px-3 py-1.5 rounded-md bg-gradient-to-r from-emerald-50 to-sky-50 hover:from-emerald-100 hover:to-sky-100 border border-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {aiImageLoading
+                      ? "Generating…"
+                      : newImageUrl
+                        ? "✨ Regenerate image"
+                        : "✨ Generate image"}
+                  </button>
+                  <span className="text-[10px] text-gray-400">or upload your own ↓</span>
+                </div>
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
-                  onChange={(e) => setNewImage(e.target.files?.[0] ?? null)}
+                  onChange={(e) => {
+                    setNewImage(e.target.files?.[0] ?? null);
+                    if (e.target.files?.[0]) setNewImageUrl("");
+                  }}
                   className="w-full text-sm text-gray-500 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
                 />
+                {aiImageError && (
+                  <p className="mt-1 text-xs text-red-600">{aiImageError}</p>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.badgeColor")}</label>
@@ -375,6 +526,59 @@ export function BadgeManager({
           </div>
         )}
       </div>
+
+      {/* AI assist modal */}
+      {aiOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
+          onClick={() => !aiLoading && setAiOpen(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-5 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div>
+              <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                ✨ AI badge assist
+              </h3>
+              <p className="text-xs text-gray-500 mt-1">
+                Describe the achievement this badge represents. The AI will pick a name, description, color, icon, and craft an image prompt — you can then generate the artwork with one click inside the form.
+              </p>
+            </div>
+            <textarea
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+              placeholder="e.g. Awarded when a member attends 5 events — gold-toned, celebratory vibe"
+              rows={5}
+              disabled={aiLoading}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 resize-none disabled:opacity-50"
+            />
+            {aiError && (
+              <div className="px-3 py-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg">
+                {aiError}
+              </div>
+            )}
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setAiOpen(false)}
+                disabled={aiLoading}
+                className="rounded-lg border border-gray-300 px-4 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={runAiTextAssist}
+                disabled={aiLoading || aiPrompt.trim().length < 3}
+                className="rounded-lg bg-gray-800 text-white px-4 py-1.5 text-xs font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {aiLoading ? "Generating…" : "Generate"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -2,11 +2,14 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateDraft } from "@/lib/ai/generate-content";
+import { generateImage } from "@/lib/ai/generate-image";
 import {
   questDraftSchema,
   eventDraftSchema,
+  badgeDraftSchema,
   type QuestDraft,
   type EventDraft,
+  type BadgeDraft,
 } from "@/lib/ai/schemas";
 import { getOwnerFromCookie } from "@/lib/auth";
 
@@ -82,6 +85,63 @@ function cleanErrorMessage(msg: string): string {
   // Strip URLs so we don't leak half a link to the user
   const urlless = msg.replace(/https?:\/\/\S+/g, "").trim();
   return urlless.slice(0, 220);
+}
+
+export async function generateBadgeDraftAction(
+  clubId: string,
+  userPrompt: string,
+): Promise<{ error: string } | { ok: true; draft: BadgeDraft }> {
+  const trimmed = userPrompt.trim();
+  if (trimmed.length < 3) return { error: "Describe the badge in at least a few words" };
+  if (trimmed.length > 1000) return { error: "Description too long (max 1000 chars)" };
+
+  const ownerId = await assertOwner(clubId);
+  if (!ownerId) return { error: "Unauthorized" };
+
+  try {
+    const ctx = await loadClubContext(clubId);
+    const result = await generateDraft({
+      clubId,
+      ownerId,
+      contentType: "badge",
+      schema: badgeDraftSchema,
+      userPrompt: trimmed,
+      templateVars: {
+        club_name: ctx.name,
+        club_description: ctx.description,
+        primary_color: ctx.primaryColor,
+      },
+    });
+    return { ok: true, draft: result.draft };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "unknown";
+    return { error: `AI generation failed: ${cleanErrorMessage(msg)}` };
+  }
+}
+
+export async function generateBadgeImageAction(
+  clubId: string,
+  imagePrompt: string,
+): Promise<{ error: string } | { ok: true; url: string }> {
+  const trimmed = imagePrompt.trim();
+  if (trimmed.length < 3) return { error: "Image prompt is required" };
+  if (trimmed.length > 600) return { error: "Image prompt too long (max 600 chars)" };
+
+  const ownerId = await assertOwner(clubId);
+  if (!ownerId) return { error: "Unauthorized" };
+
+  try {
+    const result = await generateImage({
+      clubId,
+      ownerId,
+      contentType: "badge",
+      prompt: trimmed,
+    });
+    return { ok: true, url: result.url };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "unknown";
+    return { error: `Image generation failed: ${cleanErrorMessage(msg)}` };
+  }
 }
 
 export async function generateEventDraftAction(

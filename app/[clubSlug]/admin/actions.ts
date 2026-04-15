@@ -1238,6 +1238,7 @@ export async function addBadge(
   const icon = (formData.get("icon") as string)?.trim() || null;
   const color = (formData.get("color") as string)?.trim() || "#6b7280";
   const imageFile = formData.get("image") as File | null;
+  const imageUrlInput = (formData.get("image_url") as string)?.trim() || "";
 
   if (!name) return { error: "Name is required" };
 
@@ -1249,6 +1250,10 @@ export async function addBadge(
     const result = await uploadClubImage(clubId, imageFile);
     if ("error" in result) return { error: result.error };
     imageUrl = result.url;
+  } else if (imageUrlInput) {
+    // AI-generated images are already uploaded to club-images by the
+    // generateImage helper; the URL comes in on the image_url field.
+    imageUrl = imageUrlInput;
   }
 
   const { data: existing } = await supabase
@@ -1286,6 +1291,7 @@ export async function updateBadge(
   const icon = (formData.get("icon") as string)?.trim() || null;
   const color = (formData.get("color") as string)?.trim() || "#6b7280";
   const imageFile = formData.get("image") as File | null;
+  const imageUrlInput = (formData.get("image_url") as string)?.trim() || "";
 
   if (!name) return { error: "Name is required" };
 
@@ -1309,6 +1315,9 @@ export async function updateBadge(
     const result = await uploadClubImage(badge?.club_id ?? "", imageFile);
     if ("error" in result) return { error: result.error };
     updates.image_url = result.url;
+  } else if (imageUrlInput) {
+    // AI-generated image URL passthrough.
+    updates.image_url = imageUrlInput;
   }
 
   const { error } = await supabase

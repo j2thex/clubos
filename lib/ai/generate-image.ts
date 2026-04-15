@@ -1,43 +1,92 @@
-import { createAdminClient } from "@/lib/supabase/admin";
+import { generateText } from "ai";
+import { uploadClubImage } from "@/lib/supabase/storage";
 import { checkQuota, recordUsage } from "./quota";
+import { DEFAULT_IMAGE_MODEL } from "./gateway";
 
-// Nano Banana (Gemini 3 Flash Image) wrapper.
+// Generates an image via Gemini 3.1 Flash Image ("Nano Banana") through
+// the Vercel AI Gateway, uploads the bytes to the club-images bucket,
+// and returns the public URL.
 //
-// Phase 0 status: SCAFFOLD ONLY. Phase 4 will wire the real provider call.
-// This function is intentionally throws-not-implemented so nothing can ship
-// to production with a silent stub. The signature is locked so Phase 4
-// only has to replace the body.
-//
-// Phase 4 plan:
-//   1. Use AI Gateway model string "google/gemini-3.1-flash-image-preview"
-//      with generateText({ model, prompt }) — multimodal LLM returns images
-//      in result.files filtered by mediaType.startsWith('image/').
-//   2. Take the returned bytes, wrap in a File, push through
-//      uploadClubImage(clubId, file) from lib/supabase/storage.ts.
-//   3. Return { url, storagePath }.
-//   4. Call recordUsage({ kind: 'image', imageCount: 1 }).
+// The model returns images as generated files on the result — we filter
+// by mediaType.startsWith('image/'), take the first one, and upload it.
 
 export interface GenerateImageArgs {
   clubId: string;
   ownerId?: string | null;
   contentType: "quest" | "event" | "offer" | "badge";
   prompt: string;
-  aspectRatio?: "1:1" | "4:3" | "16:9";
 }
 
 export interface GenerateImageResult {
   url: string;
-  storagePath: string;
+  mediaType: string;
 }
 
 export async function generateImage(args: GenerateImageArgs): Promise<GenerateImageResult> {
   const quota = await checkQuota(args.clubId, "image");
   if (!quota.allowed) throw new Error(quota.reason ?? "Image quota exceeded");
 
-  // Touch supabase client so the import isn't tree-shaken before Phase 4.
-  void createAdminClient;
-  void recordUsage;
-  void args;
+  try {
+    const result = await generateText({
+      model: DEFAULT_IMAGE_MODEL,
+      prompt: args.prompt,
+      providerOptions: {
+        gateway: {
+          tags: [
+            `feature:ai-assist`,
+            `content:${args.contentType}`,
+            `kind:image`,
+            `club:${args.clubId}`,
+          ],
+        },
+      },
+    });
 
-  throw new Error("generateImage: not implemented (Phase 4)");
+    const images = (result.files ?? []).filter((f) =>
+      f.mediaType?.startsWith("image/"),
+    );
+    if (images.length === 0) {
+      throw new Error("Image model returned no image files");
+    }
+
+    const img = images[0];
+    const mediaType = img.mediaType ?? "image/png";
+    const ext = mediaType.split("/")[1]?.split("+")[0] ?? "png";
+
+    // Wrap the bytes in a File so we can reuse uploadClubImage.
+    const file = new File(
+      [img.uint8Array as unknown as BlobPart],
+      `ai-${Date.now()}.${ext}`,
+      { type: mediaType },
+    );
+
+    const uploaded = await uploadClubImage(args.clubId, file);
+    if ("error" in uploaded) {
+      throw new Error(`Upload failed: ${uploaded.error}`);
+    }
+
+    await recordUsage({
+      clubId: args.clubId,
+      ownerId: args.ownerId ?? null,
+      contentType: args.contentType,
+      kind: "image",
+      model: DEFAULT_IMAGE_MODEL,
+      imageCount: 1,
+      status: "success",
+    });
+
+    return { url: uploaded.url, mediaType };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "unknown";
+    await recordUsage({
+      clubId: args.clubId,
+      ownerId: args.ownerId ?? null,
+      contentType: args.contentType,
+      kind: "image",
+      model: DEFAULT_IMAGE_MODEL,
+      status: "error",
+      errorMessage: msg.slice(0, 500),
+    });
+    throw err;
+  }
 }
