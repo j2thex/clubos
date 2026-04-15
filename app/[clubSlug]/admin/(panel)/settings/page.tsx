@@ -15,6 +15,7 @@ import { TagManager } from "../../tag-manager";
 import { LocationManager } from "../../location-manager";
 import { WorkingHoursManager } from "../../working-hours-manager";
 import { CollapsibleSection } from "@/components/collapsible-section";
+import Link from "next/link";
 import { EmailCampaignManager } from "../../email-campaign-manager";
 import { getCampaignHistory, getEmailStats } from "../../email-actions";
 import { getOwnerFromCookie } from "@/lib/auth";
@@ -217,6 +218,17 @@ export default async function SettingsPage({
           clubSlug={clubSlug}
           currentSecret={club.notification_secret ?? null}
         />
+      </CollapsibleSection>
+      <CollapsibleSection title="Push Notifications">
+        <Link
+          href={`/${clubSlug}/admin/push`}
+          className="block rounded-lg border border-gray-200 bg-white p-4 hover:border-gray-300 transition-colors"
+        >
+          <h3 className="text-sm font-semibold text-gray-900">Send a test push</h3>
+          <p className="mt-1 text-xs text-gray-500">
+            Compose a title, body, and optional link. Sends to all members who have subscribed on this club.
+          </p>
+        </Link>
       </CollapsibleSection>
       <CollapsibleSection id="spin-wheel" title="Spin Wheel">
         <WheelManager
