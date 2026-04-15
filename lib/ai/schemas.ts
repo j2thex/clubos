@@ -47,14 +47,12 @@ export const offerDraftSchema = z.object({
 });
 export type OfferDraft = z.infer<typeof offerDraftSchema>;
 
-export const badgeDraftSchema = z.object({
-  name: z.string().max(40),
-  description: z.string().max(200).nullable(),
-  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).describe("Hex color like #ff3366"),
-  icon: z.string().max(40).nullable().describe("Lucide icon name as text fallback"),
-  image_prompt: z.string().max(400).describe("Prompt for the image model (Nano Banana)"),
-});
-export type BadgeDraft = z.infer<typeof badgeDraftSchema>;
+// NOTE: there used to be a badgeDraftSchema / BadgeDraft exported here —
+// it was removed in the Phase 4 revision because badges are created
+// implicitly via the quest "Award badge" flow, not through a standalone
+// badges UI. The tower still keeps the "badge" prompt row in ai_prompts
+// for archival reasons; the ContentType union keeps "badge" for DB FK
+// compatibility but nothing active references it.
 
 export type ContentType = "quest" | "event" | "offer" | "badge" | "setup_agent";
 
@@ -62,5 +60,4 @@ export const SCHEMAS = {
   quest: questDraftSchema,
   event: eventDraftSchema,
   offer: offerDraftSchema,
-  badge: badgeDraftSchema,
 } as const;

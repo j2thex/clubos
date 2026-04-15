@@ -6,10 +6,8 @@ import { generateImage } from "@/lib/ai/generate-image";
 import {
   questDraftSchema,
   eventDraftSchema,
-  badgeDraftSchema,
   type QuestDraft,
   type EventDraft,
-  type BadgeDraft,
 } from "@/lib/ai/schemas";
 import { getOwnerFromCookie } from "@/lib/auth";
 
@@ -87,55 +85,31 @@ function cleanErrorMessage(msg: string): string {
   return urlless.slice(0, 220);
 }
 
-export async function generateBadgeDraftAction(
+export async function generateQuestImageAction(
   clubId: string,
-  userPrompt: string,
-): Promise<{ error: string } | { ok: true; draft: BadgeDraft }> {
-  const trimmed = userPrompt.trim();
-  if (trimmed.length < 3) return { error: "Describe the badge in at least a few words" };
-  if (trimmed.length > 1000) return { error: "Description too long (max 1000 chars)" };
+  title: string,
+  description: string,
+): Promise<{ error: string } | { ok: true; url: string }> {
+  const trimmedTitle = title.trim();
+  if (trimmedTitle.length < 2) {
+    return { error: "Fill in the quest title first" };
+  }
 
   const ownerId = await assertOwner(clubId);
   if (!ownerId) return { error: "Unauthorized" };
 
   try {
     const ctx = await loadClubContext(clubId);
-    const result = await generateDraft({
-      clubId,
-      ownerId,
-      contentType: "badge",
-      schema: badgeDraftSchema,
-      userPrompt: trimmed,
-      templateVars: {
-        club_name: ctx.name,
-        club_description: ctx.description,
-        primary_color: ctx.primaryColor,
-      },
-    });
-    return { ok: true, draft: result.draft };
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "unknown";
-    return { error: `AI generation failed: ${cleanErrorMessage(msg)}` };
-  }
-}
+    const trimmedDesc = description.trim();
+    const prompt =
+      `Flat vector icon, centered, circular frame, ${ctx.primaryColor} brand color, minimal, no text. ` +
+      `Represents: ${trimmedTitle}${trimmedDesc ? ` — ${trimmedDesc}` : ""}`;
 
-export async function generateBadgeImageAction(
-  clubId: string,
-  imagePrompt: string,
-): Promise<{ error: string } | { ok: true; url: string }> {
-  const trimmed = imagePrompt.trim();
-  if (trimmed.length < 3) return { error: "Image prompt is required" };
-  if (trimmed.length > 600) return { error: "Image prompt too long (max 600 chars)" };
-
-  const ownerId = await assertOwner(clubId);
-  if (!ownerId) return { error: "Unauthorized" };
-
-  try {
     const result = await generateImage({
       clubId,
       ownerId,
-      contentType: "badge",
-      prompt: trimmed,
+      contentType: "quest",
+      prompt,
     });
     return { ok: true, url: result.url };
   } catch (err) {

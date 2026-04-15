@@ -4,14 +4,18 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { savePromptVersion, restorePromptVersion } from "./actions";
 
-const CONTENT_TYPES = ["quest", "event", "offer", "badge", "setup_agent"] as const;
+// "badge" is intentionally omitted — badges are created implicitly via
+// quests (award_badge flow) and there is no standalone badge assist UI.
+// The seeded badge prompt row in ai_prompts is left in the DB but is not
+// reachable from this editor. Add it back here if a dedicated badge
+// surface is re-introduced.
+const CONTENT_TYPES = ["quest", "event", "offer", "setup_agent"] as const;
 type ContentType = (typeof CONTENT_TYPES)[number];
 
 const LABELS: Record<ContentType, string> = {
   quest: "Quest",
   event: "Event",
   offer: "Offer",
-  badge: "Badge",
   setup_agent: "Setup Agent",
 };
 
@@ -19,7 +23,6 @@ const PLACEHOLDER_HINTS: Record<ContentType, string> = {
   quest: "{{club_name}}, {{club_description}}, {{primary_color}}, {{user_prompt}}",
   event: "{{club_name}}, {{club_description}}, {{user_prompt}}",
   offer: "{{club_name}}, {{club_description}}, {{offer_catalog}}, {{user_prompt}}",
-  badge: "{{club_name}}, {{club_description}}, {{primary_color}}, {{user_prompt}}",
   setup_agent: "{{club_name}}, {{club_description}}, {{primary_color}}, {{user_prompt}}",
 };
 
@@ -66,7 +69,6 @@ export function AiPromptsClient({
     quest: undefined,
     event: undefined,
     offer: undefined,
-    badge: undefined,
     setup_agent: undefined,
   });
 
