@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { addEvent, updateEvent, deleteEvent } from "./actions";
+import { generateEventDraftAction } from "./ai-actions";
 import { IconPicker } from "@/components/icon-picker";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { LanguageTabs } from "@/components/language-tabs";
@@ -98,6 +99,58 @@ export function EventManager({
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  // AI assist
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiDraftBanner, setAiDraftBanner] = useState(false);
+  const formRef = useRef<HTMLDivElement | null>(null);
+
+  function openAiModal() {
+    setAiError(null);
+    setAiPrompt("");
+    setAiOpen(true);
+  }
+
+  async function runAiAssist() {
+    if (aiLoading) return;
+    setAiError(null);
+    setAiLoading(true);
+    try {
+      const result = await generateEventDraftAction(clubId, aiPrompt);
+      if ("error" in result) {
+        setAiError(result.error);
+        return;
+      }
+      const d = result.draft;
+      setNewTitle(d.title ?? "");
+      setNewTitleEs(d.title_es ?? "");
+      setNewDesc(d.description ?? "");
+      setNewDescEs(d.description_es ?? "");
+      setNewDate(d.date ?? "");
+      setNewTime(d.time ?? "");
+      setNewEndTime(d.end_time ?? "");
+      setNewPrice(d.price != null ? String(d.price) : "");
+      setNewIcon(d.icon ?? null);
+      setNewLink(d.link ?? "");
+      setNewLocationName(d.location_name ?? "");
+      setNewLang("en");
+      setNewImage(null);
+      setShowForm(true);
+      setAiOpen(false);
+      setAiDraftBanner(true);
+      setTimeout(() => {
+        formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 80);
+      setTimeout(() => setAiDraftBanner(false), 8000);
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setAiLoading(false);
+    }
+  }
 
   function applyTemplate(t: typeof TEMPLATES[number]) {
     setNewTitle(t.title);
@@ -244,6 +297,13 @@ export function EventManager({
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
           Events ({events.length})
         </h2>
+        <button
+          type="button"
+          onClick={openAiModal}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 px-2 py-1 rounded-md bg-gradient-to-r from-emerald-50 to-sky-50 hover:from-emerald-100 hover:to-sky-100 border border-gray-200 transition-colors"
+        >
+          ✨ AI assist
+        </button>
       </div>
 
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
@@ -582,7 +642,25 @@ export function EventManager({
 
         {/* Add new event */}
         {showForm && (
-        <div>
+        <div ref={formRef}>
+          {aiDraftBanner && (
+            <div className="px-5 py-3 bg-gradient-to-r from-emerald-50 to-sky-50 border-t border-emerald-100 flex items-start gap-2">
+              <span className="text-base leading-none pt-0.5">✨</span>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-gray-800">AI draft ready</p>
+                <p className="text-xs text-gray-600 mt-0.5">
+                  The form below has been prefilled. Review every field — double-check the date and time especially. Click <strong>Add Event</strong> at the bottom to save.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAiDraftBanner(false)}
+                className="text-gray-400 hover:text-gray-600 text-xs"
+              >
+                ✕
+              </button>
+            </div>
+          )}
           {/* Templates */}
           <div className="px-5 py-4 border-t border-gray-100 bg-gray-50">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Quick Add</p>
@@ -840,6 +918,61 @@ export function EventManager({
           </div>
         )}
       </div>
+
+      {/* AI assist modal */}
+      {aiOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
+          onClick={() => !aiLoading && setAiOpen(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-5 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div>
+              <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                ✨ AI event assist
+              </h3>
+              <p className="text-xs text-gray-500 mt-1">
+                Describe the event, or paste the text from a flyer. The AI will
+                fill in title/description (EN + ES), date, time, price, icon,
+                and location. Review every field before saving.
+              </p>
+            </div>
+            <textarea
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+              placeholder="e.g. Saturday April 25 at 22:00, DJ Obi headlining. 10€ entry, ends at 04:00. Location: main room."
+              rows={6}
+              disabled={aiLoading}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 resize-none disabled:opacity-50"
+            />
+            {aiError && (
+              <div className="px-3 py-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg">
+                {aiError}
+              </div>
+            )}
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setAiOpen(false)}
+                disabled={aiLoading}
+                className="rounded-lg border border-gray-300 px-4 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={runAiAssist}
+                disabled={aiLoading || aiPrompt.trim().length < 3}
+                className="rounded-lg bg-gray-800 text-white px-4 py-1.5 text-xs font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {aiLoading ? "Generating…" : "Generate"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
