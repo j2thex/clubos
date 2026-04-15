@@ -6,6 +6,7 @@ import { useLanguage } from "@/lib/i18n/provider";
 
 interface StaffNavProps {
   clubSlug: string;
+  spinEnabled: boolean;
 }
 
 const navItems = [
@@ -65,7 +66,7 @@ const navItems = [
   },
 ];
 
-export function StaffNav({ clubSlug }: StaffNavProps) {
+export function StaffNav({ clubSlug, spinEnabled }: StaffNavProps) {
   const pathname = usePathname();
   const { t } = useLanguage();
   const basePath = `/${clubSlug}/staff`;
@@ -74,10 +75,14 @@ export function StaffNav({ clubSlug }: StaffNavProps) {
     return null;
   }
 
+  const visibleItems = spinEnabled
+    ? navItems
+    : navItems.filter((item) => item.labelKey !== "nav.spin");
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.08)]">
       <div className="mx-auto flex max-w-md items-center justify-around pb-2 pt-2">
-        {navItems.map((item) => {
+        {visibleItems.map((item) => {
           const href = `${basePath}${item.path}`;
           const isActive =
             item.path === ""
