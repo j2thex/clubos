@@ -257,6 +257,12 @@
   "a2hs.step3": "Scroll and tap \"View More\"",
   "a2hs.step4": "Tap \"Add to Home Screen\"",
   "a2hs.close": "Close",
+  "a2hs.subscribeTitle": "Enable notifications",
+  "a2hs.subscribeTagline": "Never miss events and offers",
+  "a2hs.subscribe": "Subscribe",
+  "a2hs.subscribing": "Subscribing…",
+  "a2hs.subscribed": "Notifications enabled",
+  "a2hs.blocked": "Notifications blocked. Enable them in your browser settings.",
 
   "staff.consoleTitle": "Staff Console",
   "staff.memberPortal": "Member Portal",

@@ -257,6 +257,12 @@
   "a2hs.step3": "Desplázate y toca \"Ver más\"",
   "a2hs.step4": "Toca \"Añadir a pantalla de inicio\"",
   "a2hs.close": "Cerrar",
+  "a2hs.subscribeTitle": "Activar notificaciones",
+  "a2hs.subscribeTagline": "No te pierdas eventos y ofertas",
+  "a2hs.subscribe": "Suscribir",
+  "a2hs.subscribing": "Suscribiendo…",
+  "a2hs.subscribed": "Notificaciones activadas",
+  "a2hs.blocked": "Notificaciones bloqueadas. Actívalas en los ajustes del navegador.",
 
   "staff.consoleTitle": "Consola de Staff",
   "staff.memberPortal": "Portal de Socio",
