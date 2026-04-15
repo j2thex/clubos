@@ -52,7 +52,13 @@ export async function middleware(request: NextRequest) {
   const clubSlug = segments[0];
 
   // Skip static files and API routes
-  if (clubSlug.startsWith("_next") || clubSlug.startsWith("api") || clubSlug === "favicon.ico" || clubSlug === "a2hs") {
+  if (
+    clubSlug.startsWith("_next") ||
+    clubSlug.startsWith("api") ||
+    clubSlug === "favicon.ico" ||
+    clubSlug === "a2hs" ||
+    clubSlug === "sw.js"
+  ) {
     return applyLocale(request, NextResponse.next());
   }
 
