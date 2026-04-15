@@ -91,6 +91,12 @@ export async function middleware(request: NextRequest) {
     return applyLocale(request, NextResponse.next());
   }
 
+  // Per-club PWA manifest and apple-touch-icon must be fetchable by iOS
+  // without a member cookie — iOS fetches them anonymously during A2HS.
+  if (clubPath === "/manifest.webmanifest" || clubPath.startsWith("/icon.png")) {
+    return applyLocale(request, NextResponse.next());
+  }
+
   // Staff routes — require staff token (except staff login)
   if (clubPath.startsWith("/staff")) {
     if (clubPath === "/staff/login") {
