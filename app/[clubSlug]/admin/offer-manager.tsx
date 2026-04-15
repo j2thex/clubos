@@ -34,6 +34,7 @@ interface ClubOffer {
   description_es: string | null;
   image_url: string | null;
   icon: string | null;
+  link: string | null;
   is_public: boolean;
   archived: boolean;
 }
@@ -391,6 +392,7 @@ function OfferRow({
   );
   const [localDescription, setLocalDescription] = useState(clubOffer?.description ?? "");
   const [localDescriptionEs, setLocalDescriptionEs] = useState(clubOffer?.description_es ?? "");
+  const [localLink, setLocalLink] = useState(clubOffer?.link ?? "");
   const [localIcon, setLocalIcon] = useState<string | null>(clubOffer?.icon ?? null);
   const [localImage, setLocalImage] = useState<File | null>(null);
   const [localIsPublic, setLocalIsPublic] = useState(clubOffer?.is_public ?? false);
@@ -401,6 +403,7 @@ function OfferRow({
   const serverPrice = clubOffer?.price != null ? String(clubOffer.price) : "";
   const serverDescription = clubOffer?.description ?? "";
   const serverDescriptionEs = clubOffer?.description_es ?? "";
+  const serverLink = clubOffer?.link ?? "";
   const serverIcon = clubOffer?.icon ?? null;
   const serverIsPublic = clubOffer?.is_public ?? false;
   const optionsDirty =
@@ -409,6 +412,7 @@ function OfferRow({
       localPrice !== serverPrice ||
       localDescription !== serverDescription ||
       localDescriptionEs !== serverDescriptionEs ||
+      localLink !== serverLink ||
       localIcon !== serverIcon ||
       localIsPublic !== serverIsPublic ||
       localImage !== null);
@@ -424,6 +428,7 @@ function OfferRow({
     fd.set("price", localPrice);
     fd.set("description", localDescription);
     fd.set("description_es", localDescriptionEs);
+    fd.set("link", localLink);
     fd.set("icon", localIcon ?? "");
     fd.set("is_public", localIsPublic ? "1" : "0");
     if (localImage) fd.set("image", localImage);
@@ -584,6 +589,18 @@ function OfferRow({
                 className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition resize-none"
               />
             )}
+          </div>
+
+          {/* Link */}
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Link (optional)</label>
+            <input
+              type="url"
+              value={localLink}
+              onChange={(e) => setLocalLink(e.target.value)}
+              placeholder="https://..."
+              className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+            />
           </div>
 
           {/* Icon picker */}

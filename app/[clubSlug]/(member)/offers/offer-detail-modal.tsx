@@ -15,6 +15,7 @@ export interface OfferDetail {
   description: string | null;
   description_es: string | null;
   image_url: string | null;
+  link: string | null;
   orderable: boolean;
   price: number | null;
   hasPendingOrder?: boolean;
@@ -117,6 +118,17 @@ export function OfferDetailModal({
             <p className="text-sm text-gray-600 whitespace-pre-line leading-relaxed">
               {description}
             </p>
+          )}
+
+          {offer.link && (
+            <a
+              href={offer.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full rounded-xl border border-gray-300 text-center text-sm font-semibold text-gray-700 px-4 py-2.5 hover:bg-gray-50 transition-colors"
+            >
+              {t("offers.detail.openLink")} →
+            </a>
           )}
 
           {mode.kind === "member" && (

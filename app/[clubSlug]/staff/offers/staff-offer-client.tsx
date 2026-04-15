@@ -29,6 +29,7 @@ interface Offer {
   description: string | null;
   description_es: string | null;
   image_url: string | null;
+  link: string | null;
   orderable: boolean;
   price: number | null;
 }
@@ -67,6 +68,7 @@ export function StaffOfferClient({
         description: selectedOffer.description,
         description_es: selectedOffer.description_es,
         image_url: selectedOffer.image_url,
+        link: selectedOffer.link,
         orderable: selectedOffer.orderable,
         price: selectedOffer.price,
       }

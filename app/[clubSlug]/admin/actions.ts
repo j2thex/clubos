@@ -1495,6 +1495,7 @@ export async function updateOfferOptions(
   const price = (formData.get("price") as string)?.trim();
   const description = (formData.get("description") as string)?.trim() || null;
   const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
+  const link = (formData.get("link") as string)?.trim() || null;
   const icon = (formData.get("icon") as string)?.trim() || null;
   const isPublic = formData.get("is_public") === "1";
   const imageFile = formData.get("image") as File | null;
@@ -1506,6 +1507,7 @@ export async function updateOfferOptions(
     price: orderable && price ? Number(price) : null,
     description,
     description_es: descriptionEs,
+    link,
     icon,
     is_public: isPublic,
   };

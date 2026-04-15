@@ -17,6 +17,7 @@ interface OfferItem {
   description: string | null;
   description_es: string | null;
   image_url: string | null;
+  link: string | null;
   orderable: boolean;
   price: number | null;
   order: { id: string; club_offer_id: string; status: string } | null;

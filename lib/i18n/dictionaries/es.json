@@ -196,6 +196,7 @@
   "offers.orderable": "Ordenable",
   "offers.enabled": "Habilitado",
   "offers.detail.close": "Cerrar",
+  "offers.detail.openLink": "Abrir enlace",
   "offers.detail.request": "Solicitar",
   "offers.detail.requestHint": "Toca Solicitar y el staff lo preparará para ti.",
   "offers.detail.pending": "Pendiente — toca para cancelar",

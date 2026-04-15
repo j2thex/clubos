@@ -196,6 +196,7 @@
   "offers.orderable": "Orderable",
   "offers.enabled": "Enabled",
   "offers.detail.close": "Close",
+  "offers.detail.openLink": "Open link",
   "offers.detail.request": "Request",
   "offers.detail.requestHint": "Tap Request and staff will prepare this for you.",
   "offers.detail.pending": "Pending — tap to cancel",
