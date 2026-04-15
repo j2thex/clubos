@@ -64,11 +64,11 @@ export function OfferDetailModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4"
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 pb-[calc(5rem+env(safe-area-inset-bottom))] sm:p-4 sm:pb-4"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl max-w-sm w-full max-h-[90svh] overflow-y-auto animate-in slide-in-from-bottom-4 duration-300"
+        className="bg-white rounded-3xl sm:rounded-2xl shadow-2xl max-w-sm w-full max-h-[85svh] overflow-y-auto animate-in slide-in-from-bottom-4 duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="relative p-6 space-y-4">
