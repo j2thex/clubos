@@ -154,16 +154,8 @@ export function StaffEventClient({
       )}
 
       {success && (
-        <div className="px-5 py-2 text-xs text-green-700 bg-green-50 border-t border-green-100 flex items-center justify-between">
+        <div className="px-5 py-2 text-xs text-green-700 bg-green-50 border-t border-green-100">
           <span>{success}</span>
-          {successMemberCode && (
-            <a
-              href={`/${clubSlug}/staff/?member=${successMemberCode}`}
-              className="ml-3 rounded-lg bg-gray-800 text-white px-3 py-1 text-xs font-semibold hover:bg-gray-700 transition-colors shrink-0"
-            >
-              {t("nav.spin")}
-            </a>
-          )}
         </div>
       )}
 

@@ -222,11 +222,12 @@
   "spin.pending": "Pending",
   "spin.fulfilled": "Received",
 
-  "staff.pendingPrizes": "Pending Prizes ({count})",
-  "staff.noPendingPrizes": "No pending prizes",
-  "staff.fulfill": "Fulfill",
-  "staff.fulfilling": "...",
-  "staff.prizeFulfilled": "Prize fulfilled",
+  "staff.bonusesTitle": "Bonuses",
+  "staff.pendingBonuses": "Pending approval ({count})",
+  "staff.noBonusesPending": "No bonuses waiting for approval",
+  "staff.bonusesEmptyHint": "Member wins from the wheel will appear here.",
+  "staff.approveBonus": "Approve",
+  "staff.bonusApproved": "Bonus approved",
 
   "profile.title": "Your Profile",
   "profile.backToDiscover": "← Back to discover map",

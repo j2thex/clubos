@@ -222,11 +222,12 @@
   "spin.pending": "Pendiente",
   "spin.fulfilled": "Recibido",
 
-  "staff.pendingPrizes": "Premios Pendientes ({count})",
-  "staff.noPendingPrizes": "No hay premios pendientes",
-  "staff.fulfill": "Entregar",
-  "staff.fulfilling": "...",
-  "staff.prizeFulfilled": "Premio entregado",
+  "staff.bonusesTitle": "Bonus",
+  "staff.pendingBonuses": "Pendientes de aprobación ({count})",
+  "staff.noBonusesPending": "No hay bonus esperando aprobación",
+  "staff.bonusesEmptyHint": "Los premios ganados por socios aparecerán aquí.",
+  "staff.approveBonus": "Aprobar",
+  "staff.bonusApproved": "Bonus aprobado",
 
   "profile.title": "Tu perfil",
   "profile.backToDiscover": "← Volver al mapa global",
