@@ -33,7 +33,7 @@ export default async function StaffBonusesPage({
 
   const { data: pendingBonuses } = await supabase
     .from("spins")
-    .select("id, outcome_label, created_at, member_id, members!inner(member_code, full_name)")
+    .select("id, outcome_label, created_at, member_id, members!spins_member_id_fkey!inner(member_code, full_name)")
     .eq("club_id", club.id)
     .eq("status", "pending")
     .order("created_at", { ascending: false })

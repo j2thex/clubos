@@ -15,7 +15,7 @@ export async function approveBonus(
 
   const { data: spin } = await supabase
     .from("spins")
-    .select("id, status, outcome_label, club_id, members!inner(member_code)")
+    .select("id, status, outcome_label, club_id, members!spins_member_id_fkey!inner(member_code)")
     .eq("id", spinId)
     .eq("club_id", clubId)
     .single();
