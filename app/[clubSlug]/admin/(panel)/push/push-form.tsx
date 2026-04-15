@@ -93,13 +93,13 @@ export function PushForm({
           className="mb-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
         >
           <option value="">Quick links…</option>
-          <option value="/">Member home</option>
-          <option value="/events">Events list</option>
-          <option value="/offers">Offers list</option>
+          <option value={`/${clubSlug}`}>Member home</option>
+          <option value={`/${clubSlug}/events`}>Events list</option>
+          <option value={`/${clubSlug}/offers`}>Offers list</option>
           {events.length > 0 && (
             <optgroup label="Upcoming events">
               {events.map((ev) => (
-                <option key={ev.id} value={`/events/${ev.id}`}>
+                <option key={ev.id} value={`/${clubSlug}/events/${ev.id}`}>
                   {ev.title} — {ev.date}
                 </option>
               ))}
@@ -113,7 +113,7 @@ export function PushForm({
           onChange={(e) => setUrl(e.target.value)}
           maxLength={500}
           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900"
-          placeholder="/events/123"
+          placeholder={`/${clubSlug}/events/123`}
         />
       </div>
 

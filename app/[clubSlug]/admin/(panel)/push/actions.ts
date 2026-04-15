@@ -36,14 +36,16 @@ export async function sendTestPush(input: {
   if (url.length > MAX_URL)
     return { ok: false, error: `Link must be ${MAX_URL} characters or fewer` };
 
-  // Only same-origin links are supported. iOS standalone PWAs block cross-origin
-  // navigation from push taps, so an external URL silently fails to open.
+  // Normalize to a club-scoped same-origin path. iOS standalone PWAs block
+  // cross-origin navigation from push taps, so external URLs silently fail.
+  // We also need every path to start with /{clubSlug} — otherwise /offers lands
+  // on the platform root, not the club's offers page.
+  let normalizedUrl = "";
   if (url) {
-    if (url.startsWith("/")) {
-      // relative path — fine
-    } else if (/^https?:\/\//i.test(url)) {
+    let path = url;
+    if (/^https?:\/\//i.test(path)) {
       try {
-        const parsed = new URL(url);
+        const parsed = new URL(path);
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://osocios.club";
         const expectedHost = new URL(siteUrl).host;
         if (parsed.host !== expectedHost) {
@@ -52,14 +54,23 @@ export async function sendTestPush(input: {
             error: "Link must be a path on this site (e.g. /events/123)",
           };
         }
+        path = parsed.pathname + parsed.search + parsed.hash;
       } catch {
         return { ok: false, error: "Invalid link" };
       }
-    } else {
+    } else if (!path.startsWith("/")) {
       return {
         ok: false,
         error: "Link must start with / (e.g. /events/123)",
       };
+    }
+    const prefix = `/${clubSlug}`;
+    if (path === prefix || path.startsWith(`${prefix}/`)) {
+      normalizedUrl = path;
+    } else if (path === "/") {
+      normalizedUrl = prefix;
+    } else {
+      normalizedUrl = `${prefix}${path}`;
     }
   }
 
@@ -91,7 +102,7 @@ export async function sendTestPush(input: {
     const result = await sendPushToClub(club.id, {
       title,
       body,
-      url: url || undefined,
+      url: normalizedUrl || undefined,
     });
     return { ok: true, ...result };
   } catch (err: unknown) {
