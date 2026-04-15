@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { addQuest, updateQuest, deleteQuest, toggleQuestActive } from "./actions";
+import { generateQuestDraftAction } from "./ai-actions";
 import { useLanguage } from "@/lib/i18n/provider";
 import { t as translate } from "@/lib/i18n";
 import { IconPicker } from "@/components/icon-picker";
@@ -129,6 +130,58 @@ export function QuestManager({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const { t } = useLanguage();
+
+  // AI assist modal
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+
+  function openAiModal() {
+    setAiError(null);
+    setAiPrompt("");
+    setAiOpen(true);
+  }
+
+  async function runAiAssist() {
+    if (aiLoading) return;
+    setAiError(null);
+    setAiLoading(true);
+    try {
+      const result = await generateQuestDraftAction(clubId, aiPrompt);
+      if ("error" in result) {
+        setAiError(result.error);
+        return;
+      }
+      const d = result.draft;
+      // Prefill the "new quest" form from the draft. Leave image/link URL
+      // alone — admin picks their own link and uploads their own image.
+      setNewTitle(d.title ?? "");
+      setNewTitleEs(d.title_es ?? "");
+      setNewDesc(d.description ?? "");
+      setNewDescEs(d.description_es ?? "");
+      setNewLink(d.link ?? "");
+      setNewReward(String(d.reward_spins ?? 1));
+      setNewCategory((d.category ?? "social") as Category);
+      setNewQuestType(d.quest_type ?? "default");
+      setNewProofMode(d.proof_mode ?? "none");
+      setNewMultiUse(Boolean(d.multi_use));
+      setNewIcon(d.icon ?? null);
+      setNewTutorialSteps(d.tutorial_steps ?? []);
+      setNewProofPlaceholder("");
+      setNewImage(null);
+      setNewImageUrl("");
+      setNewDeadline("");
+      setNewAwardBadge(false);
+      setNewLang("en");
+      setShowForm(true);
+      setAiOpen(false);
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setAiLoading(false);
+    }
+  }
 
   function applyTemplate(tmpl: typeof TEMPLATES[number]) {
     // Auto-fill both languages from dictionaries
@@ -479,6 +532,13 @@ export function QuestManager({
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
           {t("admin.questsCount", { count: quests.length })}
         </h2>
+        <button
+          type="button"
+          onClick={openAiModal}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 px-2 py-1 rounded-md bg-gradient-to-r from-emerald-50 to-sky-50 hover:from-emerald-100 hover:to-sky-100 border border-gray-200 transition-colors"
+        >
+          ✨ AI assist
+        </button>
       </div>
 
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
@@ -996,6 +1056,61 @@ export function QuestManager({
           </div>
         )}
       </div>
+
+      {/* AI assist modal */}
+      {aiOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
+          onClick={() => !aiLoading && setAiOpen(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-5 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div>
+              <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                ✨ AI quest assist
+              </h3>
+              <p className="text-xs text-gray-500 mt-1">
+                Describe the quest in plain English or Spanish. The AI will fill
+                in the form with both languages, a suggested icon, category, and
+                reward — you review and save.
+              </p>
+            </div>
+            <textarea
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+              placeholder="e.g. Follow us on Instagram for 2 spins. It's a social quest — one-time only."
+              rows={5}
+              disabled={aiLoading}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 resize-none disabled:opacity-50"
+            />
+            {aiError && (
+              <div className="px-3 py-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg">
+                {aiError}
+              </div>
+            )}
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setAiOpen(false)}
+                disabled={aiLoading}
+                className="rounded-lg border border-gray-300 px-4 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
+              >
+                {t("common.cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={runAiAssist}
+                disabled={aiLoading || aiPrompt.trim().length < 3}
+                className="rounded-lg bg-gray-800 text-white px-4 py-1.5 text-xs font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {aiLoading ? "Generating…" : "Generate"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
