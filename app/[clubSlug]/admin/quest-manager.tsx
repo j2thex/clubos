@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { addQuest, updateQuest, deleteQuest, toggleQuestActive } from "./actions";
 import { generateQuestDraftAction } from "./ai-actions";
 import { useLanguage } from "@/lib/i18n/provider";
@@ -136,6 +136,8 @@ export function QuestManager({
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [aiDraftBanner, setAiDraftBanner] = useState(false);
+  const formRef = useRef<HTMLDivElement | null>(null);
 
   function openAiModal() {
     setAiError(null);
@@ -176,6 +178,13 @@ export function QuestManager({
       setNewLang("en");
       setShowForm(true);
       setAiOpen(false);
+      setAiDraftBanner(true);
+      // Scroll the form into view so the admin sees the prefilled fields.
+      // setTimeout lets React render the form first before we scroll.
+      setTimeout(() => {
+        formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 80);
+      setTimeout(() => setAiDraftBanner(false), 8000);
     } catch (err) {
       setAiError(err instanceof Error ? err.message : "Unknown error");
     } finally {
@@ -850,7 +859,25 @@ export function QuestManager({
 
         {/* Add new quest */}
         {showForm && (
-        <div>
+        <div ref={formRef}>
+          {aiDraftBanner && (
+            <div className="px-5 py-3 bg-gradient-to-r from-emerald-50 to-sky-50 border-t border-emerald-100 flex items-start gap-2">
+              <span className="text-base leading-none pt-0.5">✨</span>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-gray-800">AI draft ready</p>
+                <p className="text-xs text-gray-600 mt-0.5">
+                  The form below has been prefilled. Review every field — the admin (you) is still responsible for the final content. Click <strong>Add quest</strong> at the bottom to save.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAiDraftBanner(false)}
+                className="text-gray-400 hover:text-gray-600 text-xs"
+              >
+                ✕
+              </button>
+            </div>
+          )}
           {/* Templates */}
           <div className="px-5 py-4 border-t border-gray-100 bg-gray-50">
             <div className="flex items-center justify-between mb-3">
