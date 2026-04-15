@@ -12,19 +12,19 @@ export function LanguageSwitcher({ variant = "light" }: LanguageSwitcherProps) {
 
   const containerStyles =
     variant === "auto"
-      ? "bg-landing-surface border border-landing-border-subtle shadow-sm"
+      ? "bg-white/90 dark:bg-white/10 border border-gray-200 dark:border-white/15 shadow-sm backdrop-blur"
       : variant === "light"
       ? "bg-white/95 border border-gray-200 shadow-sm backdrop-blur"
       : "bg-white border border-gray-200 shadow-sm";
 
   const activeStyles =
     variant === "auto"
-      ? "bg-landing-text text-landing-surface shadow-sm"
+      ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900 shadow-sm"
       : "bg-gray-900 text-white shadow-sm";
 
   const inactiveStyles =
     variant === "auto"
-      ? "text-landing-text-tertiary hover:text-landing-text"
+      ? "text-gray-500 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
       : "text-gray-500 hover:text-gray-900";
 
   const buttonBase =
