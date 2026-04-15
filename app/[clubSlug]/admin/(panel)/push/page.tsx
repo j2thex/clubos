@@ -1,6 +1,11 @@
 import { PushForm } from "./push-form";
 
-export default function PushPage() {
+export default async function PushPage({
+  params,
+}: {
+  params: Promise<{ clubSlug: string }>;
+}) {
+  const { clubSlug } = await params;
   return (
     <div className="p-6 pb-24">
       <div className="mb-6">
@@ -9,7 +14,7 @@ export default function PushPage() {
           Send a test notification to all members who have subscribed on this club.
         </p>
       </div>
-      <PushForm />
+      <PushForm clubSlug={clubSlug} />
     </div>
   );
 }

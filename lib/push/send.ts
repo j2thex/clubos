@@ -9,7 +9,7 @@ export type PushPayload = {
   tag?: string;
 };
 
-export type SendResult = { sent: number; removed: number };
+export type SendResult = { sent: number; removed: number; failed: number };
 
 type Subscription = {
   id: string;
@@ -35,12 +35,13 @@ async function sendToSubscriptions(
   subs: Subscription[],
   payload: PushPayload,
 ): Promise<SendResult> {
-  if (subs.length === 0) return { sent: 0, removed: 0 };
+  if (subs.length === 0) return { sent: 0, removed: 0, failed: 0 };
   initWebPush();
   const supabase = createAdminClient();
   const body = JSON.stringify(payload);
   const staleIds: string[] = [];
   let sent = 0;
+  let failed = 0;
 
   await Promise.all(
     subs.map(async (s) => {
@@ -54,6 +55,13 @@ async function sendToSubscriptions(
         const statusCode = (err as { statusCode?: number })?.statusCode;
         if (statusCode === 404 || statusCode === 410) {
           staleIds.push(s.id);
+        } else {
+          failed++;
+          console.error("[push] sendNotification failed", {
+            endpoint: s.endpoint,
+            statusCode,
+            message: err instanceof Error ? err.message : String(err),
+          });
         }
       }
     }),
@@ -63,7 +71,7 @@ async function sendToSubscriptions(
     await supabase.from("push_subscriptions").delete().in("id", staleIds);
   }
 
-  return { sent, removed: staleIds.length };
+  return { sent, removed: staleIds.length, failed };
 }
 
 export async function sendPushToClub(
