@@ -38,12 +38,33 @@ export function AddToHomescreenModal({
   }, [open]);
 
   // Lock body scroll while modal is visible.
+  // iOS Safari ignores `overflow: hidden` on body for touch scroll chaining —
+  // we have to take the body out of flow with `position: fixed` and restore
+  // the scroll offset on unmount. Pair with `overscroll-behavior: contain` on
+  // the inner scroller below to block rubber-band boundary chaining too.
   useEffect(() => {
     if (!visible) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const scrollY = window.scrollY;
+    const body = document.body;
+    const prev = {
+      position: body.style.position,
+      top: body.style.top,
+      left: body.style.left,
+      right: body.style.right,
+      width: body.style.width,
+    };
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
     return () => {
-      document.body.style.overflow = prev;
+      body.style.position = prev.position;
+      body.style.top = prev.top;
+      body.style.left = prev.left;
+      body.style.right = prev.right;
+      body.style.width = prev.width;
+      window.scrollTo(0, scrollY);
     };
   }, [visible]);
 
@@ -105,7 +126,7 @@ export function AddToHomescreenModal({
         </div>
 
         {/* Scrollable step list */}
-        <div className="flex-1 overflow-y-auto px-5 pb-6 space-y-4">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-6 space-y-4">
           {STEPS.map((step) => (
             <div
               key={step.n}
