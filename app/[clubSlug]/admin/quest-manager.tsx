@@ -73,12 +73,15 @@ export function QuestManager({
   clubId,
   clubSlug,
   googleReviewUrl,
+  spinDisplayDecimals,
 }: {
   quests: Quest[];
   clubId: string;
   clubSlug: string;
   googleReviewUrl?: string | null;
+  spinDisplayDecimals: number;
 }) {
+  const spinStep = spinDisplayDecimals === 0 ? 1 : 0.1;
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDesc, setEditDesc] = useState("");
@@ -589,7 +592,7 @@ export function QuestManager({
                           type="number"
                           min="0"
                           max="100"
-                          step="0.1"
+                          step={spinStep}
                           value={editReward}
                           onChange={(e) => setEditReward(e.target.value)}
                           className="w-16 rounded-lg border border-gray-300 px-2 py-1.5 text-sm text-gray-900 text-center focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
@@ -883,7 +886,7 @@ export function QuestManager({
                 type="number"
                 min="0"
                 max="100"
-                step="0.1"
+                step={spinStep}
                 value={newReward}
                 onChange={(e) => setNewReward(e.target.value)}
                 required

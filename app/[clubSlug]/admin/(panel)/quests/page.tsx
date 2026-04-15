@@ -16,7 +16,7 @@ export default async function QuestsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id")
+    .select("id, spin_display_decimals")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -89,7 +89,7 @@ export default async function QuestsPage({
         </svg>
         {t(locale, "admin.backToContent")}
       </Link>
-      <QuestManager quests={questList} clubId={club.id} clubSlug={clubSlug} googleReviewUrl={googleReviewUrl} />
+      <QuestManager quests={questList} clubId={club.id} clubSlug={clubSlug} googleReviewUrl={googleReviewUrl} spinDisplayDecimals={club.spin_display_decimals ?? 0} />
     </div>
   );
 }

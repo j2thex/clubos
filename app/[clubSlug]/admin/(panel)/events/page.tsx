@@ -15,7 +15,7 @@ export default async function EventsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id")
+    .select("id, spin_display_decimals")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -89,7 +89,7 @@ export default async function EventsPage({
         </svg>
         {t(locale, "admin.backToContent")}
       </Link>
-      <EventManager events={eventList} clubId={club.id} clubSlug={clubSlug} />
+      <EventManager events={eventList} clubId={club.id} clubSlug={clubSlug} spinDisplayDecimals={club.spin_display_decimals ?? 0} />
     </div>
   );
 }
