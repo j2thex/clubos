@@ -17,11 +17,10 @@ export async function GET(
     : club.club_branding;
 
   const themeColor = branding?.primary_color ?? "#16a34a";
-  const shortName = club.name.length > 12 ? club.name.slice(0, 12) : club.name;
 
   const manifest = {
     name: club.name,
-    short_name: shortName,
+    short_name: club.name,
     start_url: `/${clubSlug}`,
     scope: `/${clubSlug}/`,
     display: "standalone",
