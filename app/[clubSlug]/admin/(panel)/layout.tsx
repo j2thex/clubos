@@ -74,30 +74,22 @@ export default async function AdminPanelLayout({
             <LogoutButton clubSlug={clubSlug} />
           </div>
         </div>
-        <div className="relative flex gap-3 mt-4 max-w-2xl mx-auto">
+        <div className="relative flex flex-wrap gap-2 mt-5 max-w-2xl mx-auto">
           <a
             href={`/${clubSlug}/staff`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs text-gray-400 hover:text-white border border-gray-600 rounded-lg px-3 py-1.5 transition-colors"
+            className="text-sm font-semibold text-white bg-white/15 hover:bg-white/25 border border-white/30 rounded-lg px-4 py-2 transition-colors backdrop-blur-sm"
           >
-            {t(locale, "admin.staffConsole")}
-          </a>
-          <a
-            href={`/${clubSlug}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-gray-400 hover:text-white border border-gray-600 rounded-lg px-3 py-1.5 transition-colors"
-          >
-            {t(locale, "admin.memberPortal")}
+            {t(locale, "admin.staffConsole")} ↗
           </a>
           <a
             href={`/${clubSlug}/public`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs text-gray-400 hover:text-white border border-gray-600 rounded-lg px-3 py-1.5 transition-colors"
+            className="text-sm font-semibold text-white bg-white/15 hover:bg-white/25 border border-white/30 rounded-lg px-4 py-2 transition-colors backdrop-blur-sm"
           >
-            {t(locale, "admin.publicPage")}
+            {t(locale, "admin.publicPage")} ↗
           </a>
         </div>
       </div>

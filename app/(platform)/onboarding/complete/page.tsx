@@ -74,10 +74,6 @@ export default async function CompletePage({
           </div>
         </CardHeader>
         <CardContent className="space-y-5">
-          <p className="rounded-lg border border-gray-200 bg-gray-50 p-5 text-sm text-gray-600">
-            {t(locale, "onboarding.completeCtaHint")}
-          </p>
-
           <Link
             href={adminUrl}
             target="_blank"
