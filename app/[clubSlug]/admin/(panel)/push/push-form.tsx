@@ -4,7 +4,15 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { sendTestPush } from "./actions";
 
-export function PushForm({ clubSlug }: { clubSlug: string }) {
+type EventOption = { id: string; title: string; date: string };
+
+export function PushForm({
+  clubSlug,
+  events,
+}: {
+  clubSlug: string;
+  events: EventOption[];
+}) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [url, setUrl] = useState("");
@@ -76,6 +84,28 @@ export function PushForm({ clubSlug }: { clubSlug: string }) {
         <label htmlFor="push-url" className="block text-sm font-medium text-gray-700 mb-1">
           Link (optional — path on this site)
         </label>
+        <select
+          id="push-url-picker"
+          value=""
+          onChange={(e) => {
+            if (e.target.value) setUrl(e.target.value);
+          }}
+          className="mb-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
+        >
+          <option value="">Quick links…</option>
+          <option value="/">Member home</option>
+          <option value="/events">Events list</option>
+          <option value="/offers">Offers list</option>
+          {events.length > 0 && (
+            <optgroup label="Upcoming events">
+              {events.map((ev) => (
+                <option key={ev.id} value={`/events/${ev.id}`}>
+                  {ev.title} — {ev.date}
+                </option>
+              ))}
+            </optgroup>
+          )}
+        </select>
         <input
           id="push-url"
           type="text"
