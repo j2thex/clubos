@@ -1,7 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getStaffFromCookie, requireActiveStaff } from "@/lib/auth";
+import { requireStaffForClub } from "@/lib/auth";
 import { logActivity } from "@/lib/activity-log";
 import { revalidatePath } from "next/cache";
 
@@ -27,14 +27,14 @@ export async function sellProduct(
   clubSlug: string,
   input: SellInput,
 ): Promise<{ error: string } | { ok: true; transactionId: string }> {
-  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
+  let staff: { member_id: string; club_id: string };
+  try { staff = await requireStaffForClub(input.clubId); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
 
   if (!Number.isFinite(input.quantity) || input.quantity <= 0) {
     return { error: "Quantity must be greater than zero" };
   }
-
-  const staff = await getStaffFromCookie();
-  if (!staff) return { error: "Not authenticated" };
 
   const supabase = createAdminClient();
 
@@ -65,13 +65,10 @@ export async function voidTransaction(
   clubSlug: string,
   reason: string,
 ): Promise<{ error: string } | { ok: true }> {
-  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
-
   const trimmed = reason.trim();
   if (!trimmed) return { error: "Void reason is required" };
 
   const supabase = createAdminClient();
-  const staff = await getStaffFromCookie();
 
   const { data: tx } = await supabase
     .from("product_transactions")
@@ -84,11 +81,16 @@ export async function voidTransaction(
   if (!tx) return { error: "Transaction not found" };
   if (tx.voided_at) return { error: "Already voided" };
 
+  let staff: { member_id: string; club_id: string };
+  try { staff = await requireStaffForClub(tx.club_id); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+
   const { error } = await supabase
     .from("product_transactions")
     .update({
       voided_at: new Date().toISOString(),
-      voided_by: staff?.member_id ?? null,
+      voided_by: staff.member_id,
       void_reason: trimmed,
     })
     .eq("id", transactionId);
@@ -114,7 +116,7 @@ export async function voidTransaction(
 
   await logActivity({
     clubId: tx.club_id,
-    staffMemberId: staff?.member_id,
+    staffMemberId: staff.member_id,
     action: "product_sale_voided",
     targetMemberCode: memberRef?.member_code ?? null,
     details: `${productRef?.name ?? "product"} · qty ${tx.quantity} restored · reason: ${trimmed}`,

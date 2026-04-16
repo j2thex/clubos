@@ -1,7 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { hashPin, getStaffFromCookie, requireActiveStaff } from "@/lib/auth";
+import { hashPin, getStaffFromCookie, requireActiveStaff, requireStaffForClub } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { logActivity } from "@/lib/activity-log";
 import {
@@ -52,7 +52,9 @@ export async function createMember(
   dateOfBirth?: string | null,
   idPhotoPath?: string | null,
 ): Promise<{ error: string } | { ok: true }> {
-  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
+  try { await requireStaffForClub(clubId); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
   const code = memberCode.trim().toUpperCase();
 
   if (!code || code.length < 3 || code.length > 8) {
@@ -339,12 +341,14 @@ export async function setManualValidTill(
 export async function uploadMemberIdPhotoAction(
   formData: FormData,
 ): Promise<{ path: string } | { error: string }> {
-  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
-
   const clubId = formData.get("clubId");
-  const file = formData.get("file");
-
   if (typeof clubId !== "string" || !clubId) return { error: "Missing club" };
+
+  try { await requireStaffForClub(clubId); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+
+  const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) return { error: "No file provided" };
   if (file.size > 5 * 1024 * 1024) return { error: "File too large (max 5 MB)" };
 
@@ -355,9 +359,7 @@ export async function markIdVerified(
   memberId: string,
   clubSlug: string,
 ): Promise<{ error: string } | { ok: true }> {
-  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
   const supabase = createAdminClient();
-  const staff = await getStaffFromCookie();
 
   const { data: current, error: loadError } = await supabase
     .from("members")
@@ -368,11 +370,16 @@ export async function markIdVerified(
   if (loadError || !current) return { error: "Member not found" };
   if (!current.date_of_birth) return { error: "Set date of birth before verifying" };
 
+  let staff: { member_id: string; club_id: string };
+  try { staff = await requireStaffForClub(current.club_id); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+
   const { error } = await supabase
     .from("members")
     .update({
       id_verified_at: new Date().toISOString(),
-      id_verified_by: staff?.member_id ?? null,
+      id_verified_by: staff.member_id,
     })
     .eq("id", memberId);
 
@@ -380,7 +387,7 @@ export async function markIdVerified(
 
   await logActivity({
     clubId: current.club_id,
-    staffMemberId: staff?.member_id,
+    staffMemberId: staff.member_id,
     action: "id_verified",
     targetMemberCode: current.member_code,
     details: current.id_photo_path ? "with photo" : "no photo",
@@ -395,15 +402,20 @@ export async function revokeIdVerification(
   clubSlug: string,
   reason?: string,
 ): Promise<{ error: string } | { ok: true }> {
-  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
   const supabase = createAdminClient();
-  const staff = await getStaffFromCookie();
 
   const { data: current } = await supabase
     .from("members")
     .select("club_id, member_code")
     .eq("id", memberId)
     .single();
+
+  if (!current) return { error: "Member not found" };
+
+  let staff: { member_id: string; club_id: string };
+  try { staff = await requireStaffForClub(current.club_id); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
 
   const { error } = await supabase
     .from("members")
@@ -413,10 +425,10 @@ export async function revokeIdVerification(
   if (error) return { error: "Failed to revoke verification" };
 
   await logActivity({
-    clubId: current?.club_id ?? "",
-    staffMemberId: staff?.member_id,
+    clubId: current.club_id,
+    staffMemberId: staff.member_id,
     action: "id_verification_revoked",
-    targetMemberCode: current?.member_code,
+    targetMemberCode: current.member_code,
     details: reason ?? null,
   });
 

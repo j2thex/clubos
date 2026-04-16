@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireOwnerForClub } from "@/lib/auth";
 import { logActivity } from "@/lib/activity-log";
 import { uploadClubImage, deleteClubImage } from "@/lib/supabase/storage";
 import { revalidatePath } from "next/cache";
@@ -13,6 +14,10 @@ export async function addProductCategory(
   name: string,
   nameEs?: string | null,
 ): Promise<{ error: string } | { ok: true }> {
+  try { await requireOwnerForClub(clubId); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+
   const trimmed = name.trim();
   if (!trimmed) return { error: "Name is required" };
 
@@ -65,6 +70,10 @@ export async function updateProductCategory(
 
   if (!current) return { error: "Category not found" };
 
+  try { await requireOwnerForClub(current.club_id); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+
   const { error } = await supabase
     .from("product_categories")
     .update({ name: trimmed, name_es: nameEs?.trim() || null })
@@ -98,6 +107,10 @@ export async function archiveProductCategory(
 
   if (!current) return { error: "Category not found" };
 
+  try { await requireOwnerForClub(current.club_id); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+
   const { error } = await supabase
     .from("product_categories")
     .update({ archived })
@@ -122,9 +135,13 @@ export async function uploadProductImageAction(
   formData: FormData,
 ): Promise<{ url: string } | { error: string }> {
   const clubId = formData.get("clubId");
-  const file = formData.get("file");
-
   if (typeof clubId !== "string" || !clubId) return { error: "Missing club" };
+
+  try { await requireOwnerForClub(clubId); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+
+  const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) return { error: "No file" };
   if (file.size > 5 * 1024 * 1024) return { error: "File too large (max 5 MB)" };
 
@@ -158,6 +175,10 @@ export async function addProduct(
   clubSlug: string,
   input: ProductInput,
 ): Promise<{ error: string } | { ok: true }> {
+  try { await requireOwnerForClub(clubId); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+
   const validation = validateProductInput(input);
   if (validation) return { error: validation };
 
@@ -216,6 +237,10 @@ export async function updateProduct(
 
   if (!current) return { error: "Product not found" };
 
+  try { await requireOwnerForClub(current.club_id); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+
   // If image was replaced, clean up the old blob.
   if (current.image_url && input.imageUrl && current.image_url !== input.imageUrl) {
     await deleteClubImage(current.image_url).catch(() => {});
@@ -265,6 +290,11 @@ export async function adjustProductStock(
     .single();
 
   if (!current) return { error: "Product not found" };
+
+  try { await requireOwnerForClub(current.club_id); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+
   const before = Number(current.stock_on_hand);
   const after = Math.max(0, before + delta);
 
@@ -302,6 +332,10 @@ export async function archiveProduct(
     .single();
 
   if (!current) return { error: "Product not found" };
+
+  try { await requireOwnerForClub(current.club_id); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
 
   const { error } = await supabase
     .from("products")

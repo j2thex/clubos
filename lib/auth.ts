@@ -126,6 +126,23 @@ export async function requireActiveStaff(): Promise<{ member_id: string; club_id
   return session;
 }
 
+/**
+ * Verify the current staff session is active AND belongs to the given
+ * club. Use from any server action that accepts a clubId or loads a
+ * resource and wants to block cross-club writes.
+ *
+ * Throws (caller wraps in try/catch and returns {error}).
+ */
+export async function requireStaffForClub(
+  clubId: string,
+): Promise<{ member_id: string; club_id: string }> {
+  const session = await requireActiveStaff();
+  if (session.club_id !== clubId) {
+    throw new Error("Unauthorized");
+  }
+  return session;
+}
+
 // --- Owner auth (email + password) ---
 
 const OWNER_COOKIE = "clubos-owner-token";
@@ -176,4 +193,23 @@ export async function getOwnerFromCookie() {
 export async function clearOwnerCookie() {
   const cookieStore = await cookies();
   cookieStore.delete(OWNER_COOKIE);
+}
+
+/**
+ * Verify the current owner session belongs to the given club. Use from
+ * any admin server action that accepts a clubId or loads a resource.
+ *
+ * Throws (caller wraps in try/catch and returns {error}).
+ */
+export async function requireOwnerForClub(
+  clubId: string,
+): Promise<{ owner_id: string; club_id: string }> {
+  const session = await getOwnerFromCookie();
+  if (!session) {
+    throw new Error("Not authenticated");
+  }
+  if (session.club_id !== clubId) {
+    throw new Error("Unauthorized");
+  }
+  return { owner_id: session.owner_id, club_id: session.club_id };
 }

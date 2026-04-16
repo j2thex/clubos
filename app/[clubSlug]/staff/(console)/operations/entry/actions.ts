@@ -1,7 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getStaffFromCookie, requireActiveStaff } from "@/lib/auth";
+import { requireStaffForClub } from "@/lib/auth";
 import { logActivity } from "@/lib/activity-log";
 import { getMemberIdPhotoSignedUrl } from "@/lib/supabase/storage";
 import { revalidatePath } from "next/cache";
@@ -52,7 +52,9 @@ export async function lookupMemberForEntry(
   clubId: string,
   rawCode: string,
 ): Promise<LookupResult> {
-  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
+  try { await requireStaffForClub(clubId); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
 
   const code = sanitizeCode(rawCode);
   if (!code) return { error: "Empty code" };
@@ -111,9 +113,11 @@ export async function admitMember(
   clubSlug: string,
   memberId: string,
 ): Promise<CheckinResult> {
-  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
+  let staff: { member_id: string; club_id: string };
+  try { staff = await requireStaffForClub(clubId); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
   const supabase = createAdminClient();
-  const staff = await getStaffFromCookie();
 
   const { data: member } = await supabase
     .from("members")
@@ -129,7 +133,7 @@ export async function admitMember(
   if (member.valid_till && member.valid_till < today) {
     await logActivity({
       clubId,
-      staffMemberId: staff?.member_id,
+      staffMemberId: staff.member_id,
       action: "entry_blocked_expired",
       targetMemberCode: member.member_code,
       details: `valid till ${member.valid_till}`,
@@ -141,7 +145,7 @@ export async function admitMember(
   if (age === null) {
     await logActivity({
       clubId,
-      staffMemberId: staff?.member_id,
+      staffMemberId: staff.member_id,
       action: "entry_blocked_no_dob",
       targetMemberCode: member.member_code,
     });
@@ -150,7 +154,7 @@ export async function admitMember(
   if (age < 21) {
     await logActivity({
       clubId,
-      staffMemberId: staff?.member_id,
+      staffMemberId: staff.member_id,
       action: "entry_blocked_underage",
       targetMemberCode: member.member_code,
       details: `age ${age}`,
@@ -163,7 +167,7 @@ export async function admitMember(
     .insert({
       club_id: clubId,
       member_id: member.id,
-      checked_in_by: staff?.member_id ?? null,
+      checked_in_by: staff.member_id,
     })
     .select("id")
     .single();
@@ -173,7 +177,7 @@ export async function admitMember(
     if (error.code === "23505") {
       await logActivity({
         clubId,
-        staffMemberId: staff?.member_id,
+        staffMemberId: staff.member_id,
         action: "entry_blocked_duplicate",
         targetMemberCode: member.member_code,
       });
@@ -184,7 +188,7 @@ export async function admitMember(
 
   await logActivity({
     clubId,
-    staffMemberId: staff?.member_id,
+    staffMemberId: staff.member_id,
     action: "entry_checkin",
     targetMemberCode: member.member_code,
     details: `age ${age}`,
@@ -199,9 +203,7 @@ export async function checkoutEntry(
   entryId: string,
   clubSlug: string,
 ): Promise<{ error: string } | { ok: true }> {
-  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
   const supabase = createAdminClient();
-  const staff = await getStaffFromCookie();
 
   const { data: current } = await supabase
     .from("club_entries")
@@ -212,10 +214,15 @@ export async function checkoutEntry(
   if (!current) return { error: "Entry not found" };
   if (current.checked_out_at) return { error: "Already checked out" };
 
+  let staff: { member_id: string; club_id: string };
+  try { staff = await requireStaffForClub(current.club_id); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+
   const now = new Date().toISOString();
   const { error } = await supabase
     .from("club_entries")
-    .update({ checked_out_at: now, checked_out_by: staff?.member_id ?? null })
+    .update({ checked_out_at: now, checked_out_by: staff.member_id })
     .eq("id", entryId);
 
   if (error) return { error: "Failed to check out" };
@@ -230,7 +237,7 @@ export async function checkoutEntry(
 
   await logActivity({
     clubId: current.club_id,
-    staffMemberId: staff?.member_id,
+    staffMemberId: staff.member_id,
     action: "entry_checkout",
     targetMemberCode: memberRef?.member_code ?? null,
     details: `duration ${durationMin} min`,

@@ -1,7 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { hashPin, clearOwnerCookie } from "@/lib/auth";
+import { hashPin, clearOwnerCookie, requireOwnerForClub } from "@/lib/auth";
 import { logActivity } from "@/lib/activity-log";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -57,6 +57,9 @@ export async function toggleOperationsModule(
   enabled: boolean,
   clubSlug: string,
 ): Promise<{ error: string } | { ok: true }> {
+  try { await requireOwnerForClub(clubId); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
   const supabase = createAdminClient();
 
   const { error } = await supabase
