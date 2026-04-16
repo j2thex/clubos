@@ -2,7 +2,8 @@
 
 import { useRef, useState, useTransition } from "react";
 import { addQuest, updateQuest, deleteQuest, toggleQuestActive } from "./actions";
-import { generateQuestDraftAction, generateQuestImageAction, QUEST_IMAGE_DEFAULT_STYLE } from "./ai-actions";
+import { generateQuestDraftAction, generateQuestImageAction } from "./ai-actions";
+import { QUEST_IMAGE_DEFAULT_STYLE } from "./ai-constants";
 import { useLanguage } from "@/lib/i18n/provider";
 import { t as translate } from "@/lib/i18n";
 import { IconPicker } from "@/components/icon-picker";

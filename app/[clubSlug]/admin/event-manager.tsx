@@ -2,7 +2,8 @@
 
 import { useRef, useState, useTransition } from "react";
 import { addEvent, updateEvent, deleteEvent } from "./actions";
-import { generateEventDraftAction, generateEventImageAction, EVENT_IMAGE_DEFAULT_STYLE } from "./ai-actions";
+import { generateEventDraftAction, generateEventImageAction } from "./ai-actions";
+import { EVENT_IMAGE_DEFAULT_STYLE } from "./ai-constants";
 import { IconPicker } from "@/components/icon-picker";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { LanguageTabs } from "@/components/language-tabs";

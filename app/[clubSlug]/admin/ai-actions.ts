@@ -89,11 +89,6 @@ function cleanErrorMessage(msg: string): string {
   return urlless.slice(0, 220);
 }
 
-const QUEST_IMAGE_DEFAULT_STYLE = "flat vector badge, circular, minimal";
-const EVENT_IMAGE_DEFAULT_STYLE = "vibrant event flyer, nightlife vibe";
-
-export { QUEST_IMAGE_DEFAULT_STYLE, EVENT_IMAGE_DEFAULT_STYLE };
-
 export async function generateQuestImageAction(
   clubId: string,
   title: string,
