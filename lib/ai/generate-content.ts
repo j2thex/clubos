@@ -78,18 +78,26 @@ export async function generateDraft<TSchema extends z.ZodTypeAny>(
       byok: resolved.byok,
     };
   } catch (err) {
+    console.error("[generateDraft]", args.contentType, err);
     const msg = err instanceof Error ? err.message : "unknown";
-    await recordUsage({
-      clubId: args.clubId,
-      ownerId: args.ownerId ?? null,
-      contentType: args.contentType,
-      kind: "text",
-      model: resolved.modelId,
-      promptVersion: prompt.version,
-      byok: resolved.byok,
-      status: "error",
-      errorMessage: msg.slice(0, 500),
-    });
+    // Telemetry write must never mask the original error — if ai_generations
+    // insert fails (RLS, missing column, etc.) we still want to re-throw the
+    // underlying generateText failure so the caller can surface a useful msg.
+    try {
+      await recordUsage({
+        clubId: args.clubId,
+        ownerId: args.ownerId ?? null,
+        contentType: args.contentType,
+        kind: "text",
+        model: resolved.modelId,
+        promptVersion: prompt.version,
+        byok: resolved.byok,
+        status: "error",
+        errorMessage: msg.slice(0, 500),
+      });
+    } catch (telemetryErr) {
+      console.error("[generateDraft] recordUsage failed", telemetryErr);
+    }
     throw err;
   }
 }

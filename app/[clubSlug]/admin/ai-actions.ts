@@ -77,6 +77,7 @@ export async function generateQuestDraftAction(
     });
     return { ok: true, draft: result.draft };
   } catch (err) {
+    console.error("[ai-actions] generateQuestDraftAction", clubId, err);
     const msg = err instanceof Error ? err.message : "unknown";
     return { error: `AI generation failed: ${cleanErrorMessage(msg)}` };
   }
@@ -123,6 +124,7 @@ export async function generateQuestImageAction(
     });
     return { ok: true, url: result.url };
   } catch (err) {
+    console.error("[ai-actions] generateQuestImageAction", clubId, err);
     const msg = err instanceof Error ? err.message : "unknown";
     return { error: `Image generation failed: ${cleanErrorMessage(msg)}` };
   }
@@ -166,6 +168,7 @@ export async function generateSetupDraftAction(
     });
     return { ok: true, draft: result.draft };
   } catch (err) {
+    console.error("[ai-actions] generateSetupDraftAction", clubId, err);
     const msg = err instanceof Error ? err.message : "unknown";
     return { error: `Setup generation failed: ${cleanErrorMessage(msg)}` };
   }
@@ -301,6 +304,7 @@ export async function generateEventImageAction(
     });
     return { ok: true, url: result.url };
   } catch (err) {
+    console.error("[ai-actions] generateEventImageAction", clubId, err);
     const msg = err instanceof Error ? err.message : "unknown";
     return { error: `Image generation failed: ${cleanErrorMessage(msg)}` };
   }
@@ -332,6 +336,7 @@ export async function generateEventDraftAction(
     });
     return { ok: true, draft: result.draft };
   } catch (err) {
+    console.error("[ai-actions] generateEventDraftAction", clubId, err);
     const msg = err instanceof Error ? err.message : "unknown";
     return { error: `AI generation failed: ${cleanErrorMessage(msg)}` };
   }
