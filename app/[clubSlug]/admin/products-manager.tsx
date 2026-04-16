@@ -665,8 +665,8 @@ function ProductNewForm({
   const [name, setName] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [unit, setUnit] = useState<"gram" | "piece">("gram");
-  const [unitPrice, setUnitPrice] = useState(0);
-  const [stockOnHand, setStockOnHand] = useState(0);
+  const [unitPrice, setUnitPrice] = useState("");
+  const [stockOnHand, setStockOnHand] = useState("");
   const [isPending, startTransition] = useTransition();
 
   function handleSubmit(e: React.FormEvent) {
@@ -677,8 +677,8 @@ function ProductNewForm({
         categoryId: categoryId || null,
         name,
         unit,
-        unitPrice,
-        stockOnHand,
+        unitPrice: Number(unitPrice) || 0,
+        stockOnHand: Number(stockOnHand) || 0,
       });
       if ("error" in r) toast.error(r.error);
       else {
@@ -686,8 +686,8 @@ function ProductNewForm({
         setName("");
         setCategoryId("");
         setUnit("gram");
-        setUnitPrice(0);
-        setStockOnHand(0);
+        setUnitPrice("");
+        setStockOnHand("");
         setOpen(false);
       }
     });
@@ -755,7 +755,8 @@ function ProductNewForm({
             step="0.01"
             min="0"
             value={unitPrice}
-            onChange={(e) => setUnitPrice(Number(e.target.value))}
+            onChange={(e) => setUnitPrice(e.target.value)}
+            placeholder="0.00"
             className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
           />
         </label>
@@ -768,7 +769,8 @@ function ProductNewForm({
             step={unit === "gram" ? "0.1" : "1"}
             min="0"
             value={stockOnHand}
-            onChange={(e) => setStockOnHand(Number(e.target.value))}
+            onChange={(e) => setStockOnHand(e.target.value)}
+            placeholder="0"
             className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
           />
         </label>

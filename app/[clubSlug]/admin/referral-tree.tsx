@@ -30,7 +30,7 @@ export function ReferralTree({
   const [expandedCode, setExpandedCode] = useState<string | null>(null);
   const [showAddPremium, setShowAddPremium] = useState(false);
   const [newPremiumId, setNewPremiumId] = useState("");
-  const [newPremiumSpins, setNewPremiumSpins] = useState("2");
+  const [newPremiumSpins, setNewPremiumSpins] = useState("");
   const [isPending, startTransition] = useTransition();
 
   function handleTogglePremium(referrer: ReferrerSummary) {
@@ -60,7 +60,7 @@ export function ReferralTree({
         clubSlug,
       );
       setNewPremiumId("");
-      setNewPremiumSpins("2");
+      setNewPremiumSpins("");
       setShowAddPremium(false);
     });
   }
@@ -102,6 +102,7 @@ export function ReferralTree({
                 max={100}
                 value={newPremiumSpins}
                 onChange={(e) => setNewPremiumSpins(e.target.value)}
+                placeholder="2"
                 className="w-20 rounded-lg border border-gray-200 px-3 py-2 text-sm"
               />
             </div>
