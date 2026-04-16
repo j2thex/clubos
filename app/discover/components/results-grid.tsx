@@ -137,16 +137,6 @@ function ResultCard({
           </div>
         )}
 
-        {/* Offer count */}
-        {item.type === "offer" && item.offer_count != null && (
-          <p className="text-xs text-landing-text-secondary mt-2">{item.offer_count} offers available</p>
-        )}
-
-        {/* Quest reward */}
-        {item.type === "quest" && item.reward_spins != null && (
-          <p className="text-xs text-primary/80 mt-2 font-medium">🎡 {item.reward_spins} {item.reward_spins === 1 ? "spin" : "spins"}</p>
-        )}
-
         {/* Tags */}
         {item.tags && item.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-3">
