@@ -3,6 +3,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateDraft } from "@/lib/ai/generate-content";
 import { generateImage } from "@/lib/ai/generate-image";
+import { loadPrompt, renderTemplate } from "@/lib/ai/prompts";
 import {
   questDraftSchema,
   eventDraftSchema,
@@ -106,10 +107,13 @@ export async function generateQuestImageAction(
   try {
     const ctx = await loadClubContext(clubId);
     const trimmedDesc = description.trim();
-    const style = styleHint?.trim() || `Flat vector icon, centered, circular frame, minimal`;
-    const prompt =
-      `${style}, ${ctx.primaryColor} brand color, no text. ` +
-      `Represents: ${trimmedTitle}${trimmedDesc ? ` — ${trimmedDesc}` : ""}`;
+    const tower = await loadPrompt("quest_image");
+    const prompt = renderTemplate(tower.user_template, {
+      title: trimmedTitle,
+      description: trimmedDesc ? ` — ${trimmedDesc}` : "",
+      primary_color: ctx.primaryColor,
+      style_hint: styleHint?.trim() ?? "",
+    });
 
     const result = await generateImage({
       clubId,
@@ -285,10 +289,13 @@ export async function generateEventImageAction(
   try {
     const ctx = await loadClubContext(clubId);
     const trimmedDesc = description.trim();
-    const style = styleHint?.trim() || `Vibrant event flyer illustration, atmospheric nightlife / club vibe, landscape 16:9 composition`;
-    const prompt =
-      `${style}, ${ctx.primaryColor} brand tint, no text. ` +
-      `Event: ${trimmedTitle}${trimmedDesc ? ` — ${trimmedDesc}` : ""}`;
+    const tower = await loadPrompt("event_image");
+    const prompt = renderTemplate(tower.user_template, {
+      title: trimmedTitle,
+      description: trimmedDesc ? ` — ${trimmedDesc}` : "",
+      primary_color: ctx.primaryColor,
+      style_hint: styleHint?.trim() ?? "",
+    });
 
     const result = await generateImage({
       clubId,
