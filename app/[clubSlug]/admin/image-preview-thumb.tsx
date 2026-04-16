@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 
-// Thumbnail that opens a full-size lightbox on click. Clicking the
-// backdrop or pressing Escape closes it; clicking the image itself
-// does nothing so the admin can drag / long-press it.
+// Thumbnail that opens a full-size lightbox on click. Any click
+// (backdrop or image) closes it; Escape also closes.
 
 interface Props {
   src: string;
@@ -51,8 +50,7 @@ export function ImagePreviewThumb({ src, alt, className }: Props) {
           <img
             src={src}
             alt={alt}
-            onClick={(e) => e.stopPropagation()}
-            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl cursor-default"
+            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl cursor-zoom-out"
           />
         </div>
       )}
