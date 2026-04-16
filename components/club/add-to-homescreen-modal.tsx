@@ -100,7 +100,7 @@ export function AddToHomescreenModal({
 
       {/* Sheet */}
       <div
-        className={`relative w-full max-w-md bg-white rounded-t-3xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col transition-transform duration-300 ease-out ${
+        className={`relative w-full max-w-md bg-white rounded-t-lg shadow-2xl max-h-[85vh] overflow-hidden flex flex-col transition-transform duration-300 ease-out ${
           animating ? "translate-y-0" : "translate-y-full"
         }`}
       >
@@ -130,7 +130,7 @@ export function AddToHomescreenModal({
           {STEPS.map((step) => (
             <div
               key={step.n}
-              className="rounded-2xl bg-gray-50 p-4 flex items-start gap-3"
+              className="rounded-lg bg-gray-50 p-4 flex items-start gap-3"
             >
               <div className="shrink-0 w-7 h-7 rounded-full bg-[color:var(--club-primary,#16a34a)] text-white font-bold flex items-center justify-center text-sm">
                 {step.n}
@@ -143,7 +143,7 @@ export function AddToHomescreenModal({
                 <img
                   src={step.imgKey}
                   alt=""
-                  className="w-full rounded-xl border border-gray-200"
+                  className="w-full rounded-lg border border-gray-200"
                 />
               </div>
             </div>

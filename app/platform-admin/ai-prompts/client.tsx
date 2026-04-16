@@ -9,20 +9,35 @@ import { savePromptVersion, restorePromptVersion } from "./actions";
 // assist (the custom-offer creation flow is a trivial name+subtype).
 // The seeded prompt rows for both are left in the DB but not reachable
 // from this editor. Add them back here if either surface ever gets AI.
-const CONTENT_TYPES = ["quest", "event", "setup_agent"] as const;
+//
+// "quest_image" and "event_image" are the prompts used by the Nano Banana
+// image-gen path — the system prompt is ignored by the image model, only
+// user_template is sent as the image prompt.
+const CONTENT_TYPES = ["quest", "event", "setup_agent", "quest_image", "event_image"] as const;
 type ContentType = (typeof CONTENT_TYPES)[number];
 
 const LABELS: Record<ContentType, string> = {
   quest: "Quest",
   event: "Event",
   setup_agent: "Setup Agent",
+  quest_image: "Quest Image",
+  event_image: "Event Image",
 };
 
 const PLACEHOLDER_HINTS: Record<ContentType, string> = {
   quest: "{{club_name}}, {{club_description}}, {{primary_color}}, {{user_prompt}}",
   event: "{{club_name}}, {{club_description}}, {{user_prompt}}",
-  setup_agent: "{{club_name}}, {{club_description}}, {{primary_color}}, {{user_prompt}}",
+  setup_agent: "{{club_name}}, {{club_description}}, {{primary_color}}, {{user_prompt}}, {{current_date}}",
+  quest_image: "{{title}}, {{description}}, {{primary_color}}, {{style_hint}}",
+  event_image: "{{title}}, {{description}}, {{primary_color}}, {{style_hint}}",
 };
+
+// Image types use only the user_template (the image model takes a single
+// prompt string). The system_prompt box is still shown for documentation,
+// but we note it clearly and don't require a minimum length server-side.
+function isImageType(t: ContentType): boolean {
+  return t === "quest_image" || t === "event_image";
+}
 
 interface PromptRow {
   id: string;
@@ -67,12 +82,18 @@ export function AiPromptsClient({
     quest: undefined,
     event: undefined,
     setup_agent: undefined,
+    quest_image: undefined,
+    event_image: undefined,
   });
+
+  const defaultModel = isImageType(activeType)
+    ? "google/gemini-3.1-flash-image-preview"
+    : "anthropic/claude-sonnet-4.6";
 
   const current = drafts[activeType] ?? {
     system: activeVersion?.system_prompt ?? "",
     user: activeVersion?.user_template ?? "",
-    model: activeVersion?.model ?? "anthropic/claude-sonnet-4.6",
+    model: activeVersion?.model ?? defaultModel,
   };
 
   function setField(field: "system" | "user" | "model", value: string) {
@@ -81,7 +102,7 @@ export function AiPromptsClient({
       [activeType]: {
         system: field === "system" ? value : (prev[activeType]?.system ?? activeVersion?.system_prompt ?? ""),
         user: field === "user" ? value : (prev[activeType]?.user ?? activeVersion?.user_template ?? ""),
-        model: field === "model" ? value : (prev[activeType]?.model ?? activeVersion?.model ?? "anthropic/claude-sonnet-4.6"),
+        model: field === "model" ? value : (prev[activeType]?.model ?? activeVersion?.model ?? defaultModel),
       },
     }));
   }
@@ -123,7 +144,7 @@ export function AiPromptsClient({
     drafts[activeType] !== undefined &&
     (current.system !== (activeVersion?.system_prompt ?? "") ||
       current.user !== (activeVersion?.user_template ?? "") ||
-      current.model !== (activeVersion?.model ?? "anthropic/claude-sonnet-4.6"));
+      current.model !== (activeVersion?.model ?? defaultModel));
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
@@ -224,11 +245,16 @@ export function AiPromptsClient({
             <div>
               <label className="block text-[11px] font-medium text-zinc-400 mb-1 uppercase tracking-wide">
                 System prompt
+                {isImageType(activeType) && (
+                  <span className="ml-2 normal-case tracking-normal text-[10px] text-amber-400">
+                    Ignored by image model — use the user template below.
+                  </span>
+                )}
               </label>
               <textarea
                 value={current.system}
                 onChange={(e) => setField("system", e.target.value)}
-                rows={12}
+                rows={isImageType(activeType) ? 4 : 12}
                 className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-sm font-mono leading-relaxed focus:outline-none focus:border-zinc-600 resize-y"
               />
             </div>

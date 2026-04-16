@@ -41,7 +41,10 @@ async function ensureRow(clubId: string): Promise<QuotaRow> {
     .eq("club_id", clubId)
     .maybeSingle<QuotaRow>();
 
-  if (error) throw new Error(`quota lookup failed: ${error.message}`);
+  if (error) {
+    console.error("[quota] lookup failed", clubId, error);
+    throw new Error(`quota lookup failed: ${error.message}`);
+  }
 
   if (data) {
     if (data.quota_period_start !== currentPeriodStart()) {
@@ -69,7 +72,10 @@ async function ensureRow(clubId: string): Promise<QuotaRow> {
       "enabled, monthly_token_limit, monthly_images_limit, tokens_used_this_month, images_used_this_month, quota_period_start",
     )
     .single<QuotaRow>();
-  if (insErr || !inserted) throw new Error(`quota init failed: ${insErr?.message ?? "no row"}`);
+  if (insErr || !inserted) {
+    console.error("[quota] init failed", clubId, insErr);
+    throw new Error(`quota init failed: ${insErr?.message ?? "no row"}`);
+  }
   return inserted;
 }
 

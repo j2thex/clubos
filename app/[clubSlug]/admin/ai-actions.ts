@@ -3,6 +3,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateDraft } from "@/lib/ai/generate-content";
 import { generateImage } from "@/lib/ai/generate-image";
+import { loadPrompt, renderTemplate } from "@/lib/ai/prompts";
 import {
   questDraftSchema,
   eventDraftSchema,
@@ -77,6 +78,7 @@ export async function generateQuestDraftAction(
     });
     return { ok: true, draft: result.draft };
   } catch (err) {
+    console.error("[ai-actions] generateQuestDraftAction", clubId, err);
     const msg = err instanceof Error ? err.message : "unknown";
     return { error: `AI generation failed: ${cleanErrorMessage(msg)}` };
   }
@@ -92,6 +94,7 @@ export async function generateQuestImageAction(
   clubId: string,
   title: string,
   description: string,
+  styleHint?: string,
 ): Promise<{ error: string } | { ok: true; url: string }> {
   const trimmedTitle = title.trim();
   if (trimmedTitle.length < 2) {
@@ -104,18 +107,27 @@ export async function generateQuestImageAction(
   try {
     const ctx = await loadClubContext(clubId);
     const trimmedDesc = description.trim();
-    const prompt =
-      `Flat vector icon, centered, circular frame, ${ctx.primaryColor} brand color, minimal, no text. ` +
-      `Represents: ${trimmedTitle}${trimmedDesc ? ` — ${trimmedDesc}` : ""}`;
+    const tower = await loadPrompt("quest_image");
+    const prompt = renderTemplate(tower.user_template, {
+      title: trimmedTitle,
+      description: trimmedDesc ? ` — ${trimmedDesc}` : "",
+      primary_color: ctx.primaryColor,
+      style_hint: styleHint?.trim() ?? "",
+    });
 
     const result = await generateImage({
       clubId,
       ownerId,
       contentType: "quest",
       prompt,
+      // Nano Banana won't reliably emit a transparent alpha channel, so
+      // the tower prompt tells it to use a solid white background and we
+      // strip that white here before upload. Works for any badge shape.
+      postProcess: "removeWhiteBg",
     });
     return { ok: true, url: result.url };
   } catch (err) {
+    console.error("[ai-actions] generateQuestImageAction", clubId, err);
     const msg = err instanceof Error ? err.message : "unknown";
     return { error: `Image generation failed: ${cleanErrorMessage(msg)}` };
   }
@@ -159,6 +171,7 @@ export async function generateSetupDraftAction(
     });
     return { ok: true, draft: result.draft };
   } catch (err) {
+    console.error("[ai-actions] generateSetupDraftAction", clubId, err);
     const msg = err instanceof Error ? err.message : "unknown";
     return { error: `Setup generation failed: ${cleanErrorMessage(msg)}` };
   }
@@ -267,6 +280,7 @@ export async function generateEventImageAction(
   clubId: string,
   title: string,
   description: string,
+  styleHint?: string,
 ): Promise<{ error: string } | { ok: true; url: string }> {
   const trimmedTitle = title.trim();
   if (trimmedTitle.length < 2) {
@@ -279,12 +293,13 @@ export async function generateEventImageAction(
   try {
     const ctx = await loadClubContext(clubId);
     const trimmedDesc = description.trim();
-    // Events want a richer, wider promo-style image — not a badge icon.
-    // Keep club color as a tint but ask for a poster-feel composition.
-    const prompt =
-      `Vibrant event flyer illustration, ${ctx.primaryColor} brand tint, ` +
-      `atmospheric nightlife / club vibe, no text, landscape 16:9 composition. ` +
-      `Event: ${trimmedTitle}${trimmedDesc ? ` — ${trimmedDesc}` : ""}`;
+    const tower = await loadPrompt("event_image");
+    const prompt = renderTemplate(tower.user_template, {
+      title: trimmedTitle,
+      description: trimmedDesc ? ` — ${trimmedDesc}` : "",
+      primary_color: ctx.primaryColor,
+      style_hint: styleHint?.trim() ?? "",
+    });
 
     const result = await generateImage({
       clubId,
@@ -295,6 +310,7 @@ export async function generateEventImageAction(
     });
     return { ok: true, url: result.url };
   } catch (err) {
+    console.error("[ai-actions] generateEventImageAction", clubId, err);
     const msg = err instanceof Error ? err.message : "unknown";
     return { error: `Image generation failed: ${cleanErrorMessage(msg)}` };
   }
@@ -326,6 +342,7 @@ export async function generateEventDraftAction(
     });
     return { ok: true, draft: result.draft };
   } catch (err) {
+    console.error("[ai-actions] generateEventDraftAction", clubId, err);
     const msg = err instanceof Error ? err.message : "unknown";
     return { error: `AI generation failed: ${cleanErrorMessage(msg)}` };
   }

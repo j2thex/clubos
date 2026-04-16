@@ -2,6 +2,7 @@ import { generateText } from "ai";
 import { uploadClubImage, uploadEventImage } from "@/lib/supabase/storage";
 import { checkQuota, recordUsage } from "./quota";
 import { DEFAULT_IMAGE_MODEL } from "./gateway";
+import { removeWhiteBackground } from "./post-process-image";
 
 // Generates an image via Gemini 3.1 Flash Image ("Nano Banana") through
 // the Vercel AI Gateway, uploads the bytes to the appropriate Supabase
@@ -22,6 +23,11 @@ export interface GenerateImageArgs {
   contentType: "quest" | "event" | "offer" | "badge";
   prompt: string;
   bucket?: "club" | "event";
+  // Optional post-processing. "removeWhiteBg" strips any pixel near pure
+  // white into transparency (used for quest badges because Nano Banana
+  // won't reliably return a real alpha channel — we prompt it to draw on
+  // solid white and strip that white here before upload).
+  postProcess?: "removeWhiteBg";
 }
 
 export interface GenerateImageResult {
@@ -57,12 +63,25 @@ export async function generateImage(args: GenerateImageArgs): Promise<GenerateIm
     }
 
     const img = images[0];
-    const mediaType = img.mediaType ?? "image/png";
-    const ext = mediaType.split("/")[1]?.split("+")[0] ?? "png";
+    const sourceMediaType = img.mediaType ?? "image/png";
+    let bytes: Uint8Array = img.uint8Array;
+    let mediaType = sourceMediaType;
+    let ext = mediaType.split("/")[1]?.split("+")[0] ?? "png";
+
+    if (args.postProcess === "removeWhiteBg") {
+      bytes = await removeWhiteBackground(bytes, sourceMediaType);
+      // If the source was a PNG we've re-encoded as PNG; if it wasn't a
+      // PNG the helper returned the original bytes unchanged, so keep the
+      // source media type/ext in that case.
+      if (sourceMediaType === "image/png") {
+        mediaType = "image/png";
+        ext = "png";
+      }
+    }
 
     // Wrap the bytes in a File so we can reuse the existing upload helpers.
     const file = new File(
-      [img.uint8Array as unknown as BlobPart],
+      [bytes as unknown as BlobPart],
       `ai-${Date.now()}.${ext}`,
       { type: mediaType },
     );

@@ -34,8 +34,14 @@ export async function loadPrompt(contentType: ContentType): Promise<LoadedPrompt
     .eq("active", true)
     .maybeSingle();
 
-  if (error) throw new Error(`loadPrompt(${contentType}) failed: ${error.message}`);
-  if (!data) throw new Error(`No active prompt found for content_type=${contentType}`);
+  if (error) {
+    console.error("[loadPrompt]", contentType, error);
+    throw new Error(`loadPrompt(${contentType}) failed: ${error.message}`);
+  }
+  if (!data) {
+    console.error("[loadPrompt] no active row", contentType);
+    throw new Error(`No active prompt found for content_type=${contentType}`);
+  }
 
   const value = data as LoadedPrompt;
   cache.set(contentType, { value, expires: Date.now() + CACHE_TTL_MS });

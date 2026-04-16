@@ -51,7 +51,7 @@ export function QuestProofModal({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-3xl sm:rounded-2xl shadow-2xl max-w-sm w-full max-h-[85svh] overflow-y-auto animate-in slide-in-from-bottom-4 duration-300"
+        className="bg-white rounded-lg shadow-2xl max-w-sm w-full max-h-[85svh] overflow-y-auto animate-in slide-in-from-bottom-4 duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="relative p-6 space-y-4">
@@ -76,7 +76,7 @@ export function QuestProofModal({
             <p className="text-xs text-gray-500 mt-1">{questTitle}</p>
           </div>
 
-          <p className="text-sm text-gray-600 bg-gray-50 rounded-xl px-4 py-3 text-center">
+          <p className="text-sm text-gray-600 bg-gray-50 rounded-lg px-4 py-3 text-center">
             {t("quests.proof.intro")}
           </p>
 
@@ -85,7 +85,7 @@ export function QuestProofModal({
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isPending}
-              className="w-full rounded-xl club-btn px-4 py-3 text-sm font-semibold disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+              className="w-full rounded-lg club-btn px-4 py-3 text-sm font-semibold disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -117,7 +117,7 @@ export function QuestProofModal({
               type="button"
               onClick={onAskStaff}
               disabled={isPending}
-              className="w-full rounded-xl bg-gray-100 text-gray-700 px-4 py-3 text-sm font-semibold hover:bg-gray-200 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+              className="w-full rounded-lg bg-gray-100 text-gray-700 px-4 py-3 text-sm font-semibold hover:bg-gray-200 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-4a4 4 0 11-8 0 4 4 0 018 0zm6 0a4 4 0 11-8 0 4 4 0 018 0z" />

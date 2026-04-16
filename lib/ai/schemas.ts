@@ -55,7 +55,14 @@ export const setupDraftSchema = z.object({
 });
 export type SetupDraft = z.infer<typeof setupDraftSchema>;
 
-export type ContentType = "quest" | "event" | "offer" | "badge" | "setup_agent";
+export type ContentType =
+  | "quest"
+  | "event"
+  | "offer"
+  | "badge"
+  | "setup_agent"
+  | "quest_image"
+  | "event_image";
 
 export const SCHEMAS = {
   quest: questDraftSchema,

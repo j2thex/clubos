@@ -4,11 +4,23 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { invalidatePromptCache } from "@/lib/ai/prompts";
 import { revalidatePath } from "next/cache";
 
-const CONTENT_TYPES = ["quest", "event", "offer", "badge", "setup_agent"] as const;
+const CONTENT_TYPES = [
+  "quest",
+  "event",
+  "offer",
+  "badge",
+  "setup_agent",
+  "quest_image",
+  "event_image",
+] as const;
 type ContentType = (typeof CONTENT_TYPES)[number];
 
 function isContentType(v: string): v is ContentType {
   return (CONTENT_TYPES as readonly string[]).includes(v);
+}
+
+function isImageType(v: ContentType): boolean {
+  return v === "quest_image" || v === "event_image";
 }
 
 export async function savePromptVersion(
@@ -25,7 +37,10 @@ export async function savePromptVersion(
   const model = String(formData.get("model") ?? "anthropic/claude-sonnet-4.6").trim();
 
   if (!isContentType(contentType)) return { error: "Invalid content_type" };
-  if (systemPrompt.length < 10) return { error: "system_prompt is too short" };
+  // Image types don't use a system prompt (the image model takes only a
+  // single prompt string), so we don't enforce a minimum length there.
+  const minSystemLen = isImageType(contentType) ? 0 : 10;
+  if (systemPrompt.length < minSystemLen) return { error: "system_prompt is too short" };
   if (userTemplate.length < 1) return { error: "user_template is required" };
   if (!model.includes("/")) return { error: "model must be in 'provider/model' format" };
 

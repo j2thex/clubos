@@ -186,6 +186,7 @@ export default async function PeoplePage({
   return (
     <>
       <SetupChecklist clubId={club.id} clubSlug={clubSlug} />
+      <div id="members">
       <PeopleManager
         clubId={club.id}
         clubSlug={clubSlug}
@@ -195,6 +196,7 @@ export default async function PeoplePage({
         referralTree={referrers}
         referralMemberOptions={memberOptions}
       />
+      </div>
     </>
   );
 }

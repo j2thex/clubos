@@ -32,7 +32,7 @@ export function EventDetailClient({
 
   if (checkedIn) {
     return (
-      <div className="w-full py-3 rounded-xl text-sm font-semibold text-center bg-green-100 text-green-700">
+      <div className="w-full py-3 rounded-lg text-sm font-semibold text-center bg-green-100 text-green-700">
         Checked In
       </div>
     );
@@ -54,7 +54,7 @@ export function EventDetailClient({
     <button
       onClick={handleToggle}
       disabled={isPending}
-      className={`w-full py-3 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 ${
+      className={`w-full py-3 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 ${
         hasRsvp
           ? "bg-gray-100 text-gray-600 hover:bg-gray-200"
           : "club-primary-bg text-white hover:opacity-90"

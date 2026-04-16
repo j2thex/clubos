@@ -21,7 +21,7 @@ export function WelcomeOverlay({ clubName }: { clubName: string }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 pb-24">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full max-h-[90svh] overflow-y-auto p-6 space-y-4 animate-in slide-in-from-bottom-4 duration-300">
+      <div className="bg-white rounded-lg shadow-2xl max-w-sm w-full max-h-[90svh] overflow-y-auto p-6 space-y-4 animate-in slide-in-from-bottom-4 duration-300">
         <div className="text-center">
           <p className="text-2xl mb-1">👋</p>
           <h2 className="text-lg font-bold text-gray-900">
@@ -33,21 +33,21 @@ export function WelcomeOverlay({ clubName }: { clubName: string }) {
         </div>
 
         <div className="space-y-2.5">
-          <div className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3">
+          <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-4 py-3">
             <span className="text-lg">🎯</span>
             <div>
               <p className="text-sm font-semibold text-gray-900">{t("welcome.quests")}</p>
               <p className="text-xs text-gray-500">{t("welcome.questsDesc")}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3">
+          <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-4 py-3">
             <span className="text-lg">🎰</span>
             <div>
               <p className="text-sm font-semibold text-gray-900">{t("welcome.spin")}</p>
               <p className="text-xs text-gray-500">{t("welcome.spinDesc")}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3">
+          <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-4 py-3">
             <span className="text-lg">📅</span>
             <div>
               <p className="text-sm font-semibold text-gray-900">{t("welcome.events")}</p>
@@ -58,7 +58,7 @@ export function WelcomeOverlay({ clubName }: { clubName: string }) {
 
         <button
           onClick={dismiss}
-          className="w-full club-btn py-3 rounded-xl text-sm font-bold shadow"
+          className="w-full club-btn py-3 rounded-lg text-sm font-bold shadow"
         >
           {t("welcome.start")}
         </button>

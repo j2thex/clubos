@@ -46,6 +46,9 @@ pnpm-debug.log*
 # claude
 .claude/
 
+# telegram bot (local state for claude-telegram-bot-bridge)
+.telegram_bot/
+
 # OS
 .DS_Store
 Thumbs.db
@@ -59,3 +62,4 @@ next-env.d.ts
 
 # internal docs (not for git)
 docs/
+.vercel

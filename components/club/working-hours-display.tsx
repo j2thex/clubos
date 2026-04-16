@@ -132,7 +132,7 @@ export function WorkingHoursDisplay({
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+    <div className="bg-white rounded-lg shadow-lg overflow-hidden">
       {/* Summary row */}
       <button
         type="button"

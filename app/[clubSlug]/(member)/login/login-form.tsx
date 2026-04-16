@@ -31,7 +31,7 @@ export function LoginForm({ loginMode }: { loginMode: string }) {
   return (
     <div className="min-h-screen flex items-center justify-center px-4" style={{ colorScheme: "light", background: "linear-gradient(135deg, color-mix(in srgb, var(--club-primary, #16a34a) 8%, white), white, color-mix(in srgb, var(--club-primary, #16a34a) 12%, white))" }}>
       <div className="w-full max-w-sm">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-white rounded-lg shadow-xl p-8">
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-full club-tint-bg mb-4">
               <svg
@@ -130,7 +130,7 @@ export function LoginForm({ loginMode }: { loginMode: string }) {
 
         <a
           href={`/${clubSlug}/public`}
-          className="mt-4 inline-flex items-center gap-2 w-full justify-center rounded-xl border-2 border-gray-200 px-6 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+          className="mt-4 inline-flex items-center gap-2 w-full justify-center rounded-lg border-2 border-gray-200 px-6 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
         >
           {t("login.visitClubPage")}
         </a>

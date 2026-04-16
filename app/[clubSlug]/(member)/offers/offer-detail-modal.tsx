@@ -68,7 +68,7 @@ export function OfferDetailModal({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-3xl sm:rounded-2xl shadow-2xl max-w-sm w-full max-h-[85svh] overflow-y-auto animate-in slide-in-from-bottom-4 duration-300"
+        className="bg-white rounded-lg shadow-2xl max-w-sm w-full max-h-[85svh] overflow-y-auto animate-in slide-in-from-bottom-4 duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="relative p-6 space-y-4">
@@ -86,10 +86,10 @@ export function OfferDetailModal({
               <img
                 src={offer.image_url}
                 alt=""
-                className="w-20 h-20 rounded-2xl object-cover mb-3"
+                className="w-20 h-20 rounded-lg object-cover mb-3"
               />
             ) : (
-              <div className="w-20 h-20 rounded-2xl flex items-center justify-center mb-3 bg-gray-100 text-gray-500">
+              <div className="w-20 h-20 rounded-lg flex items-center justify-center mb-3 bg-gray-100 text-gray-500">
                 {displayIcon ? (
                   <DynamicIcon name={displayIcon} className="w-10 h-10" />
                 ) : (
@@ -125,7 +125,7 @@ export function OfferDetailModal({
               href={offer.link}
               target="_blank"
               rel="noopener noreferrer"
-              className="block w-full rounded-xl border border-gray-300 text-center text-sm font-semibold text-gray-700 px-4 py-2.5 hover:bg-gray-50 transition-colors"
+              className="block w-full rounded-lg border border-gray-300 text-center text-sm font-semibold text-gray-700 px-4 py-2.5 hover:bg-gray-50 transition-colors"
             >
               {t("offers.detail.openLink")} →
             </a>
@@ -140,7 +140,7 @@ export function OfferDetailModal({
                       type="button"
                       onClick={mode.onCancel}
                       disabled={mode.isPending}
-                      className="w-full rounded-xl bg-amber-50 text-amber-700 border border-amber-200 px-4 py-3 text-sm font-semibold hover:bg-amber-100 disabled:opacity-50 transition-colors"
+                      className="w-full rounded-lg bg-amber-50 text-amber-700 border border-amber-200 px-4 py-3 text-sm font-semibold hover:bg-amber-100 disabled:opacity-50 transition-colors"
                     >
                       {t("offers.detail.pending")}
                     </button>
@@ -154,7 +154,7 @@ export function OfferDetailModal({
                       type="button"
                       onClick={mode.onRequest}
                       disabled={mode.isPending}
-                      className="w-full rounded-xl club-btn px-4 py-3 text-sm font-semibold disabled:opacity-50 transition-colors"
+                      className="w-full rounded-lg club-btn px-4 py-3 text-sm font-semibold disabled:opacity-50 transition-colors"
                     >
                       {t("offers.detail.request")}
                     </button>
@@ -164,7 +164,7 @@ export function OfferDetailModal({
                   </>
                 )
               ) : (
-                <p className="text-xs text-gray-500 text-center bg-gray-50 rounded-xl px-4 py-3">
+                <p className="text-xs text-gray-500 text-center bg-gray-50 rounded-lg px-4 py-3">
                   {t("offers.detail.notOrderable")}
                 </p>
               )}
@@ -173,7 +173,7 @@ export function OfferDetailModal({
 
           {mode.kind === "staff" && (
             <div className="pt-2">
-              <p className="text-xs text-gray-500 text-center bg-gray-50 rounded-xl px-4 py-3">
+              <p className="text-xs text-gray-500 text-center bg-gray-50 rounded-lg px-4 py-3">
                 {t("offers.detail.staffInfo")}
               </p>
             </div>

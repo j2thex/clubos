@@ -3,6 +3,8 @@
 import { useRef, useState, useTransition } from "react";
 import { addQuest, updateQuest, deleteQuest, toggleQuestActive } from "./actions";
 import { generateQuestDraftAction, generateQuestImageAction } from "./ai-actions";
+import { QUEST_IMAGE_DEFAULT_STYLE } from "./ai-constants";
+import { ImagePreviewThumb } from "./image-preview-thumb";
 import { useLanguage } from "@/lib/i18n/provider";
 import { t as translate } from "@/lib/i18n";
 import { IconPicker } from "@/components/icon-picker";
@@ -144,15 +146,17 @@ export function QuestManager({
   // editImageUrl state so the submit path stays unchanged.
   const [newAiImageLoading, setNewAiImageLoading] = useState(false);
   const [newAiImageError, setNewAiImageError] = useState<string | null>(null);
+  const [newImageStyle, setNewImageStyle] = useState("");
   const [editAiImageLoading, setEditAiImageLoading] = useState(false);
   const [editAiImageError, setEditAiImageError] = useState<string | null>(null);
+  const [editImageStyle, setEditImageStyle] = useState("");
 
   async function runNewAiImageGen() {
     if (newAiImageLoading) return;
     setNewAiImageError(null);
     setNewAiImageLoading(true);
     try {
-      const result = await generateQuestImageAction(clubId, newTitle, newDesc);
+      const result = await generateQuestImageAction(clubId, newTitle, newDesc, newImageStyle);
       if ("error" in result) {
         setNewAiImageError(result.error);
         return;
@@ -171,7 +175,7 @@ export function QuestManager({
     setEditAiImageError(null);
     setEditAiImageLoading(true);
     try {
-      const result = await generateQuestImageAction(clubId, editTitle, editDesc);
+      const result = await generateQuestImageAction(clubId, editTitle, editDesc, editImageStyle);
       if ("error" in result) {
         setEditAiImageError(result.error);
         return;
@@ -718,14 +722,14 @@ export function QuestManager({
                       <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questImage")}</label>
                       {editImageUrl && (
                         <div className="mb-2 p-2 bg-white rounded-lg border border-gray-200 flex items-center gap-3">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
+                          <ImagePreviewThumb
                             src={editImageUrl}
                             alt="Quest image preview"
-                            className="w-12 h-12 rounded-lg object-cover border border-gray-200"
+                            className="w-20 h-20 rounded-lg object-cover border border-gray-200"
                           />
                           <div className="flex-1 min-w-0">
                             <p className="text-[10px] text-gray-400 truncate">{editImageUrl}</p>
+                            <p className="text-[10px] text-gray-400">Click preview to zoom</p>
                           </div>
                           <button
                             type="button"
@@ -740,19 +744,25 @@ export function QuestManager({
                         </div>
                       )}
                       <div className="flex items-center gap-2 mb-1">
+                        <input
+                          type="text"
+                          value={editImageStyle}
+                          onChange={(e) => setEditImageStyle(e.target.value)}
+                          placeholder={QUEST_IMAGE_DEFAULT_STYLE}
+                          className="flex-1 min-w-0 rounded-md border border-gray-200 px-2 py-1.5 text-xs text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                        />
                         <button
                           type="button"
                           onClick={runEditAiImageGen}
                           disabled={editAiImageLoading || !editTitle.trim()}
-                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-700 hover:text-gray-900 px-3 py-1.5 rounded-md bg-gradient-to-r from-emerald-50 to-sky-50 hover:from-emerald-100 hover:to-sky-100 border border-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-700 hover:text-gray-900 px-3 py-1.5 rounded-md bg-gradient-to-r from-emerald-50 to-sky-50 hover:from-emerald-100 hover:to-sky-100 border border-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                         >
                           {editAiImageLoading
                             ? "Generating…"
                             : editImageUrl
-                              ? "✨ Regenerate image"
-                              : "✨ Generate image"}
+                              ? "✨ Regen"
+                              : "✨ Generate"}
                         </button>
-                        <span className="text-[10px] text-gray-400">or paste URL / upload ↓</span>
                       </div>
                       <input
                         type="url"
@@ -1072,14 +1082,14 @@ export function QuestManager({
             <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questImage")}</label>
             {newImageUrl && (
               <div className="mb-2 p-2 bg-white rounded-lg border border-gray-200 flex items-center gap-3">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <ImagePreviewThumb
                   src={newImageUrl}
                   alt="Quest image preview"
-                  className="w-12 h-12 rounded-lg object-cover border border-gray-200"
+                  className="w-20 h-20 rounded-lg object-cover border border-gray-200"
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] text-gray-400 truncate">{newImageUrl}</p>
+                  <p className="text-[10px] text-gray-400">Click preview to zoom</p>
                 </div>
                 <button
                   type="button"
@@ -1094,19 +1104,25 @@ export function QuestManager({
               </div>
             )}
             <div className="flex items-center gap-2 mb-1">
+              <input
+                type="text"
+                value={newImageStyle}
+                onChange={(e) => setNewImageStyle(e.target.value)}
+                placeholder={QUEST_IMAGE_DEFAULT_STYLE}
+                className="flex-1 min-w-0 rounded-md border border-gray-200 px-2 py-1.5 text-xs text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
+              />
               <button
                 type="button"
                 onClick={runNewAiImageGen}
                 disabled={newAiImageLoading || !newTitle.trim()}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-700 hover:text-gray-900 px-3 py-1.5 rounded-md bg-gradient-to-r from-emerald-50 to-sky-50 hover:from-emerald-100 hover:to-sky-100 border border-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-700 hover:text-gray-900 px-3 py-1.5 rounded-md bg-gradient-to-r from-emerald-50 to-sky-50 hover:from-emerald-100 hover:to-sky-100 border border-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
               >
                 {newAiImageLoading
                   ? "Generating…"
                   : newImageUrl
-                    ? "✨ Regenerate image"
-                    : "✨ Generate image"}
+                    ? "✨ Regen"
+                    : "✨ Generate"}
               </button>
-              <span className="text-[10px] text-gray-400">or paste URL / upload ↓</span>
             </div>
             <input
               type="url"
