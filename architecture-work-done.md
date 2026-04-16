@@ -66,7 +66,7 @@
 | 3 | **Quest Templates** | Quick-add: Instagram, TikTok, YouTube, WhatsApp, Google Review, Photo, Event, Check-In, Referral, Feedback, Tutorial, Email Collect |
 | 4 | **Event Manager** | Create/edit events: bilingual content, pricing, images, icons, recurring (RRULE), location, rewards, end time |
 | 5 | **Offer Manager** | Two-tier catalog (platform + club-specific), per-club pricing, 7 subtypes, archiving |
-| 6 | **Badge Manager** | Create badges with icons/images/colors, auto-award from quest completion |
+| ~~6~~ | ~~**Badge Manager**~~ | **Removed in Phase 4 AI revision.** Badges are now created implicitly via the "Award badge on completion" checkbox on the quest form. The linked badge row inherits `name`, `icon`, and `image_url` from the quest. No standalone badge CRUD UI. |
 | 7 | **Spin Wheel Config** | Segments: colors, probabilities, bilingual labels, spin cost, display decimals |
 | 8 | **Branding Manager** | Logo, cover image, primary/secondary colors, hero text, social links, Google Place ID |
 | 9 | **Gallery Manager** | Upload/order/delete club images with captions |
@@ -831,6 +831,87 @@ Switching locale writes the `clubos-lang` cookie and calls `router.refresh()` to
 - `app/layout.tsx` — `<Analytics />` and `<SpeedInsights />` in body
 - `package.json` — `@vercel/analytics`, `@vercel/speed-insights` dependencies
 
+## PWA & Web Push
+
+The base PWA manifest at `app/manifest.ts` (see "Brand Icons & PWA Manifest" under SEO) covers the marketing site. Per-club PWA install and web push live in this section.
+
+### Per-Club PWA Install (iOS Add to Home Screen)
+
+**Request:** When a member installs the club PWA on iOS, the home-screen icon should be the club's logo on the club's primary color (not the generic osocios green), and tapping the icon should launch into that club's member portal — not osocios.club's landing page. Existing static manifest had `start_url: "/"` and global icons, so on iOS 16.4+ Safari (which honors manifest start_url) every install opened the wrong place.
+
+**Changes:**
+- New dynamic route handler `app/[clubSlug]/manifest.webmanifest/route.ts` — reads `clubs + club_branding` via the cached `getClub()` helper and returns a per-club manifest with `name`, `start_url: /{clubSlug}`, `scope: /{clubSlug}/`, `theme_color` from `club_branding.primary_color`, and `icons` pointing at the per-club icon route.
+- New dynamic route handler `app/[clubSlug]/icon.png/route.tsx` — uses `next/og`'s `ImageResponse` to composite the club's `logo_url` (fetched and embedded as a base64 data URL) onto a square canvas filled with the club's `primary_color`. Two sizes via `?size=180|512` query param. Falls back to a white-on-color monogram (first letters of the club name) when `logo_url` is null or fetch fails.
+- Member layout's `generateMetadata` extended to emit `manifest`, `appleWebApp` (with the club name as the standalone title), and `icons.apple` referencing the per-club icon route.
+- `components/club/add-to-homescreen.tsx` rewritten: previously dead code, now an iOS-only banner that shows on the member home page with a compact card (Share icon + title + tagline + "Show me how" button + dismiss). Module-level `A2HS_TEST_MODE` constant gates whether the banner shows on every load (test mode) or once-per-club via localStorage (production). Rendered from the member home page (`app/[clubSlug]/(member)/page.tsx`).
+- `middleware.ts` allowlists `/{clubSlug}/manifest.webmanifest` and `/{clubSlug}/icon.png` so iOS Safari can fetch them anonymously without being redirected to the member login. Same fix later applied to `/a2hs/*` static assets and `/sw.js` (see web push entry below). Also added `a2hs` and `sw.js` to `lib/reserved-slugs.ts` so club onboarding can't collide with these reserved paths.
+
+**How it works:** When iOS Safari renders a club page, the member layout injects `<link rel="manifest" href="/{slug}/manifest.webmanifest">`, `<link rel="apple-touch-icon" href="/{slug}/icon.png">`, and `<meta name="apple-mobile-web-app-title" content="{Club Name}">`. Both routes are fully dynamic (cached `public, max-age=300, s-maxage=3600, stale-while-revalidate=86400`), so a club owner editing their logo or color sees the new icon on new installs within ~5 minutes — no admin action, no migration, no per-club setup. Existing clubs adopt the feature automatically: clubs with `logo_url` get their real logo composited on their primary color; clubs without one get a clean monogram tile.
+
+**Key files:**
+- `app/[clubSlug]/manifest.webmanifest/route.ts` — per-club web manifest
+- `app/[clubSlug]/icon.png/route.tsx` — per-club apple-touch-icon (180/512), monogram fallback
+- `app/[clubSlug]/(member)/layout.tsx` — `generateMetadata` injects manifest + apple-touch-icon + appleWebApp meta
+- `app/[clubSlug]/(member)/page.tsx` — renders `<AddToHomescreen clubSlug={clubSlug} />` above the bento grid
+- `components/club/add-to-homescreen.tsx` — banner with three modes (install / subscribe / hidden), test-mode flag, club-scoped once-only localStorage key
+- `middleware.ts` — allowlists `/manifest.webmanifest`, `/icon.png`, `/a2hs/*`, `/sw.js`
+- `lib/reserved-slugs.ts` — reserves `a2hs` and `sw.js`
+
+### A2HS Walkthrough Modal (4-Step Visual Guide)
+
+**Request:** The single-line "Tap the Share button, then Add to Home Screen" copy on the install banner is wrong for modern iOS Safari — the real flow is four taps and "Add to Home Screen" is hidden behind the "View More" button in the share sheet by default. Members were giving up before finding it. Replace the one-line text with a tap-through visual walkthrough.
+
+**Changes:**
+- New `components/club/add-to-homescreen-modal.tsx` — a bottom-sheet dialog (slides up from the bottom, backdrop fades in) with a scrollable vertical stack of 4 step cards. Each card has a numbered badge + caption + iPhone Safari screenshot. Uses a separate `visible`/`animating` state pair so the close animation plays before unmount. Body scroll lock uses `position: fixed; top: -<scrollY>px` (iOS Safari ignores `overflow: hidden` for touch scrolling — the fixed-body trick is the canonical workaround). Inner scroll container has `overscroll-behavior: contain` to block rubber-band chaining at boundaries. Focus moves to the close button on open, returns to the trigger on close. Escape key closes. Drag handle is decorative (no swipe-to-dismiss in v1).
+- 4 real iPhone screenshots cropped from raw 1206×2622 captures down to the relevant UI element only (Safari bar / Share popup / share-sheet bottom row with View More / expanded share sheet showing Add to Home Screen). Resized to 800px wide JPEG quality 90 via ImageMagick. Files at `public/a2hs/step-1.jpg` through `step-4.jpg`, ~35 KB each, ~160 KB total.
+- 8 new i18n keys for both EN and ES: `a2hs.tagline`, `a2hs.showMe`, `a2hs.stepsTitle`, `a2hs.step1`–`a2hs.step4`, `a2hs.close`. Old `a2hs.ios` and `a2hs.android` keys left in the dictionaries as dead keys.
+- Banner `components/club/add-to-homescreen.tsx` changed from a single inline-text card to a compact card with a "Show me how" button that opens the modal. The animated `animate-a2hs-bounce` arrow from the previous iteration is dead CSS in `app/globals.css` (left in place — harmless).
+
+**How it works:** The install state of the A2HS card now reads "Add to Home Screen / Install for quick access" + a "Show me how" button. Tapping the button opens the bottom sheet with the four screenshots and captions. Captions use the modern iOS flow: tap ⋯ → tap Share → scroll and tap View More → tap Add to Home Screen. Modal is fully accessible (`role="dialog"`, focus trap, Escape, backdrop tap), and body scroll is properly locked on iOS — earlier iterations had a sporadic scroll-chaining bug where touches leaked to the page underneath, fixed by switching from `body.style.overflow = "hidden"` to the position-fixed-and-restore-scroll pattern.
+
+**Key files:**
+- `components/club/add-to-homescreen-modal.tsx` — bottom-sheet dialog with 4 step cards, focus management, body scroll lock
+- `components/club/add-to-homescreen.tsx` — banner trigger ("Show me how" button)
+- `public/a2hs/step-1.jpg` — Safari bottom bar with ⋯
+- `public/a2hs/step-2.jpg` — ⋯ popup with Share row
+- `public/a2hs/step-3.jpg` — share sheet bottom row with View More
+- `public/a2hs/step-4.jpg` — expanded share sheet with Add to Home Screen
+- `lib/i18n/dictionaries/en.json`, `lib/i18n/dictionaries/es.json` — `a2hs.*` keys
+
+### Web Push Notifications (Members v1)
+
+**Request:** Members on iOS PWA install should be able to subscribe to web push notifications, and an admin should be able to send a test push from a new admin page that arrives on every subscribed member's device. Self-hosted, no third-party SDK, full data ownership. Phase 1 is members only — staff push and transactional triggers (member→staff on order, staff→member on approval, admin segmentation) are deferred to follow-up phases.
+
+**Changes:**
+- New Supabase migration `20260415150000_add_push_subscriptions.sql` creates `push_subscriptions` (id, member_id, club_id, endpoint, p256dh, auth, user_agent, created_at, last_seen_at), unique on `endpoint`, indexes on `member_id` and `club_id`, RLS policy permitting only the service role.
+- `web-push` and `@types/web-push` added as dependencies. VAPID keypair generated via `npx web-push generate-vapid-keys` and stored in `.env.local` and Vercel preview(develop) + production as `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (mailto: jnamed@gmail.com), `NEXT_PUBLIC_VAPID_PUBLIC_KEY`.
+- New global service worker `public/sw.js` (hand-written vanilla JS, no build step). Handles `push` events (decodes payload, calls `showNotification` with title/body/icon/data) and `notificationclick` events (focuses an existing PWA tab pointing at the click URL or opens a new one). Uses `skipWaiting` + `clients.claim` so updates take effect immediately. `middleware.ts` allowlists `/sw.js` so it serves at root scope `/`.
+- `lib/push/client.ts` — browser helpers: `registerServiceWorker()`, `getExistingSubscription()`, `subscribeToPush(vapidKey)` (idempotent, returns existing subscription if present, otherwise asks `Notification.requestPermission()` then calls `pushManager.subscribe`). Internal `urlBase64ToUint8Array` for the VAPID key conversion the Web Push API requires.
+- `lib/push/send.ts` — server-side sender. Two public functions: `sendPushToClub(clubId, payload)` and `sendPushToMember(memberId, payload)`, both returning `{ sent, removed }`. Internal `sendToSubscriptions` helper does the per-subscription try/catch with parallel `Promise.all`, lazily initialises `web-push` on first call (so missing env vars don't crash at import time), and deletes stale subscriptions in a single batch when the push service returns 404 or 410.
+- `app/[clubSlug]/(member)/push-actions.ts` — `savePushSubscription` server action. Validates the member cookie via `getMemberFromCookie()`, validates the subscription has the three required fields, upserts into `push_subscriptions` keyed by `endpoint` (so re-subscribing from the same device is idempotent). Returns a `{ ok: true } | { ok: false, error }` discriminated union.
+- `components/club/add-to-homescreen.tsx` evolved into a 3-state progressive install card: `install` (iOS, not standalone) shows the existing "Show me how" walkthrough; `subscribe` (standalone, not subscribed) shows a Bell icon + "Enable notifications" + "Never miss events and offers" + a Subscribe button that runs `subscribeToPush` → `savePushSubscription` → toast → hide; `hidden` once subscribed (forever — not gated by `A2HS_TEST_MODE`, which only gates the install state). Sonner toast for success/blocked/error states.
+- 6 new i18n keys for both EN and ES: `a2hs.subscribeTitle`, `a2hs.subscribeTagline`, `a2hs.subscribe`, `a2hs.subscribing`, `a2hs.subscribed`, `a2hs.blocked`.
+- New admin page at `/[clubSlug]/admin/push` — server component renders a `PushForm` client component with title (max 80) / body (max 300) / optional link inputs and a "Send test notification" button. `sendTestPush` server action validates the owner cookie via `getOwnerFromCookie()`, validates lengths, calls `sendPushToClub(session.club_id, payload)`, returns `{ ok: true, sent, removed }` or `{ ok: false, error }`. Sonner toast reports the outcome.
+- The admin Settings page (`app/[clubSlug]/admin/(panel)/settings/page.tsx`) gains a new `<CollapsibleSection title="Push Notifications">` (placed right after "Notification Light") containing a card link to `/admin/push`. The 4-tab admin bottom nav was deliberately not extended — the Settings card is the navigation entry point.
+
+**How it works:** A member installs the club PWA via the existing walkthrough, launches it from the home screen, and lands on the member home page. The A2HS card detects standalone mode and queries the service worker for an existing push subscription. With no subscription found, it switches to the subscribe state. The member taps Subscribe; the browser shows the permission prompt; on grant, `pushManager.subscribe` returns a subscription object which is upserted into Supabase. The card hides and a toast confirms. Meanwhile the club owner opens Admin → Settings → Push Notifications, lands on the compose page, fills in title and body, and clicks Send. The action queries `push_subscriptions` for the club's rows, signs and POSTs the encrypted payload to each device's push service via `web-push`, and the service worker on each device wakes up and shows the notification. Stale subscriptions (404/410) are auto-deleted in the same call so the table self-cleans. Tapping the notification on the member device focuses an existing PWA tab at the click URL or opens a new one.
+
+**Out of scope (deferred):** staff push subscription, member→staff transactional triggers (new order → push to staff), staff→member transactional triggers (approval → push to member), admin segmentation/scheduled sends/analytics, subscriber list UI, notification action buttons / images / badges. The Telegram informer (`/api/notify/[clubId]`) stays as the staff signal until a future phase.
+
+**Key files:**
+- `supabase/migrations/20260415150000_add_push_subscriptions.sql` — table + indexes + RLS
+- `public/sw.js` — service worker (push + notificationclick handlers)
+- `lib/push/client.ts` — browser helpers (register, subscribe, getExisting)
+- `lib/push/send.ts` — server sender (`sendPushToClub`, `sendPushToMember`, stale cleanup)
+- `app/[clubSlug]/(member)/push-actions.ts` — `savePushSubscription` server action
+- `components/club/add-to-homescreen.tsx` — 3-state install / subscribe / hidden card
+- `app/[clubSlug]/admin/(panel)/push/page.tsx` — admin compose page
+- `app/[clubSlug]/admin/(panel)/push/push-form.tsx` — title/body/link form (client)
+- `app/[clubSlug]/admin/(panel)/push/actions.ts` — `sendTestPush` server action with input validation
+- `app/[clubSlug]/admin/(panel)/settings/page.tsx` — collapsible section linking to `/admin/push`
+- `middleware.ts` — `/sw.js` allowlist
+- Vercel env: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (preview(develop) + production)
+
 ## GitHub Workflow
 
 ### gh CLI Token Fix
@@ -843,3 +924,20 @@ Switching locale writes the `clubos-lang` cookie and calls `router.refresh()` to
 
 **Key files:**
 - `~/.zshrc` — `GITHUB_TOKEN` line replaced with comment
+
+## Trello CLI (token-efficient replacement for Trello MCP)
+
+### Local `trello` CLI wrapping the REST API
+
+**Request:** Stop using the `mcp__trello__*` tools in `/work`, `/clarify`, and `/feedback-work` because they return bloated payloads that burn context tokens. Use a CLI instead.
+
+**Changes:** Created `~/.local/bin/trello`, a ~100-line bash script that wraps the Trello REST API with `curl` + `jq` and returns compact JSON shaped for LLM consumption. Supports `list`, `card`, `comment`, `move`, `add`, and `lists`. Accepts list aliases (`critical`, `feedback`, `inprogress`, `qa`) so list IDs stay out of prompts. Reads `TRELLO_API_KEY` and `TRELLO_TOKEN` from env (already persisted in `~/.zshrc`). Board ID hardcoded to `69b17b5c03c1268fdd0dd0eb` (osocios.club). Updated `.claude/commands/work.md`, `.claude/commands/clarify.md`, and `~/.claude/skills/feedback-work/SKILL.md` to call the CLI and explicitly forbid `mcp__trello__*`.
+
+**How it works:** In a Claude session, instead of invoking an MCP tool that returns a large JSON blob with every field Trello knows, the model runs `trello list critical` / `trello card <id>` / `trello move <id> qa` / `trello comment <id> "@mikitatrayan test: ..."` via Bash. The script only requests and emits the fields the workflows actually need (id, name, labels, due, members, short desc, checklists, last 20 comments), shrinking per-call output roughly 5–10×. `trello help` prints the full surface. Fails fast if env vars are missing.
+
+**Key files:**
+- `~/.local/bin/trello` — the CLI script (curl + jq wrapper, list aliases, compact JSON output)
+- `.claude/commands/work.md` — daily work session; now calls `trello list/card/move/comment`
+- `.claude/commands/clarify.md` — clarify-unclear-cards flow; now calls `trello list/card/comment`
+- `~/.claude/skills/feedback-work/SKILL.md` — feedback processing flow; now calls `trello list/card/move/comment`
+- `~/.zshrc` — holds `TRELLO_API_KEY` and `TRELLO_TOKEN` so the CLI works in any shell/session
