@@ -395,6 +395,18 @@ function EntryDialog({
               {t("ops.entry.expired", { date: member.validTill })}
             </span>
           )}
+          {!member.validExpired && member.validTill && (() => {
+            const target = new Date(member.validTill + "T00:00:00").getTime();
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+            const days = Math.ceil((target - now.getTime()) / 86400000);
+            if (days < 0 || days > 7) return null;
+            return (
+              <span className="text-xs rounded-full px-2.5 py-1 bg-amber-100 text-amber-800 font-semibold">
+                {t("ops.entry.expiresSoon", { days })}
+              </span>
+            );
+          })()}
           {alreadyInside && (
             <span className="text-xs rounded-full px-2.5 py-1 bg-blue-100 text-blue-800 font-semibold">
               {t("ops.entry.alreadyInside")}

@@ -394,6 +394,7 @@
   "ops.tx.voidCancel": "Cancel",
   "ops.tx.voided": "Transaction voided; stock restored",
   "ops.tx.staffColumn": "by {code}",
+  "ops.tx.exportCsv": "Export CSV",
   "ops.capacity.checkoutConfirm": "Check {code} out?",
   "ops.capacity.checkedOut": "{code} checked out",
   "ops.capacity.checkoutBtn": "Check out",

@@ -65,6 +65,79 @@ export async function sellProduct(
   return { ok: true, transactionId: txId as string };
 }
 
+export async function exportTodayTransactionsCsv(
+  clubId: string,
+): Promise<{ error: string } | { ok: true; csv: string; filename: string }> {
+  try { await requireStaffForClub(clubId); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+
+  const supabase = createAdminClient();
+  const dayStart = new Date(new Date().toDateString()).toISOString();
+
+  const { data } = await supabase
+    .from("product_transactions")
+    .select(
+      "id, created_at, quantity, unit_price_at_sale, total_price, weight_source, scale_raw_reading, voided_at, void_reason, members(member_code), products(name, unit), staff:fulfilled_by(member_code)",
+    )
+    .eq("club_id", clubId)
+    .gte("created_at", dayStart)
+    .order("created_at", { ascending: false });
+
+  const header = [
+    "timestamp",
+    "transaction_id",
+    "product",
+    "unit",
+    "quantity",
+    "unit_price_eur",
+    "total_eur",
+    "member_code",
+    "staff_code",
+    "weight_source",
+    "scale_raw",
+    "voided",
+    "void_reason",
+  ].join(",");
+
+  const rows = (data ?? []).map((tx) => {
+    const member = Array.isArray(tx.members) ? tx.members[0] : tx.members;
+    const product = Array.isArray(tx.products) ? tx.products[0] : tx.products;
+    const staffRef = Array.isArray(tx.staff) ? tx.staff[0] : tx.staff;
+    const cells = [
+      tx.created_at,
+      tx.id,
+      product?.name ?? "",
+      product?.unit ?? "",
+      tx.quantity,
+      tx.unit_price_at_sale,
+      tx.total_price,
+      member?.member_code ?? "",
+      staffRef?.member_code ?? "",
+      tx.weight_source,
+      tx.scale_raw_reading ?? "",
+      tx.voided_at ? "yes" : "no",
+      tx.void_reason ?? "",
+    ];
+    return cells
+      .map((cell) => {
+        const s = String(cell);
+        if (s.includes(",") || s.includes('"') || s.includes("\n")) {
+          return `"${s.replaceAll('"', '""')}"`;
+        }
+        return s;
+      })
+      .join(",");
+  });
+
+  const today = new Date().toISOString().split("T")[0];
+  return {
+    ok: true,
+    csv: [header, ...rows].join("\n"),
+    filename: `transactions-${today}.csv`,
+  };
+}
+
 export async function voidTransaction(
   transactionId: string,
   clubSlug: string,

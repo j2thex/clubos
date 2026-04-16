@@ -4,6 +4,7 @@ import Link from "next/link";
 import { t, getDateLocale } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 import { VoidButton } from "./void-button";
+import { ExportCsvButton } from "./export-button";
 
 export const dynamic = "force-dynamic";
 
@@ -112,12 +113,15 @@ export default async function StaffOperationsTransactionsPage({
         <h1 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
           {t(locale, "ops.transactionsTitle")}
         </h1>
-        <Link
-          href={`/${clubSlug}/staff/operations/sell`}
-          className="text-xs text-gray-500 hover:text-gray-900"
-        >
-          ← {t(locale, "ops.sellLink")}
-        </Link>
+        <div className="flex items-center gap-3">
+          <ExportCsvButton clubId={club.id} />
+          <Link
+            href={`/${clubSlug}/staff/operations/sell`}
+            className="text-xs text-gray-500 hover:text-gray-900"
+          >
+            ← {t(locale, "ops.sellLink")}
+          </Link>
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl shadow-lg p-5 text-center">
