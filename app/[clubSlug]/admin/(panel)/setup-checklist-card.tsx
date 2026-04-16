@@ -94,14 +94,27 @@ export function SetupChecklistCard({
                 {item.label}
               </span>
             </div>
-            {!item.done && (
-              <Link
-                href={item.href}
-                className="shrink-0 rounded-md bg-gray-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-700"
-              >
-                {item.ctaLabel}
-              </Link>
-            )}
+            {!item.done &&
+              (item.href.startsWith("#") ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    document
+                      .getElementById(item.href.slice(1))
+                      ?.scrollIntoView({ behavior: "smooth" })
+                  }
+                  className="shrink-0 rounded-md bg-gray-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-700"
+                >
+                  {item.ctaLabel}
+                </button>
+              ) : (
+                <Link
+                  href={item.href}
+                  className="shrink-0 rounded-md bg-gray-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-700"
+                >
+                  {item.ctaLabel}
+                </Link>
+              ))}
           </li>
         ))}
       </ul>

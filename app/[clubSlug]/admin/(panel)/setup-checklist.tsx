@@ -82,7 +82,7 @@ export async function SetupChecklist({
       key: "member",
       label: tr("adminSetup.member"),
       ctaLabel: tr("adminSetup.memberCta"),
-      href: `/${clubSlug}/admin`,
+      href: "#members",
       done: (memberCount ?? 0) > 0,
     },
   ];
