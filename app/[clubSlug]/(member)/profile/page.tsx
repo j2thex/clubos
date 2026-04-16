@@ -112,6 +112,18 @@ export default async function ProfilePage({
         .order("created_at", { ascending: false })
     : { data: [] };
 
+  const { data: recentPurchases } = opsEnabled
+    ? await supabase
+        .from("product_transactions")
+        .select(
+          "id, quantity, total_price, created_at, products(name, name_es, unit)",
+        )
+        .eq("member_id", session.member_id)
+        .is("voided_at", null)
+        .order("created_at", { ascending: false })
+        .limit(5)
+    : { data: null };
+
   const locale = await getServerLocale();
   const coverUrl = branding?.cover_url ?? null;
   const memberCode = member?.member_code ?? "";
@@ -239,6 +251,57 @@ export default async function ProfilePage({
             }
           />
         </div>
+
+        {/* Recent purchases (ops-enabled clubs only) */}
+        {opsEnabled && recentPurchases && recentPurchases.length > 0 && (
+          <section className="space-y-3">
+            <h2 className="m-caption px-1">{t(locale, "profile.recentPurchases")}</h2>
+            <div
+              className="overflow-hidden"
+              style={{
+                borderRadius: "var(--m-radius-sm)",
+                background: "var(--m-surface)",
+                border: "1px solid var(--m-border)",
+              }}
+            >
+              <ul className="divide-y" style={{ borderColor: "var(--m-border)" }}>
+                {recentPurchases.map((p) => {
+                  const product = Array.isArray(p.products) ? p.products[0] : p.products;
+                  const name =
+                    locale === "es" && product?.name_es
+                      ? product.name_es
+                      : product?.name ?? "—";
+                  const when = new Date(p.created_at).toLocaleDateString(
+                    getDateLocale(locale),
+                    { month: "short", day: "numeric" },
+                  );
+                  const qty = Number(p.quantity).toFixed(
+                    product?.unit === "gram" ? 1 : 0,
+                  );
+                  return (
+                    <li
+                      key={p.id}
+                      className="px-4 py-3 flex items-center gap-3"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-[color:var(--m-ink)] truncate">
+                          {name}
+                        </p>
+                        <p className="text-xs text-[color:var(--m-ink-muted)]">
+                          {qty}
+                          {product?.unit === "gram" ? "g" : ""} · {when}
+                        </p>
+                      </div>
+                      <p className="text-sm font-semibold text-[color:var(--m-ink)] tabular-nums">
+                        {Number(p.total_price).toFixed(2)} €
+                      </p>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </section>
+        )}
 
         {/* Badges */}
         {clubBadges && clubBadges.length > 0 && (

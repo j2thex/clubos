@@ -31,12 +31,20 @@ export default async function StaffOperationsPage({
 
   const locale = await getServerLocale();
 
-  const { count: productCount } = await supabase
-    .from("products")
-    .select("*", { count: "exact", head: true })
-    .eq("club_id", club.id)
-    .eq("archived", false)
-    .eq("active", true);
+  const [{ count: productCount }, { count: todayTxCount }] = await Promise.all([
+    supabase
+      .from("products")
+      .select("*", { count: "exact", head: true })
+      .eq("club_id", club.id)
+      .eq("archived", false)
+      .eq("active", true),
+    supabase
+      .from("product_transactions")
+      .select("*", { count: "exact", head: true })
+      .eq("club_id", club.id)
+      .is("voided_at", null)
+      .gte("created_at", new Date(new Date().toDateString()).toISOString()),
+  ]);
 
   const cards = [
     {
@@ -48,6 +56,16 @@ export default async function StaffOperationsPage({
       href: `/${clubSlug}/staff/operations/capacity`,
       title: t(locale, "ops.capacityCardTitle"),
       body: t(locale, "ops.capacityCardBody", { count: insideCount ?? 0 }),
+    },
+    {
+      href: `/${clubSlug}/staff/operations/sell`,
+      title: t(locale, "ops.sellCardTitle"),
+      body: t(locale, "ops.sellCardBody"),
+    },
+    {
+      href: `/${clubSlug}/staff/operations/transactions`,
+      title: t(locale, "ops.transactionsCardTitle"),
+      body: t(locale, "ops.transactionsCardBody", { count: todayTxCount ?? 0 }),
     },
     {
       href: `/${clubSlug}/staff/operations/products`,

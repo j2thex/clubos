@@ -277,6 +277,79 @@ export type Database = {
           },
         ];
       };
+      product_transactions: {
+        Row: {
+          id: string;
+          club_id: string;
+          product_id: string;
+          member_id: string;
+          fulfilled_by: string | null;
+          quantity: number;
+          unit_price_at_sale: number;
+          total_price: number;
+          weight_source: "manual" | "scale";
+          scale_raw_reading: string | null;
+          voided_at: string | null;
+          voided_by: string | null;
+          void_reason: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          club_id: string;
+          product_id: string;
+          member_id: string;
+          fulfilled_by?: string | null;
+          quantity: number;
+          unit_price_at_sale: number;
+          total_price: number;
+          weight_source?: "manual" | "scale";
+          scale_raw_reading?: string | null;
+          voided_at?: string | null;
+          voided_by?: string | null;
+          void_reason?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          club_id?: string;
+          product_id?: string;
+          member_id?: string;
+          fulfilled_by?: string | null;
+          quantity?: number;
+          unit_price_at_sale?: number;
+          total_price?: number;
+          weight_source?: "manual" | "scale";
+          scale_raw_reading?: string | null;
+          voided_at?: string | null;
+          voided_by?: string | null;
+          void_reason?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "product_transactions_club_id_fkey";
+            columns: ["club_id"];
+            isOneToOne: false;
+            referencedRelation: "clubs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "product_transactions_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "product_transactions_member_id_fkey";
+            columns: ["member_id"];
+            isOneToOne: false;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       club_entries: {
         Row: {
           id: string;
