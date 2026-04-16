@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hashPin, clearOwnerCookie } from "@/lib/auth";
+import { logActivity } from "@/lib/activity-log";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -48,6 +49,31 @@ export async function toggleSpinEnabled(
   if (error) return { error: "Failed to update spin setting" };
 
   revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
+export async function toggleOperationsModule(
+  clubId: string,
+  enabled: boolean,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ operations_module_enabled: enabled })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to update operations module" };
+
+  await logActivity({
+    clubId,
+    action: "operations_module_toggled",
+    details: enabled ? "enabled" : "disabled",
+  });
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/staff`, "layout");
   return { ok: true };
 }
 

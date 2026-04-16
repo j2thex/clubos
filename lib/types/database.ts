@@ -55,6 +55,7 @@ export type Database = {
           spin_display_decimals: number;
           spin_cost: number;
           preregistration_enabled: boolean;
+          operations_module_enabled: boolean;
           created_at: string;
         };
         Insert: {
@@ -77,6 +78,7 @@ export type Database = {
           spin_display_decimals?: number;
           spin_cost?: number;
           preregistration_enabled?: boolean;
+          operations_module_enabled?: boolean;
           created_at?: string;
         };
         Update: {
@@ -99,6 +101,7 @@ export type Database = {
           spin_display_decimals?: number;
           spin_cost?: number;
           preregistration_enabled?: boolean;
+          operations_module_enabled?: boolean;
           created_at?: string;
         };
         Relationships: [
