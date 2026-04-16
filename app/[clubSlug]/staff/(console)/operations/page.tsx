@@ -31,6 +31,13 @@ export default async function StaffOperationsPage({
 
   const locale = await getServerLocale();
 
+  const { count: productCount } = await supabase
+    .from("products")
+    .select("*", { count: "exact", head: true })
+    .eq("club_id", club.id)
+    .eq("archived", false)
+    .eq("active", true);
+
   const cards = [
     {
       href: `/${clubSlug}/staff/operations/entry`,
@@ -41,6 +48,11 @@ export default async function StaffOperationsPage({
       href: `/${clubSlug}/staff/operations/capacity`,
       title: t(locale, "ops.capacityCardTitle"),
       body: t(locale, "ops.capacityCardBody", { count: insideCount ?? 0 }),
+    },
+    {
+      href: `/${clubSlug}/staff/operations/products`,
+      title: t(locale, "ops.productsCardTitle"),
+      body: t(locale, "ops.productsCardBody", { count: productCount ?? 0 }),
     },
   ];
 

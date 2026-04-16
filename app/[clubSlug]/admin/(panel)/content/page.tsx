@@ -14,7 +14,7 @@ export default async function ContentPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id")
+    .select("id, operations_module_enabled")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -22,7 +22,7 @@ export default async function ContentPage({
   if (!club) notFound();
   const locale = await getServerLocale();
 
-  const [{ count: eventCount }, { count: questCount }, { count: offerCount }] =
+  const [{ count: eventCount }, { count: questCount }, { count: offerCount }, productsCountResult] =
     await Promise.all([
       supabase
         .from("events")
@@ -38,7 +38,15 @@ export default async function ContentPage({
         .from("club_offers")
         .select("id", { count: "exact", head: true })
         .eq("club_id", club.id),
+      club.operations_module_enabled
+        ? supabase
+            .from("products")
+            .select("id", { count: "exact", head: true })
+            .eq("club_id", club.id)
+            .eq("archived", false)
+        : Promise.resolve({ count: 0 }),
     ]);
+  const productCount = productsCountResult.count ?? 0;
 
   const items = [
     {
@@ -71,6 +79,20 @@ export default async function ContentPage({
         </svg>
       ),
     },
+    ...(club.operations_module_enabled
+      ? [
+          {
+            label: t(locale, "admin.contentProducts"),
+            href: `/${clubSlug}/admin/products`,
+            count: productCount,
+            icon: (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+            ),
+          },
+        ]
+      : []),
   ];
 
   const isEmpty = (questCount ?? 0) + (eventCount ?? 0) + (offerCount ?? 0) === 0;

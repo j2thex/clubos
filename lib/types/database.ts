@@ -170,6 +170,113 @@ export type Database = {
           },
         ];
       };
+      product_categories: {
+        Row: {
+          id: string;
+          club_id: string;
+          name: string;
+          name_es: string | null;
+          display_order: number;
+          archived: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          club_id: string;
+          name: string;
+          name_es?: string | null;
+          display_order?: number;
+          archived?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          club_id?: string;
+          name?: string;
+          name_es?: string | null;
+          display_order?: number;
+          archived?: boolean;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "product_categories_club_id_fkey";
+            columns: ["club_id"];
+            isOneToOne: false;
+            referencedRelation: "clubs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      products: {
+        Row: {
+          id: string;
+          club_id: string;
+          category_id: string | null;
+          name: string;
+          name_es: string | null;
+          description: string | null;
+          description_es: string | null;
+          image_url: string | null;
+          unit: "gram" | "piece";
+          unit_price: number;
+          stock_on_hand: number;
+          active: boolean;
+          display_order: number;
+          archived: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          club_id: string;
+          category_id?: string | null;
+          name: string;
+          name_es?: string | null;
+          description?: string | null;
+          description_es?: string | null;
+          image_url?: string | null;
+          unit?: "gram" | "piece";
+          unit_price?: number;
+          stock_on_hand?: number;
+          active?: boolean;
+          display_order?: number;
+          archived?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          club_id?: string;
+          category_id?: string | null;
+          name?: string;
+          name_es?: string | null;
+          description?: string | null;
+          description_es?: string | null;
+          image_url?: string | null;
+          unit?: "gram" | "piece";
+          unit_price?: number;
+          stock_on_hand?: number;
+          active?: boolean;
+          display_order?: number;
+          archived?: boolean;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "products_club_id_fkey";
+            columns: ["club_id"];
+            isOneToOne: false;
+            referencedRelation: "clubs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "products_category_id_fkey";
+            columns: ["category_id"];
+            isOneToOne: false;
+            referencedRelation: "product_categories";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       club_entries: {
         Row: {
           id: string;
