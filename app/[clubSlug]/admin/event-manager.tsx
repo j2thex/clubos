@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { addEvent, updateEvent, deleteEvent } from "./actions";
 import { generateEventDraftAction, generateEventImageAction } from "./ai-actions";
 import { EVENT_IMAGE_DEFAULT_STYLE } from "./ai-constants";
+import { ImagePreviewThumb } from "./image-preview-thumb";
 import { IconPicker } from "@/components/icon-picker";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { LanguageTabs } from "@/components/language-tabs";
@@ -533,23 +534,14 @@ export function EventManager({
                       <label className="block text-xs font-medium text-gray-500 mb-1">Image (optional)</label>
                       {editImageUrl && (
                         <div className="mb-2 p-2 bg-white rounded-lg border border-gray-200 flex items-center gap-3">
-                          <a
-                            href={editImageUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title="Open full size in new tab"
-                            className="shrink-0 group"
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={editImageUrl}
-                              alt="Event image preview"
-                              className="w-32 h-20 rounded object-cover border border-gray-200 group-hover:ring-2 group-hover:ring-emerald-300 transition"
-                            />
-                          </a>
+                          <ImagePreviewThumb
+                            src={editImageUrl}
+                            alt="Event image preview"
+                            className="w-32 h-20 rounded object-cover border border-gray-200"
+                          />
                           <div className="flex-1 min-w-0">
                             <p className="text-[10px] text-gray-400 truncate">{editImageUrl}</p>
-                            <p className="text-[10px] text-gray-400">Click preview to view full size</p>
+                            <p className="text-[10px] text-gray-400">Click preview to zoom</p>
                           </div>
                           <button
                             type="button"
@@ -998,23 +990,14 @@ export function EventManager({
             <label className="block text-xs font-medium text-gray-500 mb-1">Image (optional)</label>
             {newImageUrl && (
               <div className="mb-2 p-2 bg-white rounded-lg border border-gray-200 flex items-center gap-3">
-                <a
-                  href={newImageUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="Open full size in new tab"
-                  className="shrink-0 group"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={newImageUrl}
-                    alt="Event image preview"
-                    className="w-32 h-20 rounded object-cover border border-gray-200 group-hover:ring-2 group-hover:ring-emerald-300 transition"
-                  />
-                </a>
+                <ImagePreviewThumb
+                  src={newImageUrl}
+                  alt="Event image preview"
+                  className="w-32 h-20 rounded object-cover border border-gray-200"
+                />
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] text-gray-400 truncate">{newImageUrl}</p>
-                  <p className="text-[10px] text-gray-400">Click preview to view full size</p>
+                  <p className="text-[10px] text-gray-400">Click preview to zoom</p>
                 </div>
                 <button
                   type="button"
