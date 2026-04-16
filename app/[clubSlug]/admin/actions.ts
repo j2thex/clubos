@@ -927,6 +927,7 @@ export async function addEvent(
   const isPublic = formData.get("is_public") === "1";
   const icon = (formData.get("icon") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
+  const imageUrlInput = (formData.get("image_url") as string)?.trim() || null;
   const titleEs = (formData.get("title_es") as string)?.trim() || null;
   const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
   const recurrenceRule = (formData.get("recurrence_rule") as string) || null;
@@ -951,6 +952,10 @@ export async function addEvent(
     const result = await uploadEventImage(clubId, imageFile);
     if ("error" in result) return { error: result.error };
     imageUrl = result.url;
+  } else if (imageUrlInput) {
+    // AI-generated image URL — already uploaded to event-images bucket
+    // by lib/ai/generate-image.ts. Passthrough.
+    imageUrl = imageUrlInput;
   }
 
   if (recurrenceRule && recurrenceEndDate) {
@@ -1039,6 +1044,7 @@ export async function updateEvent(
   const isPublic = formData.get("is_public") === "1";
   const icon = (formData.get("icon") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
+  const imageUrlInput = (formData.get("image_url") as string)?.trim() || null;
   const titleEs = (formData.get("title_es") as string)?.trim() || null;
   const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
   const scope = (formData.get("scope") as string) || "single";
@@ -1090,6 +1096,22 @@ export async function updateEvent(
     if ("error" in result) return { error: result.error };
     updates.image_url = result.url;
     imageUrl = result.url;
+  } else if (imageUrlInput) {
+    // AI-generated URL — replace the existing image and drop the old one
+    // from storage if it's different. Already uploaded via lib/ai.
+    const { data: existing } = await supabase
+      .from("events")
+      .select("image_url")
+      .eq("id", eventId)
+      .single();
+
+    if (existing?.image_url && existing.image_url !== imageUrlInput) {
+      const { deleteEventImage } = await import("@/lib/supabase/storage");
+      await deleteEventImage(existing.image_url);
+    }
+
+    updates.image_url = imageUrlInput;
+    imageUrl = imageUrlInput;
   }
 
   if (scope === "single") {

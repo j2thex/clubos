@@ -118,6 +118,43 @@ export async function generateQuestImageAction(
   }
 }
 
+export async function generateEventImageAction(
+  clubId: string,
+  title: string,
+  description: string,
+): Promise<{ error: string } | { ok: true; url: string }> {
+  const trimmedTitle = title.trim();
+  if (trimmedTitle.length < 2) {
+    return { error: "Fill in the event title first" };
+  }
+
+  const ownerId = await assertOwner(clubId);
+  if (!ownerId) return { error: "Unauthorized" };
+
+  try {
+    const ctx = await loadClubContext(clubId);
+    const trimmedDesc = description.trim();
+    // Events want a richer, wider promo-style image — not a badge icon.
+    // Keep club color as a tint but ask for a poster-feel composition.
+    const prompt =
+      `Vibrant event flyer illustration, ${ctx.primaryColor} brand tint, ` +
+      `atmospheric nightlife / club vibe, no text, landscape 16:9 composition. ` +
+      `Event: ${trimmedTitle}${trimmedDesc ? ` — ${trimmedDesc}` : ""}`;
+
+    const result = await generateImage({
+      clubId,
+      ownerId,
+      contentType: "event",
+      prompt,
+      bucket: "event",
+    });
+    return { ok: true, url: result.url };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "unknown";
+    return { error: `Image generation failed: ${cleanErrorMessage(msg)}` };
+  }
+}
+
 export async function generateEventDraftAction(
   clubId: string,
   userPrompt: string,

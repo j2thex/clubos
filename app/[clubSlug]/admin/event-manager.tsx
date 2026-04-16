@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { addEvent, updateEvent, deleteEvent } from "./actions";
-import { generateEventDraftAction } from "./ai-actions";
+import { generateEventDraftAction, generateEventImageAction } from "./ai-actions";
 import { IconPicker } from "@/components/icon-picker";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { LanguageTabs } from "@/components/language-tabs";
@@ -64,6 +64,7 @@ export function EventManager({
   const [editReward, setEditReward] = useState("0");
   const [editIsPublic, setEditIsPublic] = useState(false);
   const [editImage, setEditImage] = useState<File | null>(null);
+  const [editImageUrl, setEditImageUrl] = useState<string>("");
   const [editIcon, setEditIcon] = useState<string | null>(null);
   const [editLang, setEditLang] = useState<"en" | "es">("en");
   const [editTitleEs, setEditTitleEs] = useState("");
@@ -82,6 +83,7 @@ export function EventManager({
   const [newReward, setNewReward] = useState("0");
   const [newIsPublic, setNewIsPublic] = useState(false);
   const [newImage, setNewImage] = useState<File | null>(null);
+  const [newImageUrl, setNewImageUrl] = useState<string>("");
   const [newIcon, setNewIcon] = useState<string | null>(null);
   const [newLang, setNewLang] = useState<"en" | "es">("en");
   const [newTitleEs, setNewTitleEs] = useState("");
@@ -152,6 +154,50 @@ export function EventManager({
     }
   }
 
+  // AI image generation — separate state per form (new vs edit)
+  const [newAiImageLoading, setNewAiImageLoading] = useState(false);
+  const [newAiImageError, setNewAiImageError] = useState<string | null>(null);
+  const [editAiImageLoading, setEditAiImageLoading] = useState(false);
+  const [editAiImageError, setEditAiImageError] = useState<string | null>(null);
+
+  async function runNewAiImageGen() {
+    if (newAiImageLoading) return;
+    setNewAiImageError(null);
+    setNewAiImageLoading(true);
+    try {
+      const result = await generateEventImageAction(clubId, newTitle, newDesc);
+      if ("error" in result) {
+        setNewAiImageError(result.error);
+        return;
+      }
+      setNewImageUrl(result.url);
+      setNewImage(null);
+    } catch (err) {
+      setNewAiImageError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setNewAiImageLoading(false);
+    }
+  }
+
+  async function runEditAiImageGen() {
+    if (editAiImageLoading) return;
+    setEditAiImageError(null);
+    setEditAiImageLoading(true);
+    try {
+      const result = await generateEventImageAction(clubId, editTitle, editDesc);
+      if ("error" in result) {
+        setEditAiImageError(result.error);
+        return;
+      }
+      setEditImageUrl(result.url);
+      setEditImage(null);
+    } catch (err) {
+      setEditAiImageError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setEditAiImageLoading(false);
+    }
+  }
+
   function applyTemplate(t: typeof TEMPLATES[number]) {
     setNewTitle(t.title);
     setNewDesc(t.description);
@@ -177,6 +223,8 @@ export function EventManager({
     setEditLng(ev.longitude);
     setEditLang("en");
     setEditImage(null);
+    setEditImageUrl(ev.image_url ?? "");
+    setEditAiImageError(null);
     setError(null);
   }
 
@@ -202,6 +250,7 @@ export function EventManager({
       fd.set("title_es", editTitleEs);
       fd.set("description_es", editDescEs);
       if (editImage) fd.set("image", editImage);
+      else if (editImageUrl) fd.set("image_url", editImageUrl);
       fd.set("location_name", editLocationName);
       if (editLat != null) fd.set("latitude", String(editLat));
       if (editLng != null) fd.set("longitude", String(editLng));
@@ -243,6 +292,7 @@ export function EventManager({
       fd.set("title_es", newTitleEs);
       fd.set("description_es", newDescEs);
       if (newImage) fd.set("image", newImage);
+      else if (newImageUrl) fd.set("image_url", newImageUrl);
       fd.set("location_name", newLocationName);
       if (newLat != null) fd.set("latitude", String(newLat));
       if (newLng != null) fd.set("longitude", String(newLng));
@@ -266,6 +316,8 @@ export function EventManager({
         setNewIsPublic(false);
         setNewIcon(null);
         setNewImage(null);
+        setNewImageUrl("");
+        setNewAiImageError(null);
         setNewTitleEs("");
         setNewDescEs("");
         setNewLang("en");
@@ -476,12 +528,53 @@ export function EventManager({
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-gray-500 mb-1">Image (optional)</label>
+                      {editImageUrl && (
+                        <div className="mb-2 p-2 bg-white rounded-lg border border-gray-200 flex items-center gap-3">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={editImageUrl}
+                            alt="Event image preview"
+                            className="w-16 h-12 rounded object-cover border border-gray-200"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[10px] text-gray-400 truncate">{editImageUrl}</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => { setEditImageUrl(""); setEditAiImageError(null); }}
+                            className="text-xs text-red-500 hover:text-red-700 transition-colors shrink-0"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 mb-1">
+                        <button
+                          type="button"
+                          onClick={runEditAiImageGen}
+                          disabled={editAiImageLoading || !editTitle.trim()}
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-700 hover:text-gray-900 px-3 py-1.5 rounded-md bg-gradient-to-r from-emerald-50 to-sky-50 hover:from-emerald-100 hover:to-sky-100 border border-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {editAiImageLoading
+                            ? "Generating…"
+                            : editImageUrl
+                              ? "✨ Regenerate image"
+                              : "✨ Generate image"}
+                        </button>
+                        <span className="text-[10px] text-gray-400">or upload ↓</span>
+                      </div>
                       <input
                         type="file"
                         accept="image/jpeg,image/png,image/webp,image/gif"
-                        onChange={(e) => setEditImage(e.target.files?.[0] ?? null)}
+                        onChange={(e) => {
+                          setEditImage(e.target.files?.[0] ?? null);
+                          if (e.target.files?.[0]) setEditImageUrl("");
+                        }}
                         className="w-full text-sm text-gray-500 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
                       />
+                      {editAiImageError && (
+                        <p className="mt-1 text-xs text-red-600">{editAiImageError}</p>
+                      )}
                     </div>
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
@@ -885,12 +978,53 @@ export function EventManager({
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Image (optional)</label>
+            {newImageUrl && (
+              <div className="mb-2 p-2 bg-white rounded-lg border border-gray-200 flex items-center gap-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={newImageUrl}
+                  alt="Event image preview"
+                  className="w-16 h-12 rounded object-cover border border-gray-200"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] text-gray-400 truncate">{newImageUrl}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setNewImageUrl(""); setNewAiImageError(null); }}
+                  className="text-xs text-red-500 hover:text-red-700 transition-colors shrink-0"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
+            <div className="flex items-center gap-2 mb-1">
+              <button
+                type="button"
+                onClick={runNewAiImageGen}
+                disabled={newAiImageLoading || !newTitle.trim()}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-700 hover:text-gray-900 px-3 py-1.5 rounded-md bg-gradient-to-r from-emerald-50 to-sky-50 hover:from-emerald-100 hover:to-sky-100 border border-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {newAiImageLoading
+                  ? "Generating…"
+                  : newImageUrl
+                    ? "✨ Regenerate image"
+                    : "✨ Generate image"}
+              </button>
+              <span className="text-[10px] text-gray-400">or upload ↓</span>
+            </div>
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp,image/gif"
-              onChange={(e) => setNewImage(e.target.files?.[0] ?? null)}
+              onChange={(e) => {
+                setNewImage(e.target.files?.[0] ?? null);
+                if (e.target.files?.[0]) setNewImageUrl("");
+              }}
               className="w-full text-sm text-gray-500 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
             />
+            {newAiImageError && (
+              <p className="mt-1 text-xs text-red-600">{newAiImageError}</p>
+            )}
           </div>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
