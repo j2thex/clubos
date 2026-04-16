@@ -88,10 +88,16 @@ function cleanErrorMessage(msg: string): string {
   return urlless.slice(0, 220);
 }
 
+const QUEST_IMAGE_DEFAULT_STYLE = "flat vector badge, circular, minimal";
+const EVENT_IMAGE_DEFAULT_STYLE = "vibrant event flyer, nightlife vibe";
+
+export { QUEST_IMAGE_DEFAULT_STYLE, EVENT_IMAGE_DEFAULT_STYLE };
+
 export async function generateQuestImageAction(
   clubId: string,
   title: string,
   description: string,
+  styleHint?: string,
 ): Promise<{ error: string } | { ok: true; url: string }> {
   const trimmedTitle = title.trim();
   if (trimmedTitle.length < 2) {
@@ -104,8 +110,9 @@ export async function generateQuestImageAction(
   try {
     const ctx = await loadClubContext(clubId);
     const trimmedDesc = description.trim();
+    const style = styleHint?.trim() || `Flat vector icon, centered, circular frame, minimal`;
     const prompt =
-      `Flat vector icon, centered, circular frame, ${ctx.primaryColor} brand color, minimal, no text. ` +
+      `${style}, ${ctx.primaryColor} brand color, no text. ` +
       `Represents: ${trimmedTitle}${trimmedDesc ? ` — ${trimmedDesc}` : ""}`;
 
     const result = await generateImage({
@@ -267,6 +274,7 @@ export async function generateEventImageAction(
   clubId: string,
   title: string,
   description: string,
+  styleHint?: string,
 ): Promise<{ error: string } | { ok: true; url: string }> {
   const trimmedTitle = title.trim();
   if (trimmedTitle.length < 2) {
@@ -279,11 +287,9 @@ export async function generateEventImageAction(
   try {
     const ctx = await loadClubContext(clubId);
     const trimmedDesc = description.trim();
-    // Events want a richer, wider promo-style image — not a badge icon.
-    // Keep club color as a tint but ask for a poster-feel composition.
+    const style = styleHint?.trim() || `Vibrant event flyer illustration, atmospheric nightlife / club vibe, landscape 16:9 composition`;
     const prompt =
-      `Vibrant event flyer illustration, ${ctx.primaryColor} brand tint, ` +
-      `atmospheric nightlife / club vibe, no text, landscape 16:9 composition. ` +
+      `${style}, ${ctx.primaryColor} brand tint, no text. ` +
       `Event: ${trimmedTitle}${trimmedDesc ? ` — ${trimmedDesc}` : ""}`;
 
     const result = await generateImage({

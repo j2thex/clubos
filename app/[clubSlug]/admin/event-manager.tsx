@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { addEvent, updateEvent, deleteEvent } from "./actions";
-import { generateEventDraftAction, generateEventImageAction } from "./ai-actions";
+import { generateEventDraftAction, generateEventImageAction, EVENT_IMAGE_DEFAULT_STYLE } from "./ai-actions";
 import { IconPicker } from "@/components/icon-picker";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { LanguageTabs } from "@/components/language-tabs";
@@ -157,15 +157,17 @@ export function EventManager({
   // AI image generation — separate state per form (new vs edit)
   const [newAiImageLoading, setNewAiImageLoading] = useState(false);
   const [newAiImageError, setNewAiImageError] = useState<string | null>(null);
+  const [newImageStyle, setNewImageStyle] = useState("");
   const [editAiImageLoading, setEditAiImageLoading] = useState(false);
   const [editAiImageError, setEditAiImageError] = useState<string | null>(null);
+  const [editImageStyle, setEditImageStyle] = useState("");
 
   async function runNewAiImageGen() {
     if (newAiImageLoading) return;
     setNewAiImageError(null);
     setNewAiImageLoading(true);
     try {
-      const result = await generateEventImageAction(clubId, newTitle, newDesc);
+      const result = await generateEventImageAction(clubId, newTitle, newDesc, newImageStyle);
       if ("error" in result) {
         setNewAiImageError(result.error);
         return;
@@ -184,7 +186,7 @@ export function EventManager({
     setEditAiImageError(null);
     setEditAiImageLoading(true);
     try {
-      const result = await generateEventImageAction(clubId, editTitle, editDesc);
+      const result = await generateEventImageAction(clubId, editTitle, editDesc, editImageStyle);
       if ("error" in result) {
         setEditAiImageError(result.error);
         return;
@@ -549,19 +551,25 @@ export function EventManager({
                         </div>
                       )}
                       <div className="flex items-center gap-2 mb-1">
+                        <input
+                          type="text"
+                          value={editImageStyle}
+                          onChange={(e) => setEditImageStyle(e.target.value)}
+                          placeholder={EVENT_IMAGE_DEFAULT_STYLE}
+                          className="flex-1 min-w-0 rounded-md border border-gray-200 px-2 py-1.5 text-xs text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                        />
                         <button
                           type="button"
                           onClick={runEditAiImageGen}
                           disabled={editAiImageLoading || !editTitle.trim()}
-                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-700 hover:text-gray-900 px-3 py-1.5 rounded-md bg-gradient-to-r from-emerald-50 to-sky-50 hover:from-emerald-100 hover:to-sky-100 border border-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-700 hover:text-gray-900 px-3 py-1.5 rounded-md bg-gradient-to-r from-emerald-50 to-sky-50 hover:from-emerald-100 hover:to-sky-100 border border-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                         >
                           {editAiImageLoading
                             ? "Generating…"
                             : editImageUrl
-                              ? "✨ Regenerate image"
-                              : "✨ Generate image"}
+                              ? "✨ Regen"
+                              : "✨ Generate"}
                         </button>
-                        <span className="text-[10px] text-gray-400">or upload ↓</span>
                       </div>
                       <input
                         type="file"
@@ -999,19 +1007,25 @@ export function EventManager({
               </div>
             )}
             <div className="flex items-center gap-2 mb-1">
+              <input
+                type="text"
+                value={newImageStyle}
+                onChange={(e) => setNewImageStyle(e.target.value)}
+                placeholder={EVENT_IMAGE_DEFAULT_STYLE}
+                className="flex-1 min-w-0 rounded-md border border-gray-200 px-2 py-1.5 text-xs text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
+              />
               <button
                 type="button"
                 onClick={runNewAiImageGen}
                 disabled={newAiImageLoading || !newTitle.trim()}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-700 hover:text-gray-900 px-3 py-1.5 rounded-md bg-gradient-to-r from-emerald-50 to-sky-50 hover:from-emerald-100 hover:to-sky-100 border border-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-700 hover:text-gray-900 px-3 py-1.5 rounded-md bg-gradient-to-r from-emerald-50 to-sky-50 hover:from-emerald-100 hover:to-sky-100 border border-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
               >
                 {newAiImageLoading
                   ? "Generating…"
                   : newImageUrl
-                    ? "✨ Regenerate image"
-                    : "✨ Generate image"}
+                    ? "✨ Regen"
+                    : "✨ Generate"}
               </button>
-              <span className="text-[10px] text-gray-400">or upload ↓</span>
             </div>
             <input
               type="file"
