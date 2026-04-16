@@ -68,7 +68,7 @@ app/
 **Core**: `organizations`, `clubs`, `club_branding`, `club_gallery`, `club_invite_buttons`, `club_tags`
 **Members**: `members`, `member_roles`, `member_badges`, `badges`, `membership_periods`, `invite_requests`
 **Auth**: `club_owners`, `club_owner_clubs`, `password_reset_tokens`
-**Gamification**: `spins`, `wheel_configs`, `quests`, `member_quests`
+**Gamification**: `spins`, `wheel_configs`, `quests`, `member_quests`, `badges`, `member_badges`
 **Events**: `events`, `event_rsvps`, `event_checkins`
 **Services/Offers**: `services`, `service_orders`, `offer_catalog`, `club_offers`, `offer_orders`
 **System**: `activity_log`
@@ -109,6 +109,7 @@ feature branch → develop (staging) → main (production)
 - Server Action return types need explicit union annotations for TypeScript narrowing
 - SpinWheel uses `forwardRef` + `useImperativeHandle` — dynamic import to avoid SSR canvas issues
 - Bottom nav components hide themselves on login pages
+- **Badges have no standalone admin UI.** The legacy `/admin/badges` page and `BadgeManager` component were removed in the Phase 4 AI revision. Badges are created implicitly via the **"Award badge on completion"** checkbox on the quest form — `addQuest` / `updateQuest` in `app/[clubSlug]/admin/actions.ts` insert the `badges` row with `name = quest.title`, `icon = quest.icon`, and `image_url = quest.image_url`. Members see badges on their profile via `BadgeCollection`. The `badges` and `member_badges` tables are still alive; there is just no CRUD surface beyond quests.
 
 ## UX Principles
 

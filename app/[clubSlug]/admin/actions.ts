@@ -660,11 +660,20 @@ export async function addQuest(
 
   if (error) return { error: "Failed to add quest" };
 
-  // Auto-create badge if requested
+  // Auto-create badge if requested. The badge inherits the quest's
+  // image_url so the badge visible on member profiles matches the quest
+  // thumbnail — this is the canonical way to ship badge artwork now
+  // that there's no standalone badge admin UI.
   if (awardBadge && quest) {
     const { data: badge } = await supabase
       .from("badges")
-      .insert({ club_id: clubId, name: title, icon: icon || null, color: "#6b7280" })
+      .insert({
+        club_id: clubId,
+        name: title,
+        icon: icon || null,
+        color: "#6b7280",
+        image_url: imageUrl,
+      })
       .select("id")
       .single();
 
@@ -720,13 +729,28 @@ export async function updateQuest(
     .eq("id", questId)
     .single();
 
-  // Determine badge_id based on toggle
+  // Determine badge_id based on toggle. When creating a new badge, seed
+  // image_url from the quest's effective image (existing or being set in
+  // this update). When an existing badge is kept and the quest image is
+  // changing, we also sync the badge row below so the badge stays in
+  // lockstep with the quest's visual.
   let badgeId: string | null = currentQuest?.badge_id ?? null;
+  const previousQuestImage = currentQuest?.image_url ?? null;
   if (awardBadge && !badgeId) {
-    // Create a new badge
+    // Create a new badge seeded with whatever image the quest will end
+    // up with — computed below after we decide on updates.image_url.
+    // For now we capture the incoming URL; if no image change, use the
+    // quest's current image.
+    const seedImageUrl = imageUrlInput ?? previousQuestImage;
     const { data: badge } = await supabase
       .from("badges")
-      .insert({ club_id: currentQuest?.club_id ?? "", name: title, icon: icon || null, color: "#6b7280" })
+      .insert({
+        club_id: currentQuest?.club_id ?? "",
+        name: title,
+        icon: icon || null,
+        color: "#6b7280",
+        image_url: seedImageUrl,
+      })
       .select("id")
       .single();
     if (badge) badgeId = badge.id;
@@ -777,6 +801,29 @@ export async function updateQuest(
     .eq("id", questId);
 
   if (error) return { error: "Failed to update quest" };
+
+  // Sync the linked badge's image_url when the quest image changed.
+  // Covers three cases:
+  //   1. Existing badge, quest image just changed → push new URL into badge
+  //   2. New badge we just created above → also sync name/icon in case
+  //      the admin edited them in the same save
+  //   3. Badge kept, no image change, name/icon unchanged → noop
+  if (badgeId && "image_url" in updates) {
+    await supabase
+      .from("badges")
+      .update({
+        name: title,
+        icon: icon || null,
+        image_url: updates.image_url ?? null,
+      })
+      .eq("id", badgeId);
+  } else if (badgeId && !("image_url" in updates)) {
+    // Keep name/icon in sync even if image didn't change.
+    await supabase
+      .from("badges")
+      .update({ name: title, icon: icon || null })
+      .eq("id", badgeId);
+  }
 
   revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
@@ -880,6 +927,7 @@ export async function addEvent(
   const isPublic = formData.get("is_public") === "1";
   const icon = (formData.get("icon") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
+  const imageUrlInput = (formData.get("image_url") as string)?.trim() || null;
   const titleEs = (formData.get("title_es") as string)?.trim() || null;
   const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
   const recurrenceRule = (formData.get("recurrence_rule") as string) || null;
@@ -904,6 +952,10 @@ export async function addEvent(
     const result = await uploadEventImage(clubId, imageFile);
     if ("error" in result) return { error: result.error };
     imageUrl = result.url;
+  } else if (imageUrlInput) {
+    // AI-generated image URL — already uploaded to event-images bucket
+    // by lib/ai/generate-image.ts. Passthrough.
+    imageUrl = imageUrlInput;
   }
 
   if (recurrenceRule && recurrenceEndDate) {
@@ -992,6 +1044,7 @@ export async function updateEvent(
   const isPublic = formData.get("is_public") === "1";
   const icon = (formData.get("icon") as string)?.trim() || null;
   const imageFile = formData.get("image") as File | null;
+  const imageUrlInput = (formData.get("image_url") as string)?.trim() || null;
   const titleEs = (formData.get("title_es") as string)?.trim() || null;
   const descriptionEs = (formData.get("description_es") as string)?.trim() || null;
   const scope = (formData.get("scope") as string) || "single";
@@ -1043,6 +1096,22 @@ export async function updateEvent(
     if ("error" in result) return { error: result.error };
     updates.image_url = result.url;
     imageUrl = result.url;
+  } else if (imageUrlInput) {
+    // AI-generated URL — replace the existing image and drop the old one
+    // from storage if it's different. Already uploaded via lib/ai.
+    const { data: existing } = await supabase
+      .from("events")
+      .select("image_url")
+      .eq("id", eventId)
+      .single();
+
+    if (existing?.image_url && existing.image_url !== imageUrlInput) {
+      const { deleteEventImage } = await import("@/lib/supabase/storage");
+      await deleteEventImage(existing.image_url);
+    }
+
+    updates.image_url = imageUrlInput;
+    imageUrl = imageUrlInput;
   }
 
   if (scope === "single") {
@@ -1226,118 +1295,10 @@ export async function deleteMembershipPeriod(
   return { ok: true };
 }
 
-// --- Badge actions ---
-
-export async function addBadge(
-  clubId: string,
-  formData: FormData,
-  clubSlug: string,
-): Promise<{ error: string } | { ok: true }> {
-  const name = (formData.get("name") as string)?.trim();
-  const description = (formData.get("description") as string)?.trim() || null;
-  const icon = (formData.get("icon") as string)?.trim() || null;
-  const color = (formData.get("color") as string)?.trim() || "#6b7280";
-  const imageFile = formData.get("image") as File | null;
-
-  if (!name) return { error: "Name is required" };
-
-  const supabase = createAdminClient();
-
-  let imageUrl: string | null = null;
-  if (imageFile && imageFile.size > 0) {
-    const { uploadClubImage } = await import("@/lib/supabase/storage");
-    const result = await uploadClubImage(clubId, imageFile);
-    if ("error" in result) return { error: result.error };
-    imageUrl = result.url;
-  }
-
-  const { data: existing } = await supabase
-    .from("badges")
-    .select("display_order")
-    .eq("club_id", clubId)
-    .order("display_order", { ascending: false })
-    .limit(1);
-
-  const nextOrder = existing && existing.length > 0 ? existing[0].display_order + 1 : 0;
-
-  const { error } = await supabase.from("badges").insert({
-    club_id: clubId,
-    name,
-    description,
-    icon,
-    image_url: imageUrl,
-    color,
-    display_order: nextOrder,
-  });
-
-  if (error) return { error: "Failed to add badge" };
-
-  revalidatePath(`/${clubSlug}/admin`, "layout");
-  return { ok: true };
-}
-
-export async function updateBadge(
-  badgeId: string,
-  formData: FormData,
-  clubSlug: string,
-): Promise<{ error: string } | { ok: true }> {
-  const name = (formData.get("name") as string)?.trim();
-  const description = (formData.get("description") as string)?.trim() || null;
-  const icon = (formData.get("icon") as string)?.trim() || null;
-  const color = (formData.get("color") as string)?.trim() || "#6b7280";
-  const imageFile = formData.get("image") as File | null;
-
-  if (!name) return { error: "Name is required" };
-
-  const supabase = createAdminClient();
-
-  const updates: Record<string, unknown> = { name, description, icon, color };
-
-  if (imageFile && imageFile.size > 0) {
-    const { data: badge } = await supabase
-      .from("badges")
-      .select("image_url, club_id")
-      .eq("id", badgeId)
-      .single();
-
-    if (badge?.image_url) {
-      const { deleteClubImage } = await import("@/lib/supabase/storage");
-      await deleteClubImage(badge.image_url);
-    }
-
-    const { uploadClubImage } = await import("@/lib/supabase/storage");
-    const result = await uploadClubImage(badge?.club_id ?? "", imageFile);
-    if ("error" in result) return { error: result.error };
-    updates.image_url = result.url;
-  }
-
-  const { error } = await supabase
-    .from("badges")
-    .update(updates)
-    .eq("id", badgeId);
-
-  if (error) return { error: "Failed to update badge" };
-
-  revalidatePath(`/${clubSlug}/admin`, "layout");
-  return { ok: true };
-}
-
-export async function deleteBadge(
-  badgeId: string,
-  clubSlug: string,
-): Promise<{ error: string } | { ok: true }> {
-  const supabase = createAdminClient();
-
-  const { error } = await supabase
-    .from("badges")
-    .delete()
-    .eq("id", badgeId);
-
-  if (error) return { error: "Failed to delete badge" };
-
-  revalidatePath(`/${clubSlug}/admin`, "layout");
-  return { ok: true };
-}
+// Badges are created implicitly via the `award_badge` checkbox on quests
+// (see addQuest/updateQuest above). There is no standalone badge CRUD UI —
+// the rows are displayed on members' profiles via BadgeCollection, and the
+// legacy /admin/(panel)/badges page was removed in the Phase 4 AI revision.
 
 // --- Gallery actions ---
 

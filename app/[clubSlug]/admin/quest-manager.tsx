@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { addQuest, updateQuest, deleteQuest, toggleQuestActive } from "./actions";
+import { generateQuestDraftAction, generateQuestImageAction } from "./ai-actions";
 import { useLanguage } from "@/lib/i18n/provider";
 import { t as translate } from "@/lib/i18n";
 import { IconPicker } from "@/components/icon-picker";
@@ -129,6 +130,113 @@ export function QuestManager({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const { t } = useLanguage();
+
+  // AI assist modal (text draft)
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiDraftBanner, setAiDraftBanner] = useState(false);
+  const formRef = useRef<HTMLDivElement | null>(null);
+
+  // AI image generation — separate state per form (new vs edit) so they
+  // don't trample each other. Each targets the existing newImageUrl /
+  // editImageUrl state so the submit path stays unchanged.
+  const [newAiImageLoading, setNewAiImageLoading] = useState(false);
+  const [newAiImageError, setNewAiImageError] = useState<string | null>(null);
+  const [editAiImageLoading, setEditAiImageLoading] = useState(false);
+  const [editAiImageError, setEditAiImageError] = useState<string | null>(null);
+
+  async function runNewAiImageGen() {
+    if (newAiImageLoading) return;
+    setNewAiImageError(null);
+    setNewAiImageLoading(true);
+    try {
+      const result = await generateQuestImageAction(clubId, newTitle, newDesc);
+      if ("error" in result) {
+        setNewAiImageError(result.error);
+        return;
+      }
+      setNewImageUrl(result.url);
+      setNewImage(null);
+    } catch (err) {
+      setNewAiImageError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setNewAiImageLoading(false);
+    }
+  }
+
+  async function runEditAiImageGen() {
+    if (editAiImageLoading) return;
+    setEditAiImageError(null);
+    setEditAiImageLoading(true);
+    try {
+      const result = await generateQuestImageAction(clubId, editTitle, editDesc);
+      if ("error" in result) {
+        setEditAiImageError(result.error);
+        return;
+      }
+      setEditImageUrl(result.url);
+      setEditImage(null);
+    } catch (err) {
+      setEditAiImageError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setEditAiImageLoading(false);
+    }
+  }
+
+  function openAiModal() {
+    setAiError(null);
+    setAiPrompt("");
+    setAiOpen(true);
+  }
+
+  async function runAiAssist() {
+    if (aiLoading) return;
+    setAiError(null);
+    setAiLoading(true);
+    try {
+      const result = await generateQuestDraftAction(clubId, aiPrompt);
+      if ("error" in result) {
+        setAiError(result.error);
+        return;
+      }
+      const d = result.draft;
+      // Prefill the "new quest" form from the draft. Leave image/link URL
+      // alone — admin picks their own link and uploads their own image.
+      setNewTitle(d.title ?? "");
+      setNewTitleEs(d.title_es ?? "");
+      setNewDesc(d.description ?? "");
+      setNewDescEs(d.description_es ?? "");
+      setNewLink(d.link ?? "");
+      setNewReward(String(d.reward_spins ?? 1));
+      setNewCategory((d.category ?? "social") as Category);
+      setNewQuestType(d.quest_type ?? "default");
+      setNewProofMode(d.proof_mode ?? "none");
+      setNewMultiUse(Boolean(d.multi_use));
+      setNewIcon(d.icon ?? null);
+      setNewTutorialSteps(d.tutorial_steps ?? []);
+      setNewProofPlaceholder("");
+      setNewImage(null);
+      setNewImageUrl("");
+      setNewDeadline("");
+      setNewAwardBadge(false);
+      setNewLang("en");
+      setShowForm(true);
+      setAiOpen(false);
+      setAiDraftBanner(true);
+      // Scroll the form into view so the admin sees the prefilled fields.
+      // setTimeout lets React render the form first before we scroll.
+      setTimeout(() => {
+        formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 80);
+      setTimeout(() => setAiDraftBanner(false), 8000);
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setAiLoading(false);
+    }
+  }
 
   function applyTemplate(tmpl: typeof TEMPLATES[number]) {
     // Auto-fill both languages from dictionaries
@@ -479,6 +587,13 @@ export function QuestManager({
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
           {t("admin.questsCount", { count: quests.length })}
         </h2>
+        <button
+          type="button"
+          onClick={openAiModal}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 px-2 py-1 rounded-md bg-gradient-to-r from-emerald-50 to-sky-50 hover:from-emerald-100 hover:to-sky-100 border border-gray-200 transition-colors"
+        >
+          ✨ AI assist
+        </button>
       </div>
 
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
@@ -601,6 +716,44 @@ export function QuestManager({
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questImage")}</label>
+                      {editImageUrl && (
+                        <div className="mb-2 p-2 bg-white rounded-lg border border-gray-200 flex items-center gap-3">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={editImageUrl}
+                            alt="Quest image preview"
+                            className="w-12 h-12 rounded-lg object-cover border border-gray-200"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[10px] text-gray-400 truncate">{editImageUrl}</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditImageUrl("");
+                              setEditAiImageError(null);
+                            }}
+                            className="text-xs text-red-500 hover:text-red-700 transition-colors shrink-0"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 mb-1">
+                        <button
+                          type="button"
+                          onClick={runEditAiImageGen}
+                          disabled={editAiImageLoading || !editTitle.trim()}
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-700 hover:text-gray-900 px-3 py-1.5 rounded-md bg-gradient-to-r from-emerald-50 to-sky-50 hover:from-emerald-100 hover:to-sky-100 border border-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {editAiImageLoading
+                            ? "Generating…"
+                            : editImageUrl
+                              ? "✨ Regenerate image"
+                              : "✨ Generate image"}
+                        </button>
+                        <span className="text-[10px] text-gray-400">or paste URL / upload ↓</span>
+                      </div>
                       <input
                         type="url"
                         placeholder="https://..."
@@ -615,6 +768,9 @@ export function QuestManager({
                         onChange={(e) => { setEditImage(e.target.files?.[0] ?? null); if (e.target.files?.[0]) setEditImageUrl(""); }}
                         className="w-full text-sm text-gray-500 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
                       />
+                      {editAiImageError && (
+                        <p className="mt-1 text-xs text-red-600">{editAiImageError}</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-gray-500 mb-1">Deadline</label>
@@ -790,7 +946,25 @@ export function QuestManager({
 
         {/* Add new quest */}
         {showForm && (
-        <div>
+        <div ref={formRef}>
+          {aiDraftBanner && (
+            <div className="px-5 py-3 bg-gradient-to-r from-emerald-50 to-sky-50 border-t border-emerald-100 flex items-start gap-2">
+              <span className="text-base leading-none pt-0.5">✨</span>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-gray-800">AI draft ready</p>
+                <p className="text-xs text-gray-600 mt-0.5">
+                  The form below has been prefilled. Review every field — the admin (you) is still responsible for the final content. Click <strong>Add quest</strong> at the bottom to save.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAiDraftBanner(false)}
+                className="text-gray-400 hover:text-gray-600 text-xs"
+              >
+                ✕
+              </button>
+            </div>
+          )}
           {/* Templates */}
           <div className="px-5 py-4 border-t border-gray-100 bg-gray-50">
             <div className="flex items-center justify-between mb-3">
@@ -896,6 +1070,44 @@ export function QuestManager({
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questImage")}</label>
+            {newImageUrl && (
+              <div className="mb-2 p-2 bg-white rounded-lg border border-gray-200 flex items-center gap-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={newImageUrl}
+                  alt="Quest image preview"
+                  className="w-12 h-12 rounded-lg object-cover border border-gray-200"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] text-gray-400 truncate">{newImageUrl}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewImageUrl("");
+                    setNewAiImageError(null);
+                  }}
+                  className="text-xs text-red-500 hover:text-red-700 transition-colors shrink-0"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
+            <div className="flex items-center gap-2 mb-1">
+              <button
+                type="button"
+                onClick={runNewAiImageGen}
+                disabled={newAiImageLoading || !newTitle.trim()}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-700 hover:text-gray-900 px-3 py-1.5 rounded-md bg-gradient-to-r from-emerald-50 to-sky-50 hover:from-emerald-100 hover:to-sky-100 border border-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {newAiImageLoading
+                  ? "Generating…"
+                  : newImageUrl
+                    ? "✨ Regenerate image"
+                    : "✨ Generate image"}
+              </button>
+              <span className="text-[10px] text-gray-400">or paste URL / upload ↓</span>
+            </div>
             <input
               type="url"
               placeholder="https://..."
@@ -910,6 +1122,9 @@ export function QuestManager({
               onChange={(e) => { setNewImage(e.target.files?.[0] ?? null); if (e.target.files?.[0]) setNewImageUrl(""); }}
               className="w-full text-sm text-gray-500 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
             />
+            {newAiImageError && (
+              <p className="mt-1 text-xs text-red-600">{newAiImageError}</p>
+            )}
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Deadline</label>
@@ -996,6 +1211,61 @@ export function QuestManager({
           </div>
         )}
       </div>
+
+      {/* AI assist modal */}
+      {aiOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
+          onClick={() => !aiLoading && setAiOpen(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-5 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div>
+              <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                ✨ AI quest assist
+              </h3>
+              <p className="text-xs text-gray-500 mt-1">
+                Describe the quest in plain English or Spanish. The AI will fill
+                in the form with both languages, a suggested icon, category, and
+                reward — you review and save.
+              </p>
+            </div>
+            <textarea
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+              placeholder="e.g. Follow us on Instagram for 2 spins. It's a social quest — one-time only."
+              rows={5}
+              disabled={aiLoading}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 resize-none disabled:opacity-50"
+            />
+            {aiError && (
+              <div className="px-3 py-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg">
+                {aiError}
+              </div>
+            )}
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setAiOpen(false)}
+                disabled={aiLoading}
+                className="rounded-lg border border-gray-300 px-4 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
+              >
+                {t("common.cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={runAiAssist}
+                disabled={aiLoading || aiPrompt.trim().length < 3}
+                className="rounded-lg bg-gray-800 text-white px-4 py-1.5 text-xs font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {aiLoading ? "Generating…" : "Generate"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

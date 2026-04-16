@@ -305,9 +305,17 @@ export function PlatformAdminClient({
             <h1 className="text-2xl font-bold">osocios tower</h1>
             <p className="text-sm text-landing-text-tertiary font-mono mt-1">platform dashboard</p>
           </div>
-          <a href="/" className="text-xs text-landing-text-tertiary hover:text-landing-text-secondary transition-colors">
-            Back to site
-          </a>
+          <div className="flex items-center gap-4">
+            <a
+              href={`/platform-admin/ai-prompts?secret=${encodeURIComponent(secret)}`}
+              className="text-xs text-landing-text-tertiary hover:text-landing-text-secondary transition-colors"
+            >
+              ✨ AI Prompts
+            </a>
+            <a href="/" className="text-xs text-landing-text-tertiary hover:text-landing-text-secondary transition-colors">
+              Back to site
+            </a>
+          </div>
         </div>
 
         {/* Key Numbers */}
