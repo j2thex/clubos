@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import { lookupMemberForEntry, type LookedUpMember } from "../entry/actions";
 import { sellProduct } from "./actions";
+import { ScalePanel } from "@/components/club/scale-panel";
 
 const Scanner = dynamic(
   () => import("@yudiel/react-qr-scanner").then((m) => m.Scanner),
@@ -38,6 +39,9 @@ export function SellClient({
   const [member, setMember] = useState<LookedUpMember | null>(null);
   const [productId, setProductId] = useState<string>("");
   const [quantity, setQuantity] = useState<string>("");
+  const [scaleReading, setScaleReading] = useState<{
+    raw: string;
+  } | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const product = products.find((p) => p.id === productId) ?? null;
@@ -71,7 +75,8 @@ export function SellClient({
         productId: product.id,
         memberId: member.id,
         quantity: qty,
-        weightSource: "manual",
+        weightSource: scaleReading ? "scale" : "manual",
+        scaleRawReading: scaleReading?.raw ?? null,
       });
       if ("error" in r) {
         toast.error(r.error);
@@ -81,6 +86,7 @@ export function SellClient({
       setMember(null);
       setProductId("");
       setQuantity("");
+      setScaleReading(null);
     });
   }
 
@@ -285,10 +291,31 @@ export function SellClient({
             step={product?.unit === "piece" ? "1" : "0.1"}
             min="0"
             value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
+            onChange={(e) => {
+              setQuantity(e.target.value);
+              // If the user hand-edits the number, don't keep claiming the
+              // scale produced it.
+              setScaleReading(null);
+            }}
             placeholder={product?.unit === "gram" ? "e.g. 3.5" : "e.g. 2"}
             className="w-full rounded-lg border border-gray-300 px-3 py-3 text-lg font-semibold text-gray-900 text-center"
           />
+          {product?.unit === "gram" && (
+            <ScalePanel
+              onUseReading={(reading) => {
+                setQuantity(reading.weightGrams.toFixed(2));
+                setScaleReading({ raw: reading.raw });
+                if (!reading.stable) {
+                  toast.warning("Reading was not stable — confirm before selling");
+                }
+              }}
+            />
+          )}
+          {scaleReading && (
+            <p className="text-[11px] text-blue-600 text-center">
+              Quantity captured from scale. Auditable on the transaction.
+            </p>
+          )}
           {product && qtyValid && (
             <div
               className={`rounded-lg p-3 text-center ${
