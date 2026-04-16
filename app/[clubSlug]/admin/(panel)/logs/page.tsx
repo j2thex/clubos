@@ -14,7 +14,7 @@ export default async function AdminLogsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name")
+    .select("id, name, operations_module_enabled")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -58,7 +58,7 @@ export default async function AdminLogsPage({
       <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-1">
         {t(locale, "admin.activityLog")}
       </h2>
-      <LogViewer logs={enrichedLogs} />
+      <LogViewer logs={enrichedLogs} opsEnabled={club.operations_module_enabled ?? false} />
     </div>
   );
 }

@@ -33,12 +33,18 @@ export default async function StaffOperationsTransactionsPage({
 
   const from = page * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
+  const dayStart = new Date(new Date().toDateString()).toISOString();
 
-  const [{ data: txs, count }, { data: totals }] = await Promise.all([
+  const [
+    { data: txs, count },
+    { data: totals },
+    { data: voidedToday },
+    { data: todayRows },
+  ] = await Promise.all([
     supabase
       .from("product_transactions")
       .select(
-        "id, quantity, unit_price_at_sale, total_price, weight_source, scale_raw_reading, created_at, voided_at, void_reason, members(member_code, full_name), products(name, unit)",
+        "id, quantity, unit_price_at_sale, total_price, weight_source, scale_raw_reading, created_at, voided_at, void_reason, members(member_code, full_name), products(name, unit), staff:fulfilled_by(member_code, full_name)",
         { count: "exact" },
       )
       .eq("club_id", club.id)
@@ -49,13 +55,55 @@ export default async function StaffOperationsTransactionsPage({
       .select("total_price")
       .eq("club_id", club.id)
       .is("voided_at", null)
-      .gte("created_at", new Date(new Date().toDateString()).toISOString()),
+      .gte("created_at", dayStart),
+    supabase
+      .from("product_transactions")
+      .select("total_price")
+      .eq("club_id", club.id)
+      .not("voided_at", "is", null)
+      .gte("voided_at", dayStart),
+    page === 0
+      ? supabase
+          .from("product_transactions")
+          .select("quantity, total_price, products(name, unit)")
+          .eq("club_id", club.id)
+          .is("voided_at", null)
+          .gte("created_at", dayStart)
+      : Promise.resolve({ data: null }),
   ]);
 
   const todayTotal = (totals ?? []).reduce(
     (s, r) => s + Number(r.total_price),
     0,
   );
+  const voidedTotal = (voidedToday ?? []).reduce(
+    (s, r) => s + Number(r.total_price),
+    0,
+  );
+  const voidedCount = voidedToday?.length ?? 0;
+
+  // Group today's sales by product for the per-product summary block.
+  const productSummary = new Map<
+    string,
+    { qty: number; revenue: number; unit: "gram" | "piece" }
+  >();
+  for (const row of todayRows ?? []) {
+    const prod = Array.isArray(row.products) ? row.products[0] : row.products;
+    if (!prod) continue;
+    const key = prod.name;
+    const existing = productSummary.get(key) ?? {
+      qty: 0,
+      revenue: 0,
+      unit: prod.unit as "gram" | "piece",
+    };
+    existing.qty += Number(row.quantity);
+    existing.revenue += Number(row.total_price);
+    productSummary.set(key, existing);
+  }
+  const productSummaryRows = Array.from(productSummary.entries()).sort(
+    (a, b) => b[1].revenue - a[1].revenue,
+  );
+
   const totalCount = count ?? 0;
 
   return (
@@ -79,7 +127,42 @@ export default async function StaffOperationsTransactionsPage({
         <p className="text-3xl font-bold text-gray-900 mt-1">
           {todayTotal.toFixed(2)} €
         </p>
+        {voidedCount > 0 && (
+          <p className="text-[11px] text-gray-500 mt-2">
+            {t(locale, "ops.tx.voidedToday", {
+              count: voidedCount,
+              total: voidedTotal.toFixed(2),
+            })}
+          </p>
+        )}
       </div>
+
+      {productSummaryRows.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          <div className="px-5 py-3 border-b border-gray-100">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              {t(locale, "ops.tx.summary")}
+            </p>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {productSummaryRows.map(([name, row]) => (
+              <div
+                key={name}
+                className="px-5 py-2 flex items-center justify-between gap-3"
+              >
+                <p className="text-sm text-gray-900 truncate flex-1">{name}</p>
+                <p className="text-xs text-gray-500 shrink-0 tabular-nums">
+                  {row.qty.toFixed(row.unit === "gram" ? 1 : 0)}
+                  {row.unit === "gram" ? "g" : ""}
+                </p>
+                <p className="text-sm font-semibold text-gray-900 shrink-0 tabular-nums w-16 text-right">
+                  {row.revenue.toFixed(2)} €
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
         {totalCount === 0 ? (
@@ -95,6 +178,9 @@ export default async function StaffOperationsTransactionsPage({
               const product = Array.isArray(tx.products)
                 ? tx.products[0]
                 : tx.products;
+              const staffRef = Array.isArray(tx.staff)
+                ? tx.staff[0]
+                : tx.staff;
               const when = new Date(tx.created_at).toLocaleString(
                 getDateLocale(locale),
                 { dateStyle: "short", timeStyle: "short" },
@@ -121,6 +207,9 @@ export default async function StaffOperationsTransactionsPage({
                     </p>
                     <p className="text-[11px] text-gray-400">
                       {when}
+                      {staffRef?.member_code
+                        ? ` · ${t(locale, "ops.tx.staffColumn", { code: staffRef.member_code })}`
+                        : ""}
                       {voided && tx.void_reason
                         ? ` · ${t(locale, "ops.tx.voidedBy", { reason: tx.void_reason })}`
                         : ""}

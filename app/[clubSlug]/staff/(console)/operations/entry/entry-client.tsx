@@ -9,7 +9,9 @@ import {
   lookupMemberForEntry,
   admitMember,
   checkoutEntry,
+  searchMembersByName,
   type LookedUpMember,
+  type MemberSearchResult,
 } from "./actions";
 
 // Camera scanner is client-only and heavy — lazy-load it.
@@ -26,7 +28,7 @@ function ScannerPlaceholder() {
   );
 }
 
-type Mode = "idle" | "scanning" | "manual";
+type Mode = "idle" | "scanning" | "manual" | "search";
 
 type BlockedReason = {
   key: string;
@@ -57,9 +59,25 @@ export function EntryClient({
   const { t } = useLanguage();
   const [mode, setMode] = useState<Mode>("idle");
   const [manualCode, setManualCode] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<MemberSearchResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [found, setFound] = useState<LookedUpMember | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  async function runSearch(q: string) {
+    setSearchQuery(q);
+    if (q.trim().length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    setSearchLoading(true);
+    const r = await searchMembersByName(clubId, q);
+    setSearchLoading(false);
+    if ("ok" in r) setSearchResults(r.matches);
+    else setSearchResults([]);
+  }
 
   function reset() {
     setFound(null);
@@ -174,6 +192,62 @@ export function EntryClient({
               </button>
             </div>
           </form>
+        ) : mode === "search" ? (
+          <div className="p-4 space-y-3">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => runSearch(e.target.value)}
+              placeholder={t("ops.entry.searchPlaceholder")}
+              autoFocus
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            />
+            {searchLoading ? (
+              <p className="text-xs text-gray-400 text-center">…</p>
+            ) : searchResults.length === 0 && searchQuery.trim().length >= 2 ? (
+              <p className="text-xs text-gray-400 text-center">
+                {t("ops.entry.searchNoResults")}
+              </p>
+            ) : (
+              <div className="divide-y divide-gray-100 max-h-64 overflow-y-auto rounded-lg border border-gray-100">
+                {searchResults.map((r) => (
+                  <button
+                    key={r.memberCode}
+                    type="button"
+                    onClick={() => handleCode(r.memberCode)}
+                    className="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center justify-between gap-2"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-mono text-sm font-semibold text-gray-900">
+                        {r.memberCode}
+                      </p>
+                      {r.fullName && (
+                        <p className="text-xs text-gray-500 truncate">
+                          {r.fullName}
+                        </p>
+                      )}
+                    </div>
+                    {r.idVerifiedAt && (
+                      <span className="text-[10px] rounded-full px-2 py-0.5 bg-green-100 text-green-700 font-semibold shrink-0">
+                        {t("ops.entry.verified")}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setMode("idle");
+                setSearchQuery("");
+                setSearchResults([]);
+              }}
+              className="w-full rounded-lg border border-gray-300 text-sm font-semibold text-gray-600 px-4 py-2"
+            >
+              {t("ops.entry.cancel")}
+            </button>
+          </div>
         ) : (
           <div className="p-5 space-y-3">
             <button
@@ -209,6 +283,18 @@ export function EntryClient({
               className="w-full rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 py-3 hover:bg-gray-50"
             >
               {t("ops.entry.enterManually")}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                reset();
+                setSearchQuery("");
+                setSearchResults([]);
+                setMode("search");
+              }}
+              className="w-full rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 py-3 hover:bg-gray-50"
+            >
+              {t("ops.entry.searchByName")}
             </button>
           </div>
         )}

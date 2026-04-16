@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 import { CheckoutButton } from "./checkout-button";
+import { CheckoutAllButton } from "./checkout-all-button";
 
 export const dynamic = "force-dynamic";
 
@@ -60,11 +61,16 @@ export default async function StaffOperationsCapacityPage({
         </a>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-lg p-6 text-center">
-        <p className="text-4xl font-bold text-gray-900">{count}</p>
-        <p className="text-xs text-gray-500 uppercase tracking-wide mt-1">
-          {t(locale, "ops.inside")}
-        </p>
+      <div className="bg-white rounded-2xl shadow-lg p-6 text-center space-y-3">
+        <div>
+          <p className="text-4xl font-bold text-gray-900">{count}</p>
+          <p className="text-xs text-gray-500 uppercase tracking-wide mt-1">
+            {t(locale, "ops.inside")}
+          </p>
+        </div>
+        {count > 0 && (
+          <CheckoutAllButton clubId={club.id} clubSlug={clubSlug} count={count} />
+        )}
       </div>
 
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">

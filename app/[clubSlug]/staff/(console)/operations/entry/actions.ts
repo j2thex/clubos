@@ -199,6 +199,81 @@ export async function admitMember(
   return { ok: true, entryId: entry.id };
 }
 
+export async function checkoutAllOpen(
+  clubId: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true; count: number }> {
+  let staff: { member_id: string; club_id: string };
+  try { staff = await requireStaffForClub(clubId); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+
+  const supabase = createAdminClient();
+  const nowIso = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from("club_entries")
+    .update({ checked_out_at: nowIso, checked_out_by: staff.member_id })
+    .eq("club_id", clubId)
+    .is("checked_out_at", null)
+    .select("id");
+
+  if (error) return { error: "Failed to close sessions" };
+
+  const count = data?.length ?? 0;
+  if (count > 0) {
+    await logActivity({
+      clubId,
+      staffMemberId: staff.member_id,
+      action: "entry_bulk_checkout",
+      details: `${count} sessions closed`,
+    });
+  }
+
+  revalidatePath(`/${clubSlug}/staff/operations/capacity`);
+  revalidatePath(`/${clubSlug}/staff/operations/entry`);
+  return { ok: true, count };
+}
+
+export type MemberSearchResult = {
+  memberCode: string;
+  fullName: string | null;
+  dateOfBirth: string | null;
+  idVerifiedAt: string | null;
+};
+
+export async function searchMembersByName(
+  clubId: string,
+  query: string,
+): Promise<{ error: string } | { ok: true; matches: MemberSearchResult[] }> {
+  try { await requireStaffForClub(clubId); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+
+  const trimmed = query.trim();
+  if (trimmed.length < 2) return { ok: true, matches: [] };
+
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from("members")
+    .select("member_code, full_name, date_of_birth, id_verified_at")
+    .eq("club_id", clubId)
+    .eq("status", "active")
+    .or(`full_name.ilike.%${trimmed}%,member_code.ilike.%${trimmed}%`)
+    .order("full_name", { ascending: true })
+    .limit(10);
+
+  return {
+    ok: true,
+    matches: (data ?? []).map((m) => ({
+      memberCode: m.member_code,
+      fullName: m.full_name ?? null,
+      dateOfBirth: m.date_of_birth ?? null,
+      idVerifiedAt: m.id_verified_at ?? null,
+    })),
+  };
+}
+
 export async function checkoutEntry(
   entryId: string,
   clubSlug: string,
