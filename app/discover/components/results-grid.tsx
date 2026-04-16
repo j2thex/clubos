@@ -51,6 +51,39 @@ function ResultCard({
     ? `https://www.google.com/maps/dir/?api=1&destination=${item.latitude},${item.longitude}`
     : null;
 
+  if (item.type === "offer" || item.type === "quest") {
+    return (
+      <div
+        onClick={onSelect}
+        className={`rounded-xl p-4 text-center flex flex-col items-center gap-2 cursor-pointer transition-colors ${
+          selected
+            ? "bg-landing-surface-hover ring-1 ring-primary/30"
+            : "bg-landing-surface hover:bg-landing-surface-hover"
+        }`}
+      >
+        <div
+          className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white"
+          style={{ backgroundColor: item.primary_color }}
+        >
+          {item.title.charAt(0).toUpperCase()}
+        </div>
+        <p className="text-sm font-semibold text-landing-text leading-tight line-clamp-2">
+          {item.title}
+        </p>
+        {item.type === "offer" && item.offer_count != null && (
+          <p className="text-[10px] text-landing-text-tertiary">
+            {item.offer_count} {item.offer_count === 1 ? "offer" : "offers"}
+          </p>
+        )}
+        {item.type === "quest" && item.reward_spins != null && (
+          <p className="text-[10px] text-primary/80 font-medium">
+            🎡 {item.reward_spins} {item.reward_spins === 1 ? "spin" : "spins"}
+          </p>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div
       onClick={onSelect}
@@ -192,7 +225,13 @@ export function ResultsGrid({
         <h2 className="text-sm font-semibold text-landing-text">{t(locale, TAB_HEADING_KEYS[activeTab])}</h2>
         <span className="text-xs text-landing-text-tertiary">{t(locale, "discover.resultsCount", { count: items.length })}</span>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div
+        className={
+          activeTab === "offers" || activeTab === "quests"
+            ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"
+            : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+        }
+      >
         {items.map((item) => (
           <ResultCard
             key={item.id}
