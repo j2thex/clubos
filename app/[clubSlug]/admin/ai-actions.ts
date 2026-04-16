@@ -120,6 +120,10 @@ export async function generateQuestImageAction(
       ownerId,
       contentType: "quest",
       prompt,
+      // Nano Banana won't reliably emit a transparent alpha channel, so
+      // the tower prompt tells it to use a solid white background and we
+      // strip that white here before upload. Works for any badge shape.
+      postProcess: "removeWhiteBg",
     });
     return { ok: true, url: result.url };
   } catch (err) {
