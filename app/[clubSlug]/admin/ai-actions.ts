@@ -121,6 +121,15 @@ export async function generateQuestImageAction(
   }
 }
 
+// Returns the ISO date for the next Saturday (exclusive of today). Used
+// as a sensible fallback when the AI proposes an event without a date.
+function nextSaturdayIso(): string {
+  const d = new Date();
+  const daysUntilSat = (6 - d.getUTCDay() + 7) % 7 || 7;
+  d.setUTCDate(d.getUTCDate() + daysUntilSat);
+  return d.toISOString().slice(0, 10);
+}
+
 export async function generateSetupDraftAction(
   clubId: string,
   userPrompt: string,
@@ -134,6 +143,7 @@ export async function generateSetupDraftAction(
 
   try {
     const ctx = await loadClubContext(clubId);
+    const today = new Date().toISOString().slice(0, 10);
     const result = await generateDraft({
       clubId,
       ownerId,
@@ -144,6 +154,7 @@ export async function generateSetupDraftAction(
         club_name: ctx.name,
         club_description: ctx.description,
         primary_color: ctx.primaryColor,
+        current_date: today,
       },
     });
     return { ok: true, draft: result.draft };
@@ -217,18 +228,19 @@ export async function saveSetupDraftAction(
     if (qErr) return { error: `Failed to save quests: ${qErr.message}` };
   }
 
-  // Bulk insert events. We require a date on save — any event returned
-  // without a date gets dropped with a warning (the admin can add it
-  // manually later if they want). Most test runs will have dates.
-  const datedEvents = safe.events.filter((e) => !!e.date);
-  if (datedEvents.length > 0) {
-    const eventRows = datedEvents.map((e, i) => ({
+  // Bulk insert events. The AI sometimes returns date: null (it doesn't
+  // know what "soon" means), so we fall back to next-Saturday as a
+  // sensible placeholder — the admin can edit the date on the event
+  // page after save. No event is silently dropped.
+  if (safe.events.length > 0) {
+    const fallbackDate = nextSaturdayIso();
+    const eventRows = safe.events.map((e, i) => ({
       club_id: clubId,
       title: e.title,
       title_es: e.title_es,
       description: e.description,
       description_es: e.description_es,
-      date: e.date!,
+      date: e.date ?? fallbackDate,
       time: e.time,
       end_time: e.end_time,
       price: e.price,
@@ -247,7 +259,7 @@ export async function saveSetupDraftAction(
   return {
     ok: true,
     questCount: safe.quests.length,
-    eventCount: datedEvents.length,
+    eventCount: safe.events.length,
   };
 }
 

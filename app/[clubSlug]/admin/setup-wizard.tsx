@@ -176,7 +176,7 @@ export function SetupWizard({
                     </div>
                     {!e.date && (
                       <p className="text-[10px] text-amber-600 mt-0.5">
-                        ⚠ No date — will be skipped on save. Add manually after.
+                        ⚠ No date — will default to next Saturday. Edit after save.
                       </p>
                     )}
                     {e.description && (
