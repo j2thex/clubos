@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useLanguage } from "@/lib/i18n/provider";
 import { isWebSerialSupported, type ScaleAdapter, type ScaleReading } from "@/lib/hardware/scale";
 import { OhausNV422Adapter } from "@/lib/hardware/ohaus-nv422";
 
@@ -12,6 +13,7 @@ export function ScalePanel({
 }: {
   onUseReading: (reading: ScaleReading) => void;
 }) {
+  const { t } = useLanguage();
   const [supported, setSupported] = useState<boolean | null>(null);
   const [state, setState] = useState<ConnectionState>("disconnected");
   const [reading, setReading] = useState<ScaleReading | null>(null);
@@ -39,15 +41,15 @@ export function ScalePanel({
       adapter.onReading((r) => setReading(r));
       adapterRef.current = adapter;
       setState("connected");
-      toast.success("Scale connected");
+      toast.success(t("ops.scale.connected"));
     } catch (err) {
       setState("disconnected");
       const message =
         err instanceof Error && err.name === "NotFoundError"
-          ? "No device selected"
+          ? t("ops.scale.noDevice")
           : err instanceof Error
             ? err.message
-            : "Failed to connect scale";
+            : t("ops.scale.connectFailed");
       toast.error(message);
     }
   }
@@ -66,7 +68,7 @@ export function ScalePanel({
   function handleUse() {
     if (!reading) return;
     if (reading.weightGrams <= 0) {
-      toast.error("Place the product on the scale first");
+      toast.error(t("ops.scale.placeProduct"));
       return;
     }
     onUseReading(reading);
@@ -78,7 +80,7 @@ export function ScalePanel({
   if (!supported) {
     return (
       <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-900">
-        Scale integration requires Chrome or Edge on desktop. Type the weight manually on this device.
+        {t("ops.scale.unsupported")}
       </div>
     );
   }
@@ -90,7 +92,7 @@ export function ScalePanel({
         onClick={handleConnect}
         className="w-full rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 py-2 hover:bg-gray-50"
       >
-        Connect scale (Ohaus NV422)
+        {t("ops.scale.connect")}
       </button>
     );
   }
@@ -98,7 +100,7 @@ export function ScalePanel({
   if (state === "connecting") {
     return (
       <div className="rounded-lg bg-gray-100 px-3 py-2 text-xs text-gray-600 text-center">
-        Opening serial port…
+        {t("ops.scale.opening")}
       </div>
     );
   }
@@ -107,14 +109,14 @@ export function ScalePanel({
     <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 space-y-2">
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-          Ohaus NV422
+          {t("ops.scale.label")}
         </span>
         <button
           type="button"
           onClick={handleDisconnect}
           className="text-[11px] text-gray-500 hover:text-red-600"
         >
-          Disconnect
+          {t("ops.scale.disconnect")}
         </button>
       </div>
       <div className="text-center">
@@ -124,9 +126,9 @@ export function ScalePanel({
         <p className="text-[10px] text-gray-400 mt-0.5">
           {reading
             ? reading.stable
-              ? "Stable"
-              : "Stabilizing…"
-            : "Waiting for reading…"}
+              ? t("ops.scale.stable")
+              : t("ops.scale.stabilizing")
+            : t("ops.scale.waiting")}
         </p>
       </div>
       <button
@@ -135,7 +137,7 @@ export function ScalePanel({
         disabled={!reading || reading.weightGrams <= 0}
         className="w-full rounded-lg bg-blue-600 text-white text-xs font-semibold py-2 hover:bg-blue-700 disabled:opacity-50"
       >
-        Use this reading
+        {t("ops.scale.use")}
       </button>
     </div>
   );

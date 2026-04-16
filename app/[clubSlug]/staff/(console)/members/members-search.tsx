@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { useLanguage } from "@/lib/i18n/provider";
 import { StaffMemberRow } from "../../members/member-row";
 import { markIdVerified, revokeIdVerification } from "../../members/actions";
 
@@ -46,6 +47,7 @@ function VerifyRow({
   idPhotoSignedUrl: string | null;
   age: number | null;
 }) {
+  const { t } = useLanguage();
   const [isPending, startTransition] = useTransition();
 
   function handleVerify() {
@@ -75,13 +77,13 @@ function VerifyRow({
               : "bg-gray-100 text-gray-600"
           }`}
         >
-          {age !== null ? `Age ${age}` : "DOB set"}
+          {age !== null ? t("ops.entry.age", { age }) : t("ops.memberForm.dobLabel")}
         </span>
       )}
       {idVerifiedAt ? (
         <>
           <span className="text-xs rounded-full px-2 py-0.5 bg-green-100 text-green-700 font-semibold">
-            ID Verified
+            {t("ops.entry.verified")}
           </span>
           <button
             type="button"
@@ -89,22 +91,22 @@ function VerifyRow({
             disabled={isPending}
             className="text-xs rounded-full px-2 py-0.5 bg-gray-100 text-gray-500 hover:bg-gray-200 disabled:opacity-50"
           >
-            Revoke
+            {t("ops.entry.cancel")}
           </button>
         </>
       ) : (
         <>
           <span className="text-xs rounded-full px-2 py-0.5 bg-amber-100 text-amber-800">
-            Not verified
+            {t("ops.entry.notVerified")}
           </span>
           <button
             type="button"
             onClick={handleVerify}
             disabled={isPending || !dateOfBirth}
-            title={!dateOfBirth ? "Set date of birth first" : ""}
+            title={!dateOfBirth ? t("ops.memberForm.dobRequired") : ""}
             className="text-xs rounded-full px-2 py-0.5 bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-50"
           >
-            {isPending ? "..." : "Mark verified"}
+            {isPending ? "..." : t("ops.entry.verified")}
           </button>
         </>
       )}
@@ -115,7 +117,7 @@ function VerifyRow({
           rel="noopener noreferrer"
           className="text-xs rounded-full px-2 py-0.5 bg-blue-100 text-blue-700 hover:bg-blue-200"
         >
-          View ID
+          {t("ops.memberForm.photoLabel")}
         </a>
       )}
     </div>
@@ -127,13 +129,15 @@ export function MembersSearch({
   roles,
   clubSlug,
   opsEnabled,
+  initialQuery = "",
 }: {
   members: MembersSearchMember[];
   roles: { id: string; name: string }[];
   clubSlug: string;
   opsEnabled: boolean;
+  initialQuery?: string;
 }) {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const [filter, setFilter] = useState<Filter>("all");
 
   const filtered = useMemo(() => {

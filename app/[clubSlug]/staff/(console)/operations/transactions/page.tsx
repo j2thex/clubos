@@ -74,7 +74,7 @@ export default async function StaffOperationsTransactionsPage({
 
       <div className="bg-white rounded-2xl shadow-lg p-5 text-center">
         <p className="text-xs text-gray-500 uppercase tracking-wide">
-          {t(locale, "ops.todayRevenue")}
+          {t(locale, "ops.tx.todayRevenue")}
         </p>
         <p className="text-3xl font-bold text-gray-900 mt-1">
           {todayTotal.toFixed(2)} €
@@ -84,7 +84,7 @@ export default async function StaffOperationsTransactionsPage({
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
         {totalCount === 0 ? (
           <div className="p-8 text-center text-gray-400 text-sm">
-            {t(locale, "ops.transactionsEmpty")}
+            {t(locale, "ops.tx.empty")}
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
@@ -117,12 +117,12 @@ export default async function StaffOperationsTransactionsPage({
                       )}
                       {product?.unit === "gram" ? "g" : ""} ·{" "}
                       {member?.member_code ?? "?"}
-                      {tx.weight_source === "scale" ? " · scale" : ""}
+                      {tx.weight_source === "scale" ? ` · ${t(locale, "ops.tx.scale")}` : ""}
                     </p>
                     <p className="text-[11px] text-gray-400">
                       {when}
                       {voided && tx.void_reason
-                        ? ` · voided: ${tx.void_reason}`
+                        ? ` · ${t(locale, "ops.tx.voidedBy", { reason: tx.void_reason })}`
                         : ""}
                     </p>
                   </div>
@@ -151,7 +151,7 @@ export default async function StaffOperationsTransactionsPage({
               href={`/${clubSlug}/staff/operations/transactions?page=${page - 1}`}
               className="text-xs rounded-full px-3 py-1 bg-gray-100 text-gray-700 hover:bg-gray-200"
             >
-              ← Newer
+              {t(locale, "ops.tx.newer")}
             </Link>
           )}
           {from + PAGE_SIZE < totalCount && (
@@ -159,7 +159,7 @@ export default async function StaffOperationsTransactionsPage({
               href={`/${clubSlug}/staff/operations/transactions?page=${page + 1}`}
               className="text-xs rounded-full px-3 py-1 bg-gray-100 text-gray-700 hover:bg-gray-200"
             >
-              Older →
+              {t(locale, "ops.tx.older")}
             </Link>
           )}
         </div>

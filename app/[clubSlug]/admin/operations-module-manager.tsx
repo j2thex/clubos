@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import { useLanguage } from "@/lib/i18n/provider";
 import { toggleOperationsModule } from "./actions";
 
 export function OperationsModuleManager({
@@ -13,6 +14,7 @@ export function OperationsModuleManager({
   clubSlug: string;
   initialEnabled: boolean;
 }) {
+  const { t } = useLanguage();
   const [enabled, setEnabled] = useState(initialEnabled);
   const [isPending, startTransition] = useTransition();
 
@@ -26,9 +28,7 @@ export function OperationsModuleManager({
         toast.error(result.error);
         return;
       }
-      toast.success(
-        next ? "Operations module enabled" : "Operations module disabled",
-      );
+      toast.success(t(next ? "ops.admin.toastEnabled" : "ops.admin.toastDisabled"));
     });
   }
 
@@ -44,18 +44,16 @@ export function OperationsModuleManager({
             className="mt-0.5 h-4 w-4 rounded border-gray-300"
           />
           <span className="text-sm text-gray-900">
-            Enable operations module
+            {t("ops.admin.enableLabel")}
             <span className="block text-xs text-gray-500 mt-0.5">
-              Adds staff pages for door control (QR check-in/out, capacity, age verification)
-              and dispensary (product catalog, weighed sales, transactions).
+              {t("ops.admin.enableDesc")}
             </span>
           </span>
         </label>
 
         {enabled && (
           <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-900">
-            Staff console now shows additional &ldquo;Operations&rdquo; pages. Member portal is unaffected.
-            Disable this toggle at any time to hide the module &mdash; no data is lost.
+            {t("ops.admin.warning")}
           </div>
         )}
       </div>

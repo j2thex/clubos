@@ -8,10 +8,13 @@ import { getServerLocale } from "@/lib/i18n/server";
 
 export default async function StaffMembersPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ clubSlug: string }>;
+  searchParams: Promise<{ q?: string }>;
 }) {
   const { clubSlug } = await params;
+  const { q: initialQuery } = await searchParams;
   const supabase = createAdminClient();
 
   const { data: club } = await supabase
@@ -90,6 +93,7 @@ export default async function StaffMembersPage({
           roles={roles ?? []}
           clubSlug={clubSlug}
           opsEnabled={opsEnabled}
+          initialQuery={initialQuery ?? ""}
         />
       </div>
     </>

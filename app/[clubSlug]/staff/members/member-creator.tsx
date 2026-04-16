@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import { useLanguage } from "@/lib/i18n/provider";
 import { createMember, uploadMemberIdPhotoAction } from "./actions";
 
 export function StaffMemberCreator({
@@ -14,6 +15,7 @@ export function StaffMemberCreator({
   periods: { id: string; name: string; duration_months: number }[];
   opsEnabled?: boolean;
 }) {
+  const { t } = useLanguage();
   const [memberCode, setMemberCode] = useState("");
   const [selectedPeriodId, setSelectedPeriodId] = useState("");
   const [referredBy, setReferredBy] = useState("");
@@ -30,7 +32,7 @@ export function StaffMemberCreator({
     setSuccess(null);
 
     if (opsEnabled && !dateOfBirth) {
-      setError("Date of birth is required when operations module is on");
+      setError(t("ops.memberForm.dobRequired"));
       return;
     }
 
@@ -60,7 +62,7 @@ export function StaffMemberCreator({
       if ("error" in result) {
         setError(result.error);
       } else {
-        setSuccess(`Member ${memberCode.toUpperCase()} created`);
+        setSuccess(t("ops.memberForm.created", { code: memberCode.toUpperCase() }));
         setMemberCode("");
         setSelectedPeriodId("");
         setReferredBy("");
@@ -75,21 +77,21 @@ export function StaffMemberCreator({
   return (
     <div className="space-y-2">
       <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-1">
-        Onboard New Member
+        {t("ops.memberForm.sectionTitle")}
       </h2>
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
         <form onSubmit={handleSubmit}>
           <div className="px-5 py-4 flex gap-3 items-end">
             <div className="flex-1">
               <label htmlFor="staffMemberCode" className="block text-xs font-medium text-gray-500 mb-1">
-                Member Code
+                {t("ops.memberForm.codeLabel")}
               </label>
               <input
                 id="staffMemberCode"
                 type="text"
                 value={memberCode}
                 onChange={(e) => setMemberCode(e.target.value.toUpperCase())}
-                placeholder="ABC12"
+                placeholder={t("ops.memberForm.codePlaceholder")}
                 maxLength={8}
                 required
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono tracking-wide uppercase text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition"
@@ -100,18 +102,18 @@ export function StaffMemberCreator({
               disabled={isPending || !memberCode.trim()}
               className="rounded-lg bg-gray-800 text-white px-5 py-2 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
             >
-              {isPending ? "..." : "Create"}
+              {isPending ? "..." : t("ops.memberForm.create")}
             </button>
           </div>
           <div className="px-5 pb-2">
             <label className="block text-xs font-medium text-gray-500 mb-1">
-              Referred by
+              {t("ops.memberForm.referredByLabel")}
             </label>
             <input
               type="text"
               value={referredBy}
               onChange={(e) => setReferredBy(e.target.value.toUpperCase())}
-              placeholder="Member code (optional)"
+              placeholder={t("ops.memberForm.referredByPlaceholder")}
               maxLength={8}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono tracking-wide uppercase text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition"
             />
@@ -119,17 +121,17 @@ export function StaffMemberCreator({
           {periods.length > 0 && (
             <div className="px-5 pb-2">
               <label className="block text-xs font-medium text-gray-500 mb-1">
-                Membership Period
+                {t("ops.memberForm.periodLabel")}
               </label>
               <select
                 value={selectedPeriodId}
                 onChange={(e) => setSelectedPeriodId(e.target.value)}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition bg-white"
               >
-                <option value="">No period</option>
+                <option value="">{t("ops.memberForm.noPeriod")}</option>
                 {periods.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name} ({p.duration_months} {p.duration_months === 1 ? "month" : "months"})
+                    {p.name} ({p.duration_months} {t(p.duration_months === 1 ? "ops.memberForm.month" : "ops.memberForm.months")})
                   </option>
                 ))}
               </select>
@@ -139,7 +141,7 @@ export function StaffMemberCreator({
             <>
               <div className="px-5 pb-2">
                 <label htmlFor="dob" className="block text-xs font-medium text-gray-500 mb-1">
-                  Date of birth <span className="text-red-500">*</span>
+                  {t("ops.memberForm.dobLabel")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="dob"
@@ -153,7 +155,7 @@ export function StaffMemberCreator({
               </div>
               <div className="px-5 pb-4">
                 <label htmlFor="idPhoto" className="block text-xs font-medium text-gray-500 mb-1">
-                  ID photo (optional at creation)
+                  {t("ops.memberForm.photoLabel")}
                 </label>
                 <input
                   id="idPhoto"
@@ -164,7 +166,7 @@ export function StaffMemberCreator({
                   className="w-full text-xs text-gray-700 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-gray-700 hover:file:bg-gray-200"
                 />
                 <p className="text-[11px] text-gray-400 mt-1">
-                  Stored privately. Staff only. Shown on entry-flow verification.
+                  {t("ops.memberForm.photoHelp")}
                 </p>
               </div>
             </>

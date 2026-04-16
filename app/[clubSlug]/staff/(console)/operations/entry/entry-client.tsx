@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
+import { useLanguage } from "@/lib/i18n/provider";
 import {
   lookupMemberForEntry,
   admitMember,
@@ -19,12 +21,31 @@ const Scanner = dynamic(
 function ScannerPlaceholder() {
   return (
     <div className="aspect-square w-full rounded-2xl bg-gray-900 flex items-center justify-center">
-      <span className="text-xs text-gray-400">Loading camera…</span>
+      <span className="text-xs text-gray-400">…</span>
     </div>
   );
 }
 
 type Mode = "idle" | "scanning" | "manual";
+
+type BlockedReason = {
+  key: string;
+  params?: Record<string, string | number>;
+  fixable: boolean;
+};
+
+function computeBlockedReason(member: LookedUpMember): BlockedReason | null {
+  if (member.age === null) {
+    return { key: "ops.entry.reasonNoDob", fixable: true };
+  }
+  if (member.age < 21) {
+    return { key: "ops.entry.reasonUnderage", params: { age: member.age }, fixable: false };
+  }
+  if (member.validExpired && member.validTill) {
+    return { key: "ops.entry.reasonExpired", params: { date: member.validTill }, fixable: true };
+  }
+  return null;
+}
 
 export function EntryClient({
   clubId,
@@ -33,6 +54,7 @@ export function EntryClient({
   clubId: string;
   clubSlug: string;
 }) {
+  const { t } = useLanguage();
   const [mode, setMode] = useState<Mode>("idle");
   const [manualCode, setManualCode] = useState("");
   const [found, setFound] = useState<LookedUpMember | null>(null);
@@ -67,7 +89,7 @@ export function EntryClient({
         toast.error(res.error);
         return;
       }
-      toast.success(`${found.memberCode} admitted`);
+      toast.success(t("ops.entry.admitted", { code: found.memberCode }));
       reset();
     });
   }
@@ -80,7 +102,7 @@ export function EntryClient({
         toast.error(res.error);
         return;
       }
-      toast.success(`${found.memberCode} checked out`);
+      toast.success(t("ops.entry.checkedOut", { code: found.memberCode }));
       reset();
     });
   }
@@ -112,7 +134,7 @@ export function EntryClient({
               onClick={() => setMode("idle")}
               className="absolute top-3 right-3 rounded-full bg-black/60 text-white text-xs font-semibold px-3 py-1.5 hover:bg-black/80"
             >
-              Cancel
+              {t("ops.entry.cancel")}
             </button>
           </div>
         ) : mode === "manual" ? (
@@ -124,13 +146,13 @@ export function EntryClient({
             className="p-5 space-y-3"
           >
             <label className="block text-xs font-medium text-gray-500">
-              Member code
+              {t("ops.entry.memberCode")}
             </label>
             <input
               type="text"
               value={manualCode}
               onChange={(e) => setManualCode(e.target.value.toUpperCase())}
-              placeholder="ABC12"
+              placeholder={t("ops.memberForm.codePlaceholder")}
               maxLength={8}
               autoFocus
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-base font-mono uppercase tracking-wide text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400"
@@ -141,14 +163,14 @@ export function EntryClient({
                 disabled={isPending || !manualCode.trim()}
                 className="flex-1 rounded-lg bg-gray-800 text-white text-sm font-semibold py-2 hover:bg-gray-700 disabled:opacity-50"
               >
-                {isPending ? "Looking up…" : "Find member"}
+                {isPending ? t("ops.entry.lookingUp") : t("ops.entry.findMember")}
               </button>
               <button
                 type="button"
                 onClick={() => setMode("idle")}
                 className="rounded-lg border border-gray-300 text-sm font-semibold text-gray-600 px-4 py-2 hover:bg-gray-50"
               >
-                Cancel
+                {t("ops.entry.cancel")}
               </button>
             </div>
           </form>
@@ -176,7 +198,7 @@ export function EntryClient({
                   d="M4 6.5V4a1 1 0 011-1h2.5M4 17.5V20a1 1 0 001 1h2.5M17.5 3H20a1 1 0 011 1v2.5M17.5 21H20a1 1 0 001-1v-2.5M8 8h8v8H8z"
                 />
               </svg>
-              Scan QR code
+              {t("ops.entry.scanQr")}
             </button>
             <button
               type="button"
@@ -186,7 +208,7 @@ export function EntryClient({
               }}
               className="w-full rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 py-3 hover:bg-gray-50"
             >
-              Enter code manually
+              {t("ops.entry.enterManually")}
             </button>
           </div>
         )}
@@ -201,6 +223,7 @@ export function EntryClient({
       {found && (
         <EntryDialog
           member={found}
+          clubSlug={clubSlug}
           isPending={isPending}
           onAdmit={handleAdmit}
           onCheckout={handleCheckout}
@@ -213,20 +236,24 @@ export function EntryClient({
 
 function EntryDialog({
   member,
+  clubSlug,
   isPending,
   onAdmit,
   onCheckout,
   onClose,
 }: {
   member: LookedUpMember;
+  clubSlug: string;
   isPending: boolean;
   onAdmit: () => void;
   onCheckout: () => void;
   onClose: () => void;
 }) {
+  const { t } = useLanguage();
   const alreadyInside = !!member.openEntryId;
   const under21 = member.age !== null && member.age < 21;
-  const blocked = member.validExpired || under21 || member.age === null;
+  const blockedReason = computeBlockedReason(member);
+  const blocked = !!blockedReason;
 
   return (
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
@@ -234,12 +261,12 @@ function EntryDialog({
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={member.idPhotoSignedUrl}
-          alt="Stored ID photo"
+          alt=""
           className="w-full max-h-72 object-cover bg-gray-100"
         />
       ) : (
         <div className="w-full h-40 bg-gray-100 flex items-center justify-center text-xs text-gray-400">
-          No ID photo on file
+          {t("ops.entry.noPhoto")}
         </div>
       )}
       <div className="p-5 space-y-3">
@@ -260,34 +287,48 @@ function EntryDialog({
                   : "bg-gray-100 text-gray-700"
               }`}
             >
-              Age {member.age}
+              {t("ops.entry.age", { age: member.age })}
             </span>
           )}
           {member.age === null && (
             <span className="text-xs rounded-full px-2.5 py-1 bg-red-100 text-red-700 font-semibold">
-              No DOB
+              {t("ops.entry.noDob")}
             </span>
           )}
           {member.idVerifiedAt ? (
             <span className="text-xs rounded-full px-2.5 py-1 bg-green-100 text-green-700 font-semibold">
-              ID Verified
+              {t("ops.entry.verified")}
             </span>
           ) : (
             <span className="text-xs rounded-full px-2.5 py-1 bg-amber-100 text-amber-800 font-semibold">
-              Not verified
+              {t("ops.entry.notVerified")}
             </span>
           )}
-          {member.validExpired && (
+          {member.validExpired && member.validTill && (
             <span className="text-xs rounded-full px-2.5 py-1 bg-red-100 text-red-700 font-semibold">
-              Expired {member.validTill}
+              {t("ops.entry.expired", { date: member.validTill })}
             </span>
           )}
           {alreadyInside && (
             <span className="text-xs rounded-full px-2.5 py-1 bg-blue-100 text-blue-800 font-semibold">
-              Already inside
+              {t("ops.entry.alreadyInside")}
             </span>
           )}
         </div>
+
+        {blockedReason && !alreadyInside && (
+          <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700 space-y-1">
+            <p className="font-semibold">{t(blockedReason.key, blockedReason.params)}</p>
+            {blockedReason.fixable && (
+              <Link
+                href={`/${clubSlug}/staff/members?q=${member.memberCode}`}
+                className="inline-block text-xs text-red-800 underline hover:text-red-900"
+              >
+                {t("ops.entry.fixInMembers")}
+              </Link>
+            )}
+          </div>
+        )}
 
         {alreadyInside ? (
           <button
@@ -296,7 +337,7 @@ function EntryDialog({
             disabled={isPending}
             className="w-full rounded-lg bg-blue-600 text-white text-sm font-semibold py-3 hover:bg-blue-700 disabled:opacity-50"
           >
-            {isPending ? "…" : "Check out"}
+            {isPending ? "…" : t("ops.entry.checkOut")}
           </button>
         ) : (
           <button
@@ -307,7 +348,7 @@ function EntryDialog({
               blocked ? "bg-gray-400" : "bg-green-600 hover:bg-green-700"
             }`}
           >
-            {isPending ? "…" : blocked ? "Blocked" : "Admit"}
+            {isPending ? "…" : blocked ? t("ops.entry.blocked") : t("ops.entry.admit")}
           </button>
         )}
         <button
@@ -316,7 +357,7 @@ function EntryDialog({
           disabled={isPending}
           className="w-full rounded-lg border border-gray-300 text-sm font-semibold text-gray-600 py-2 hover:bg-gray-50 disabled:opacity-50"
         >
-          Cancel
+          {t("ops.entry.cancel")}
         </button>
       </div>
     </div>
