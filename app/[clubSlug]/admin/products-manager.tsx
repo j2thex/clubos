@@ -706,56 +706,72 @@ function ProductNewForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="px-5 py-4 space-y-2 bg-gray-50">
-      <input
-        type="text"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="Product name"
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-        autoFocus
-      />
+    <form onSubmit={handleSubmit} className="px-5 py-4 space-y-3 bg-gray-50">
+      <label className="block">
+        <span className="text-[11px] text-gray-500">Product name</span>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          autoFocus
+        />
+      </label>
       <div className="grid grid-cols-2 gap-2">
-        <select
-          value={categoryId}
-          onChange={(e) => setCategoryId(e.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white"
-        >
-          <option value="">No category</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-        <select
-          value={unit}
-          onChange={(e) => setUnit(e.target.value as "gram" | "piece")}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white"
-        >
-          <option value="gram">Sold by gram</option>
-          <option value="piece">Sold by piece</option>
-        </select>
+        <label className="block">
+          <span className="text-[11px] text-gray-500">Category</span>
+          <select
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white"
+          >
+            <option value="">No category</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block">
+          <span className="text-[11px] text-gray-500">Unit</span>
+          <select
+            value={unit}
+            onChange={(e) => setUnit(e.target.value as "gram" | "piece")}
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white"
+          >
+            <option value="gram">Sold by gram</option>
+            <option value="piece">Sold by piece</option>
+          </select>
+        </label>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <input
-          type="number"
-          step="0.01"
-          min="0"
-          value={unitPrice}
-          onChange={(e) => setUnitPrice(Number(e.target.value))}
-          placeholder={`Price €/${unit === "gram" ? "g" : "ea"}`}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-        />
-        <input
-          type="number"
-          step={unit === "gram" ? "0.1" : "1"}
-          min="0"
-          value={stockOnHand}
-          onChange={(e) => setStockOnHand(Number(e.target.value))}
-          placeholder={`Stock (${unit === "gram" ? "g" : "units"})`}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-        />
+        <label className="block">
+          <span className="text-[11px] text-gray-500">
+            Unit price (€/{unit === "gram" ? "g" : "ea"})
+          </span>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            value={unitPrice}
+            onChange={(e) => setUnitPrice(Number(e.target.value))}
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="block">
+          <span className="text-[11px] text-gray-500">
+            Stock on hand ({unit === "gram" ? "g" : "units"})
+          </span>
+          <input
+            type="number"
+            step={unit === "gram" ? "0.1" : "1"}
+            min="0"
+            value={stockOnHand}
+            onChange={(e) => setStockOnHand(Number(e.target.value))}
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          />
+        </label>
       </div>
       <div className="flex gap-2">
         <button
