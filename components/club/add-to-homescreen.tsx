@@ -115,7 +115,7 @@ export function AddToHomescreen({ clubSlug }: { clubSlug: string }) {
 
   if (mode === "subscribe") {
     return (
-      <div className="bg-white rounded-2xl shadow-lg p-4 flex items-center gap-3">
+      <div className="bg-white rounded-lg shadow-lg p-4 flex items-center gap-3">
         <div className="shrink-0 w-9 h-9 rounded-full club-tint-bg flex items-center justify-center">
           <Bell className="w-5 h-5 club-primary" strokeWidth={2} />
         </div>
@@ -150,7 +150,7 @@ export function AddToHomescreen({ clubSlug }: { clubSlug: string }) {
   // mode === "install"
   return (
     <>
-      <div className="bg-white rounded-2xl shadow-lg p-4 flex items-center gap-3">
+      <div className="bg-white rounded-lg shadow-lg p-4 flex items-center gap-3">
         <div className="shrink-0 w-9 h-9 rounded-full club-tint-bg flex items-center justify-center">
           <Share className="w-5 h-5 club-primary" strokeWidth={2} />
         </div>

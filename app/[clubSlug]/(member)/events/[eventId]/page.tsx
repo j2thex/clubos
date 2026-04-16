@@ -75,7 +75,7 @@ export default async function EventDetailPage({
       )}
 
       <div className={`px-4 pb-10 max-w-md mx-auto ${event.image_url ? "mt-4" : "-mt-6"}`}>
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <div className="p-5 space-y-4">
             {event.image_url && (
               <h1 className="text-xl font-bold text-gray-900">{event.title}</h1>
