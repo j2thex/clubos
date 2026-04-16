@@ -35,6 +35,43 @@ export async function uploadQuestProof(
   return uploadToBucket("quest-proofs", clubId, file);
 }
 
+// --- Member ID photos (bucket: member-ids, PRIVATE) ---
+// Stores a storage path, not a public URL. Reads go through getMemberIdPhotoSignedUrl.
+
+export async function uploadMemberIdPhoto(
+  clubId: string,
+  file: File,
+): Promise<{ path: string } | { error: string }> {
+  const supabase = createAdminClient();
+
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+  const filename = `${clubId}/${crypto.randomUUID()}.${ext}`;
+
+  const { error } = await supabase.storage
+    .from("member-ids")
+    .upload(filename, file, { contentType: file.type, upsert: false });
+
+  if (error) return { error: "Failed to upload ID photo" };
+
+  return { path: filename };
+}
+
+export async function deleteMemberIdPhoto(path: string): Promise<void> {
+  const supabase = createAdminClient();
+  await supabase.storage.from("member-ids").remove([path]);
+}
+
+export async function getMemberIdPhotoSignedUrl(
+  path: string,
+  expiresInSeconds = 3600,
+): Promise<string | null> {
+  const supabase = createAdminClient();
+  const { data } = await supabase.storage
+    .from("member-ids")
+    .createSignedUrl(path, expiresInSeconds);
+  return data?.signedUrl ?? null;
+}
+
 // --- Feedback screenshots (bucket: feedback) ---
 
 export async function uploadFeedbackImage(

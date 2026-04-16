@@ -4,6 +4,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { hashPin, getStaffFromCookie, requireActiveStaff } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { logActivity } from "@/lib/activity-log";
+import {
+  uploadMemberIdPhoto as uploadMemberIdPhotoToBucket,
+  deleteMemberIdPhoto,
+} from "@/lib/supabase/storage";
 
 export async function updateMemberRole(memberId: string, roleId: string | null, clubSlug: string) {
   try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
@@ -45,7 +49,9 @@ export async function createMember(
   clubSlug: string,
   periodId?: string | null,
   referredBy?: string | null,
-) {
+  dateOfBirth?: string | null,
+  idPhotoPath?: string | null,
+): Promise<{ error: string } | { ok: true }> {
   try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
   const code = memberCode.trim().toUpperCase();
 
@@ -54,6 +60,10 @@ export async function createMember(
   }
   if (!/^[A-Z0-9]+$/.test(code)) {
     return { error: "Member code must be alphanumeric" };
+  }
+
+  if (dateOfBirth && !/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)) {
+    return { error: "Invalid date of birth" };
   }
 
   const supabase = createAdminClient();
@@ -103,9 +113,15 @@ export async function createMember(
     membership_period_id: membershipPeriodId,
     valid_till: validTill,
     referred_by: referredByCode,
+    date_of_birth: dateOfBirth || null,
+    id_photo_path: idPhotoPath || null,
   });
 
   if (error) {
+    // If the insert failed after a successful photo upload, clean up the orphan blob.
+    if (idPhotoPath) {
+      await deleteMemberIdPhoto(idPhotoPath).catch(() => {});
+    }
     if (error.code === "23505") return { error: "Member code already exists" };
     return { error: "Failed to create member" };
   }
@@ -314,6 +330,94 @@ export async function setManualValidTill(
     action: "validity_updated",
     targetMemberCode: memberForLog?.member_code,
     details: `Valid till ${validTill}`,
+  });
+
+  revalidatePath(`/${clubSlug}/staff/members`);
+  return { ok: true };
+}
+
+export async function uploadMemberIdPhotoAction(
+  formData: FormData,
+): Promise<{ path: string } | { error: string }> {
+  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
+
+  const clubId = formData.get("clubId");
+  const file = formData.get("file");
+
+  if (typeof clubId !== "string" || !clubId) return { error: "Missing club" };
+  if (!(file instanceof File) || file.size === 0) return { error: "No file provided" };
+  if (file.size > 5 * 1024 * 1024) return { error: "File too large (max 5 MB)" };
+
+  return uploadMemberIdPhotoToBucket(clubId, file);
+}
+
+export async function markIdVerified(
+  memberId: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
+  const supabase = createAdminClient();
+  const staff = await getStaffFromCookie();
+
+  const { data: current, error: loadError } = await supabase
+    .from("members")
+    .select("club_id, member_code, date_of_birth, id_photo_path")
+    .eq("id", memberId)
+    .single();
+
+  if (loadError || !current) return { error: "Member not found" };
+  if (!current.date_of_birth) return { error: "Set date of birth before verifying" };
+
+  const { error } = await supabase
+    .from("members")
+    .update({
+      id_verified_at: new Date().toISOString(),
+      id_verified_by: staff?.member_id ?? null,
+    })
+    .eq("id", memberId);
+
+  if (error) return { error: "Failed to mark verified" };
+
+  await logActivity({
+    clubId: current.club_id,
+    staffMemberId: staff?.member_id,
+    action: "id_verified",
+    targetMemberCode: current.member_code,
+    details: current.id_photo_path ? "with photo" : "no photo",
+  });
+
+  revalidatePath(`/${clubSlug}/staff/members`);
+  return { ok: true };
+}
+
+export async function revokeIdVerification(
+  memberId: string,
+  clubSlug: string,
+  reason?: string,
+): Promise<{ error: string } | { ok: true }> {
+  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
+  const supabase = createAdminClient();
+  const staff = await getStaffFromCookie();
+
+  const { data: current } = await supabase
+    .from("members")
+    .select("club_id, member_code")
+    .eq("id", memberId)
+    .single();
+
+  const { error } = await supabase
+    .from("members")
+    .update({ id_verified_at: null, id_verified_by: null })
+    .eq("id", memberId);
+
+  if (error) return { error: "Failed to revoke verification" };
+
+  await logActivity({
+    clubId: current?.club_id ?? "",
+    staffMemberId: staff?.member_id,
+    action: "id_verification_revoked",
+    targetMemberCode: current?.member_code,
+    details: reason ?? null,
   });
 
   revalidatePath(`/${clubSlug}/staff/members`);

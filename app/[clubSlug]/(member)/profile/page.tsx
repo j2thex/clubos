@@ -62,10 +62,11 @@ export default async function ProfilePage({
     { data: branding },
     { data: clubBadges },
     { data: memberBadges },
+    { data: clubOps },
   ] = await Promise.all([
     supabase
       .from("members")
-      .select("member_code, full_name, spin_balance, valid_till, created_at, email")
+      .select("member_code, full_name, spin_balance, valid_till, created_at, email, id_verified_at")
       .eq("id", session.member_id)
       .single(),
     supabase
@@ -93,7 +94,14 @@ export default async function ProfilePage({
       .from("member_badges")
       .select("badge_id, earned_at")
       .eq("member_id", session.member_id),
+    supabase
+      .from("clubs")
+      .select("operations_module_enabled")
+      .eq("id", session.club_id)
+      .single(),
   ]);
+  const opsEnabled = clubOps?.operations_module_enabled ?? false;
+  const idVerified = opsEnabled && !!member?.id_verified_at;
 
   const { data: referrals } = member?.member_code
     ? await supabase
@@ -174,6 +182,24 @@ export default async function ProfilePage({
                 {t(locale, "profile.memberSince")} · {memberSince.toUpperCase()}
               </p>
               <h2 className="m-display mt-2 text-white">{fullName || "Member"}</h2>
+              {idVerified && (
+                <span className="inline-flex items-center gap-1 mt-2 rounded-full bg-green-500/20 border border-green-300/40 px-2 py-0.5 text-[11px] font-semibold text-green-100">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    className="w-3 h-3"
+                    aria-hidden
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  {t(locale, "profile.ageVerified")}
+                </span>
+              )}
             </div>
             <MemberIdCard memberCode={memberCode} />
             <div className="flex items-center justify-between">

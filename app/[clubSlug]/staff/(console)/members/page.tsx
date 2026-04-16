@@ -1,7 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
-import { StaffMemberRow } from "../../members/member-row";
 import { StaffMemberCreator } from "../../members/member-creator";
+import { MembersSearch, type MembersSearchMember } from "./members-search";
+import { getMemberIdPhotoSignedUrl } from "@/lib/supabase/storage";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 
@@ -15,17 +16,20 @@ export default async function StaffMembersPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name")
+    .select("id, name, operations_module_enabled")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
 
   if (!club) notFound();
+  const opsEnabled = club.operations_module_enabled ?? false;
 
   const [{ data: members }, { data: roles }, { data: periods }] = await Promise.all([
     supabase
       .from("members")
-      .select("id, member_code, full_name, spin_balance, status, role_id, membership_period_id, valid_till, member_roles(id, name)")
+      .select(
+        "id, member_code, full_name, spin_balance, status, role_id, membership_period_id, valid_till, date_of_birth, id_verified_at, id_photo_path, member_roles(id, name)",
+      )
       .eq("club_id", club.id)
       .order("created_at", { ascending: false }),
     supabase
@@ -41,47 +45,52 @@ export default async function StaffMembersPage({
       .order("display_order", { ascending: true }),
   ]);
 
+  // Generate signed URLs for member ID photos (only if ops module is on).
+  const membersWithSigned: MembersSearchMember[] = await Promise.all(
+    (members ?? []).map(async (m) => {
+      const roleName = Array.isArray(m.member_roles)
+        ? m.member_roles[0]?.name ?? null
+        : (m.member_roles as { id: string; name: string } | null)?.name ?? null;
+      const signed =
+        opsEnabled && m.id_photo_path
+          ? await getMemberIdPhotoSignedUrl(m.id_photo_path, 1800)
+          : null;
+      return {
+        id: m.id,
+        memberCode: m.member_code,
+        fullName: m.full_name,
+        spinBalance: m.spin_balance,
+        roleId: m.role_id,
+        roleName,
+        validTill: m.valid_till ?? null,
+        dateOfBirth: m.date_of_birth ?? null,
+        idVerifiedAt: m.id_verified_at ?? null,
+        idPhotoSignedUrl: signed,
+      };
+    }),
+  );
+
   const locale = await getServerLocale();
 
   return (
     <>
-      <StaffMemberCreator clubId={club.id} clubSlug={clubSlug} periods={periods ?? []} />
+      <StaffMemberCreator
+        clubId={club.id}
+        clubSlug={clubSlug}
+        periods={periods ?? []}
+        opsEnabled={opsEnabled}
+      />
 
       <div className="space-y-2">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-1">
           {t(locale, "staff.allMembers", { count: members?.length ?? 0 })}
         </h2>
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-          {members && members.length > 0 ? (
-            <div className="divide-y divide-gray-100">
-              {members.map((member) => {
-                const roleName = Array.isArray(member.member_roles)
-                  ? member.member_roles[0]?.name
-                  : (member.member_roles as { id: string; name: string } | null)?.name;
-                return (
-                  <StaffMemberRow
-                    key={member.id}
-                    member={{
-                      id: member.id,
-                      memberCode: member.member_code,
-                      fullName: member.full_name,
-                      spinBalance: member.spin_balance,
-                      roleId: member.role_id,
-                      roleName: roleName ?? null,
-                      validTill: member.valid_till ?? null,
-                    }}
-                    roles={roles ?? []}
-                    clubSlug={clubSlug}
-                  />
-                );
-              })}
-            </div>
-          ) : (
-            <div className="p-8 text-center text-gray-400 text-sm">
-              {t(locale, "staff.noMembers")}
-            </div>
-          )}
-        </div>
+        <MembersSearch
+          members={membersWithSigned}
+          roles={roles ?? []}
+          clubSlug={clubSlug}
+          opsEnabled={opsEnabled}
+        />
       </div>
     </>
   );

@@ -229,6 +229,10 @@ export type Database = {
           is_premium_referrer: boolean;
           is_system_member: boolean;
           referral_reward_spins: number;
+          date_of_birth: string | null;
+          id_verified_at: string | null;
+          id_verified_by: string | null;
+          id_photo_path: string | null;
           created_at: string;
         };
         Insert: {
@@ -248,6 +252,10 @@ export type Database = {
           is_premium_referrer?: boolean;
           is_system_member?: boolean;
           referral_reward_spins?: number;
+          date_of_birth?: string | null;
+          id_verified_at?: string | null;
+          id_verified_by?: string | null;
+          id_photo_path?: string | null;
           created_at?: string;
         };
         Update: {
@@ -267,6 +275,10 @@ export type Database = {
           is_premium_referrer?: boolean;
           is_system_member?: boolean;
           referral_reward_spins?: number;
+          date_of_birth?: string | null;
+          id_verified_at?: string | null;
+          id_verified_by?: string | null;
+          id_photo_path?: string | null;
           created_at?: string;
         };
         Relationships: [

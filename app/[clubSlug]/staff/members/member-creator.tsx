@@ -1,20 +1,25 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { createMember } from "./actions";
+import { useRef, useState, useTransition } from "react";
+import { createMember, uploadMemberIdPhotoAction } from "./actions";
 
 export function StaffMemberCreator({
   clubId,
   clubSlug,
   periods,
+  opsEnabled = false,
 }: {
   clubId: string;
   clubSlug: string;
   periods: { id: string; name: string; duration_months: number }[];
+  opsEnabled?: boolean;
 }) {
   const [memberCode, setMemberCode] = useState("");
   const [selectedPeriodId, setSelectedPeriodId] = useState("");
   const [referredBy, setReferredBy] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -24,15 +29,44 @@ export function StaffMemberCreator({
     setError(null);
     setSuccess(null);
 
+    if (opsEnabled && !dateOfBirth) {
+      setError("Date of birth is required when operations module is on");
+      return;
+    }
+
     startTransition(async () => {
-      const result = await createMember(clubId, memberCode, clubSlug, selectedPeriodId || null, referredBy || null);
-      if (result.error) {
+      let photoPath: string | null = null;
+      if (photoFile) {
+        const fd = new FormData();
+        fd.set("clubId", clubId);
+        fd.set("file", photoFile);
+        const uploadResult = await uploadMemberIdPhotoAction(fd);
+        if ("error" in uploadResult) {
+          setError(uploadResult.error);
+          return;
+        }
+        photoPath = uploadResult.path;
+      }
+
+      const result = await createMember(
+        clubId,
+        memberCode,
+        clubSlug,
+        selectedPeriodId || null,
+        referredBy || null,
+        dateOfBirth || null,
+        photoPath,
+      );
+      if ("error" in result) {
         setError(result.error);
       } else {
         setSuccess(`Member ${memberCode.toUpperCase()} created`);
         setMemberCode("");
         setSelectedPeriodId("");
         setReferredBy("");
+        setDateOfBirth("");
+        setPhotoFile(null);
+        if (photoInputRef.current) photoInputRef.current.value = "";
         setTimeout(() => setSuccess(null), 3000);
       }
     });
@@ -100,6 +134,40 @@ export function StaffMemberCreator({
                 ))}
               </select>
             </div>
+          )}
+          {opsEnabled && (
+            <>
+              <div className="px-5 pb-2">
+                <label htmlFor="dob" className="block text-xs font-medium text-gray-500 mb-1">
+                  Date of birth <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="dob"
+                  type="date"
+                  value={dateOfBirth}
+                  onChange={(e) => setDateOfBirth(e.target.value)}
+                  required
+                  max={new Date().toISOString().split("T")[0]}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                />
+              </div>
+              <div className="px-5 pb-4">
+                <label htmlFor="idPhoto" className="block text-xs font-medium text-gray-500 mb-1">
+                  ID photo (optional at creation)
+                </label>
+                <input
+                  id="idPhoto"
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/heic"
+                  onChange={(e) => setPhotoFile(e.target.files?.[0] ?? null)}
+                  className="w-full text-xs text-gray-700 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-gray-700 hover:file:bg-gray-200"
+                />
+                <p className="text-[11px] text-gray-400 mt-1">
+                  Stored privately. Staff only. Shown on entry-flow verification.
+                </p>
+              </div>
+            </>
           )}
         </form>
 
