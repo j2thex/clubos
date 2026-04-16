@@ -44,6 +44,17 @@ export type EventDraft = z.infer<typeof eventDraftSchema>;
 // ContentType union still includes both for DB/seed compatibility with
 // the ai_prompts table.
 
+// Setup wizard batch schema — used by Phase 5 one-shot "build my club"
+// flow. Returns a small starter kit the admin can review and bulk-save.
+// Offers and badges are intentionally not here; badges will auto-attach
+// to any quest that has award_badge implied by the AI.
+export const setupDraftSchema = z.object({
+  overview: z.string().max(400).describe("1-2 sentence summary of what this starter kit contains and why it fits the described club"),
+  quests: z.array(questDraftSchema).min(1).max(6),
+  events: z.array(eventDraftSchema).max(3),
+});
+export type SetupDraft = z.infer<typeof setupDraftSchema>;
+
 export type ContentType = "quest" | "event" | "offer" | "badge" | "setup_agent";
 
 export const SCHEMAS = {

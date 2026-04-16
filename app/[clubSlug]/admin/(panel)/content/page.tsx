@@ -73,8 +73,33 @@ export default async function ContentPage({
     },
   ];
 
+  const isEmpty = (questCount ?? 0) + (eventCount ?? 0) + (offerCount ?? 0) === 0;
+
   return (
     <div className="space-y-3">
+      {/* AI setup wizard — prominent when content is empty, compact otherwise */}
+      <Link
+        href={`/${clubSlug}/admin/setup`}
+        className={`flex items-center gap-4 rounded-2xl shadow-lg px-5 py-4 transition-colors ${
+          isEmpty
+            ? "bg-gradient-to-r from-emerald-50 via-sky-50 to-indigo-50 hover:from-emerald-100 hover:via-sky-100 hover:to-indigo-100 border border-emerald-100"
+            : "bg-white hover:bg-gray-50"
+        }`}
+      >
+        <div className="text-2xl">✨</div>
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-gray-900">AI setup wizard</p>
+          <p className="text-xs text-gray-500">
+            {isEmpty
+              ? "Describe your club and we'll draft a starter kit of quests and events in seconds"
+              : "Generate more quests and events from a single prompt"}
+          </p>
+        </div>
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      </Link>
+
       {items.map((item) => (
         <Link
           key={item.label}
