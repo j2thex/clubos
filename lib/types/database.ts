@@ -170,6 +170,54 @@ export type Database = {
           },
         ];
       };
+      club_entries: {
+        Row: {
+          id: string;
+          club_id: string;
+          member_id: string;
+          checked_in_at: string;
+          checked_in_by: string | null;
+          checked_out_at: string | null;
+          checked_out_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          club_id: string;
+          member_id: string;
+          checked_in_at?: string;
+          checked_in_by?: string | null;
+          checked_out_at?: string | null;
+          checked_out_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          club_id?: string;
+          member_id?: string;
+          checked_in_at?: string;
+          checked_in_by?: string | null;
+          checked_out_at?: string | null;
+          checked_out_by?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "club_entries_club_id_fkey";
+            columns: ["club_id"];
+            isOneToOne: false;
+            referencedRelation: "clubs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "club_entries_member_id_fkey";
+            columns: ["member_id"];
+            isOneToOne: false;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       email_campaigns: {
         Row: {
           id: string;

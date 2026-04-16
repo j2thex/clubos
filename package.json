@@ -16,6 +16,7 @@
     "@supabase/supabase-js": "^2.98.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
+    "@yudiel/react-qr-scanner": "^2.5.1",
     "ai": "^6.0.159",
     "bcryptjs": "^3.0.3",
     "canvas-confetti": "^1.9.4",
