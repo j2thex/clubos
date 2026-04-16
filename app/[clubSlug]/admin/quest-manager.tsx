@@ -721,14 +721,23 @@ export function QuestManager({
                       <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questImage")}</label>
                       {editImageUrl && (
                         <div className="mb-2 p-2 bg-white rounded-lg border border-gray-200 flex items-center gap-3">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={editImageUrl}
-                            alt="Quest image preview"
-                            className="w-12 h-12 rounded-lg object-cover border border-gray-200"
-                          />
+                          <a
+                            href={editImageUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Open full size in new tab"
+                            className="shrink-0 group"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={editImageUrl}
+                              alt="Quest image preview"
+                              className="w-20 h-20 rounded-lg object-cover border border-gray-200 group-hover:ring-2 group-hover:ring-emerald-300 transition"
+                            />
+                          </a>
                           <div className="flex-1 min-w-0">
                             <p className="text-[10px] text-gray-400 truncate">{editImageUrl}</p>
+                            <p className="text-[10px] text-gray-400">Click preview to view full size</p>
                           </div>
                           <button
                             type="button"
@@ -1081,14 +1090,23 @@ export function QuestManager({
             <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.questImage")}</label>
             {newImageUrl && (
               <div className="mb-2 p-2 bg-white rounded-lg border border-gray-200 flex items-center gap-3">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={newImageUrl}
-                  alt="Quest image preview"
-                  className="w-12 h-12 rounded-lg object-cover border border-gray-200"
-                />
+                <a
+                  href={newImageUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Open full size in new tab"
+                  className="shrink-0 group"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={newImageUrl}
+                    alt="Quest image preview"
+                    className="w-20 h-20 rounded-lg object-cover border border-gray-200 group-hover:ring-2 group-hover:ring-emerald-300 transition"
+                  />
+                </a>
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] text-gray-400 truncate">{newImageUrl}</p>
+                  <p className="text-[10px] text-gray-400">Click preview to view full size</p>
                 </div>
                 <button
                   type="button"
