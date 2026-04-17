@@ -41,9 +41,16 @@ export function StaffMemberRow({
   return (
     <div className="px-5 py-4 flex items-center gap-4">
       <div className="flex-1 min-w-0">
-        <p className="font-mono font-semibold text-gray-900 text-sm tracking-wide">
-          {member.memberCode}
-        </p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="font-mono font-semibold text-gray-900 text-sm tracking-wide">
+            {member.memberCode}
+          </p>
+          {member.roleName && (
+            <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+              {member.roleName}
+            </span>
+          )}
+        </div>
         {member.fullName && (
           <p className="text-xs text-gray-400 mt-0.5 truncate">{member.fullName}</p>
         )}
