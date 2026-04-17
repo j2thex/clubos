@@ -505,14 +505,28 @@ export async function toggleMemberStatus(
   return { ok: true, newStatus };
 }
 
+// Reserved because these strings are the display labels of the
+// onboarding residency_status radio. Letting an admin also create them
+// as custom member_roles produced two dropdowns showing the same word
+// in different places on the create-member form.
+const RESERVED_ROLE_NAMES = new Set(["local", "tourist", "turista"]);
+
 export async function addRole(clubId: string, name: string, clubSlug: string) {
-  if (!name.trim()) return { error: "Role name is required" };
+  const trimmed = name.trim();
+  if (!trimmed) return { error: "Role name is required" };
+
+  if (RESERVED_ROLE_NAMES.has(trimmed.toLowerCase())) {
+    return {
+      error:
+        "This name is reserved — it's used for the local/tourist residency field on onboarding. Pick a different name.",
+    };
+  }
 
   const supabase = createAdminClient();
 
   const { error } = await supabase
     .from("member_roles")
-    .insert({ club_id: clubId, name: name.trim() });
+    .insert({ club_id: clubId, name: trimmed });
 
   if (error) {
     if (error.code === "23505") return { error: "Role already exists" };
