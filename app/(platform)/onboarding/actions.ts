@@ -5,7 +5,10 @@ import { uploadClubImage } from "@/lib/supabase/storage";
 import { hashPassword, createOwnerToken, setOwnerCookie } from "@/lib/auth";
 import { generateSlug } from "@/lib/utils";
 import { RESERVED_SLUGS } from "@/lib/reserved-slugs";
+import { parseMapsUrl, reverseGeocode } from "@/lib/google-geocoding";
 import { redirect } from "next/navigation";
+
+const DEFAULT_SOCIAL_TELEGRAM = "https://t.me/osociosbot";
 
 export type CreateOrgAndClubState = {
   error?: string;
@@ -114,7 +117,34 @@ export async function createOrgAndClub(formData: FormData): Promise<CreateOrgAnd
   await supabase.from("club_branding").insert({
     club_id: club.id,
     social_google_maps: googleMapsUrl,
+    social_telegram: DEFAULT_SOCIAL_TELEGRAM,
   });
+
+  // If admin pasted a Google Maps URL, try to derive address/lat/lng so the
+  // admin doesn't have to retype it in settings. Fail-soft — onboarding must
+  // never be blocked by geocoding errors.
+  if (googleMapsUrl) {
+    try {
+      const coords = await parseMapsUrl(googleMapsUrl);
+      if (coords) {
+        const loc = await reverseGeocode(coords);
+        if (loc) {
+          await supabase
+            .from("clubs")
+            .update({
+              address: loc.address,
+              city: loc.city,
+              country: loc.country,
+              latitude: loc.latitude,
+              longitude: loc.longitude,
+            })
+            .eq("id", club.id);
+        }
+      }
+    } catch {
+      // ignore — location stays blank and admin can fill it in settings
+    }
+  }
 
   // Create club owner account (email uniqueness already validated above)
   const { data: owner, error: ownerError } = await supabase
