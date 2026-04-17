@@ -93,27 +93,29 @@ export function StaffNav({ clubSlug, spinEnabled, operationsEnabled }: StaffNavP
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.08)]">
-      <div className="mx-auto flex max-w-md items-center justify-around pb-2 pt-2">
-        {visibleItems.map((item) => {
-          const href = `${basePath}${item.path}`;
-          const isActive =
-            item.path === ""
-              ? pathname === basePath || pathname === `${basePath}/`
-              : pathname.startsWith(href);
+      <div className="overflow-x-auto overscroll-x-contain">
+        <div className="mx-auto flex min-w-max max-w-md items-center justify-around pb-2 pt-2">
+          {visibleItems.map((item) => {
+            const href = `${basePath}${item.path}`;
+            const isActive =
+              item.path === ""
+                ? pathname === basePath || pathname === `${basePath}/`
+                : pathname.startsWith(href);
 
-          return (
-            <Link
-              key={item.labelKey}
-              href={href}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1 text-xs transition-colors ${
-                isActive ? "text-gray-900 font-semibold" : "text-gray-400 hover:text-gray-600"
-              }`}
-            >
-              {item.icon}
-              <span>{t(item.labelKey)}</span>
-            </Link>
-          );
-        })}
+            return (
+              <Link
+                key={item.labelKey}
+                href={href}
+                className={`flex shrink-0 flex-col items-center gap-0.5 px-3 py-1 text-xs transition-colors ${
+                  isActive ? "text-gray-900 font-semibold" : "text-gray-400 hover:text-gray-600"
+                }`}
+              >
+                {item.icon}
+                <span>{t(item.labelKey)}</span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
       <div className="h-safe-area-inset-bottom pb-[env(safe-area-inset-bottom)]" />
     </nav>
