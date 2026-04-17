@@ -4,7 +4,30 @@ import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { useLanguage } from "@/lib/i18n/provider";
 import { StaffMemberRow } from "../../members/member-row";
-import { markIdVerified, revokeIdVerification } from "../../members/actions";
+import {
+  markIdVerified,
+  revokeIdVerification,
+  staffUpdateMemberIdentity,
+  staffReplaceMemberIdPhoto,
+  staffReplaceMemberPhoto,
+  staffReplaceMemberSignature,
+  staffRebindMemberRfid,
+} from "../../members/actions";
+import {
+  MemberDetail,
+  type MemberDetailRecord,
+  type MemberDetailActions,
+} from "@/components/club/member-detail";
+
+const staffMemberDetailActions: MemberDetailActions = {
+  updateIdentity: staffUpdateMemberIdentity,
+  replaceIdPhoto: staffReplaceMemberIdPhoto,
+  replacePortrait: staffReplaceMemberPhoto,
+  replaceSignature: staffReplaceMemberSignature,
+  rebindRfid: staffRebindMemberRfid,
+  markVerified: markIdVerified,
+  revokeVerification: revokeIdVerification,
+};
 
 export type MembersSearchMember = {
   id: string;
@@ -125,13 +148,17 @@ function VerifyRow({
 }
 
 export function MembersSearch({
+  clubId,
   members,
+  memberDetails = [],
   roles,
   clubSlug,
   opsEnabled,
   initialQuery = "",
 }: {
+  clubId: string;
   members: MembersSearchMember[];
+  memberDetails?: MemberDetailRecord[];
   roles: { id: string; name: string }[];
   clubSlug: string;
   opsEnabled: boolean;
@@ -139,6 +166,12 @@ export function MembersSearch({
 }) {
   const [query, setQuery] = useState(initialQuery);
   const [filter, setFilter] = useState<Filter>("all");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const { t: tRoot } = useLanguage();
+  const memberDetailById = useMemo(
+    () => new Map(memberDetails.map((d) => [d.id, d])),
+    [memberDetails],
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -206,22 +239,54 @@ export function MembersSearch({
           <div className="divide-y divide-gray-100">
             {filtered.map((m) => {
               const age = computeAge(m.dateOfBirth);
+              const detail = memberDetailById.get(m.id);
+              const isExpanded = expandedId === m.id;
               return (
                 <div key={m.id}>
-                  <StaffMemberRow
-                    member={{
-                      id: m.id,
-                      memberCode: m.memberCode,
-                      fullName: m.fullName,
-                      spinBalance: m.spinBalance,
-                      roleId: m.roleId,
-                      roleName: m.roleName,
-                      validTill: m.validTill,
-                    }}
-                    roles={roles}
-                    clubSlug={clubSlug}
-                  />
-                  {opsEnabled && (
+                  <div className="flex items-stretch">
+                    <div className="flex-1 min-w-0">
+                      <StaffMemberRow
+                        member={{
+                          id: m.id,
+                          memberCode: m.memberCode,
+                          fullName: m.fullName,
+                          spinBalance: m.spinBalance,
+                          roleId: m.roleId,
+                          roleName: m.roleName,
+                          validTill: m.validTill,
+                        }}
+                        roles={roles}
+                        clubSlug={clubSlug}
+                      />
+                    </div>
+                    {detail && (
+                      <button
+                        type="button"
+                        onClick={() => setExpandedId(isExpanded ? null : m.id)}
+                        className="px-4 text-gray-400 hover:text-gray-900 transition-colors"
+                        title={
+                          isExpanded
+                            ? tRoot("admin.memberDetail.collapse")
+                            : tRoot("admin.memberDetail.expand")
+                        }
+                      >
+                        <svg
+                          className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                  {opsEnabled && !isExpanded && (
                     <VerifyRow
                       memberId={m.id}
                       clubSlug={clubSlug}
@@ -229,6 +294,14 @@ export function MembersSearch({
                       idVerifiedAt={m.idVerifiedAt}
                       idPhotoSignedUrl={m.idPhotoSignedUrl}
                       age={age}
+                    />
+                  )}
+                  {detail && isExpanded && (
+                    <MemberDetail
+                      member={detail}
+                      clubId={clubId}
+                      clubSlug={clubSlug}
+                      actions={staffMemberDetailActions}
                     />
                   )}
                 </div>

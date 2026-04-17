@@ -3,15 +3,6 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { useLanguage } from "@/lib/i18n/provider";
-import {
-  updateMemberIdentity,
-  replaceMemberIdPhotoAction,
-  replaceMemberPhotoAction,
-  replaceMemberSignatureAction,
-  rebindMemberRfid,
-  adminMarkIdVerified,
-  adminRevokeIdVerification,
-} from "./actions";
 import { PhotoCapture } from "@/components/club/photo-capture";
 import { SignaturePad } from "@/components/club/signature-pad";
 import { RfidCapture } from "@/components/club/rfid-capture";
@@ -34,6 +25,46 @@ export type MemberDetailRecord = {
   signature_url: string | null;
 };
 
+export type UpdateMemberIdentityInput = {
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string | null;
+  residencyStatus: "local" | "tourist" | null;
+  idNumber: string | null;
+  phone: string | null;
+  email: string | null;
+};
+
+export type MemberDetailActions = {
+  updateIdentity: (
+    memberId: string,
+    clubSlug: string,
+    input: UpdateMemberIdentityInput,
+  ) => Promise<{ error: string } | { ok: true }>;
+  replaceIdPhoto: (
+    fd: FormData,
+  ) => Promise<{ error: string } | { ok: true; path: string }>;
+  replacePortrait: (
+    fd: FormData,
+  ) => Promise<{ error: string } | { ok: true; path: string }>;
+  replaceSignature: (
+    fd: FormData,
+  ) => Promise<{ error: string } | { ok: true; path: string }>;
+  rebindRfid: (
+    memberId: string,
+    clubSlug: string,
+    newUid: string | null,
+  ) => Promise<{ error: string } | { ok: true }>;
+  markVerified: (
+    memberId: string,
+    clubSlug: string,
+  ) => Promise<{ error: string } | { ok: true }>;
+  revokeVerification: (
+    memberId: string,
+    clubSlug: string,
+  ) => Promise<{ error: string } | { ok: true }>;
+};
+
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
   try {
@@ -47,10 +78,12 @@ export function MemberDetail({
   member,
   clubId,
   clubSlug,
+  actions,
 }: {
   member: MemberDetailRecord;
   clubId: string;
   clubSlug: string;
+  actions: MemberDetailActions;
 }) {
   const { t } = useLanguage();
   const [firstName, setFirstName] = useState(member.first_name ?? "");
@@ -79,7 +112,7 @@ export function MemberDetail({
 
   function handleSaveIdentity() {
     startTransition(async () => {
-      const r = await updateMemberIdentity(member.id, clubSlug, {
+      const r = await actions.updateIdentity(member.id, clubSlug, {
         firstName,
         lastName,
         dateOfBirth: dob || null,
@@ -100,7 +133,7 @@ export function MemberDetail({
     fd.set("memberId", member.id);
     fd.set("file", portraitFile);
     startTransition(async () => {
-      const r = await replaceMemberPhotoAction(fd);
+      const r = await actions.replacePortrait(fd);
       if ("error" in r) toast.error(r.error);
       else {
         toast.success(t("admin.memberDetail.portraitReplaced"));
@@ -117,7 +150,7 @@ export function MemberDetail({
     fd.set("memberId", member.id);
     fd.set("file", idPhotoFile);
     startTransition(async () => {
-      const r = await replaceMemberIdPhotoAction(fd);
+      const r = await actions.replaceIdPhoto(fd);
       if ("error" in r) toast.error(r.error);
       else {
         toast.success(t("admin.memberDetail.idPhotoReplaced"));
@@ -134,7 +167,7 @@ export function MemberDetail({
     fd.set("memberId", member.id);
     fd.set("file", signatureFile);
     startTransition(async () => {
-      const r = await replaceMemberSignatureAction(fd);
+      const r = await actions.replaceSignature(fd);
       if ("error" in r) toast.error(r.error);
       else {
         toast.success(t("admin.memberDetail.signatureReplaced"));
@@ -146,7 +179,7 @@ export function MemberDetail({
 
   function handleRebindRfid() {
     startTransition(async () => {
-      const r = await rebindMemberRfid(member.id, clubSlug, rfidDraft);
+      const r = await actions.rebindRfid(member.id, clubSlug, rfidDraft);
       if ("error" in r) toast.error(r.error);
       else {
         toast.success(t("admin.memberDetail.rfidRebound"));
@@ -159,7 +192,7 @@ export function MemberDetail({
   function handleUnbindRfid() {
     if (!window.confirm(t("admin.memberDetail.rfidUnbindConfirm"))) return;
     startTransition(async () => {
-      const r = await rebindMemberRfid(member.id, clubSlug, null);
+      const r = await actions.rebindRfid(member.id, clubSlug, null);
       if ("error" in r) toast.error(r.error);
       else toast.success(t("admin.memberDetail.rfidUnbound"));
     });
@@ -167,7 +200,7 @@ export function MemberDetail({
 
   function handleVerify() {
     startTransition(async () => {
-      const r = await adminMarkIdVerified(member.id, clubSlug);
+      const r = await actions.markVerified(member.id, clubSlug);
       if ("error" in r) toast.error(r.error);
       else toast.success(t("admin.memberDetail.verified"));
     });
@@ -176,7 +209,7 @@ export function MemberDetail({
   function handleRevoke() {
     if (!window.confirm(t("admin.memberDetail.revokeConfirm"))) return;
     startTransition(async () => {
-      const r = await adminRevokeIdVerification(member.id, clubSlug);
+      const r = await actions.revokeVerification(member.id, clubSlug);
       if ("error" in r) toast.error(r.error);
       else toast.success(t("admin.memberDetail.revoked"));
     });

@@ -1,10 +1,38 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { createMember, createStaffMember, toggleMemberStatus, deleteMember, createReferralSource, deleteReferralSource } from "./actions";
+import {
+  createMember,
+  createStaffMember,
+  toggleMemberStatus,
+  deleteMember,
+  createReferralSource,
+  deleteReferralSource,
+  updateMemberIdentity,
+  replaceMemberIdPhotoAction,
+  replaceMemberPhotoAction,
+  replaceMemberSignatureAction,
+  rebindMemberRfid,
+  adminMarkIdVerified,
+  adminRevokeIdVerification,
+} from "./actions";
 import { useLanguage } from "@/lib/i18n/provider";
 import { ReferralTree, type ReferrerSummary, type MemberOption } from "./referral-tree";
-import { MemberDetail, type MemberDetailRecord } from "./member-detail";
+import {
+  MemberDetail,
+  type MemberDetailRecord,
+  type MemberDetailActions,
+} from "@/components/club/member-detail";
+
+const adminMemberDetailActions: MemberDetailActions = {
+  updateIdentity: updateMemberIdentity,
+  replaceIdPhoto: replaceMemberIdPhotoAction,
+  replacePortrait: replaceMemberPhotoAction,
+  replaceSignature: replaceMemberSignatureAction,
+  rebindRfid: rebindMemberRfid,
+  markVerified: adminMarkIdVerified,
+  revokeVerification: adminRevokeIdVerification,
+};
 
 interface Member {
   id: string;
@@ -379,6 +407,7 @@ export function PeopleManager({
                           member={detail}
                           clubId={clubId}
                           clubSlug={clubSlug}
+                          actions={adminMemberDetailActions}
                         />
                       )}
                     </div>

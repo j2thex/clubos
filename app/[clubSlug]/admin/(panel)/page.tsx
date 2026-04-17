@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { PeopleManager } from "../people-manager";
 import { SetupChecklist } from "./setup-checklist";
 import type { ReferrerSummary, MemberOption } from "../referral-tree";
-import type { MemberDetailRecord } from "../member-detail";
+import type { MemberDetailRecord } from "@/components/club/member-detail";
 import {
   getMemberIdPhotoSignedUrl,
   getMemberPhotoSignedUrl,
