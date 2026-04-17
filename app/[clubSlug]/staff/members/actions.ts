@@ -87,12 +87,21 @@ function baseCodeFromNames(firstName: string, lastName: string): string {
   return `${a}${b}`;
 }
 
+async function cleanupOrphanedUploads(input: CreateMemberInput): Promise<void> {
+  const jobs: Promise<unknown>[] = [];
+  if (input.idPhotoPath) jobs.push(deleteMemberIdPhoto(input.idPhotoPath).catch(() => {}));
+  if (input.photoPath) jobs.push(deleteMemberPhoto(input.photoPath).catch(() => {}));
+  if (input.signaturePath) jobs.push(deleteMemberSignature(input.signaturePath).catch(() => {}));
+  if (jobs.length) await Promise.all(jobs);
+}
+
 export async function createMember(
   clubId: string,
   clubSlug: string,
   input: CreateMemberInput,
 ): Promise<{ error: string } | { ok: true; memberCode: string }> {
   try { await requireStaffForClub(clubId); } catch (err) {
+    await cleanupOrphanedUploads(input);
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
 
@@ -103,22 +112,32 @@ export async function createMember(
   const email = input.email?.trim() || null;
 
   if (!firstName || !lastName) {
+    await cleanupOrphanedUploads(input);
     return { error: "First name and last name are required" };
   }
   if (!input.dateOfBirth || !/^\d{4}-\d{2}-\d{2}$/.test(input.dateOfBirth)) {
+    await cleanupOrphanedUploads(input);
     return { error: "Valid date of birth is required" };
   }
   if (ageFromDob(input.dateOfBirth) < 18) {
+    await cleanupOrphanedUploads(input);
     return {
       error:
         "This club requires members to be 18 or older. The account was not created.",
     };
   }
   if (input.residencyStatus !== "local" && input.residencyStatus !== "tourist") {
+    await cleanupOrphanedUploads(input);
     return { error: "Residency must be local or tourist" };
   }
-  if (!idNumber) return { error: "ID number is required" };
-  if (!phone) return { error: "Phone number is required" };
+  if (!idNumber) {
+    await cleanupOrphanedUploads(input);
+    return { error: "ID number is required" };
+  }
+  if (!phone) {
+    await cleanupOrphanedUploads(input);
+    return { error: "Phone number is required" };
+  }
 
   const supabase = createAdminClient();
 
@@ -132,12 +151,15 @@ export async function createMember(
 
   if (opsEnabled) {
     if (!input.idPhotoPath) {
+      await cleanupOrphanedUploads(input);
       return { error: "ID photo is required for this club" };
     }
     if (!input.photoPath) {
+      await cleanupOrphanedUploads(input);
       return { error: "Member portrait is required for this club" };
     }
     if (!input.signaturePath) {
+      await cleanupOrphanedUploads(input);
       return { error: "Signature is required for this club" };
     }
   }
@@ -153,7 +175,10 @@ export async function createMember(
         .eq("club_id", clubId)
         .eq("member_code", refCode)
         .single();
-      if (!referrer) return { error: "Referral code not found" };
+      if (!referrer) {
+        await cleanupOrphanedUploads(input);
+        return { error: "Referral code not found" };
+      }
       referredByCode = refCode;
     }
   }
@@ -188,6 +213,7 @@ export async function createMember(
       .eq("rfid_uid", rfidUidClean)
       .maybeSingle();
     if (existingRfid) {
+      await cleanupOrphanedUploads(input);
       return {
         error: `This chip is already bound to member ${existingRfid.member_code}`,
       };
@@ -258,15 +284,7 @@ export async function createMember(
   }
 
   if (insertError) {
-    if (input.idPhotoPath) {
-      await deleteMemberIdPhoto(input.idPhotoPath).catch(() => {});
-    }
-    if (input.photoPath) {
-      await deleteMemberPhoto(input.photoPath).catch(() => {});
-    }
-    if (input.signaturePath) {
-      await deleteMemberSignature(input.signaturePath).catch(() => {});
-    }
+    await cleanupOrphanedUploads(input);
     if (insertError.code === "23505" && insertError.message?.includes("rfid_uid")) {
       return { error: "This chip is already bound to another member" };
     }

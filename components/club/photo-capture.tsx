@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLanguage } from "@/lib/i18n/provider";
 
 type Status = "idle" | "requesting" | "streaming" | "captured" | "denied";
@@ -23,22 +23,14 @@ export function PhotoCapture({
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [status, setStatus] = useState<Status>("idle");
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Release the object URL on unmount or when the value changes.
+  // Derive the preview URL from the file via useMemo (avoids set-state-in-effect).
+  const previewUrl = useMemo(() => (value ? URL.createObjectURL(value) : null), [value]);
   useEffect(() => {
-    if (!value) {
-      setPreviewUrl(null);
-      return;
-    }
-    const url = URL.createObjectURL(value);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [value]);
-
-  // Stop any active stream on unmount.
-  useEffect(() => stopStream, []);
+    if (!previewUrl) return;
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [previewUrl]);
 
   function stopStream() {
     if (streamRef.current) {
@@ -46,6 +38,11 @@ export function PhotoCapture({
       streamRef.current = null;
     }
   }
+
+  // Stop any active stream on unmount.
+  useEffect(() => {
+    return () => stopStream();
+  }, []);
 
   async function startCamera() {
     setError(null);
@@ -61,15 +58,24 @@ export function PhotoCapture({
         audio: false,
       });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play().catch(() => {});
-      }
+      // The <video> element doesn't exist until status flips to "streaming"
+      // and the streaming branch renders. The ref callback on that <video>
+      // below attaches the stream once it mounts.
       setStatus("streaming");
     } catch {
       stopStream();
       setStatus("denied");
       setError(t("ops.memberForm.photoCapture.cameraDenied"));
+    }
+  }
+
+  function attachStreamToVideo(el: HTMLVideoElement | null) {
+    videoRef.current = el;
+    if (!el) return;
+    const stream = streamRef.current;
+    if (stream && el.srcObject !== stream) {
+      el.srcObject = stream;
+      el.play().catch(() => {});
     }
   }
 
@@ -143,7 +149,7 @@ export function PhotoCapture({
       ) : status === "streaming" ? (
         <div className="space-y-2">
           <video
-            ref={videoRef}
+            ref={attachStreamToVideo}
             autoPlay
             muted
             playsInline

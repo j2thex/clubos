@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useLanguage } from "@/lib/i18n/provider";
 
 export function SignaturePad({
@@ -19,17 +19,13 @@ export function SignaturePad({
   const drawingRef = useRef(false);
   const hasStrokesRef = useRef(false);
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
+  // Derive preview URL from file via useMemo (avoids set-state-in-effect).
+  const previewUrl = useMemo(() => (value ? URL.createObjectURL(value) : null), [value]);
   useEffect(() => {
-    if (!value) {
-      setPreviewUrl(null);
-      return;
-    }
-    const url = URL.createObjectURL(value);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [value]);
+    if (!previewUrl) return;
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [previewUrl]);
 
   // Size the canvas to the CSS width at 2x for crispness on retina.
   const resizeCanvas = useCallback(() => {

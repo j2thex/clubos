@@ -114,7 +114,12 @@ export function StaffMemberCreator({
       });
 
       if ("error" in result) {
-        setError(result.error);
+        // Localize the one user-facing legal error; other errors stay as-is.
+        setError(
+          result.error.startsWith("This club requires members to be 18")
+            ? t("ops.memberForm.under18Error")
+            : result.error,
+        );
       } else {
         setSuccess(t("ops.memberForm.created", { code: result.memberCode }));
         setFirstName("");

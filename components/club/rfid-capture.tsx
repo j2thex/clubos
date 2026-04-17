@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useLanguage } from "@/lib/i18n/provider";
 
 // Sycreader SYC ID&IC (and most cheap HID-keyboard RFID readers) type the
 // tag's UID into the focused input as plain characters, then press Enter.
-// This component focuses a capture input, collects whatever gets typed, and
+// This component collects whatever gets typed into its capture input and
 // locks the UID in when Enter arrives. Works read-only — it can't write
-// chips. Also supports manual text entry as a fallback.
+// chips. Also supports manual text entry as a fallback. The input is NOT
+// auto-focused on mount so the parent form's first field keeps focus;
+// staff clicks into the RFID capture when ready to tap a chip.
 
 export function RfidCapture({
   label,
@@ -19,18 +21,17 @@ export function RfidCapture({
   onChange: (uid: string | null) => void;
 }) {
   const { t } = useLanguage();
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const focusNextMountRef = useRef(false);
   const [draft, setDraft] = useState("");
   const [mode, setMode] = useState<"scan" | "manual">("scan");
   const [showManual, setShowManual] = useState(false);
 
-  // When entering scan mode, auto-focus the capture input so keystrokes from
-  // the reader land here instead of bubbling to another focused field.
-  useEffect(() => {
-    if (!value && mode === "scan" && inputRef.current) {
-      inputRef.current.focus();
+  function registerScanInput(el: HTMLInputElement | null) {
+    if (el && focusNextMountRef.current) {
+      el.focus();
+      focusNextMountRef.current = false;
     }
-  }, [value, mode]);
+  }
 
   function commit(raw: string) {
     const uid = raw.trim();
@@ -51,7 +52,8 @@ export function RfidCapture({
     setDraft("");
     setMode("scan");
     setShowManual(false);
-    // focus handled by effect once value becomes null
+    // Focus the input when it mounts in the next render tick.
+    focusNextMountRef.current = true;
   }
 
   if (value) {
@@ -81,7 +83,7 @@ export function RfidCapture({
       {mode === "scan" && (
         <>
           <input
-            ref={inputRef}
+            ref={registerScanInput}
             type="text"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
