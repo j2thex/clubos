@@ -9,6 +9,8 @@ import {
   deleteMemberIdPhoto,
   uploadMemberPhoto as uploadMemberPhotoToBucket,
   deleteMemberPhoto,
+  uploadMemberSignature as uploadMemberSignatureToBucket,
+  deleteMemberSignature,
 } from "@/lib/supabase/storage";
 
 export async function updateMemberRole(memberId: string, roleId: string | null, clubSlug: string) {
@@ -57,6 +59,7 @@ export type CreateMemberInput = {
   referredBy?: string | null;
   idPhotoPath?: string | null;
   photoPath?: string | null;
+  signaturePath?: string | null;
   opsEnabled?: boolean;
 };
 
@@ -132,6 +135,9 @@ export async function createMember(
     }
     if (!input.photoPath) {
       return { error: "Member portrait is required for this club" };
+    }
+    if (!input.signaturePath) {
+      return { error: "Signature is required for this club" };
     }
   }
 
@@ -211,6 +217,7 @@ export async function createMember(
       referred_by: referredByCode,
       id_photo_path: input.idPhotoPath || null,
       photo_path: input.photoPath || null,
+      signature_path: input.signaturePath || null,
     });
     if (!error) {
       insertError = null;
@@ -231,6 +238,9 @@ export async function createMember(
     }
     if (input.photoPath) {
       await deleteMemberPhoto(input.photoPath).catch(() => {});
+    }
+    if (input.signaturePath) {
+      await deleteMemberSignature(input.signaturePath).catch(() => {});
     }
     if (insertError.code === "23505") {
       return { error: "Could not generate a unique member code — try different names" };
@@ -480,6 +490,24 @@ export async function uploadMemberPhotoAction(
   if (file.size > 5 * 1024 * 1024) return { error: "File too large (max 5 MB)" };
 
   return uploadMemberPhotoToBucket(clubId, file);
+}
+
+export async function uploadMemberSignatureAction(
+  formData: FormData,
+): Promise<{ path: string } | { error: string }> {
+  const clubId = formData.get("clubId");
+  if (typeof clubId !== "string" || !clubId) return { error: "Missing club" };
+
+  try { await requireStaffForClub(clubId); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) return { error: "No file provided" };
+  if (file.size > 512 * 1024) return { error: "Signature too large (max 500 KB)" };
+  if (file.type !== "image/png") return { error: "Signature must be PNG" };
+
+  return uploadMemberSignatureToBucket(clubId, file);
 }
 
 export async function markIdVerified(

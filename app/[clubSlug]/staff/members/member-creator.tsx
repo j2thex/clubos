@@ -6,8 +6,10 @@ import {
   createMember,
   uploadMemberIdPhotoAction,
   uploadMemberPhotoAction,
+  uploadMemberSignatureAction,
 } from "./actions";
 import { PhotoCapture } from "@/components/club/photo-capture";
+import { SignaturePad } from "@/components/club/signature-pad";
 
 export function StaffMemberCreator({
   clubId,
@@ -32,6 +34,7 @@ export function StaffMemberCreator({
   const [referredBy, setReferredBy] = useState("");
   const [portraitFile, setPortraitFile] = useState<File | null>(null);
   const [idPhotoFile, setIdPhotoFile] = useState<File | null>(null);
+  const [signatureFile, setSignatureFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -44,7 +47,7 @@ export function StaffMemberCreator({
     !dateOfBirth ||
     !idNumber.trim() ||
     !phone.trim() ||
-    (opsEnabled && (!portraitFile || !idPhotoFile));
+    (opsEnabled && (!portraitFile || !idPhotoFile || !signatureFile));
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -54,6 +57,7 @@ export function StaffMemberCreator({
     startTransition(async () => {
       let idPhotoPath: string | null = null;
       let photoPath: string | null = null;
+      let signaturePath: string | null = null;
 
       if (idPhotoFile) {
         const fd = new FormData();
@@ -79,6 +83,18 @@ export function StaffMemberCreator({
         photoPath = r.path;
       }
 
+      if (signatureFile) {
+        const fd = new FormData();
+        fd.set("clubId", clubId);
+        fd.set("file", signatureFile);
+        const r = await uploadMemberSignatureAction(fd);
+        if ("error" in r) {
+          setError(r.error);
+          return;
+        }
+        signaturePath = r.path;
+      }
+
       const result = await createMember(clubId, clubSlug, {
         firstName,
         lastName,
@@ -91,6 +107,7 @@ export function StaffMemberCreator({
         referredBy: referredBy || null,
         idPhotoPath,
         photoPath,
+        signaturePath,
       });
 
       if ("error" in result) {
@@ -108,6 +125,7 @@ export function StaffMemberCreator({
         setReferredBy("");
         setPortraitFile(null);
         setIdPhotoFile(null);
+        setSignatureFile(null);
         setTimeout(() => setSuccess(null), 5000);
       }
     });
@@ -280,20 +298,28 @@ export function StaffMemberCreator({
           </div>
 
           {opsEnabled && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              <PhotoCapture
-                label={t("ops.memberForm.portraitLabel")}
+            <div className="space-y-3 pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <PhotoCapture
+                  label={t("ops.memberForm.portraitLabel")}
+                  required
+                  facingMode="user"
+                  value={portraitFile}
+                  onChange={setPortraitFile}
+                />
+                <PhotoCapture
+                  label={t("ops.memberForm.idPhotoRequiredLabel")}
+                  required
+                  facingMode="environment"
+                  value={idPhotoFile}
+                  onChange={setIdPhotoFile}
+                />
+              </div>
+              <SignaturePad
+                label={t("ops.memberForm.signatureLabel")}
                 required
-                facingMode="user"
-                value={portraitFile}
-                onChange={setPortraitFile}
-              />
-              <PhotoCapture
-                label={t("ops.memberForm.idPhotoRequiredLabel")}
-                required
-                facingMode="environment"
-                value={idPhotoFile}
-                onChange={setIdPhotoFile}
+                value={signatureFile}
+                onChange={setSignatureFile}
               />
             </div>
           )}

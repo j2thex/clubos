@@ -109,6 +109,42 @@ export async function getMemberPhotoSignedUrl(
   return data?.signedUrl ?? null;
 }
 
+// --- Member signatures (bucket: member-signatures, PRIVATE) ---
+// PNG exports from the canvas signature pad (or Signotec signoPAD later).
+
+export async function uploadMemberSignature(
+  clubId: string,
+  file: File,
+): Promise<{ path: string } | { error: string }> {
+  const supabase = createAdminClient();
+
+  const filename = `${clubId}/${crypto.randomUUID()}.png`;
+
+  const { error } = await supabase.storage
+    .from("member-signatures")
+    .upload(filename, file, { contentType: "image/png", upsert: false });
+
+  if (error) return { error: "Failed to upload signature" };
+
+  return { path: filename };
+}
+
+export async function deleteMemberSignature(path: string): Promise<void> {
+  const supabase = createAdminClient();
+  await supabase.storage.from("member-signatures").remove([path]);
+}
+
+export async function getMemberSignatureSignedUrl(
+  path: string,
+  expiresInSeconds = 3600,
+): Promise<string | null> {
+  const supabase = createAdminClient();
+  const { data } = await supabase.storage
+    .from("member-signatures")
+    .createSignedUrl(path, expiresInSeconds);
+  return data?.signedUrl ?? null;
+}
+
 // --- Feedback screenshots (bucket: feedback) ---
 
 export async function uploadFeedbackImage(
