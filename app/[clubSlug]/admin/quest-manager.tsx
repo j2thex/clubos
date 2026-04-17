@@ -76,14 +76,24 @@ export function QuestManager({
   clubId,
   clubSlug,
   googleReviewUrl,
+  instagramUrl,
+  websiteUrl,
   spinDisplayDecimals,
 }: {
   quests: Quest[];
   clubId: string;
   clubSlug: string;
   googleReviewUrl?: string | null;
+  instagramUrl?: string | null;
+  websiteUrl?: string | null;
   spinDisplayDecimals: number;
 }) {
+  function resolveTemplateLink(tmpl: typeof TEMPLATES[number]): string {
+    if (tmpl.titleKey === "admin.quickGoogleReview" && googleReviewUrl) return googleReviewUrl;
+    if (tmpl.titleKey === "admin.quickFollowInstagram" && instagramUrl) return instagramUrl;
+    if (tmpl.titleKey === "admin.quickVisitWebsite" && websiteUrl) return websiteUrl;
+    return tmpl.link;
+  }
   const spinStep = spinDisplayDecimals === 0 ? 1 : 0.1;
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -111,7 +121,7 @@ export function QuestManager({
   const [newLink, setNewLink] = useState("");
   const [newReward, setNewReward] = useState("");
   const [newMultiUse, setNewMultiUse] = useState(false);
-  const [newIsPublic, setNewIsPublic] = useState(false);
+  const [newIsPublic, setNewIsPublic] = useState(true);
   const [newImage, setNewImage] = useState<File | null>(null);
   const [newImageUrl, setNewImageUrl] = useState("");
   const [newQuestType, setNewQuestType] = useState("default");
@@ -248,16 +258,12 @@ export function QuestManager({
     setNewDesc(translate("en", tmpl.descKey));
     setNewTitleEs(translate("es", tmpl.titleKey));
     setNewDescEs(translate("es", tmpl.descKey));
-    setNewLink(tmpl.link);
+    setNewLink(resolveTemplateLink(tmpl));
     setNewReward(String(tmpl.rewardSpins));
     setNewQuestType(tmpl.questType);
     setNewIcon(tmpl.icon);
     setNewProofMode(tmpl.proofMode);
     setNewCategory(tmpl.category);
-    // Auto-fill Google Review link if available
-    if (tmpl.titleKey === "admin.quickGoogleReview" && googleReviewUrl) {
-      setNewLink(googleReviewUrl);
-    }
     if (tmpl.questType === "feedback") {
       setNewMultiUse(true);
       setNewProofPlaceholder("");
@@ -419,7 +425,7 @@ export function QuestManager({
         setNewLink("");
         setNewReward("");
         setNewMultiUse(false);
-        setNewIsPublic(false);
+        setNewIsPublic(true);
         setNewQuestType("default");
         setNewProofMode("none");
         setNewProofPlaceholder("");
@@ -459,12 +465,12 @@ export function QuestManager({
         fd.set("description", translate("en", tmpl.descKey));
         fd.set("title_es", translate("es", tmpl.titleKey));
         fd.set("description_es", translate("es", tmpl.descKey));
-        fd.set("link", tmpl.titleKey === "admin.quickGoogleReview" && googleReviewUrl ? googleReviewUrl : tmpl.link);
+        fd.set("link", resolveTemplateLink(tmpl));
         fd.set("reward_spins", String(tmpl.rewardSpins));
         fd.set("quest_type", tmpl.questType);
         fd.set("proof_mode", tmpl.proofMode);
         fd.set("multi_use", tmpl.questType === "feedback" ? "1" : "0");
-        fd.set("is_public", "0");
+        fd.set("is_public", "1");
         fd.set("icon", tmpl.icon);
         fd.set("award_badge", "0");
         fd.set("proof_placeholder", "");

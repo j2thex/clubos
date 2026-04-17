@@ -395,7 +395,7 @@ function OfferRow({
   const [localLink, setLocalLink] = useState(clubOffer?.link ?? "");
   const [localIcon, setLocalIcon] = useState<string | null>(clubOffer?.icon ?? null);
   const [localImage, setLocalImage] = useState<File | null>(null);
-  const [localIsPublic, setLocalIsPublic] = useState(clubOffer?.is_public ?? false);
+  const [localIsPublic, setLocalIsPublic] = useState(clubOffer?.is_public ?? true);
   const [descLang, setDescLang] = useState<"en" | "es">("en");
 
   // Track whether options have been changed from server values

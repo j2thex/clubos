@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { updateClubLocation, findCoordinates } from "./location-actions";
+import { isGooglePlacesEnabled, loadPlaces } from "@/lib/google-places-client";
 
 interface LocationData {
   address: string | null;
@@ -28,6 +29,54 @@ export function LocationManager({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  const addressInputRef = useRef<HTMLInputElement | null>(null);
+  const placesEnabled = isGooglePlacesEnabled();
+
+  useEffect(() => {
+    if (!placesEnabled) return;
+    const input = addressInputRef.current;
+    if (!input) return;
+
+    let cancelled = false;
+    let autocomplete: google.maps.places.Autocomplete | null = null;
+    let listener: google.maps.MapsEventListener | null = null;
+
+    loadPlaces().then((places) => {
+      if (cancelled || !places || !input) return;
+      autocomplete = new places.Autocomplete(input, {
+        types: ["address"],
+        fields: ["address_components", "geometry", "formatted_address"],
+      });
+      listener = autocomplete.addListener("place_changed", () => {
+        const place = autocomplete?.getPlace();
+        if (!place) return;
+        const comp = (type: string) =>
+          place.address_components?.find((c) => c.types.includes(type))?.long_name ?? "";
+        const streetNum = comp("street_number");
+        const route = comp("route");
+        const street = [route, streetNum].filter(Boolean).join(" ").trim();
+        const resolvedAddress = street || place.formatted_address || "";
+        const resolvedCity =
+          comp("locality") || comp("postal_town") || comp("administrative_area_level_2") || "";
+        const resolvedCountry = comp("country");
+        setAddress(resolvedAddress);
+        setCity(resolvedCity);
+        setCountry(resolvedCountry);
+        const loc = place.geometry?.location;
+        if (loc) {
+          setLatitude(loc.lat());
+          setLongitude(loc.lng());
+        }
+        setError(null);
+      });
+    });
+
+    return () => {
+      cancelled = true;
+      if (listener) listener.remove();
+    };
+  }, [placesEnabled]);
 
   function handleSubmit(formData: FormData) {
     setError(null);
@@ -90,12 +139,19 @@ export function LocationManager({
             <div>
               <label className="text-sm font-medium text-gray-700">Address</label>
               <input
+                ref={addressInputRef}
                 type="text"
                 value={address}
                 onChange={(e) => handleAddressChange("address", e.target.value)}
-                placeholder="Street address"
+                placeholder={placesEnabled ? "Start typing to search…" : "Street address"}
+                autoComplete="off"
                 className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
               />
+              {placesEnabled && (
+                <p className="mt-1 text-xs text-gray-500">
+                  Pick a suggestion to auto-fill city, country, and coordinates.
+                </p>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>

@@ -22,3 +22,30 @@ export async function geocodeAddress(
     display_name: data[0].display_name,
   };
 }
+
+export async function reverseGeocodeNominatim(
+  lat: number,
+  lng: number,
+): Promise<{ address: string; city: string | null; country: string | null } | null> {
+  const url = new URL("https://nominatim.openstreetmap.org/reverse");
+  url.searchParams.set("lat", String(lat));
+  url.searchParams.set("lon", String(lng));
+  url.searchParams.set("format", "json");
+  url.searchParams.set("addressdetails", "1");
+
+  const res = await fetch(url.toString(), {
+    headers: { "User-Agent": "osocios.club/1.0" },
+  });
+
+  if (!res.ok) return null;
+  const data = await res.json();
+  if (!data || !data.address) return null;
+
+  const a = data.address;
+  const streetParts = [a.road, a.house_number].filter(Boolean);
+  const address = streetParts.length > 0 ? streetParts.join(" ") : (data.display_name ?? "");
+  const city = a.city ?? a.town ?? a.village ?? a.municipality ?? null;
+  const country = a.country ?? null;
+
+  return { address, city, country };
+}

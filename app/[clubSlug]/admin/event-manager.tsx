@@ -83,7 +83,7 @@ export function EventManager({
   const [newPrice, setNewPrice] = useState("");
   const [newLink, setNewLink] = useState("");
   const [newReward, setNewReward] = useState("");
-  const [newIsPublic, setNewIsPublic] = useState(false);
+  const [newIsPublic, setNewIsPublic] = useState(true);
   const [newImage, setNewImage] = useState<File | null>(null);
   const [newImageUrl, setNewImageUrl] = useState<string>("");
   const [newIcon, setNewIcon] = useState<string | null>(null);
@@ -317,7 +317,7 @@ export function EventManager({
         setNewPrice("");
         setNewLink("");
         setNewReward("");
-        setNewIsPublic(false);
+        setNewIsPublic(true);
         setNewIcon(null);
         setNewImage(null);
         setNewImageUrl("");

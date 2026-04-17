@@ -38,7 +38,7 @@ export default async function QuestsPage({
       .eq("quests.club_id", club.id),
     supabase
       .from("club_branding")
-      .select("google_place_id")
+      .select("google_place_id, social_instagram, social_website")
       .eq("club_id", club.id)
       .single(),
   ]);
@@ -89,7 +89,15 @@ export default async function QuestsPage({
         </svg>
         {t(locale, "admin.backToContent")}
       </Link>
-      <QuestManager quests={questList} clubId={club.id} clubSlug={clubSlug} googleReviewUrl={googleReviewUrl} spinDisplayDecimals={club.spin_display_decimals ?? 0} />
+      <QuestManager
+        quests={questList}
+        clubId={club.id}
+        clubSlug={clubSlug}
+        googleReviewUrl={googleReviewUrl}
+        instagramUrl={branding?.social_instagram ?? null}
+        websiteUrl={branding?.social_website ?? null}
+        spinDisplayDecimals={club.spin_display_decimals ?? 0}
+      />
     </div>
   );
 }
