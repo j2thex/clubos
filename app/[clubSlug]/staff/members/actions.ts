@@ -43,41 +43,82 @@ export async function updateMemberRole(memberId: string, roleId: string | null, 
   return { ok: true };
 }
 
+export type CreateMemberInput = {
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  residencyStatus: "local" | "tourist";
+  idNumber: string;
+  phone: string;
+  email?: string | null;
+  periodId?: string | null;
+  referredBy?: string | null;
+  idPhotoPath?: string | null;
+};
+
+function ageFromDob(dob: string): number {
+  const [y, m, d] = dob.split("-").map(Number);
+  const today = new Date();
+  let age = today.getUTCFullYear() - y;
+  const before =
+    today.getUTCMonth() + 1 < m ||
+    (today.getUTCMonth() + 1 === m && today.getUTCDate() < d);
+  if (before) age -= 1;
+  return age;
+}
+
+function baseCodeFromNames(firstName: string, lastName: string): string {
+  const normalize = (s: string) =>
+    s
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "");
+  const a = normalize(firstName).slice(0, 2).padEnd(2, "X");
+  const b = normalize(lastName).slice(0, 2).padEnd(2, "X");
+  return `${a}${b}`;
+}
+
 export async function createMember(
   clubId: string,
-  memberCode: string,
   clubSlug: string,
-  periodId?: string | null,
-  referredBy?: string | null,
-  dateOfBirth?: string | null,
-  idPhotoPath?: string | null,
-): Promise<{ error: string } | { ok: true }> {
+  input: CreateMemberInput,
+): Promise<{ error: string } | { ok: true; memberCode: string }> {
   try { await requireStaffForClub(clubId); } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
-  const code = memberCode.trim().toUpperCase();
 
-  if (!code || code.length < 3 || code.length > 8) {
-    return { error: "Member code must be 3-8 characters" };
-  }
-  if (!/^[A-Z0-9]+$/.test(code)) {
-    return { error: "Member code must be alphanumeric" };
-  }
+  const firstName = input.firstName.trim();
+  const lastName = input.lastName.trim();
+  const idNumber = input.idNumber.trim();
+  const phone = input.phone.trim();
+  const email = input.email?.trim() || null;
 
-  if (dateOfBirth && !/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)) {
-    return { error: "Invalid date of birth" };
+  if (!firstName || !lastName) {
+    return { error: "First name and last name are required" };
   }
+  if (!input.dateOfBirth || !/^\d{4}-\d{2}-\d{2}$/.test(input.dateOfBirth)) {
+    return { error: "Valid date of birth is required" };
+  }
+  if (ageFromDob(input.dateOfBirth) < 18) {
+    return {
+      error:
+        "This club requires members to be 18 or older. The account was not created.",
+    };
+  }
+  if (input.residencyStatus !== "local" && input.residencyStatus !== "tourist") {
+    return { error: "Residency must be local or tourist" };
+  }
+  if (!idNumber) return { error: "ID number is required" };
+  if (!phone) return { error: "Phone number is required" };
 
   const supabase = createAdminClient();
 
   // Validate referral code if provided
   let referredByCode: string | null = null;
-  if (referredBy) {
-    const refCode = referredBy.trim().toUpperCase();
+  if (input.referredBy) {
+    const refCode = input.referredBy.trim().toUpperCase();
     if (refCode) {
-      if (refCode === code) {
-        return { error: "Member cannot refer themselves" };
-      }
       const { data: referrer } = await supabase
         .from("members")
         .select("id")
@@ -93,38 +134,82 @@ export async function createMember(
   let membershipPeriodId: string | null = null;
   let validTill: string | null = null;
 
-  if (periodId) {
+  if (input.periodId) {
     const { data: period } = await supabase
       .from("membership_periods")
       .select("duration_months")
-      .eq("id", periodId)
+      .eq("id", input.periodId)
       .single();
 
     if (period) {
-      membershipPeriodId = periodId;
+      membershipPeriodId = input.periodId;
       const d = new Date();
       d.setMonth(d.getMonth() + period.duration_months);
       validTill = d.toISOString().split("T")[0];
     }
   }
 
-  const { error } = await supabase.from("members").insert({
-    club_id: clubId,
-    member_code: code,
-    spin_balance: 0,
-    membership_period_id: membershipPeriodId,
-    valid_till: validTill,
-    referred_by: referredByCode,
-    date_of_birth: dateOfBirth || null,
-    id_photo_path: idPhotoPath || null,
-  });
+  // Auto-generate member code: <first2><last2><seq>. Retry a few times on
+  // 23505 (uniqueness collision) in case of concurrent inserts.
+  const base = baseCodeFromNames(firstName, lastName);
+  const { data: existingCodes } = await supabase
+    .from("members")
+    .select("member_code")
+    .eq("club_id", clubId)
+    .like("member_code", `${base}%`);
 
-  if (error) {
-    // If the insert failed after a successful photo upload, clean up the orphan blob.
-    if (idPhotoPath) {
-      await deleteMemberIdPhoto(idPhotoPath).catch(() => {});
+  const usedSeqs = new Set<number>();
+  for (const row of existingCodes ?? []) {
+    const suffix = row.member_code.slice(base.length);
+    if (/^\d+$/.test(suffix)) usedSeqs.add(parseInt(suffix, 10));
+  }
+
+  let nextSeq = 1;
+  while (usedSeqs.has(nextSeq)) nextSeq += 1;
+
+  const fullName = `${firstName} ${lastName}`;
+  let code = "";
+  let insertError: { code?: string } | null = null;
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    code = `${base}${String(nextSeq).padStart(2, "0")}`;
+    const { error } = await supabase.from("members").insert({
+      club_id: clubId,
+      member_code: code,
+      full_name: fullName,
+      first_name: firstName,
+      last_name: lastName,
+      date_of_birth: input.dateOfBirth,
+      residency_status: input.residencyStatus,
+      id_number: idNumber,
+      phone,
+      email,
+      spin_balance: 0,
+      membership_period_id: membershipPeriodId,
+      valid_till: validTill,
+      referred_by: referredByCode,
+      id_photo_path: input.idPhotoPath || null,
+    });
+    if (!error) {
+      insertError = null;
+      break;
     }
-    if (error.code === "23505") return { error: "Member code already exists" };
+    if (error.code !== "23505") {
+      insertError = error;
+      break;
+    }
+    // 23505 — collision, bump seq and try again
+    nextSeq += 1;
+    insertError = error;
+  }
+
+  if (insertError) {
+    if (input.idPhotoPath) {
+      await deleteMemberIdPhoto(input.idPhotoPath).catch(() => {});
+    }
+    if (insertError.code === "23505") {
+      return { error: "Could not generate a unique member code — try different names" };
+    }
     return { error: "Failed to create member" };
   }
 
@@ -239,7 +324,7 @@ export async function createMember(
 
   revalidatePath(`/${clubSlug}/staff/members`);
   revalidatePath(`/${clubSlug}`, "layout");
-  return { ok: true };
+  return { ok: true, memberCode: code };
 }
 
 export async function assignMembershipPeriod(
