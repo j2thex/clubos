@@ -72,6 +72,43 @@ export async function getMemberIdPhotoSignedUrl(
   return data?.signedUrl ?? null;
 }
 
+// --- Member portrait photos (bucket: member-photos, PRIVATE) ---
+// Head-and-shoulders photo captured at onboarding. Mirrors the member-ids pattern.
+
+export async function uploadMemberPhoto(
+  clubId: string,
+  file: File,
+): Promise<{ path: string } | { error: string }> {
+  const supabase = createAdminClient();
+
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+  const filename = `${clubId}/${crypto.randomUUID()}.${ext}`;
+
+  const { error } = await supabase.storage
+    .from("member-photos")
+    .upload(filename, file, { contentType: file.type, upsert: false });
+
+  if (error) return { error: "Failed to upload member photo" };
+
+  return { path: filename };
+}
+
+export async function deleteMemberPhoto(path: string): Promise<void> {
+  const supabase = createAdminClient();
+  await supabase.storage.from("member-photos").remove([path]);
+}
+
+export async function getMemberPhotoSignedUrl(
+  path: string,
+  expiresInSeconds = 3600,
+): Promise<string | null> {
+  const supabase = createAdminClient();
+  const { data } = await supabase.storage
+    .from("member-photos")
+    .createSignedUrl(path, expiresInSeconds);
+  return data?.signedUrl ?? null;
+}
+
 // --- Feedback screenshots (bucket: feedback) ---
 
 export async function uploadFeedbackImage(

@@ -1,8 +1,13 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useLanguage } from "@/lib/i18n/provider";
-import { createMember, uploadMemberIdPhotoAction } from "./actions";
+import {
+  createMember,
+  uploadMemberIdPhotoAction,
+  uploadMemberPhotoAction,
+} from "./actions";
+import { PhotoCapture } from "@/components/club/photo-capture";
 
 export function StaffMemberCreator({
   clubId,
@@ -25,8 +30,8 @@ export function StaffMemberCreator({
   const [email, setEmail] = useState("");
   const [selectedPeriodId, setSelectedPeriodId] = useState("");
   const [referredBy, setReferredBy] = useState("");
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const photoInputRef = useRef<HTMLInputElement>(null);
+  const [portraitFile, setPortraitFile] = useState<File | null>(null);
+  const [idPhotoFile, setIdPhotoFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -38,7 +43,8 @@ export function StaffMemberCreator({
     !lastName.trim() ||
     !dateOfBirth ||
     !idNumber.trim() ||
-    !phone.trim();
+    !phone.trim() ||
+    (opsEnabled && (!portraitFile || !idPhotoFile));
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -46,17 +52,31 @@ export function StaffMemberCreator({
     setSuccess(null);
 
     startTransition(async () => {
+      let idPhotoPath: string | null = null;
       let photoPath: string | null = null;
-      if (photoFile) {
+
+      if (idPhotoFile) {
         const fd = new FormData();
         fd.set("clubId", clubId);
-        fd.set("file", photoFile);
-        const uploadResult = await uploadMemberIdPhotoAction(fd);
-        if ("error" in uploadResult) {
-          setError(uploadResult.error);
+        fd.set("file", idPhotoFile);
+        const r = await uploadMemberIdPhotoAction(fd);
+        if ("error" in r) {
+          setError(r.error);
           return;
         }
-        photoPath = uploadResult.path;
+        idPhotoPath = r.path;
+      }
+
+      if (portraitFile) {
+        const fd = new FormData();
+        fd.set("clubId", clubId);
+        fd.set("file", portraitFile);
+        const r = await uploadMemberPhotoAction(fd);
+        if ("error" in r) {
+          setError(r.error);
+          return;
+        }
+        photoPath = r.path;
       }
 
       const result = await createMember(clubId, clubSlug, {
@@ -69,7 +89,8 @@ export function StaffMemberCreator({
         email: email.trim() || null,
         periodId: selectedPeriodId || null,
         referredBy: referredBy || null,
-        idPhotoPath: photoPath,
+        idPhotoPath,
+        photoPath,
       });
 
       if ("error" in result) {
@@ -85,8 +106,8 @@ export function StaffMemberCreator({
         setEmail("");
         setSelectedPeriodId("");
         setReferredBy("");
-        setPhotoFile(null);
-        if (photoInputRef.current) photoInputRef.current.value = "";
+        setPortraitFile(null);
+        setIdPhotoFile(null);
         setTimeout(() => setSuccess(null), 5000);
       }
     });
@@ -259,21 +280,22 @@ export function StaffMemberCreator({
           </div>
 
           {opsEnabled && (
-            <label className="block">
-              <span className="text-xs font-medium text-gray-500">
-                {t("ops.memberForm.photoLabel")}
-              </span>
-              <input
-                ref={photoInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/heic"
-                onChange={(e) => setPhotoFile(e.target.files?.[0] ?? null)}
-                className="mt-1 w-full text-xs text-gray-700 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-gray-700 hover:file:bg-gray-200"
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <PhotoCapture
+                label={t("ops.memberForm.portraitLabel")}
+                required
+                facingMode="user"
+                value={portraitFile}
+                onChange={setPortraitFile}
               />
-              <span className="text-[11px] text-gray-400 mt-1 block">
-                {t("ops.memberForm.photoHelp")}
-              </span>
-            </label>
+              <PhotoCapture
+                label={t("ops.memberForm.idPhotoRequiredLabel")}
+                required
+                facingMode="environment"
+                value={idPhotoFile}
+                onChange={setIdPhotoFile}
+              />
+            </div>
           )}
 
           <div className="pt-1">

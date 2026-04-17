@@ -7,6 +7,8 @@ import { logActivity } from "@/lib/activity-log";
 import {
   uploadMemberIdPhoto as uploadMemberIdPhotoToBucket,
   deleteMemberIdPhoto,
+  uploadMemberPhoto as uploadMemberPhotoToBucket,
+  deleteMemberPhoto,
 } from "@/lib/supabase/storage";
 
 export async function updateMemberRole(memberId: string, roleId: string | null, clubSlug: string) {
@@ -54,6 +56,8 @@ export type CreateMemberInput = {
   periodId?: string | null;
   referredBy?: string | null;
   idPhotoPath?: string | null;
+  photoPath?: string | null;
+  opsEnabled?: boolean;
 };
 
 function ageFromDob(dob: string): number {
@@ -113,6 +117,23 @@ export async function createMember(
   if (!phone) return { error: "Phone number is required" };
 
   const supabase = createAdminClient();
+
+  // Server-verified ops flag — don't trust the client's flag alone.
+  const { data: clubRow } = await supabase
+    .from("clubs")
+    .select("operations_module_enabled")
+    .eq("id", clubId)
+    .single();
+  const opsEnabled = Boolean(clubRow?.operations_module_enabled);
+
+  if (opsEnabled) {
+    if (!input.idPhotoPath) {
+      return { error: "ID photo is required for this club" };
+    }
+    if (!input.photoPath) {
+      return { error: "Member portrait is required for this club" };
+    }
+  }
 
   // Validate referral code if provided
   let referredByCode: string | null = null;
@@ -189,6 +210,7 @@ export async function createMember(
       valid_till: validTill,
       referred_by: referredByCode,
       id_photo_path: input.idPhotoPath || null,
+      photo_path: input.photoPath || null,
     });
     if (!error) {
       insertError = null;
@@ -206,6 +228,9 @@ export async function createMember(
   if (insertError) {
     if (input.idPhotoPath) {
       await deleteMemberIdPhoto(input.idPhotoPath).catch(() => {});
+    }
+    if (input.photoPath) {
+      await deleteMemberPhoto(input.photoPath).catch(() => {});
     }
     if (insertError.code === "23505") {
       return { error: "Could not generate a unique member code — try different names" };
@@ -438,6 +463,23 @@ export async function uploadMemberIdPhotoAction(
   if (file.size > 5 * 1024 * 1024) return { error: "File too large (max 5 MB)" };
 
   return uploadMemberIdPhotoToBucket(clubId, file);
+}
+
+export async function uploadMemberPhotoAction(
+  formData: FormData,
+): Promise<{ path: string } | { error: string }> {
+  const clubId = formData.get("clubId");
+  if (typeof clubId !== "string" || !clubId) return { error: "Missing club" };
+
+  try { await requireStaffForClub(clubId); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) return { error: "No file provided" };
+  if (file.size > 5 * 1024 * 1024) return { error: "File too large (max 5 MB)" };
+
+  return uploadMemberPhotoToBucket(clubId, file);
 }
 
 export async function markIdVerified(
