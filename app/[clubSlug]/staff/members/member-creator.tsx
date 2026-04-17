@@ -10,6 +10,7 @@ import {
 } from "./actions";
 import { PhotoCapture } from "@/components/club/photo-capture";
 import { SignaturePad } from "@/components/club/signature-pad";
+import { RfidCapture } from "@/components/club/rfid-capture";
 
 export function StaffMemberCreator({
   clubId,
@@ -35,6 +36,7 @@ export function StaffMemberCreator({
   const [portraitFile, setPortraitFile] = useState<File | null>(null);
   const [idPhotoFile, setIdPhotoFile] = useState<File | null>(null);
   const [signatureFile, setSignatureFile] = useState<File | null>(null);
+  const [rfidUid, setRfidUid] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -108,6 +110,7 @@ export function StaffMemberCreator({
         idPhotoPath,
         photoPath,
         signaturePath,
+        rfidUid,
       });
 
       if ("error" in result) {
@@ -126,6 +129,7 @@ export function StaffMemberCreator({
         setPortraitFile(null);
         setIdPhotoFile(null);
         setSignatureFile(null);
+        setRfidUid(null);
         setTimeout(() => setSuccess(null), 5000);
       }
     });
@@ -320,6 +324,11 @@ export function StaffMemberCreator({
                 required
                 value={signatureFile}
                 onChange={setSignatureFile}
+              />
+              <RfidCapture
+                label={t("ops.memberForm.rfidLabel")}
+                value={rfidUid}
+                onChange={setRfidUid}
               />
             </div>
           )}

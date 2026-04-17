@@ -60,6 +60,7 @@ export type CreateMemberInput = {
   idPhotoPath?: string | null;
   photoPath?: string | null;
   signaturePath?: string | null;
+  rfidUid?: string | null;
   opsEnabled?: boolean;
 };
 
@@ -176,6 +177,23 @@ export async function createMember(
     }
   }
 
+  // Pre-flight RFID uniqueness so we can return a clear error message before
+  // any INSERT. Final safety net is the members_club_rfid_uid_uniq partial index.
+  const rfidUidClean = input.rfidUid?.trim() || null;
+  if (rfidUidClean) {
+    const { data: existingRfid } = await supabase
+      .from("members")
+      .select("id, member_code")
+      .eq("club_id", clubId)
+      .eq("rfid_uid", rfidUidClean)
+      .maybeSingle();
+    if (existingRfid) {
+      return {
+        error: `This chip is already bound to member ${existingRfid.member_code}`,
+      };
+    }
+  }
+
   // Auto-generate member code: <first2><last2><seq>. Retry a few times on
   // 23505 (uniqueness collision) in case of concurrent inserts.
   const base = baseCodeFromNames(firstName, lastName);
@@ -196,7 +214,7 @@ export async function createMember(
 
   const fullName = `${firstName} ${lastName}`;
   let code = "";
-  let insertError: { code?: string } | null = null;
+  let insertError: { code?: string; message?: string } | null = null;
 
   for (let attempt = 0; attempt < 5; attempt += 1) {
     code = `${base}${String(nextSeq).padStart(2, "0")}`;
@@ -218,16 +236,23 @@ export async function createMember(
       id_photo_path: input.idPhotoPath || null,
       photo_path: input.photoPath || null,
       signature_path: input.signaturePath || null,
+      rfid_uid: rfidUidClean,
     });
     if (!error) {
       insertError = null;
+      break;
+    }
+    // If the collision is on rfid_uid (race with a concurrent insert), don't
+    // retry with a bumped sequence — that won't help. Surface immediately.
+    if (error.code === "23505" && error.message?.includes("rfid_uid")) {
+      insertError = error;
       break;
     }
     if (error.code !== "23505") {
       insertError = error;
       break;
     }
-    // 23505 — collision, bump seq and try again
+    // 23505 on member_code — bump seq and try again.
     nextSeq += 1;
     insertError = error;
   }
@@ -241,6 +266,9 @@ export async function createMember(
     }
     if (input.signaturePath) {
       await deleteMemberSignature(input.signaturePath).catch(() => {});
+    }
+    if (insertError.code === "23505" && insertError.message?.includes("rfid_uid")) {
+      return { error: "This chip is already bound to another member" };
     }
     if (insertError.code === "23505") {
       return { error: "Could not generate a unique member code — try different names" };
