@@ -121,7 +121,7 @@ export function QuestManager({
   const [newLink, setNewLink] = useState("");
   const [newReward, setNewReward] = useState("");
   const [newMultiUse, setNewMultiUse] = useState(false);
-  const [newIsPublic, setNewIsPublic] = useState(false);
+  const [newIsPublic, setNewIsPublic] = useState(true);
   const [newImage, setNewImage] = useState<File | null>(null);
   const [newImageUrl, setNewImageUrl] = useState("");
   const [newQuestType, setNewQuestType] = useState("default");
@@ -425,7 +425,7 @@ export function QuestManager({
         setNewLink("");
         setNewReward("");
         setNewMultiUse(false);
-        setNewIsPublic(false);
+        setNewIsPublic(true);
         setNewQuestType("default");
         setNewProofMode("none");
         setNewProofPlaceholder("");
@@ -470,7 +470,7 @@ export function QuestManager({
         fd.set("quest_type", tmpl.questType);
         fd.set("proof_mode", tmpl.proofMode);
         fd.set("multi_use", tmpl.questType === "feedback" ? "1" : "0");
-        fd.set("is_public", "0");
+        fd.set("is_public", "1");
         fd.set("icon", tmpl.icon);
         fd.set("award_badge", "0");
         fd.set("proof_placeholder", "");
