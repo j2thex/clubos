@@ -316,6 +316,8 @@
   "ops.memberForm.referredByPlaceholder": "Código de socio (opcional)",
   "ops.memberForm.periodLabel": "Periodo de membresía",
   "ops.memberForm.noPeriod": "Sin periodo",
+  "ops.memberForm.roleLabel": "Rol",
+  "ops.memberForm.noRole": "Sin rol",
   "ops.memberForm.month": "mes",
   "ops.memberForm.months": "meses",
   "ops.memberForm.dobLabel": "Fecha de nacimiento",

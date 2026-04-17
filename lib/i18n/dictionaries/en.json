@@ -316,6 +316,8 @@
   "ops.memberForm.referredByPlaceholder": "Member code (optional)",
   "ops.memberForm.periodLabel": "Membership Period",
   "ops.memberForm.noPeriod": "No period",
+  "ops.memberForm.roleLabel": "Role",
+  "ops.memberForm.noRole": "No role",
   "ops.memberForm.month": "month",
   "ops.memberForm.months": "months",
   "ops.memberForm.dobLabel": "Date of birth",

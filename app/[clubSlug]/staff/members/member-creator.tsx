@@ -16,11 +16,13 @@ export function StaffMemberCreator({
   clubId,
   clubSlug,
   periods,
+  roles = [],
   opsEnabled = false,
 }: {
   clubId: string;
   clubSlug: string;
   periods: { id: string; name: string; duration_months: number }[];
+  roles?: { id: string; name: string }[];
   opsEnabled?: boolean;
 }) {
   const { t } = useLanguage();
@@ -32,6 +34,7 @@ export function StaffMemberCreator({
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [selectedPeriodId, setSelectedPeriodId] = useState("");
+  const [selectedRoleId, setSelectedRoleId] = useState("");
   const [referredBy, setReferredBy] = useState("");
   const [portraitFile, setPortraitFile] = useState<File | null>(null);
   const [idPhotoFile, setIdPhotoFile] = useState<File | null>(null);
@@ -106,6 +109,7 @@ export function StaffMemberCreator({
         phone,
         email: email.trim() || null,
         periodId: selectedPeriodId || null,
+        roleId: selectedRoleId || null,
         referredBy: referredBy || null,
         idPhotoPath,
         photoPath,
@@ -130,6 +134,7 @@ export function StaffMemberCreator({
         setPhone("");
         setEmail("");
         setSelectedPeriodId("");
+        setSelectedRoleId("");
         setReferredBy("");
         setPortraitFile(null);
         setIdPhotoFile(null);
@@ -305,6 +310,26 @@ export function StaffMemberCreator({
               </label>
             )}
           </div>
+
+          {roles.length > 0 && (
+            <label className="block">
+              <span className="text-xs font-medium text-gray-500">
+                {t("ops.memberForm.roleLabel")}
+              </span>
+              <select
+                value={selectedRoleId}
+                onChange={(e) => setSelectedRoleId(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+              >
+                <option value="">{t("ops.memberForm.noRole")}</option>
+                {roles.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
 
           {opsEnabled && (
             <div className="space-y-3 pt-1">

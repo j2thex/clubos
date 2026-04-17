@@ -138,6 +138,7 @@ export default async function StaffMembersPage({
         clubId={club.id}
         clubSlug={clubSlug}
         periods={periods ?? []}
+        roles={roles ?? []}
         opsEnabled={opsEnabled}
       />
 

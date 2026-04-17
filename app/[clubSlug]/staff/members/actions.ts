@@ -56,6 +56,7 @@ export type CreateMemberInput = {
   phone: string;
   email?: string | null;
   periodId?: string | null;
+  roleId?: string | null;
   referredBy?: string | null;
   idPhotoPath?: string | null;
   photoPath?: string | null;
@@ -257,6 +258,7 @@ export async function createMember(
       email,
       spin_balance: 0,
       membership_period_id: membershipPeriodId,
+      role_id: input.roleId || null,
       valid_till: validTill,
       referred_by: referredByCode,
       id_photo_path: input.idPhotoPath || null,
