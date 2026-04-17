@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { createMember, createStaffMember, toggleMemberStatus, deleteMember, createReferralSource, deleteReferralSource } from "./actions";
 import { useLanguage } from "@/lib/i18n/provider";
 import { ReferralTree, type ReferrerSummary, type MemberOption } from "./referral-tree";
+import { MemberDetail, type MemberDetailRecord } from "./member-detail";
 
 interface Member {
   id: string;
@@ -29,6 +30,7 @@ export function PeopleManager({
   clubId,
   clubSlug,
   members,
+  memberDetails = [],
   staff,
   referralSources = [],
   referralTree = [],
@@ -37,12 +39,15 @@ export function PeopleManager({
   clubId: string;
   clubSlug: string;
   members: Member[];
+  memberDetails?: MemberDetailRecord[];
   staff: Member[];
   referralSources?: Member[];
   referralTree?: ReferrerSummary[];
   referralMemberOptions?: MemberOption[];
 }) {
   const [tab, setTab] = useState<"members" | "staff" | "referrals" | "tree">("members");
+  const [expandedMemberId, setExpandedMemberId] = useState<string | null>(null);
+  const memberDetailById = new Map(memberDetails.map((d) => [d.id, d]));
   const totalReferrals = referralTree.reduce((sum, r) => sum + r.referrals.length, 0);
   const [code, setCode] = useState("");
   const [pin, setPin] = useState("");
@@ -289,63 +294,96 @@ export function PeopleManager({
           <>
             {list.length > 0 ? (
               <div className="divide-y divide-gray-100">
-                {list.map((person) => (
-                  <div key={person.id} className="px-4 py-3 flex items-center gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-semibold text-gray-900 text-sm tracking-wide">
-                          {person.member_code}
-                        </span>
-                        {person.roleName && (
-                          <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
-                            {person.roleName}
-                          </span>
-                        )}
+                {list.map((person) => {
+                  const detail = tab === "members" ? memberDetailById.get(person.id) : undefined;
+                  const isExpanded = expandedMemberId === person.id;
+                  return (
+                    <div key={person.id}>
+                      <div className="px-4 py-3 flex items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-semibold text-gray-900 text-sm tracking-wide">
+                              {person.member_code}
+                            </span>
+                            {person.roleName && (
+                              <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+                                {person.roleName}
+                              </span>
+                            )}
+                          </div>
+                          {person.full_name && (
+                            <p className="text-xs text-gray-400 mt-0.5 truncate">{person.full_name}</p>
+                          )}
+                        </div>
+                        <div className="text-right shrink-0 flex items-center gap-2">
+                          {tab === "members" && (
+                            <p className="text-sm font-semibold text-gray-900">
+                              {person.spin_balance} <span className="text-xs font-normal text-gray-400">{t("common.spinsLabel")}</span>
+                            </p>
+                          )}
+                          <button
+                            onClick={() => {
+                              startTransition(async () => {
+                                await toggleMemberStatus(person.id, clubSlug);
+                              });
+                            }}
+                            disabled={isPending}
+                            className={`text-xs font-medium px-2.5 py-1 rounded-full transition-colors disabled:opacity-50 ${
+                              person.status === "active"
+                                ? "bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-700"
+                                : "bg-red-100 text-red-600 hover:bg-green-100 hover:text-green-700"
+                            }`}
+                          >
+                            {person.status === "active" ? t("common.active") : t("common.inactive")}
+                          </button>
+                          {detail && (
+                            <button
+                              onClick={() =>
+                                setExpandedMemberId(isExpanded ? null : person.id)
+                              }
+                              disabled={isPending}
+                              className="text-gray-400 hover:text-gray-900 disabled:opacity-50 transition-colors"
+                              title={isExpanded ? t("admin.memberDetail.collapse") : t("admin.memberDetail.expand")}
+                            >
+                              <svg
+                                className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </button>
+                          )}
+                          <button
+                            onClick={() => {
+                              if (window.confirm(t("admin.deleteConfirm", { code: person.member_code }))) {
+                                startTransition(async () => {
+                                  await deleteMember(person.id, clubSlug);
+                                });
+                              }
+                            }}
+                            disabled={isPending}
+                            className="text-gray-300 hover:text-red-500 disabled:opacity-50 transition-colors"
+                            title="Delete member"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
-                      {person.full_name && (
-                        <p className="text-xs text-gray-400 mt-0.5 truncate">{person.full_name}</p>
+                      {detail && isExpanded && (
+                        <MemberDetail
+                          member={detail}
+                          clubId={clubId}
+                          clubSlug={clubSlug}
+                        />
                       )}
                     </div>
-                    <div className="text-right shrink-0 flex items-center gap-2">
-                      {tab === "members" && (
-                        <p className="text-sm font-semibold text-gray-900">
-                          {person.spin_balance} <span className="text-xs font-normal text-gray-400">{t("common.spinsLabel")}</span>
-                        </p>
-                      )}
-                      <button
-                        onClick={() => {
-                          startTransition(async () => {
-                            await toggleMemberStatus(person.id, clubSlug);
-                          });
-                        }}
-                        disabled={isPending}
-                        className={`text-xs font-medium px-2.5 py-1 rounded-full transition-colors disabled:opacity-50 ${
-                          person.status === "active"
-                            ? "bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-700"
-                            : "bg-red-100 text-red-600 hover:bg-green-100 hover:text-green-700"
-                        }`}
-                      >
-                        {person.status === "active" ? t("common.active") : t("common.inactive")}
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (window.confirm(t("admin.deleteConfirm", { code: person.member_code }))) {
-                            startTransition(async () => {
-                              await deleteMember(person.id, clubSlug);
-                            });
-                          }
-                        }}
-                        disabled={isPending}
-                        className="text-gray-300 hover:text-red-500 disabled:opacity-50 transition-colors"
-                        title="Delete member"
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="p-8 text-center text-gray-400 text-sm">
