@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import { useLanguage } from "@/lib/i18n/provider";
@@ -52,9 +52,11 @@ function computeBlockedReason(member: LookedUpMember): BlockedReason | null {
 export function EntryClient({
   clubId,
   clubSlug,
+  initialMemberCode,
 }: {
   clubId: string;
   clubSlug: string;
+  initialMemberCode?: string | null;
 }) {
   const { t } = useLanguage();
   const [mode, setMode] = useState<Mode>("idle");
@@ -65,6 +67,7 @@ export function EntryClient({
   const [found, setFound] = useState<LookedUpMember | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const prefilledRef = useRef(false);
 
   async function runSearch(q: string) {
     setSearchQuery(q);
@@ -98,6 +101,14 @@ export function EntryClient({
       }
     });
   }
+
+  useEffect(() => {
+    if (prefilledRef.current) return;
+    if (!initialMemberCode) return;
+    prefilledRef.current = true;
+    handleCode(initialMemberCode.toUpperCase());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialMemberCode]);
 
   function handleAdmit() {
     if (!found) return;

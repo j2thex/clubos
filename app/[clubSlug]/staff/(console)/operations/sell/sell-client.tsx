@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import { useLanguage } from "@/lib/i18n/provider";
@@ -36,15 +36,18 @@ export function SellClient({
   clubId,
   clubSlug,
   products,
+  initialMemberCode,
 }: {
   clubId: string;
   clubSlug: string;
   products: SellProduct[];
+  initialMemberCode?: string | null;
 }) {
   const { t } = useLanguage();
   const [pickerMode, setPickerMode] = useState<PickerMode>("idle");
   const [manualCode, setManualCode] = useState("");
   const [member, setMember] = useState<LookedUpMember | null>(null);
+  const prefilledRef = useRef(false);
   const [productId, setProductId] = useState<string>("");
   const [quantity, setQuantity] = useState<string>("");
   const [scaleReading, setScaleReading] = useState<{
@@ -73,6 +76,14 @@ export function SellClient({
       setManualCode("");
     });
   }
+
+  useEffect(() => {
+    if (prefilledRef.current) return;
+    if (!initialMemberCode) return;
+    prefilledRef.current = true;
+    resolveCode(initialMemberCode.toUpperCase());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialMemberCode]);
 
   function handleConfirm() {
     if (!member || !product || receipt) return;

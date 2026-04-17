@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { useLanguage } from "@/lib/i18n/provider";
@@ -79,11 +80,13 @@ export function MemberDetail({
   clubId,
   clubSlug,
   actions,
+  deepLinks,
 }: {
   member: MemberDetailRecord;
   clubId: string;
   clubSlug: string;
   actions: MemberDetailActions;
+  deepLinks?: { entry: boolean; sell: boolean };
 }) {
   const { t } = useLanguage();
   const [firstName, setFirstName] = useState(member.first_name ?? "");
@@ -217,6 +220,32 @@ export function MemberDetail({
 
   return (
     <div className="px-4 py-4 bg-gray-50 space-y-5">
+      {deepLinks && (deepLinks.entry || deepLinks.sell) && (
+        <div className="flex gap-2 flex-wrap">
+          {deepLinks.entry && (
+            <Link
+              href={`/${clubSlug}/staff/operations/entry?memberCode=${member.member_code}`}
+              className="inline-flex items-center gap-1.5 rounded-full bg-gray-800 text-white text-xs font-semibold px-3 py-1.5 hover:bg-gray-700 transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12H3m0 0l4-4m-4 4l4 4m8-12v16" />
+              </svg>
+              {t("ops.deepLink.openAtDoor")}
+            </Link>
+          )}
+          {deepLinks.sell && (
+            <Link
+              href={`/${clubSlug}/staff/operations/sell?memberCode=${member.member_code}`}
+              className="inline-flex items-center gap-1.5 rounded-full bg-gray-800 text-white text-xs font-semibold px-3 py-1.5 hover:bg-gray-700 transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              {t("ops.deepLink.sellToMember")}
+            </Link>
+          )}
+        </div>
+      )}
       {/* Identity */}
       <section className="space-y-3">
         <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">

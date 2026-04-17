@@ -1,7 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireStaffForClub } from "@/lib/auth";
+import { requireStaffPermission } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
 export type SellInput = {
@@ -33,7 +33,7 @@ export async function sellProduct(
   input: SellInput,
 ): Promise<{ error: string } | { ok: true; transactionId: string }> {
   let staff: { member_id: string; club_id: string };
-  try { staff = await requireStaffForClub(input.clubId); } catch (err) {
+  try { staff = await requireStaffPermission(input.clubId, "sell"); } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
 
@@ -68,7 +68,7 @@ export async function sellProduct(
 export async function exportTodayTransactionsCsv(
   clubId: string,
 ): Promise<{ error: string } | { ok: true; csv: string; filename: string }> {
-  try { await requireStaffForClub(clubId); } catch (err) {
+  try { await requireStaffPermission(clubId, "transactions"); } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
 
@@ -159,7 +159,7 @@ export async function voidTransaction(
   if (!tx) return { error: "Transaction not found" };
 
   let staff: { member_id: string; club_id: string };
-  try { staff = await requireStaffForClub(tx.club_id); } catch (err) {
+  try { staff = await requireStaffPermission(tx.club_id, "transactions"); } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
 
