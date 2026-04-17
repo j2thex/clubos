@@ -3,16 +3,21 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
+import { requireStaffPermission } from "@/lib/auth";
+import { NoAccessCard } from "@/components/club/no-access-card";
 import { SellClient, type SellProduct } from "./sell-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function StaffOperationsSellPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ clubSlug: string }>;
+  searchParams: Promise<{ memberCode?: string }>;
 }) {
   const { clubSlug } = await params;
+  const { memberCode: initialMemberCode } = await searchParams;
   const supabase = createAdminClient();
   const locale = await getServerLocale();
 
@@ -24,6 +29,12 @@ export default async function StaffOperationsSellPage({
     .single();
 
   if (!club) notFound();
+
+  try {
+    await requireStaffPermission(club.id, "sell");
+  } catch {
+    return <NoAccessCard permission="sell" clubSlug={clubSlug} locale={locale} />;
+  }
 
   const { data: products } = await supabase
     .from("products")
@@ -62,7 +73,12 @@ export default async function StaffOperationsSellPage({
           {t(locale, "ops.transactionsLink")} →
         </Link>
       </div>
-      <SellClient clubId={club.id} clubSlug={clubSlug} products={rows} />
+      <SellClient
+        clubId={club.id}
+        clubSlug={clubSlug}
+        products={rows}
+        initialMemberCode={initialMemberCode ?? null}
+      />
     </div>
   );
 }

@@ -143,6 +143,35 @@ export async function requireStaffForClub(
   return session;
 }
 
+export type StaffPermission = "entry" | "sell" | "transactions";
+
+/**
+ * Verify the current staff session is active, belongs to the given club,
+ * AND holds the named capability flag on their member row. Ops routes and
+ * ops mutations call this to block staff that the owner has restricted.
+ *
+ * Throws (caller wraps in try/catch and either shows NoAccessCard on a
+ * page, or returns {error} from an action).
+ */
+export async function requireStaffPermission(
+  clubId: string,
+  permission: StaffPermission,
+): Promise<{ member_id: string; club_id: string }> {
+  const session = await requireStaffForClub(clubId);
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const supabase = createAdminClient();
+  const { data: member } = await supabase
+    .from("members")
+    .select("can_do_entry, can_do_sell, can_do_transactions")
+    .eq("id", session.member_id)
+    .single();
+  const column = `can_do_${permission}` as const;
+  if (!member || !member[column]) {
+    throw new Error(`Not permitted: ${permission}`);
+  }
+  return session;
+}
+
 // --- Owner auth (email + password) ---
 
 const OWNER_COOKIE = "clubos-owner-token";

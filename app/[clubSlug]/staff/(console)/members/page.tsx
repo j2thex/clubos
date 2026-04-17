@@ -9,6 +9,7 @@ import {
 } from "@/lib/supabase/storage";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
+import { getStaffFromCookie } from "@/lib/auth";
 import type { MemberDetailRecord } from "@/components/club/member-detail";
 
 export default async function StaffMembersPage({
@@ -31,6 +32,24 @@ export default async function StaffMembersPage({
 
   if (!club) notFound();
   const opsEnabled = club.operations_module_enabled ?? false;
+
+  // Load the current staff viewer's own permissions so the member-detail
+  // panel can show deep-link chips keyed to what the viewer can actually do.
+  // Non-blocking: middleware already guaranteed a staff cookie exists to
+  // reach this route, but we defensive-check in case session state drifted.
+  const viewerSession = opsEnabled ? await getStaffFromCookie() : null;
+  let viewerPerms: { entry: boolean; sell: boolean } = { entry: false, sell: false };
+  if (opsEnabled && viewerSession?.member_id) {
+    const { data: viewer } = await supabase
+      .from("members")
+      .select("can_do_entry, can_do_sell")
+      .eq("id", viewerSession.member_id)
+      .single();
+    viewerPerms = {
+      entry: viewer?.can_do_entry ?? false,
+      sell: viewer?.can_do_sell ?? false,
+    };
+  }
 
   const [{ data: members }, { data: roles }, { data: periods }] = await Promise.all([
     supabase
@@ -134,6 +153,7 @@ export default async function StaffMembersPage({
           clubSlug={clubSlug}
           opsEnabled={opsEnabled}
           initialQuery={initialQuery ?? ""}
+          deepLinks={opsEnabled ? viewerPerms : undefined}
         />
       </div>
     </>

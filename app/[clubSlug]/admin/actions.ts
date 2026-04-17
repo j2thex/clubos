@@ -2120,6 +2120,48 @@ export async function adminMarkIdVerified(
   return { ok: true };
 }
 
+export async function updateStaffPermissions(
+  memberId: string,
+  clubSlug: string,
+  input: {
+    canDoEntry?: boolean;
+    canDoSell?: boolean;
+    canDoTransactions?: boolean;
+  },
+): Promise<{ error: string } | { ok: true }> {
+  const auth = await authorizeMemberOwner(memberId);
+  if ("error" in auth) return auth;
+
+  const patch: {
+    can_do_entry?: boolean;
+    can_do_sell?: boolean;
+    can_do_transactions?: boolean;
+  } = {};
+  if (typeof input.canDoEntry === "boolean") patch.can_do_entry = input.canDoEntry;
+  if (typeof input.canDoSell === "boolean") patch.can_do_sell = input.canDoSell;
+  if (typeof input.canDoTransactions === "boolean") patch.can_do_transactions = input.canDoTransactions;
+
+  if (Object.keys(patch).length === 0) return { ok: true };
+
+  const supabase = createAdminClient();
+  const { error } = await supabase.from("members").update(patch).eq("id", memberId);
+  if (error) return { error: "Failed to update permissions" };
+
+  const details = Object.entries(patch)
+    .map(([k, v]) => `${k}=${v}`)
+    .join(", ");
+
+  await logActivity({
+    clubId: auth.clubId,
+    action: "staff_permissions_updated",
+    targetMemberCode: auth.memberCode,
+    details,
+  });
+
+  revalidatePath(`/${clubSlug}/admin`);
+  return { ok: true };
+}
+
 export async function adminRevokeIdVerification(
   memberId: string,
   clubSlug: string,

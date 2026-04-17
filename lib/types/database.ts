@@ -470,6 +470,9 @@ export type Database = {
           photo_path: string | null;
           signature_path: string | null;
           rfid_uid: string | null;
+          can_do_entry: boolean;
+          can_do_sell: boolean;
+          can_do_transactions: boolean;
           created_at: string;
         };
         Insert: {
@@ -502,6 +505,9 @@ export type Database = {
           photo_path?: string | null;
           signature_path?: string | null;
           rfid_uid?: string | null;
+          can_do_entry?: boolean;
+          can_do_sell?: boolean;
+          can_do_transactions?: boolean;
           created_at?: string;
         };
         Update: {
@@ -534,6 +540,9 @@ export type Database = {
           photo_path?: string | null;
           signature_path?: string | null;
           rfid_uid?: string | null;
+          can_do_entry?: boolean;
+          can_do_sell?: boolean;
+          can_do_transactions?: boolean;
           created_at?: string;
         };
         Relationships: [

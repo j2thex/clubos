@@ -1,7 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireStaffForClub } from "@/lib/auth";
+import { requireStaffForClub, requireStaffPermission } from "@/lib/auth";
 import { logActivity } from "@/lib/activity-log";
 import { getMemberIdPhotoSignedUrl } from "@/lib/supabase/storage";
 import { revalidatePath } from "next/cache";
@@ -114,7 +114,7 @@ export async function admitMember(
   memberId: string,
 ): Promise<CheckinResult> {
   let staff: { member_id: string; club_id: string };
-  try { staff = await requireStaffForClub(clubId); } catch (err) {
+  try { staff = await requireStaffPermission(clubId, "entry"); } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
   const supabase = createAdminClient();
@@ -204,7 +204,7 @@ export async function checkoutAllOpen(
   clubSlug: string,
 ): Promise<{ error: string } | { ok: true; count: number }> {
   let staff: { member_id: string; club_id: string };
-  try { staff = await requireStaffForClub(clubId); } catch (err) {
+  try { staff = await requireStaffPermission(clubId, "entry"); } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
 
@@ -290,7 +290,7 @@ export async function checkoutEntry(
   if (current.checked_out_at) return { error: "Already checked out" };
 
   let staff: { member_id: string; club_id: string };
-  try { staff = await requireStaffForClub(current.club_id); } catch (err) {
+  try { staff = await requireStaffPermission(current.club_id, "entry"); } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
 

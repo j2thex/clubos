@@ -155,6 +155,7 @@ export function MembersSearch({
   clubSlug,
   opsEnabled,
   initialQuery = "",
+  deepLinks,
 }: {
   clubId: string;
   members: MembersSearchMember[];
@@ -163,6 +164,7 @@ export function MembersSearch({
   clubSlug: string;
   opsEnabled: boolean;
   initialQuery?: string;
+  deepLinks?: { entry: boolean; sell: boolean };
 }) {
   const [query, setQuery] = useState(initialQuery);
   const [filter, setFilter] = useState<Filter>("all");
@@ -302,6 +304,7 @@ export function MembersSearch({
                       clubId={clubId}
                       clubSlug={clubSlug}
                       actions={staffMemberDetailActions}
+                      deepLinks={deepLinks}
                     />
                   )}
                 </div>

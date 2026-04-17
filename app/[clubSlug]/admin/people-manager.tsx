@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import {
   createMember,
   createStaffMember,
@@ -15,6 +16,7 @@ import {
   rebindMemberRfid,
   adminMarkIdVerified,
   adminRevokeIdVerification,
+  updateStaffPermissions,
 } from "./actions";
 import { useLanguage } from "@/lib/i18n/provider";
 import { ReferralTree, type ReferrerSummary, type MemberOption } from "./referral-tree";
@@ -42,6 +44,9 @@ interface Member {
   is_staff: boolean;
   status: string;
   roleName: string | null;
+  canDoEntry?: boolean;
+  canDoSell?: boolean;
+  canDoTransactions?: boolean;
 }
 
 const PRESET_SOURCES = [
@@ -402,6 +407,15 @@ export function PeopleManager({
                           </button>
                         </div>
                       </div>
+                      {tab === "staff" && (
+                        <StaffPermissionRow
+                          memberId={person.id}
+                          clubSlug={clubSlug}
+                          initialEntry={person.canDoEntry ?? true}
+                          initialSell={person.canDoSell ?? true}
+                          initialTransactions={person.canDoTransactions ?? true}
+                        />
+                      )}
                       {detail && isExpanded && (
                         <MemberDetail
                           member={detail}
@@ -455,6 +469,86 @@ export function PeopleManager({
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+function StaffPermissionRow({
+  memberId,
+  clubSlug,
+  initialEntry,
+  initialSell,
+  initialTransactions,
+}: {
+  memberId: string;
+  clubSlug: string;
+  initialEntry: boolean;
+  initialSell: boolean;
+  initialTransactions: boolean;
+}) {
+  const { t } = useLanguage();
+  const [canDoEntry, setCanDoEntry] = useState(initialEntry);
+  const [canDoSell, setCanDoSell] = useState(initialSell);
+  const [canDoTransactions, setCanDoTransactions] = useState(initialTransactions);
+  const [isPending, startTransition] = useTransition();
+
+  function toggle(
+    field: "canDoEntry" | "canDoSell" | "canDoTransactions",
+    next: boolean,
+  ) {
+    const prevEntry = canDoEntry;
+    const prevSell = canDoSell;
+    const prevTransactions = canDoTransactions;
+    if (field === "canDoEntry") setCanDoEntry(next);
+    if (field === "canDoSell") setCanDoSell(next);
+    if (field === "canDoTransactions") setCanDoTransactions(next);
+
+    startTransition(async () => {
+      const r = await updateStaffPermissions(memberId, clubSlug, {
+        [field]: next,
+      });
+      if ("error" in r) {
+        toast.error(r.error);
+        if (field === "canDoEntry") setCanDoEntry(prevEntry);
+        if (field === "canDoSell") setCanDoSell(prevSell);
+        if (field === "canDoTransactions") setCanDoTransactions(prevTransactions);
+      }
+    });
+  }
+
+  const rows: {
+    key: "canDoEntry" | "canDoSell" | "canDoTransactions";
+    label: string;
+    value: boolean;
+  }[] = [
+    { key: "canDoEntry", label: t("admin.staff.permissions.door"), value: canDoEntry },
+    { key: "canDoSell", label: t("admin.staff.permissions.sell"), value: canDoSell },
+    {
+      key: "canDoTransactions",
+      label: t("admin.staff.permissions.transactions"),
+      value: canDoTransactions,
+    },
+  ];
+
+  return (
+    <div className="px-4 pb-3 -mt-1 flex items-center gap-2 flex-wrap">
+      {rows.map((r) => (
+        <button
+          key={r.key}
+          type="button"
+          onClick={() => toggle(r.key, !r.value)}
+          disabled={isPending}
+          className={`text-[11px] font-semibold rounded-full px-2.5 py-0.5 transition disabled:opacity-50 ${
+            r.value
+              ? "bg-green-100 text-green-700 hover:bg-green-200"
+              : "bg-gray-200 text-gray-500 hover:bg-gray-300"
+          }`}
+          title={r.value ? t("admin.staff.permissions.on") : t("admin.staff.permissions.off")}
+        >
+          {r.label}
+          <span className="ml-1 opacity-80">{r.value ? "●" : "○"}</span>
+        </button>
+      ))}
     </div>
   );
 }

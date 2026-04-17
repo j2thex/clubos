@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { t, getDateLocale } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
+import { requireStaffPermission } from "@/lib/auth";
+import { NoAccessCard } from "@/components/club/no-access-card";
 import { VoidButton } from "./void-button";
 import { ExportCsvButton } from "./export-button";
 
@@ -31,6 +33,12 @@ export default async function StaffOperationsTransactionsPage({
     .single();
 
   if (!club) notFound();
+
+  try {
+    await requireStaffPermission(club.id, "transactions");
+  } catch {
+    return <NoAccessCard permission="transactions" clubSlug={clubSlug} locale={locale} />;
+  }
 
   const from = page * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
