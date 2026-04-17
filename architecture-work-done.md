@@ -454,6 +454,21 @@ Quest links (URLs/emails) remain visible after a quest is marked done. Previousl
 - `app/[clubSlug]/admin/actions.ts` — server actions `addQuest`, `updateQuest` with reward_spins parsing and validation
 - `app/[clubSlug]/admin/quest-manager.tsx` — client form with spins input fields
 
+## Admin Create-New Number Inputs: Empty-by-Default with Placeholder
+
+**Request:** Five admin create-new forms (Products, Events, Quests, Referral-tree premium spins, Memberships) pre-filled their number inputs with meaningless defaults (`0`, `2`, `12`). Clicking the field didn't clear the value, forcing staff to backspace before typing.
+
+**Changes:** Flipped the state initialization in each form from `useState(0)` / `useState("0")` / `useState("2")` / `useState("12")` to `useState("")`, added a `placeholder` carrying the prior default as a hint (`"0.00"`, `"0"`, `"2"`, `"12"`), and parsed to number at submit with the same fallback the old default encoded (`Number(x) || 12` for membership duration; server already treats empty `reward_spins` as 0). Dropped the `required` attribute on event/quest reward-spins inputs since `0` (blank) is a valid "no reward" answer. Edit forms were not touched — `useState(existing.value)` is the correct pattern there.
+
+**How it works:** Opening any affected create-new form (ProductNewForm, new-event, new-quest, Add Premium Referrer, add-period) now shows empty number inputs with greyed-out placeholder hints. Submitting empty yields the same fallback behavior as before (`0` for price/stock/spins, `2` default premium referral spins, `12` months for membership duration). No server-side validation changed.
+
+**Key files:**
+- `app/[clubSlug]/admin/products-manager.tsx` — `ProductNewForm` unit price + stock
+- `app/[clubSlug]/admin/event-manager.tsx` — new-event reward spins
+- `app/[clubSlug]/admin/quest-manager.tsx` — new-quest reward spins
+- `app/[clubSlug]/admin/referral-tree.tsx` — Add Premium Referrer reward spins
+- `app/[clubSlug]/admin/membership-period-manager.tsx` — add-period duration
+
 ## Mobile Viewport and Horizontal Scroll Fix
 
 **Request:** Fix admin panel overflowing horizontally on mobile Safari — content wider than screen, nav icons cut off.
@@ -467,6 +482,17 @@ Quest links (URLs/emails) remain visible after a quest is marked done. Previousl
 - `app/globals.css` — global `overflow-x-hidden` on `html, body`
 - `components/club/admin-nav.tsx` — bottom nav with 5 items, `px-1.5` padding
 - `app/[clubSlug]/admin/people-manager.tsx` — member management card with `px-4` padding
+
+## Staff Bottom-Nav Horizontal Scroll on Small Phones
+
+**Request:** Staff reported from a phone that the Operations tab at the far-right of the staff bottom-nav was unreachable. With 6–7 tabs (Bonuses, Quests, Events, Offers, Preregistrations, Members, Operations), the `max-w-md` + `justify-around` layout compressed items below tap-target size on any phone narrower than 448 px and clipped the rightmost tab.
+
+**Changes:** `components/club/staff-nav.tsx` wraps the flex row in `<div className="overflow-x-auto overscroll-x-contain">`, adds `min-w-max` to the inner flex so it claims its natural content width when items don't fit, and `shrink-0` on each tab `Link` so individual tabs don't compress. `max-w-md` and `justify-around` are preserved for the desktop case.
+
+**How it works:** On phones narrower than the tabs' combined natural width, the nav row scrolls horizontally; every tab stays at full icon + label size and Operations remains tappable by swiping the nav. On desktop and wider phones the row still spreads via `justify-around` within `max-w-md` — zero visual change on large viewports.
+
+**Key files:**
+- `components/club/staff-nav.tsx` — `overflow-x-auto` wrapper, `min-w-max` on inner flex, `shrink-0` per tab
 
 ## Public Club Profiles
 
@@ -984,7 +1010,7 @@ Cannabis-club operational layer (door control + dispensary) built for Ice Tray W
 - Members list rewritten as `MembersSearch` client component (`app/[clubSlug]/staff/(console)/members/members-search.tsx`) — search input (name or code), filter chips (All / Verified / Unverified / Expired). Verified/Unverified chips only render when `opsEnabled`. Per-row "Mark verified" / "Revoke" actions render inline when ops is on. Signed photo URL generated server-side per row and passed down; thumbnails open in a new tab. Page accepts `?q=` search param to prefill the filter (deep-link target for the entry-flow "Fix in Members →" link).
 - Member profile page (`app/[clubSlug]/(member)/profile/page.tsx`) — conditional fetch of `operations_module_enabled` and (if on) recent `product_transactions` for the member. When `opsEnabled && id_verified_at`, renders a green "21+ Verified" chip under the member's name on the identity card. Stored ID photo is NEVER shown to members — staff-only.
 
-**How it works:** Staff in an ops-enabled club creates a new member; DOB is required, photo is optional. DOB is stored as plain date; photo is uploaded to the private `member-ids` bucket, and only the storage path (not a URL) is saved on the member row. Staff marks the ID verified — must have DOB set first. Verification stamp is auditable via `id_verified_at` + `id_verified_by`. Photos are retrieved for staff UI via server-side `getMemberIdPhotoSignedUrl` (30 min expiry). Members see only the 21+ chip on their own profile when verified, never the photo.
+**How it works:** Staff in an ops-enabled club creates a new member; DOB is required, photo is optional. DOB is stored as plain date; photo is uploaded to the private `member-ids` bucket, and only the storage path (not a URL) is saved on the member row. Staff marks the ID verified — must have DOB set first. Verification stamp is auditable via `id_verified_at` + `id_verified_by`. Photos are retrieved for staff UI via server-side `getMemberIdPhotoSignedUrl` (30 min expiry). Members see only the 21+ chip on their own profile when verified, never the photo. **Note:** the onboarding form has since been significantly expanded — see the "Member onboarding overhaul" subsections below for the full current state (first/last name, residency, DNI/passport, phone, email, auto-generated code, required portrait + signature, optional RFID).
 
 **Key files:**
 - `supabase/migrations/20260416170000_add_members_ops_fields.sql` — DOB + verification columns
@@ -1143,6 +1169,92 @@ All admin-ops-manager components (OperationsModuleManager, StaffMemberCreator, M
 **Key files:**
 - `app/[clubSlug]/admin/log-viewer.tsx` — `OPS_ACTIONS`, enriched `ACTION_CONFIG`, `opsEnabled` prop
 - `app/[clubSlug]/admin/(panel)/logs/page.tsx` — selects + passes the flag
+
+### Member onboarding overhaul — identity fields + auto-generated code + under-18 gate
+
+**Request:** Staff needs to capture every field required by Spanish cannabis-social-club compliance at onboarding: first/last name, DOB with an explicit 18+ gate, residency (local / tourist), DNI or passport number (no format validation), phone, optional email. Member codes should be auto-generated, not hand-typed. Bundled the Trello-linked under-18-silent-failure card in the same ship.
+
+**Changes:**
+- Migration `20260417120000_member_onboarding_fields.sql` adds eight nullable columns to `members`: `first_name`, `last_name`, `id_number`, `phone`, `residency_status`, plus forward-looking `photo_path`, `signature_path`, `rfid_uid`. Adds a CHECK constraint `residency_status IS NULL OR residency_status IN ('local','tourist')` and a partial unique index `members_club_rfid_uid_uniq ON members(club_id, rfid_uid) WHERE rfid_uid IS NOT NULL`. Back-fills `first_name` / `last_name` from existing `full_name` split on the first space where both are currently null; single-word names are left alone.
+- `createMember` in `app/[clubSlug]/staff/members/actions.ts` rewritten to take a `CreateMemberInput` object (not positional args). Computes age from DOB via local `ageFromDob` and returns `This club requires members to be 18 or older. The account was not created.` before any INSERT if under 18. Auto-generates the member code via `baseCodeFromNames(firstName, lastName)` — first 2 letters of first + first 2 of last, Unicode diacritics stripped through NFD + non-alphanumeric removed, padded with `X`. Collision-resolves by pre-querying existing `member_code LIKE '${base}%'` per club, picking the lowest unused 2-digit sequence, and retrying on 23505 up to 5 attempts.
+- `StaffMemberCreator` (`app/[clubSlug]/staff/members/member-creator.tsx`) rewritten: member-code text input removed; new first name, last name, always-required DOB (no longer ops-gated), Local/Tourist residency radio as a pill toggle via `has-[:checked]:bg-gray-800`, DNI/NIE or passport input with a label that swaps on residency, phone (required), email (optional). Success toast reports the auto-assigned code (`Member {code} created`).
+- i18n: 18 new keys in both `en.json` and `es.json` under `ops.memberForm.*` covering the new labels / placeholders and `under18Error`.
+
+**How it works:** Staff opens Members → Onboard new member, fills identity + residency + ID + phone + optional email. On submit the server computes `<first2><last2><NN>` (e.g. Jane García → `JAGA01`), collision-resolves per club, writes the row with `full_name` synthesized as `${first} ${last}` alongside the new columns, and returns the assigned code so the client can show it in the toast. Under-18 DOBs short-circuit with an inline error banner; no row is created. Residency is stored as `local` / `tourist` and drives the DNI-vs-passport label; ID number itself is free text with no format validation. All downstream consumers (admin People page, etc.) continue to read `full_name`.
+
+**Key files:**
+- `supabase/migrations/20260417120000_member_onboarding_fields.sql` — columns + CHECK + rfid unique index + `full_name` split back-fill
+- `app/[clubSlug]/staff/members/actions.ts` — `CreateMemberInput`, `ageFromDob`, `baseCodeFromNames`, collision-resolving insert loop
+- `app/[clubSlug]/staff/members/member-creator.tsx` — rewritten identity form
+- `lib/i18n/dictionaries/{en,es}.json` — 18 new keys in `ops.memberForm.*`
+
+### Camera capture for member portrait + ID document photo
+
+**Request:** Replace the old file-picker-only ID photo upload with a live camera capture UI that takes two required photos — a front-camera member portrait and a back-camera ID document — when the club has the Operations Module enabled. Fold the "ID photo should be required" Trello card by flipping both photos from optional to required.
+
+**Changes:**
+- Migration `20260417130000_create_member_photos_bucket.sql` creates a second private Supabase storage bucket `member-photos` (5 MB cap; `image/jpeg|png|webp|heic`; service-role-only like `member-ids`).
+- `lib/supabase/storage.ts` gains `uploadMemberPhoto` / `deleteMemberPhoto` / `getMemberPhotoSignedUrl` (parallel to the `member-ids` trio).
+- New reusable component `components/club/photo-capture.tsx` — calls `navigator.mediaDevices.getUserMedia` with a `facingMode` hint, renders a live `<video>` preview, captures a frame to a canvas, and exports JPEG at quality 0.9 via `canvas.toBlob`. Preview + Retake + Confirm buttons. File-picker fallback uses `<input type="file" capture={facingMode}>` so mobile opens the native camera and desktop opens the file chooser. Cleanly stops the MediaStream on capture / cancel / unmount.
+- `createMember` now **server-verifies** `operations_module_enabled` from the `clubs` table (never trusts the client-supplied flag) and requires both `idPhotoPath` and `photoPath` when on. Orphaned uploads in both buckets are deleted on insert failure.
+- New `uploadMemberPhotoAction` server action mirrors `uploadMemberIdPhotoAction` — auth-guarded via `requireStaffForClub(clubId)`, 5 MB limit.
+- Form wires two `<PhotoCapture>` instances side by side inside the ops-enabled section: `facingMode="user"` for the portrait, `facingMode="environment"` for the ID document. Both required; Create button stays disabled until both files exist.
+- i18n: 11 new keys under `ops.memberForm.portraitLabel`, `ops.memberForm.idPhotoRequiredLabel`, and `ops.memberForm.photoCapture.*` (useCamera, uploadFile, capture, retake, cancel, requesting, cameraDenied, cameraUnsupported).
+
+**How it works:** Staff opens onboarding on an ops-enabled club. Below the identity fields, two capture tiles appear. "Take photo" triggers the browser camera permission; on grant, a live preview runs. "Capture" freezes a JPEG and shows it in-place with a Retake button. On denied / unsupported, the file-picker fallback kicks in. Submit uploads both files, writes `photo_path` + `id_photo_path` on the member row, and cleans up orphaned blobs if anything fails. Non-ops clubs see neither tile and the create flow remains the existing minimal path.
+
+**Key files:**
+- `supabase/migrations/20260417130000_create_member_photos_bucket.sql` — private portrait bucket
+- `lib/supabase/storage.ts` — `uploadMemberPhoto` / `deleteMemberPhoto` / `getMemberPhotoSignedUrl`
+- `components/club/photo-capture.tsx` — camera + file-fallback component
+- `app/[clubSlug]/staff/members/actions.ts` — `uploadMemberPhotoAction`, server-verified ops flag in `createMember`
+- `app/[clubSlug]/staff/members/member-creator.tsx` — two `<PhotoCapture>` instances in the ops section
+- `lib/i18n/dictionaries/{en,es}.json` — 11 `photoCapture.*` keys
+
+### Canvas signature pad (with Signotec swap-in roadmap)
+
+**Request:** Capture a member signature at onboarding. The target Windows staff workstation has Signotec ST-BE105-2-U100 with vendor drivers preinstalled, but the signoPAD-API/Web JS library is not yet vendored in this repo. Ship a cross-device canvas pad now; keep the Signotec integration as a drop-in UI swap later.
+
+**Changes:**
+- Migration `20260417140000_create_member_signatures_bucket.sql` creates a private Supabase storage bucket `member-signatures` (500 KB cap; `image/png` only).
+- `lib/supabase/storage.ts` gains `uploadMemberSignature` / `deleteMemberSignature` / `getMemberSignatureSignedUrl`.
+- New `components/club/signature-pad.tsx` — HTML canvas using pointer events, DPR-aware retina scaling (`canvas.width/height` = CSS size × `devicePixelRatio`), smooth stroke drawing (`lineCap: "round"`, `lineJoin: "round"`, stroke `#111827`). Clear + Save buttons; after Save, a preview image is shown with a Redo option. Same `{ value: File | null; onChange(file) }` contract as `PhotoCapture` so the form treats it identically.
+- New `uploadMemberSignatureAction` server action — auth-guarded, PNG-only, 500 KB cap (stricter than the photo buckets).
+- `createMember` extended with `signaturePath`; when the server-verified ops flag is on, signature is required; orphaned signature uploads are cleaned up on insert failure.
+- Form adds the pad full-width below the two photo captures inside the ops-enabled section.
+- i18n: 5 new keys — `signatureLabel`, `signature.confirm`, `signature.clear`, `signature.redo`, `signature.hint`.
+- Signotec swap-in plan recorded in local-only `docs/hardware/signotec-setup.md` (gitignored with the rest of `docs/`): download the signoPAD-API/Web JS library into `public/vendor/signotec/`, write a `signature-panel.tsx` that connects to the bridge's WebSocket on `ws://localhost:49494`, feature-detect the bridge and fall back to the canvas pad when unreachable. Storage pipeline / server action / DB column stay identical.
+
+**How it works:** Staff asks the member to sign with a finger, stylus, or mouse inside the blue-bordered canvas. Pointer events track the stroke and paint on the retina-scaled canvas. Save exports a PNG blob + File; the file is uploaded to the private signatures bucket and `signature_path` is written on the member row. Clear wipes the canvas; Redo (after save) lets the member resign. Works identically across touchscreens, Wacom / iPad stylus, and mice.
+
+**Key files:**
+- `supabase/migrations/20260417140000_create_member_signatures_bucket.sql` — signatures bucket
+- `lib/supabase/storage.ts` — signature upload / delete / signed-URL helpers
+- `components/club/signature-pad.tsx` — canvas pointer-event pad
+- `app/[clubSlug]/staff/members/actions.ts` — `uploadMemberSignatureAction`, signature enforcement in `createMember`
+- `app/[clubSlug]/staff/members/member-creator.tsx` — pad placed below the two photo captures
+- `lib/i18n/dictionaries/{en,es}.json` — 5 `signature.*` keys
+- (local, gitignored) `docs/hardware/signotec-setup.md` — Signotec swap roadmap
+
+### RFID chip capture via HID keyboard reader
+
+**Request:** Bind an RFID chip UID to each new member at onboarding when the club uses chips. Hardware confirmed: Sycreader SYC ID&IC USB Reader (vendor `0xFFFF`, product `0x0035`) — supports both 125 kHz EM4100 and 13.56 MHz Mifare at the same device; HID keyboard class; read-only (cannot write chips — the UID already burned into each card is what gets bound). Confirmed working on the developer Mac via a TextEdit smoke test; target Windows workstation has vendor drivers preinstalled.
+
+**Changes:**
+- No migration — the `rfid_uid` column and the per-club partial unique index `members_club_rfid_uid_uniq` already shipped in `20260417120000`.
+- New component `components/club/rfid-capture.tsx` — a blue dashed-border `<input>` that auto-focuses when the scan mode is active. The HID reader types the chip UID as plain characters followed by Enter; on Enter the component commits the UID and renders it in a green bar. "Scan a different chip" clears and refocuses. "Enter manually" toggles to a plain text input for typing the UID by hand (rare fallback).
+- `CreateMemberInput` gets an optional `rfidUid` field. `createMember` runs a pre-flight uniqueness check against `(club_id, rfid_uid)` and returns `This chip is already bound to member ${existing.member_code}` — a named, actionable error instead of a generic 23505. The insert retry loop also inspects `error.message.includes("rfid_uid")` on 23505 to distinguish member-code collisions (retry with bumped sequence) from chip collisions (surface immediately).
+- RFID is **optional** — the only onboarding input that is (photos + signature + DOB + names + phone + id_number + residency are all required when ops is on). Clubs that don't use chips leave the field empty.
+- i18n: 8 new keys under `ops.memberForm.rfidLabel` and `ops.memberForm.rfid.*` (prompt, hint, rescan, manualToggle, backToScan, manualPlaceholder, save).
+
+**How it works:** Staff plugs the Sycreader into the Windows PC (drivers already installed). The onboarding form's ops-enabled block renders the RFID capture tile. Staff clicks into the capture input, taps a chip on the reader, and the UID (typically 10 decimal digits) types in + auto-submits on Enter. The tile locks green. On submit, `createMember` pre-checks uniqueness per club, writes `rfid_uid` on the new member row, and relies on the partial unique index to backstop any race. No driver, no Web Serial, no helper app — the HID keyboard emulation **is** the integration surface.
+
+**Key files:**
+- `components/club/rfid-capture.tsx` — focused-input capture with manual-entry fallback
+- `app/[clubSlug]/staff/members/actions.ts` — `rfidUid` field on input, pre-flight + 23505 message mapping
+- `app/[clubSlug]/staff/members/member-creator.tsx` — `<RfidCapture>` in the ops section
+- `lib/i18n/dictionaries/{en,es}.json` — 8 `rfid.*` keys
+- Hardware detail: vendor `0xFFFF`, product `0x0035`, serial-visible under `ioreg -p IOUSB -l -w 0`. Staff workstation is Windows with vendor drivers preinstalled; the dev Mac showed a Keyboard Setup Assistant that `Cmd+Q` dismisses safely (device still functions).
 
 ### Add-product form field labels (bug fix)
 
