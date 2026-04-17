@@ -36,7 +36,7 @@ export default async function StaffLayout({
   const supabase = createAdminClient();
   const { data: club } = await supabase
     .from("clubs")
-    .select("name, approved, spin_enabled")
+    .select("name, approved, spin_enabled, operations_module_enabled")
     .eq("slug", clubSlug)
     .single();
 
@@ -47,7 +47,11 @@ export default async function StaffLayout({
   return (
     <div className="pb-20">
       {children}
-      <StaffNav clubSlug={clubSlug} spinEnabled={club?.spin_enabled ?? false} />
+      <StaffNav
+        clubSlug={clubSlug}
+        spinEnabled={club?.spin_enabled ?? false}
+        operationsEnabled={club?.operations_module_enabled ?? false}
+      />
     </div>
   );
 }

@@ -31,9 +31,55 @@ const ACTION_CONFIG: Record<string, { label: string; color: string }> = {
   offer_order_fulfilled: { label: "Fulfilled order", color: "bg-amber-100 text-amber-700" },
   offer_walkin_order: { label: "Walk-in order", color: "bg-amber-100 text-amber-700" },
   email_collected: { label: "Email collected", color: "bg-indigo-100 text-indigo-700" },
+  // Operations module
+  operations_module_toggled: { label: "Ops toggled", color: "bg-slate-100 text-slate-700" },
+  id_verified: { label: "ID verified", color: "bg-teal-100 text-teal-700" },
+  id_verification_revoked: { label: "ID revoked", color: "bg-rose-100 text-rose-700" },
+  entry_checkin: { label: "Door admit", color: "bg-teal-100 text-teal-700" },
+  entry_checkout: { label: "Door check-out", color: "bg-teal-100 text-teal-700" },
+  entry_bulk_checkout: { label: "All checked out", color: "bg-teal-100 text-teal-700" },
+  entry_blocked_expired: { label: "Blocked: expired", color: "bg-rose-100 text-rose-700" },
+  entry_blocked_no_dob: { label: "Blocked: no DOB", color: "bg-rose-100 text-rose-700" },
+  entry_blocked_underage: { label: "Blocked: underage", color: "bg-rose-100 text-rose-700" },
+  entry_blocked_duplicate: { label: "Blocked: dup scan", color: "bg-rose-100 text-rose-700" },
+  product_sale: { label: "Sale", color: "bg-emerald-100 text-emerald-700" },
+  product_sale_voided: { label: "Sale voided", color: "bg-rose-100 text-rose-700" },
+  product_created: { label: "Product +", color: "bg-slate-100 text-slate-700" },
+  product_updated: { label: "Product edit", color: "bg-slate-100 text-slate-700" },
+  product_archived: { label: "Product archived", color: "bg-slate-100 text-slate-700" },
+  product_restored: { label: "Product restored", color: "bg-slate-100 text-slate-700" },
+  product_stock_adjusted: { label: "Stock adjust", color: "bg-slate-100 text-slate-700" },
+  product_category_created: { label: "Category +", color: "bg-slate-100 text-slate-700" },
+  product_category_updated: { label: "Category edit", color: "bg-slate-100 text-slate-700" },
+  product_category_archived: { label: "Category archived", color: "bg-slate-100 text-slate-700" },
+  product_category_restored: { label: "Category restored", color: "bg-slate-100 text-slate-700" },
 };
 
-const CATEGORIES: { key: string; label: string; actions: string[]; color: string }[] = [
+const OPS_ACTIONS = [
+  "operations_module_toggled",
+  "id_verified",
+  "id_verification_revoked",
+  "entry_checkin",
+  "entry_checkout",
+  "entry_bulk_checkout",
+  "entry_blocked_expired",
+  "entry_blocked_no_dob",
+  "entry_blocked_underage",
+  "entry_blocked_duplicate",
+  "product_sale",
+  "product_sale_voided",
+  "product_created",
+  "product_updated",
+  "product_archived",
+  "product_restored",
+  "product_stock_adjusted",
+  "product_category_created",
+  "product_category_updated",
+  "product_category_archived",
+  "product_category_restored",
+];
+
+const BASE_CATEGORIES: { key: string; label: string; actions: string[]; color: string }[] = [
   { key: "all", label: "All", actions: [], color: "bg-gray-100 text-gray-700" },
   { key: "members", label: "Members", actions: ["member_created", "role_assigned", "membership_assigned", "membership_prolongated", "validity_updated", "referral_reward", "quest_auto_completed", "email_collected"], color: "bg-blue-100 text-blue-700" },
   { key: "spins", label: "Spins", actions: ["member_spin", "spin_performed"], color: "bg-purple-100 text-purple-700" },
@@ -63,24 +109,37 @@ function timeAgo(iso: string): string {
   });
 }
 
-export function LogViewer({ logs }: { logs: LogEntry[] }) {
+export function LogViewer({ logs, opsEnabled = false }: { logs: LogEntry[]; opsEnabled?: boolean }) {
   const [activeCategory, setActiveCategory] = useState("all");
+
+  const categories = useMemo(() => {
+    if (!opsEnabled) return BASE_CATEGORIES;
+    return [
+      ...BASE_CATEGORIES,
+      {
+        key: "operations",
+        label: "Operations",
+        actions: OPS_ACTIONS,
+        color: "bg-teal-100 text-teal-700",
+      },
+    ];
+  }, [opsEnabled]);
 
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { all: logs.length };
-    for (const cat of CATEGORIES) {
+    for (const cat of categories) {
       if (cat.key === "all") continue;
       counts[cat.key] = logs.filter((l) => cat.actions.includes(l.action)).length;
     }
     return counts;
-  }, [logs]);
+  }, [logs, categories]);
 
   const filteredLogs = useMemo(() => {
     if (activeCategory === "all") return logs;
-    const cat = CATEGORIES.find((c) => c.key === activeCategory);
+    const cat = categories.find((c) => c.key === activeCategory);
     if (!cat) return logs;
     return logs.filter((l) => cat.actions.includes(l.action));
-  }, [logs, activeCategory]);
+  }, [logs, activeCategory, categories]);
 
   if (logs.length === 0) {
     return (
@@ -94,7 +153,7 @@ export function LogViewer({ logs }: { logs: LogEntry[] }) {
     <div className="space-y-3">
       {/* Category filter pills */}
       <div className="flex gap-1.5 overflow-x-auto pb-1">
-        {CATEGORIES.map((cat) => {
+        {categories.map((cat) => {
           const count = categoryCounts[cat.key] ?? 0;
           const isActive = activeCategory === cat.key;
           if (cat.key !== "all" && count === 0) return null;

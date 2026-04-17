@@ -454,6 +454,21 @@ Quest links (URLs/emails) remain visible after a quest is marked done. Previousl
 - `app/[clubSlug]/admin/actions.ts` — server actions `addQuest`, `updateQuest` with reward_spins parsing and validation
 - `app/[clubSlug]/admin/quest-manager.tsx` — client form with spins input fields
 
+## Admin Create-New Number Inputs: Empty-by-Default with Placeholder
+
+**Request:** Five admin create-new forms (Products, Events, Quests, Referral-tree premium spins, Memberships) pre-filled their number inputs with meaningless defaults (`0`, `2`, `12`). Clicking the field didn't clear the value, forcing staff to backspace before typing.
+
+**Changes:** Flipped the state initialization in each form from `useState(0)` / `useState("0")` / `useState("2")` / `useState("12")` to `useState("")`, added a `placeholder` carrying the prior default as a hint (`"0.00"`, `"0"`, `"2"`, `"12"`), and parsed to number at submit with the same fallback the old default encoded (`Number(x) || 12` for membership duration; server already treats empty `reward_spins` as 0). Dropped the `required` attribute on event/quest reward-spins inputs since `0` (blank) is a valid "no reward" answer. Edit forms were not touched — `useState(existing.value)` is the correct pattern there.
+
+**How it works:** Opening any affected create-new form (ProductNewForm, new-event, new-quest, Add Premium Referrer, add-period) now shows empty number inputs with greyed-out placeholder hints. Submitting empty yields the same fallback behavior as before (`0` for price/stock/spins, `2` default premium referral spins, `12` months for membership duration). No server-side validation changed.
+
+**Key files:**
+- `app/[clubSlug]/admin/products-manager.tsx` — `ProductNewForm` unit price + stock
+- `app/[clubSlug]/admin/event-manager.tsx` — new-event reward spins
+- `app/[clubSlug]/admin/quest-manager.tsx` — new-quest reward spins
+- `app/[clubSlug]/admin/referral-tree.tsx` — Add Premium Referrer reward spins
+- `app/[clubSlug]/admin/membership-period-manager.tsx` — add-period duration
+
 ## Mobile Viewport and Horizontal Scroll Fix
 
 **Request:** Fix admin panel overflowing horizontally on mobile Safari — content wider than screen, nav icons cut off.
@@ -467,6 +482,17 @@ Quest links (URLs/emails) remain visible after a quest is marked done. Previousl
 - `app/globals.css` — global `overflow-x-hidden` on `html, body`
 - `components/club/admin-nav.tsx` — bottom nav with 5 items, `px-1.5` padding
 - `app/[clubSlug]/admin/people-manager.tsx` — member management card with `px-4` padding
+
+## Staff Bottom-Nav Horizontal Scroll on Small Phones
+
+**Request:** Staff reported from a phone that the Operations tab at the far-right of the staff bottom-nav was unreachable. With 6–7 tabs (Bonuses, Quests, Events, Offers, Preregistrations, Members, Operations), the `max-w-md` + `justify-around` layout compressed items below tap-target size on any phone narrower than 448 px and clipped the rightmost tab.
+
+**Changes:** `components/club/staff-nav.tsx` wraps the flex row in `<div className="overflow-x-auto overscroll-x-contain">`, adds `min-w-max` to the inner flex so it claims its natural content width when items don't fit, and `shrink-0` on each tab `Link` so individual tabs don't compress. `max-w-md` and `justify-around` are preserved for the desktop case.
+
+**How it works:** On phones narrower than the tabs' combined natural width, the nav row scrolls horizontally; every tab stays at full icon + label size and Operations remains tappable by swiping the nav. On desktop and wider phones the row still spreads via `justify-around` within `max-w-md` — zero visual change on large viewports.
+
+**Key files:**
+- `components/club/staff-nav.tsx` — `overflow-x-auto` wrapper, `min-w-max` on inner flex, `shrink-0` per tab
 
 ## Public Club Profiles
 
@@ -941,3 +967,321 @@ The base PWA manifest at `app/manifest.ts` (see "Brand Icons & PWA Manifest" und
 - `.claude/commands/clarify.md` — clarify-unclear-cards flow; now calls `trello list/card/comment`
 - `~/.claude/skills/feedback-work/SKILL.md` — feedback processing flow; now calls `trello list/card/move/comment`
 - `~/.zshrc` — holds `TRELLO_API_KEY` and `TRELLO_TOKEN` so the CLI works in any shell/session
+
+## Operations Module
+
+Cannabis-club operational layer (door control + dispensary) built for Ice Tray Weed Club. Off by default for every other club — flag-gated at the `clubs.operations_module_enabled` column. Built as Phases 0–4b, then hardened in Tiers A–E. Each subsection below describes a subsystem in its **current final state** after all hardening; phase/tier history is kept in git (`779b739` through `3eebda1`, plus later bug fixes).
+
+### Operations module feature flag + gated routes
+
+**Request:** Ice Tray wants a full ops layer (door + POS), but no other club needs it; ship it fully hidden unless explicitly enabled per-club.
+
+**Changes:**
+- Migration `20260416160000_add_operations_module.sql` adds `clubs.operations_module_enabled boolean NOT NULL DEFAULT false`.
+- `toggleOperationsModule(clubId, enabled, clubSlug)` in `app/[clubSlug]/admin/actions.ts` — guarded by `requireOwnerForClub(clubId)` (Tier A), writes the flag, logs `operations_module_toggled` to `activity_log`, revalidates admin + staff layouts. Mirrors `toggleSpinEnabled` but with audit logging.
+- Admin Settings page (`app/[clubSlug]/admin/(panel)/settings/page.tsx`) gains a `<CollapsibleSection title="Operations Module">` (placed right before Push Notifications) rendering `<OperationsModuleManager>` — a simple checkbox + amber warning banner. Every string localized via `t()`.
+- Staff layout (`app/[clubSlug]/staff/layout.tsx`) selects both `spin_enabled` and `operations_module_enabled` and passes them to `StaffNav`, which filters both nav items independently (`components/club/staff-nav.tsx` lines 89-93).
+- New route group `app/[clubSlug]/staff/(console)/operations/` with a `layout.tsx` that re-checks the flag via `getClub(clubSlug)` and returns `notFound()` if disabled — defense-in-depth alongside the nav filter.
+
+**How it works:** Owner toggles the flag in Admin → Settings → Operations Module. When ON, staff nav grows an "Ops" tab and `/staff/operations/*` routes resolve. When OFF, tab is hidden and direct URL 404s. Other clubs see zero change regardless. Flip-off is non-destructive — all ops data is preserved and reappears when flipped back on.
+
+**Key files:**
+- `supabase/migrations/20260416160000_add_operations_module.sql` — flag column
+- `app/[clubSlug]/admin/operations-module-manager.tsx` — checkbox + warning (i18n via `ops.admin.*` keys)
+- `app/[clubSlug]/admin/actions.ts` — `toggleOperationsModule` + `requireOwnerForClub`
+- `app/[clubSlug]/staff/layout.tsx` — selects flag, passes to nav
+- `components/club/staff-nav.tsx` — filter both `spinEnabled` and `operationsEnabled`
+- `app/[clubSlug]/staff/(console)/operations/layout.tsx` — `notFound()` gate
+- `app/[clubSlug]/staff/(console)/operations/page.tsx` — dashboard with five cards: Door check-in, Live capacity, Sell product, Transactions, Product catalog
+
+### Members: DOB, private ID photo, verification, search
+
+**Request:** Cannabis clubs need age verification at the door — members need a date of birth, optionally a stored ID photo, and a staff-triggered "verified" flag. Staff needs a search + filter view.
+
+**Changes:**
+- Migration `20260416170000_add_members_ops_fields.sql` adds four nullable columns to `members`: `date_of_birth date`, `id_verified_at timestamptz`, `id_verified_by uuid REFERENCES members(id) ON DELETE SET NULL`, `id_photo_path text`. Plus an index on `(club_id, date_of_birth)`.
+- Migration `20260416170001_create_member_ids_bucket.sql` creates a **private** Supabase storage bucket `member-ids` with `public: false`, no RLS policies (service role bypasses RLS; authenticated + anon have no access). Reads only via `createSignedUrl` for 30-minute windows from the server.
+- `lib/supabase/storage.ts` gains `uploadMemberIdPhoto(clubId, file)` (returns `{ path }`, not URL), `deleteMemberIdPhoto(path)`, `getMemberIdPhotoSignedUrl(path, expiresInSeconds = 3600)`.
+- `app/[clubSlug]/staff/members/actions.ts`:
+  - `createMember` extended with optional `dateOfBirth` and `idPhotoPath` args; orphaned photo blobs cleaned up on insert failure. Now guards with `requireStaffForClub(clubId)`.
+  - New `uploadMemberIdPhotoAction(formData)` — staff-for-club authorized, reads `clubId` + `file` from FormData, 5 MB max, writes to private bucket, returns `{ path }` or `{ error }`.
+  - New `markIdVerified(memberId, clubSlug)` and `revokeIdVerification(memberId, clubSlug, reason?)` — load member's `club_id`, authorize with `requireStaffForClub(current.club_id)`, stamp/clear `id_verified_at` + `id_verified_by`, write `id_verified` / `id_verification_revoked` to activity log.
+- Staff member creator (`app/[clubSlug]/staff/members/member-creator.tsx`) — when `opsEnabled=true`, shows required DOB picker and optional ID photo input. All strings via `ops.memberForm.*` i18n keys.
+- Members list rewritten as `MembersSearch` client component (`app/[clubSlug]/staff/(console)/members/members-search.tsx`) — search input (name or code), filter chips (All / Verified / Unverified / Expired). Verified/Unverified chips only render when `opsEnabled`. Per-row "Mark verified" / "Revoke" actions render inline when ops is on. Signed photo URL generated server-side per row and passed down; thumbnails open in a new tab. Page accepts `?q=` search param to prefill the filter (deep-link target for the entry-flow "Fix in Members →" link).
+- Member profile page (`app/[clubSlug]/(member)/profile/page.tsx`) — conditional fetch of `operations_module_enabled` and (if on) recent `product_transactions` for the member. When `opsEnabled && id_verified_at`, renders a green "21+ Verified" chip under the member's name on the identity card. Stored ID photo is NEVER shown to members — staff-only.
+
+**How it works:** Staff in an ops-enabled club creates a new member; DOB is required, photo is optional. DOB is stored as plain date; photo is uploaded to the private `member-ids` bucket, and only the storage path (not a URL) is saved on the member row. Staff marks the ID verified — must have DOB set first. Verification stamp is auditable via `id_verified_at` + `id_verified_by`. Photos are retrieved for staff UI via server-side `getMemberIdPhotoSignedUrl` (30 min expiry). Members see only the 21+ chip on their own profile when verified, never the photo. **Note:** the onboarding form has since been significantly expanded — see the "Member onboarding overhaul" subsections below for the full current state (first/last name, residency, DNI/passport, phone, email, auto-generated code, required portrait + signature, optional RFID).
+
+**Key files:**
+- `supabase/migrations/20260416170000_add_members_ops_fields.sql` — DOB + verification columns
+- `supabase/migrations/20260416170001_create_member_ids_bucket.sql` — private bucket
+- `lib/supabase/storage.ts` — `uploadMemberIdPhoto` / `deleteMemberIdPhoto` / `getMemberIdPhotoSignedUrl`
+- `app/[clubSlug]/staff/members/actions.ts` — `createMember`, `uploadMemberIdPhotoAction`, `markIdVerified`, `revokeIdVerification`
+- `app/[clubSlug]/staff/members/member-creator.tsx` — DOB + photo inputs, ops-gated
+- `app/[clubSlug]/staff/(console)/members/members-search.tsx` — search + filter + verify/revoke rows
+- `app/[clubSlug]/staff/(console)/members/page.tsx` — signed-URL generation, `?q=` prefill
+- `app/[clubSlug]/(member)/profile/page.tsx` — 21+ chip + recent purchases section (ops-only)
+
+### Door flow: QR check-in, manual check-out, live capacity
+
+**Request:** Staff stands at the door, scans members' QR codes, verifies age and ID, admits them. Members stay "inside" until a staff member explicitly checks them out. Live capacity dashboard shows who's in.
+
+**Changes:**
+- Migration `20260416180000_create_club_entries.sql` creates `club_entries` (`id`, `club_id`, `member_id`, `checked_in_at`, `checked_in_by`, `checked_out_at`, `checked_out_by`, `created_at`) with a **partial unique index** `idx_club_entries_one_open_per_member ON club_entries(member_id) WHERE checked_out_at IS NULL` — DB-level guarantee of one open session per member. Plus `(club_id) WHERE checked_out_at IS NULL` for fast capacity queries. RLS enabled with service-role-only policy.
+- `@yudiel/react-qr-scanner` added (lazy-loaded in client components via `next/dynamic`, `ssr: false`). Camera uses `facingMode: "environment"` by default with a manual-entry fallback on every surface.
+- `app/[clubSlug]/staff/(console)/operations/entry/actions.ts`:
+  - `lookupMemberForEntry(clubId, rawCode)` — `requireStaffForClub(clubId)`, sanitizes input (accepts bare codes or QR-URL payloads), returns `LookedUpMember` with computed age, verified state, expiry state, any open entry id, and a signed photo URL.
+  - `admitMember(clubId, clubSlug, memberId)` — authorizes, validates member is active + 21+ + has DOB + not expired + not already inside. Each blocked path writes a distinct audit row: `entry_blocked_expired`, `entry_blocked_no_dob`, `entry_blocked_underage`, `entry_blocked_duplicate`. On success inserts `club_entries` row + `entry_checkin` log.
+  - `checkoutEntry(entryId, clubSlug)` — loads entry, authorizes via `requireStaffForClub(current.club_id)`, stamps `checked_out_at` + `checked_out_by`, logs `entry_checkout` with duration in minutes.
+  - `checkoutAllOpen(clubId, clubSlug)` — closes every open entry in one UPDATE for end-of-night, writes one `entry_bulk_checkout` audit row with the count.
+  - `searchMembersByName(clubId, query)` — ILIKE on `full_name` OR `member_code`, active members only, limit 10. For door staff when a member forgot their code.
+- Entry page (`app/[clubSlug]/staff/(console)/operations/entry/page.tsx` + `entry-client.tsx`) — three picker modes: Scan QR, Enter code manually, Search by name. Resolved lookup opens `EntryDialog` showing the stored photo, name, age chip (red if <21), verified chip, expired / expiring-soon chips, and an "Already inside" chip if applicable. When blocked, a red banner explains the exact reason (localized) with a "Fix in Members →" deep-link for fixable reasons (missing DOB, expired). Admit button runs the admit; if already inside, becomes a Check-out button.
+- Capacity page (`app/[clubSlug]/staff/(console)/operations/capacity/page.tsx`) — big count card with "Check out all" button (confirm-dialog), per-row entries with duration-since and a per-row "Check out" button. Server-rendered, client buttons trigger revalidation.
+
+**How it works:** Staff at the door opens `/staff/operations/entry`. They scan a member QR (or type / search by name). The lookup surface shows the stored ID photo so staff can visually confirm identity. If age / DOB / expiry / already-inside blocks apply, staff sees an explicit reason and cannot admit. Otherwise tap Admit → a `club_entries` row is created, member is "inside". The capacity page shows a live count and list with durations. At end of night, one "Check out all" click closes every open session with an audited `entry_bulk_checkout` row.
+
+**Key files:**
+- `supabase/migrations/20260416180000_create_club_entries.sql` — table + partial unique index
+- `app/[clubSlug]/staff/(console)/operations/entry/actions.ts` — lookup, admit, checkout, checkoutAll, searchByName
+- `app/[clubSlug]/staff/(console)/operations/entry/entry-client.tsx` — scan / manual / search picker, EntryDialog with blocked-reason banner
+- `app/[clubSlug]/staff/(console)/operations/entry/page.tsx` — server component wrapper
+- `app/[clubSlug]/staff/(console)/operations/capacity/page.tsx` — count card + open-entries list
+- `app/[clubSlug]/staff/(console)/operations/capacity/checkout-button.tsx` — per-row checkout
+- `app/[clubSlug]/staff/(console)/operations/capacity/checkout-all-button.tsx` — bulk close
+- `package.json` — `@yudiel/react-qr-scanner`
+
+### Product catalog + categories (admin CRUD, staff browse)
+
+**Request:** Admin curates a dispensary menu — categories (Flower / Edibles / etc.), products with bilingual name + description, image, sold-by-gram or sold-by-piece, price per unit, stock on hand. Staff sees a read-only browse.
+
+**Changes:**
+- Migration `20260416190000_create_products.sql` creates `product_categories` (`id`, `club_id`, `name`, `name_es`, `display_order`, `archived`, `created_at`) and `products` (`id`, `club_id`, `category_id`, `name`, `name_es`, `description`, `description_es`, `image_url`, `unit 'gram'|'piece'`, `unit_price numeric(10,2)`, `stock_on_hand numeric(10,3)`, `active`, `display_order`, `archived`, `created_at`). RLS enabled, service-role-only policy.
+- `app/[clubSlug]/admin/products-actions.ts` — separate actions file (admin actions.ts is already 1700+ lines). Seven functions: `addProductCategory`, `updateProductCategory`, `archiveProductCategory`, `uploadProductImageAction`, `addProduct`, `updateProduct`, `adjustProductStock`, `archiveProduct`. Every function authorizes via `requireOwnerForClub(clubId)` (Tier A) and writes a `product_*` audit row. `adjustProductStock` takes a delta + optional reason and clamps to zero. `uploadProductImageAction` reuses `uploadClubImage` into the existing public `club-images` bucket.
+- Admin manager (`app/[clubSlug]/admin/products-manager.tsx`) — tabbed Active/Archived view. Categories section: inline add row + edit row + archive/restore. Products section: collapsed-by-default product rows with expand-to-edit accordion. Edit form has bilingual name/description, image uploader, category + unit selects, unit price + stock inputs (labeled via `<label><span>…</span><input/></label>`), and a "Quick stock adjust" panel inside the edit form with a delta + reason input. "+ Add product" row opens a compact inline form (also labeled — see bug-fix subsection below).
+- Admin Content hub (`app/[clubSlug]/admin/(panel)/content/page.tsx`) — ops-flag-gated Products card added alongside Quests/Events/Offers. Shows active product count. Does NOT extend the 4-tab admin bottom nav (matches push-notifications precedent — Content hub is the nav entry point for this).
+- Staff browse (`app/[clubSlug]/staff/(console)/operations/products/page.tsx`) — server-rendered, grouped by category, bilingual name/description via `localize(locale, en, es)` helper. Out-of-stock items flagged red. Read-only; selling happens on the sell page.
+
+**How it works:** Admin goes to Content → Products (ops-flag-gated card), creates categories and products. Each product is priced per gram or per piece; stock is tracked as `numeric(10,3)` for gram precision. Images upload to the public `club-images` bucket. Stock adjustments are audited with an optional reason. Staff sees a read-only browse grouped by category, with out-of-stock red markers. Selling decrements stock atomically via the sell RPC (see next subsection).
+
+**Key files:**
+- `supabase/migrations/20260416190000_create_products.sql` — two tables + RLS
+- `app/[clubSlug]/admin/products-actions.ts` — all CRUD with `requireOwnerForClub` guards
+- `app/[clubSlug]/admin/products-manager.tsx` — tabbed manager with accordion rows
+- `app/[clubSlug]/admin/(panel)/products/page.tsx` — server entry, loads categories + products
+- `app/[clubSlug]/admin/(panel)/content/page.tsx` — Products card, ops-flag-gated
+- `app/[clubSlug]/staff/(console)/operations/products/page.tsx` — staff browse
+
+### Sell flow + transactions + void + Ohaus scale
+
+**Request:** Staff picks a member, picks a product, enters or weighs the quantity, records the sale. Transactions have full history with per-product / per-day summaries. Void a transaction restores stock. Optional USB scale (Ohaus Navigator NV422) streams weight live.
+
+**Changes:**
+- Migration `20260416200000_create_product_transactions.sql` creates `product_transactions` (`id`, `club_id`, `product_id`, `member_id`, `fulfilled_by`, `quantity`, `unit_price_at_sale`, `total_price`, `weight_source 'manual'|'scale'`, `scale_raw_reading`, `voided_at`, `voided_by`, `void_reason`, `created_at`) with indexes on `(club_id, created_at)`, `(member_id, created_at)`, `(product_id, created_at)`. RLS + service-role policy. Also defines the `sell_product` PL/pgSQL RPC.
+- `sell_product(p_club_id, p_product_id, p_member_id, p_staff_id, p_quantity, p_weight_source, p_scale_raw)` RPC — recreated in `20260416210001_harden_sell_product.sql` to **row-lock the product** (`SELECT … FOR UPDATE`), verify the staff member belongs to the club (defense-in-depth beyond the action-layer auth), check product active + stock sufficient, decrement stock, insert the transaction, and insert the `product_sale` audit row — all in one transaction. Returns the new transaction id. Raises distinct error codes (`invalid_quantity`, `product_not_found`, `product_inactive`, `insufficient_stock`, `member_not_found`, `staff_wrong_club`, `invalid_weight_source`) that the action layer maps to friendly messages.
+- Migration `20260416210000_add_void_product_sale.sql` creates `void_product_sale(p_transaction_id, p_club_id, p_staff_id, p_reason)` RPC — locks tx + product, restores stock, stamps void fields, logs `product_sale_voided`. Atomic, no read-then-write race.
+- `app/[clubSlug]/staff/(console)/operations/sell/actions.ts`:
+  - `sellProduct(clubSlug, input)` — `requireStaffForClub(input.clubId)`, calls the RPC, maps errors, revalidates products/sell/transactions paths.
+  - `voidTransaction(transactionId, clubSlug, reason)` — loads tx's `club_id`, authorizes, calls `void_product_sale` RPC.
+  - `exportTodayTransactionsCsv(clubId)` — staff-for-club scoped, returns a CSV blob (stable English headers: timestamp, transaction_id, product, unit, quantity, unit_price_eur, total_eur, member_code, staff_code, weight_source, scale_raw, voided, void_reason) for today's rows. Accountant-friendly.
+- Sell page (`app/[clubSlug]/staff/(console)/operations/sell/sell-client.tsx`) — three-step flow:
+  1. Member: QR scan / manual / implicitly uses the entry's lookup action. After lookup, a red **inline banner** shows if the member is not ID-verified ("Confirm only if you already verified them at the door today"). Does NOT rely on a toast alone.
+  2. Product: list grouped by category, out-of-stock products disabled. A **"Recent" quick-pick row** above the list keeps the last 3 sold product ids in this session's memory (tab-scoped, no persistence).
+  3. Quantity: numeric input + optional scale panel when product is sold by gram.
+  After confirm, shows a **green "Sale #TX-XXXXXXXX recorded — 42.00 €" receipt banner** with a "New sale" button. Steps 2 and 3 are locked (dimmed + pointer-events-none) until the user clicks New sale — prevents network-lag double-submission. On error, inputs stay intact so staff can retry without re-selecting.
+- Transactions page (`app/[clubSlug]/staff/(console)/operations/transactions/page.tsx`) — server-rendered, paginated 50/page. Top: today's revenue card + "Voided today: {count} · {total} €" sub-line. On page 0: "Today by product" summary block grouping today's sales into a per-product qty + revenue table. Each row shows product name, qty + unit, member code, staff code ("by ABC12"), total, timestamp, scale/manual marker, void reason (struck through if voided). Per-row Void button with required reason input. Header has an "Export CSV" button.
+- Void button (`void-button.tsx`) — inline reason input, calls `voidTransaction`, toasts "Transaction voided; stock restored".
+- Scale driver — `lib/hardware/scale.ts` defines the `ScaleAdapter` interface + `isWebSerialSupported()`. `lib/hardware/ohaus-nv422.ts` implements it over `navigator.serial` at 9600 8-N-1 (NV422 factory defaults), parses Ohaus print output (regex for signed decimal + `g|kg|oz|lb` + optional `?` unstable marker), streams readings via a callback. `TextDecoderStream.writable` cast to `WritableStream<Uint8Array>` because DOM lib types the variance too strict.
+- Scale panel (`components/club/scale-panel.tsx`) — checks `isWebSerialSupported()` client-side to avoid SSR mismatch. On unsupported browsers (Safari/iOS) shows an amber note with manual-entry instruction, not an error. On supported browsers shows Connect button → native port picker → live weight readout with Stable/Stabilizing/Waiting status → "Use this reading" button. When used, fills the quantity input in the sell form AND sets `scaleReading.raw` so the sale records `weight_source = 'scale'` + the raw line. If staff hand-edits the quantity after reading, the scale flag is cleared automatically so no fraudulent audit trail can be produced.
+- Member profile (`app/[clubSlug]/(member)/profile/page.tsx`) — for ops-enabled clubs, a "Recent Purchases" section lists the last 5 non-voided sales (bilingual product name, qty, date, total).
+
+**How it works:** Budtender picks member (scan/manual) → picks product (stock-aware; Recent quick-pick for repeats) → enters or weighs quantity (optional Ohaus NV422 via Web Serial; manual fallback on unsupported browsers) → confirms. The RPC row-locks the product, validates stock + staff-belongs-to-club, inserts the transaction, decrements stock, writes the audit row — all atomic. A green receipt banner replaces the form and requires an explicit "New sale" click before the next transaction (no auto-clear, no double-submit). Transactions page shows today's revenue, voided-today tally, and a per-product summary at a glance. Void requires a reason, restores stock atomically, logs `product_sale_voided`. CSV export gives accountant-ready columns. Every sale appears on the member's portal profile under Recent Purchases.
+
+**Key files:**
+- `supabase/migrations/20260416200000_create_product_transactions.sql` — table + original `sell_product` RPC
+- `supabase/migrations/20260416210000_add_void_product_sale.sql` — atomic void RPC
+- `supabase/migrations/20260416210001_harden_sell_product.sql` — staff-wrong-club defense-in-depth
+- `app/[clubSlug]/staff/(console)/operations/sell/actions.ts` — `sellProduct`, `voidTransaction`, `exportTodayTransactionsCsv`
+- `app/[clubSlug]/staff/(console)/operations/sell/sell-client.tsx` — three-step flow + receipt + Recent shortcut + inline unverified banner
+- `app/[clubSlug]/staff/(console)/operations/sell/page.tsx` — server entry
+- `app/[clubSlug]/staff/(console)/operations/transactions/page.tsx` — revenue card, voided tally, per-product summary, pagination
+- `app/[clubSlug]/staff/(console)/operations/transactions/void-button.tsx` — inline void with reason
+- `app/[clubSlug]/staff/(console)/operations/transactions/export-button.tsx` — CSV download trigger
+- `lib/hardware/scale.ts` — `ScaleAdapter` interface + `isWebSerialSupported`
+- `lib/hardware/ohaus-nv422.ts` — Web Serial driver + Ohaus print parser
+- `components/club/scale-panel.tsx` — connect / live weight / Use this reading
+- `app/[clubSlug]/(member)/profile/page.tsx` — Recent Purchases section (ops-only)
+
+### Multi-tenant authorization for ops actions
+
+**Request:** Hardening pass found that early ops actions trusted caller-supplied `clubId` or resource ids without checking them against the session's club. Staff of club A could touch club B's resources. Close this before promoting to main.
+
+**Changes:**
+- `lib/auth.ts` gains two helpers:
+  - `requireStaffForClub(clubId): Promise<{ member_id; club_id }>` — calls `requireActiveStaff()` and throws if `session.club_id !== clubId`.
+  - `requireOwnerForClub(clubId): Promise<{ owner_id; club_id }>` — calls `getOwnerFromCookie()`, throws if missing or club mismatch.
+  - Both throw; callers wrap in `try { … } catch (err) { return { error: err instanceof Error ? err.message : "Unauthorized" }; }`.
+- Every ops write action switched to the new helpers:
+  - `admitMember`, `lookupMemberForEntry`, `checkoutEntry`, `checkoutAllOpen`, `searchMembersByName` — `requireStaffForClub(clubId)` at the top (or after loading resource's `club_id` when the action takes a resource id).
+  - `sellProduct`, `voidTransaction`, `exportTodayTransactionsCsv` — same.
+  - `uploadMemberIdPhotoAction`, `markIdVerified`, `revokeIdVerification`, `createMember` — same.
+  - All seven `app/[clubSlug]/admin/products-actions.ts` functions — `requireOwnerForClub(clubId)` at the top (previously had no auth guard at all).
+  - `toggleOperationsModule` — `requireOwnerForClub(clubId)`.
+- The `sell_product` RPC gained a `staff_wrong_club` defense-in-depth check (see above).
+
+**How it works:** Every ops server action now authorizes before any mutation. Staff of club A calling a server action with a club-B resource id receives `{ error: "Unauthorized" }` and nothing is written or logged. The session's `club_id` is the authority, not the caller-supplied arg. The RPC layer re-checks for defense-in-depth. The pattern — load resource to get `club_id`, then authorize, then mutate — is the standard for all new ops actions going forward.
+
+**Key files:**
+- `lib/auth.ts` — `requireStaffForClub`, `requireOwnerForClub`
+- every ops action file listed in the other subsections
+
+### i18n coverage for the operations module
+
+**Request:** Initial ops build shipped with ~20 hardcoded English strings across the new components. Ice Tray operates in Spanish. Every user-visible surface must localize.
+
+**Changes:** ~100 keys added to both `lib/i18n/dictionaries/en.json` and `es.json`, namespaced:
+- `ops.admin.*` — settings toggle + warning + toasts
+- `ops.memberForm.*` — member-creator labels, placeholder, DOB required, photo help
+- `ops.entry.*` — door-flow chips, buttons, blocked-reason strings, search UI
+- `ops.sell.*` — step labels, member chips, inline unverified banner, product list, quantity placeholders, total, insufficient stock, Record sale / Recording, scale-captured note, unstable warning, receipt + New sale
+- `ops.tx.*` — today's revenue, voided today, per-product summary, empty state, pagination, scale marker, voided reason, void/reason/confirm, staff column, export CSV
+- `ops.capacity.*` — checkout confirm, checked out, Check out / Check out all / Check out all confirm
+- `ops.scale.*` — Chrome/Edge-only notice, connect, opening port, label, disconnect, Stable / Stabilizing / Waiting, Use this reading, connected toast, no device, fail, place product
+- `ops.logsFilter` — Admin logs filter chip
+
+All admin-ops-manager components (OperationsModuleManager, StaffMemberCreator, MembersSearch, EntryClient's EntryDialog + picker, SellClient, VoidButton, CheckoutButton, CheckoutAllButton, ScalePanel, transactions/page.tsx) now consume via `t()` (client) or `t(locale, …)` (server). EN/ES parity verified via `jq -r 'keys[]' dict.json | sort | diff`.
+
+**How it works:** Language toggle in any portal flips every ops surface together. Product/category names use a `localize(locale, en, es)` helper that falls back to English when Spanish is not provided. CSV export headers stay English regardless of locale (accountant software expects stable column names).
+
+**Key files:**
+- `lib/i18n/dictionaries/en.json` — ~100 new keys
+- `lib/i18n/dictionaries/es.json` — same keys, Spanish values
+
+### Operations activity-log filter
+
+**Request:** Admin log viewer already categorizes events into Members / Spins / Quests / Orders / Events. Ops adds 21 new action types — they need their own filter chip and human-readable labels.
+
+**Changes:**
+- `app/[clubSlug]/admin/log-viewer.tsx` — `ACTION_CONFIG` map extended with all 21 ops action labels + colors (teal for entry/verify, emerald for sale, rose for void/blocked, slate for toggle/product-CRUD). `OPS_ACTIONS` const lists every action name. `LogViewer` component gains an `opsEnabled` prop; when true, an "Operations" filter chip is added to the categories list covering all 21 actions. `BASE_CATEGORIES` (renamed from `CATEGORIES`) stays unchanged.
+- `app/[clubSlug]/admin/(panel)/logs/page.tsx` — selects `operations_module_enabled` alongside `name`, passes to `<LogViewer opsEnabled={…}/>`.
+
+**How it works:** Admin → Logs for an ops-enabled club shows a new Operations chip that filters the stream to ops events. Action labels render as "Sale", "Door admit", "Stock adjust" etc. instead of raw slugs. For non-ops clubs the chip is hidden and the viewer behaves identically to before.
+
+**Key files:**
+- `app/[clubSlug]/admin/log-viewer.tsx` — `OPS_ACTIONS`, enriched `ACTION_CONFIG`, `opsEnabled` prop
+- `app/[clubSlug]/admin/(panel)/logs/page.tsx` — selects + passes the flag
+
+### Member onboarding overhaul — identity fields + auto-generated code + under-18 gate
+
+**Request:** Staff needs to capture every field required by Spanish cannabis-social-club compliance at onboarding: first/last name, DOB with an explicit 18+ gate, residency (local / tourist), DNI or passport number (no format validation), phone, optional email. Member codes should be auto-generated, not hand-typed. Bundled the Trello-linked under-18-silent-failure card in the same ship.
+
+**Changes:**
+- Migration `20260417120000_member_onboarding_fields.sql` adds eight nullable columns to `members`: `first_name`, `last_name`, `id_number`, `phone`, `residency_status`, plus forward-looking `photo_path`, `signature_path`, `rfid_uid`. Adds a CHECK constraint `residency_status IS NULL OR residency_status IN ('local','tourist')` and a partial unique index `members_club_rfid_uid_uniq ON members(club_id, rfid_uid) WHERE rfid_uid IS NOT NULL`. Back-fills `first_name` / `last_name` from existing `full_name` split on the first space where both are currently null; single-word names are left alone.
+- `createMember` in `app/[clubSlug]/staff/members/actions.ts` rewritten to take a `CreateMemberInput` object (not positional args). Computes age from DOB via local `ageFromDob` and returns `This club requires members to be 18 or older. The account was not created.` before any INSERT if under 18. Auto-generates the member code via `baseCodeFromNames(firstName, lastName)` — first 2 letters of first + first 2 of last, Unicode diacritics stripped through NFD + non-alphanumeric removed, padded with `X`. Collision-resolves by pre-querying existing `member_code LIKE '${base}%'` per club, picking the lowest unused 2-digit sequence, and retrying on 23505 up to 5 attempts.
+- `StaffMemberCreator` (`app/[clubSlug]/staff/members/member-creator.tsx`) rewritten: member-code text input removed; new first name, last name, always-required DOB (no longer ops-gated), Local/Tourist residency radio as a pill toggle via `has-[:checked]:bg-gray-800`, DNI/NIE or passport input with a label that swaps on residency, phone (required), email (optional). Success toast reports the auto-assigned code (`Member {code} created`).
+- i18n: 18 new keys in both `en.json` and `es.json` under `ops.memberForm.*` covering the new labels / placeholders and `under18Error`.
+
+**How it works:** Staff opens Members → Onboard new member, fills identity + residency + ID + phone + optional email. On submit the server computes `<first2><last2><NN>` (e.g. Jane García → `JAGA01`), collision-resolves per club, writes the row with `full_name` synthesized as `${first} ${last}` alongside the new columns, and returns the assigned code so the client can show it in the toast. Under-18 DOBs short-circuit with an inline error banner; no row is created. Residency is stored as `local` / `tourist` and drives the DNI-vs-passport label; ID number itself is free text with no format validation. All downstream consumers (admin People page, etc.) continue to read `full_name`.
+
+**Key files:**
+- `supabase/migrations/20260417120000_member_onboarding_fields.sql` — columns + CHECK + rfid unique index + `full_name` split back-fill
+- `app/[clubSlug]/staff/members/actions.ts` — `CreateMemberInput`, `ageFromDob`, `baseCodeFromNames`, collision-resolving insert loop
+- `app/[clubSlug]/staff/members/member-creator.tsx` — rewritten identity form
+- `lib/i18n/dictionaries/{en,es}.json` — 18 new keys in `ops.memberForm.*`
+
+### Camera capture for member portrait + ID document photo
+
+**Request:** Replace the old file-picker-only ID photo upload with a live camera capture UI that takes two required photos — a front-camera member portrait and a back-camera ID document — when the club has the Operations Module enabled. Fold the "ID photo should be required" Trello card by flipping both photos from optional to required.
+
+**Changes:**
+- Migration `20260417130000_create_member_photos_bucket.sql` creates a second private Supabase storage bucket `member-photos` (5 MB cap; `image/jpeg|png|webp|heic`; service-role-only like `member-ids`).
+- `lib/supabase/storage.ts` gains `uploadMemberPhoto` / `deleteMemberPhoto` / `getMemberPhotoSignedUrl` (parallel to the `member-ids` trio).
+- New reusable component `components/club/photo-capture.tsx` — calls `navigator.mediaDevices.getUserMedia` with a `facingMode` hint, renders a live `<video>` preview, captures a frame to a canvas, and exports JPEG at quality 0.9 via `canvas.toBlob`. Preview + Retake + Confirm buttons. File-picker fallback uses `<input type="file" capture={facingMode}>` so mobile opens the native camera and desktop opens the file chooser. Cleanly stops the MediaStream on capture / cancel / unmount.
+- `createMember` now **server-verifies** `operations_module_enabled` from the `clubs` table (never trusts the client-supplied flag) and requires both `idPhotoPath` and `photoPath` when on. Orphaned uploads in both buckets are deleted on insert failure.
+- New `uploadMemberPhotoAction` server action mirrors `uploadMemberIdPhotoAction` — auth-guarded via `requireStaffForClub(clubId)`, 5 MB limit.
+- Form wires two `<PhotoCapture>` instances side by side inside the ops-enabled section: `facingMode="user"` for the portrait, `facingMode="environment"` for the ID document. Both required; Create button stays disabled until both files exist.
+- i18n: 11 new keys under `ops.memberForm.portraitLabel`, `ops.memberForm.idPhotoRequiredLabel`, and `ops.memberForm.photoCapture.*` (useCamera, uploadFile, capture, retake, cancel, requesting, cameraDenied, cameraUnsupported).
+
+**How it works:** Staff opens onboarding on an ops-enabled club. Below the identity fields, two capture tiles appear. "Take photo" triggers the browser camera permission; on grant, a live preview runs. "Capture" freezes a JPEG and shows it in-place with a Retake button. On denied / unsupported, the file-picker fallback kicks in. Submit uploads both files, writes `photo_path` + `id_photo_path` on the member row, and cleans up orphaned blobs if anything fails. Non-ops clubs see neither tile and the create flow remains the existing minimal path.
+
+**Key files:**
+- `supabase/migrations/20260417130000_create_member_photos_bucket.sql` — private portrait bucket
+- `lib/supabase/storage.ts` — `uploadMemberPhoto` / `deleteMemberPhoto` / `getMemberPhotoSignedUrl`
+- `components/club/photo-capture.tsx` — camera + file-fallback component
+- `app/[clubSlug]/staff/members/actions.ts` — `uploadMemberPhotoAction`, server-verified ops flag in `createMember`
+- `app/[clubSlug]/staff/members/member-creator.tsx` — two `<PhotoCapture>` instances in the ops section
+- `lib/i18n/dictionaries/{en,es}.json` — 11 `photoCapture.*` keys
+
+### Canvas signature pad (with Signotec swap-in roadmap)
+
+**Request:** Capture a member signature at onboarding. The target Windows staff workstation has Signotec ST-BE105-2-U100 with vendor drivers preinstalled, but the signoPAD-API/Web JS library is not yet vendored in this repo. Ship a cross-device canvas pad now; keep the Signotec integration as a drop-in UI swap later.
+
+**Changes:**
+- Migration `20260417140000_create_member_signatures_bucket.sql` creates a private Supabase storage bucket `member-signatures` (500 KB cap; `image/png` only).
+- `lib/supabase/storage.ts` gains `uploadMemberSignature` / `deleteMemberSignature` / `getMemberSignatureSignedUrl`.
+- New `components/club/signature-pad.tsx` — HTML canvas using pointer events, DPR-aware retina scaling (`canvas.width/height` = CSS size × `devicePixelRatio`), smooth stroke drawing (`lineCap: "round"`, `lineJoin: "round"`, stroke `#111827`). Clear + Save buttons; after Save, a preview image is shown with a Redo option. Same `{ value: File | null; onChange(file) }` contract as `PhotoCapture` so the form treats it identically.
+- New `uploadMemberSignatureAction` server action — auth-guarded, PNG-only, 500 KB cap (stricter than the photo buckets).
+- `createMember` extended with `signaturePath`; when the server-verified ops flag is on, signature is required; orphaned signature uploads are cleaned up on insert failure.
+- Form adds the pad full-width below the two photo captures inside the ops-enabled section.
+- i18n: 5 new keys — `signatureLabel`, `signature.confirm`, `signature.clear`, `signature.redo`, `signature.hint`.
+- Signotec swap-in plan recorded in local-only `docs/hardware/signotec-setup.md` (gitignored with the rest of `docs/`): download the signoPAD-API/Web JS library into `public/vendor/signotec/`, write a `signature-panel.tsx` that connects to the bridge's WebSocket on `ws://localhost:49494`, feature-detect the bridge and fall back to the canvas pad when unreachable. Storage pipeline / server action / DB column stay identical.
+
+**How it works:** Staff asks the member to sign with a finger, stylus, or mouse inside the blue-bordered canvas. Pointer events track the stroke and paint on the retina-scaled canvas. Save exports a PNG blob + File; the file is uploaded to the private signatures bucket and `signature_path` is written on the member row. Clear wipes the canvas; Redo (after save) lets the member resign. Works identically across touchscreens, Wacom / iPad stylus, and mice.
+
+**Key files:**
+- `supabase/migrations/20260417140000_create_member_signatures_bucket.sql` — signatures bucket
+- `lib/supabase/storage.ts` — signature upload / delete / signed-URL helpers
+- `components/club/signature-pad.tsx` — canvas pointer-event pad
+- `app/[clubSlug]/staff/members/actions.ts` — `uploadMemberSignatureAction`, signature enforcement in `createMember`
+- `app/[clubSlug]/staff/members/member-creator.tsx` — pad placed below the two photo captures
+- `lib/i18n/dictionaries/{en,es}.json` — 5 `signature.*` keys
+- (local, gitignored) `docs/hardware/signotec-setup.md` — Signotec swap roadmap
+
+### RFID chip capture via HID keyboard reader
+
+**Request:** Bind an RFID chip UID to each new member at onboarding when the club uses chips. Hardware confirmed: Sycreader SYC ID&IC USB Reader (vendor `0xFFFF`, product `0x0035`) — supports both 125 kHz EM4100 and 13.56 MHz Mifare at the same device; HID keyboard class; read-only (cannot write chips — the UID already burned into each card is what gets bound). Confirmed working on the developer Mac via a TextEdit smoke test; target Windows workstation has vendor drivers preinstalled.
+
+**Changes:**
+- No migration — the `rfid_uid` column and the per-club partial unique index `members_club_rfid_uid_uniq` already shipped in `20260417120000`.
+- New component `components/club/rfid-capture.tsx` — a blue dashed-border `<input>` that auto-focuses when the scan mode is active. The HID reader types the chip UID as plain characters followed by Enter; on Enter the component commits the UID and renders it in a green bar. "Scan a different chip" clears and refocuses. "Enter manually" toggles to a plain text input for typing the UID by hand (rare fallback).
+- `CreateMemberInput` gets an optional `rfidUid` field. `createMember` runs a pre-flight uniqueness check against `(club_id, rfid_uid)` and returns `This chip is already bound to member ${existing.member_code}` — a named, actionable error instead of a generic 23505. The insert retry loop also inspects `error.message.includes("rfid_uid")` on 23505 to distinguish member-code collisions (retry with bumped sequence) from chip collisions (surface immediately).
+- RFID is **optional** — the only onboarding input that is (photos + signature + DOB + names + phone + id_number + residency are all required when ops is on). Clubs that don't use chips leave the field empty.
+- i18n: 8 new keys under `ops.memberForm.rfidLabel` and `ops.memberForm.rfid.*` (prompt, hint, rescan, manualToggle, backToScan, manualPlaceholder, save).
+
+**How it works:** Staff plugs the Sycreader into the Windows PC (drivers already installed). The onboarding form's ops-enabled block renders the RFID capture tile. Staff clicks into the capture input, taps a chip on the reader, and the UID (typically 10 decimal digits) types in + auto-submits on Enter. The tile locks green. On submit, `createMember` pre-checks uniqueness per club, writes `rfid_uid` on the new member row, and relies on the partial unique index to backstop any race. No driver, no Web Serial, no helper app — the HID keyboard emulation **is** the integration surface.
+
+**Key files:**
+- `components/club/rfid-capture.tsx` — focused-input capture with manual-entry fallback
+- `app/[clubSlug]/staff/members/actions.ts` — `rfidUid` field on input, pre-flight + 23505 message mapping
+- `app/[clubSlug]/staff/members/member-creator.tsx` — `<RfidCapture>` in the ops section
+- `lib/i18n/dictionaries/{en,es}.json` — 8 `rfid.*` keys
+- Hardware detail: vendor `0xFFFF`, product `0x0035`, serial-visible under `ioreg -p IOUSB -l -w 0`. Staff workstation is Windows with vendor drivers preinstalled; the dev Mac showed a Keyboard Setup Assistant that `Cmd+Q` dismisses safely (device still functions).
+
+### Add-product form field labels (bug fix)
+
+**Request:** Jeff reported that the admin Add-product form's inputs had no labels — only placeholders. Once an admin entered values, the placeholder disappeared and the field became anonymous (screenshot showed typed values "0100" and "01000" in the two numeric fields with no way to tell which was price vs stock).
+
+**Changes:** `ProductNewForm` in `app/[clubSlug]/admin/products-manager.tsx` rewrapped each input/select in `<label className="block"><span className="text-[11px] text-gray-500">…</span><input className="mt-1 w-full …"/></label>` — matching the pattern already used in the same file's `ProductEditForm`. Five labels: Product name, Category, Unit, Unit price (€/g or €/ea, dynamic with unit selection), Stock on hand (g or units, dynamic). Placeholders removed where labels carry the same info.
+
+**How it works:** The add-product form now shows persistent labels above every field, dynamically reflecting the chosen unit (€/g vs €/ea, g vs units). Matches the edit form's existing style. `CategoryNewForm` in the same file has the same placeholder-only issue — filed on a separate Trello card (GeMo4Ph3), not bundled per the /fix-bug skill's "no refactor while fixing" rule.
+
+**Key files:**
+- `app/[clubSlug]/admin/products-manager.tsx` — `ProductNewForm` lines 708+ now label-wrapped
+
+## Bug-Fix Workflow
+
+### `/fix-bug` skill — disciplined single-bug flow
+
+**Request:** As ClubOS grows (three portals × ~dozen clubs × two languages × two themes × PWA + desktop × the Operations Module), bugs from Mikita and production need a consistent path rather than ad-hoc fixes. Encode the discipline (reproduce → root-cause → fix → staging → Mikita → main) into a skill.
+
+**Changes:**
+- `~/.claude/skills/fix-bug/SKILL.md` — the skill itself. Eight steps (intake → triage → reproduce → root-cause → plan → implement → verify → ship + QA) plus ten class playbooks (Layout, Functional-client, Functional-server, Data/RLS, i18n drift, Auth/cross-club, Performance, Integration, Env-specific, Security). Six hard rules: reproduce before fixing, name root cause in one sentence, every fix flows `develop` → staging → Mikita → `main` (no exceptions, not even P0), every fix lands in Trello `qa` with `@mikitatrayan`, no refactoring while fixing, `pnpm build` + `pnpm lint` clean on touched files. Composes with `superpowers:systematic-debugging` for non-trivial diagnostics.
+- `.claude/commands/fix-bug.md` (gitignored, local) — command wrapper so `/fix-bug` is discoverable from the repo alongside `/work` and `/clarify`.
+- Memory: `feedback_bug_workflow.md` + pointer in `MEMORY.md` — persists the "always staging first, no direct-to-main, stop-and-ask on unreproducibles" contract across sessions.
+
+**How it works:** `/fix-bug <input>` accepts three input shapes: a Trello card id / short URL, a free-text description (which creates a new `feedback` card), or a pasted Mikita comment / screenshot path. The skill runs the 8-step flow, invokes `superpowers:systematic-debugging` for anything non-trivial, maps the bug to one of the ten class playbooks for Read/Usual-suspects/Write guidance, and always ends with `trello move <id> qa` + a `@mikitatrayan` comment naming the root cause and the exact reproduction steps. Cross-cutting patterns spotted during a fix go to a separate follow-up card, never bundled into the current fix. P0 emergencies use a `git revert` PR into `main` as mitigation — still PR-reviewed, not a bypass — while the real fix goes through the normal staging flow.
+
+**Key files:**
+- `~/.claude/skills/fix-bug/SKILL.md` — the skill definition
+- `.claude/commands/fix-bug.md` — local command wrapper (gitignored with rest of `.claude/`)
+- `~/.claude/projects/-Users-jeffsmith-Projects-osocios-osocios-web-app/memory/feedback_bug_workflow.md` — persistent contract
+- `~/.claude/projects/-Users-jeffsmith-Projects-osocios-osocios-web-app/memory/MEMORY.md` — index pointer

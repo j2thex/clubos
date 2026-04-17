@@ -1,9 +1,29 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { hashPin, clearOwnerCookie } from "@/lib/auth";
+import { hashPin, clearOwnerCookie, requireOwnerForClub } from "@/lib/auth";
+import { logActivity } from "@/lib/activity-log";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import {
+  uploadMemberIdPhoto,
+  deleteMemberIdPhoto,
+  uploadMemberPhoto,
+  deleteMemberPhoto,
+  uploadMemberSignature,
+  deleteMemberSignature,
+} from "@/lib/supabase/storage";
+
+function ageFromDob(dob: string): number {
+  const [y, m, d] = dob.split("-").map(Number);
+  const today = new Date();
+  let age = today.getUTCFullYear() - y;
+  const before =
+    today.getUTCMonth() + 1 < m ||
+    (today.getUTCMonth() + 1 === m && today.getUTCDate() < d);
+  if (before) age -= 1;
+  return age;
+}
 
 export async function logoutOwner(clubSlug: string) {
   await clearOwnerCookie();
@@ -48,6 +68,34 @@ export async function toggleSpinEnabled(
   if (error) return { error: "Failed to update spin setting" };
 
   revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
+export async function toggleOperationsModule(
+  clubId: string,
+  enabled: boolean,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  try { await requireOwnerForClub(clubId); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ operations_module_enabled: enabled })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to update operations module" };
+
+  await logActivity({
+    clubId,
+    action: "operations_module_toggled",
+    details: enabled ? "enabled" : "disabled",
+  });
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/staff`, "layout");
   return { ok: true };
 }
 
@@ -1707,5 +1755,394 @@ export async function updateSpinDisplayOptions(
     .eq("id", clubId);
   if (error) return { error: "Failed to update spin options" };
   revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
+// ============================================================================
+// Admin member detail — view + edit onboarding fields
+// ============================================================================
+
+export type UpdateMemberIdentityInput = {
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string | null;
+  residencyStatus: "local" | "tourist" | null;
+  idNumber: string | null;
+  phone: string | null;
+  email: string | null;
+};
+
+async function authorizeMemberOwner(
+  memberId: string,
+): Promise<
+  | {
+      error: string;
+    }
+  | {
+      ok: true;
+      clubId: string;
+      memberCode: string;
+      oldIdPhotoPath: string | null;
+      oldPhotoPath: string | null;
+      oldSignaturePath: string | null;
+    }
+> {
+  const supabase = createAdminClient();
+  const { data: member } = await supabase
+    .from("members")
+    .select("club_id, member_code, id_photo_path, photo_path, signature_path")
+    .eq("id", memberId)
+    .single();
+
+  if (!member) return { error: "Member not found" };
+
+  try {
+    await requireOwnerForClub(member.club_id);
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+
+  return {
+    ok: true,
+    clubId: member.club_id,
+    memberCode: member.member_code,
+    oldIdPhotoPath: member.id_photo_path,
+    oldPhotoPath: member.photo_path,
+    oldSignaturePath: member.signature_path,
+  };
+}
+
+export async function updateMemberIdentity(
+  memberId: string,
+  clubSlug: string,
+  input: UpdateMemberIdentityInput,
+): Promise<{ error: string } | { ok: true }> {
+  const auth = await authorizeMemberOwner(memberId);
+  if ("error" in auth) return auth;
+
+  const firstName = input.firstName.trim();
+  const lastName = input.lastName.trim();
+  if (!firstName || !lastName) {
+    return { error: "First name and last name are required" };
+  }
+
+  if (input.dateOfBirth) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(input.dateOfBirth)) {
+      return { error: "Invalid date of birth" };
+    }
+    if (ageFromDob(input.dateOfBirth) < 18) {
+      return {
+        error:
+          "This club requires members to be 18 or older. The change was not saved.",
+      };
+    }
+  }
+
+  if (
+    input.residencyStatus !== null &&
+    input.residencyStatus !== "local" &&
+    input.residencyStatus !== "tourist"
+  ) {
+    return { error: "Residency must be local or tourist" };
+  }
+
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("members")
+    .update({
+      first_name: firstName,
+      last_name: lastName,
+      full_name: `${firstName} ${lastName}`,
+      date_of_birth: input.dateOfBirth || null,
+      residency_status: input.residencyStatus,
+      id_number: input.idNumber?.trim() || null,
+      phone: input.phone?.trim() || null,
+      email: input.email?.trim() || null,
+    })
+    .eq("id", memberId);
+
+  if (error) return { error: "Failed to update member" };
+
+  await logActivity({
+    clubId: auth.clubId,
+    action: "admin_member_identity_updated",
+    targetMemberCode: auth.memberCode,
+    details: `${firstName} ${lastName}`,
+  });
+
+  revalidatePath(`/${clubSlug}/admin`);
+  return { ok: true };
+}
+
+async function validateReplaceFormData(
+  formData: FormData,
+  maxBytes: number,
+  requiredMime?: string,
+): Promise<
+  | { error: string }
+  | { memberId: string; clubId: string; file: File }
+> {
+  const memberId = formData.get("memberId");
+  const clubId = formData.get("clubId");
+  if (typeof memberId !== "string" || !memberId) return { error: "Missing member" };
+  if (typeof clubId !== "string" || !clubId) return { error: "Missing club" };
+
+  try {
+    await requireOwnerForClub(clubId);
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "No file provided" };
+  }
+  if (file.size > maxBytes) {
+    return {
+      error: `File too large (max ${Math.round(maxBytes / 1024)} KB)`,
+    };
+  }
+  if (requiredMime && file.type !== requiredMime) {
+    return { error: `File must be ${requiredMime}` };
+  }
+
+  return { memberId, clubId, file };
+}
+
+export async function replaceMemberIdPhotoAction(
+  formData: FormData,
+): Promise<{ error: string } | { ok: true; path: string }> {
+  const validated = await validateReplaceFormData(formData, 5 * 1024 * 1024);
+  if ("error" in validated) return validated;
+
+  const supabase = createAdminClient();
+  const { data: member } = await supabase
+    .from("members")
+    .select("club_id, member_code, id_photo_path")
+    .eq("id", validated.memberId)
+    .single();
+  if (!member || member.club_id !== validated.clubId) return { error: "Member not found" };
+
+  const upload = await uploadMemberIdPhoto(validated.clubId, validated.file);
+  if ("error" in upload) return upload;
+
+  const { error: updateError } = await supabase
+    .from("members")
+    .update({ id_photo_path: upload.path })
+    .eq("id", validated.memberId);
+
+  if (updateError) {
+    await deleteMemberIdPhoto(upload.path).catch(() => {});
+    return { error: "Failed to update member" };
+  }
+
+  if (member.id_photo_path) {
+    await deleteMemberIdPhoto(member.id_photo_path).catch(() => {});
+  }
+
+  await logActivity({
+    clubId: validated.clubId,
+    action: "admin_member_idphoto_replaced",
+    targetMemberCode: member.member_code,
+  });
+
+  revalidatePath(`/${validated.clubId}/admin`);
+  return { ok: true, path: upload.path };
+}
+
+export async function replaceMemberPhotoAction(
+  formData: FormData,
+): Promise<{ error: string } | { ok: true; path: string }> {
+  const validated = await validateReplaceFormData(formData, 5 * 1024 * 1024);
+  if ("error" in validated) return validated;
+
+  const supabase = createAdminClient();
+  const { data: member } = await supabase
+    .from("members")
+    .select("club_id, member_code, photo_path")
+    .eq("id", validated.memberId)
+    .single();
+  if (!member || member.club_id !== validated.clubId) return { error: "Member not found" };
+
+  const upload = await uploadMemberPhoto(validated.clubId, validated.file);
+  if ("error" in upload) return upload;
+
+  const { error: updateError } = await supabase
+    .from("members")
+    .update({ photo_path: upload.path })
+    .eq("id", validated.memberId);
+
+  if (updateError) {
+    await deleteMemberPhoto(upload.path).catch(() => {});
+    return { error: "Failed to update member" };
+  }
+
+  if (member.photo_path) {
+    await deleteMemberPhoto(member.photo_path).catch(() => {});
+  }
+
+  await logActivity({
+    clubId: validated.clubId,
+    action: "admin_member_portrait_replaced",
+    targetMemberCode: member.member_code,
+  });
+
+  revalidatePath(`/${validated.clubId}/admin`);
+  return { ok: true, path: upload.path };
+}
+
+export async function replaceMemberSignatureAction(
+  formData: FormData,
+): Promise<{ error: string } | { ok: true; path: string }> {
+  const validated = await validateReplaceFormData(formData, 512 * 1024, "image/png");
+  if ("error" in validated) return validated;
+
+  const supabase = createAdminClient();
+  const { data: member } = await supabase
+    .from("members")
+    .select("club_id, member_code, signature_path")
+    .eq("id", validated.memberId)
+    .single();
+  if (!member || member.club_id !== validated.clubId) return { error: "Member not found" };
+
+  const upload = await uploadMemberSignature(validated.clubId, validated.file);
+  if ("error" in upload) return upload;
+
+  const { error: updateError } = await supabase
+    .from("members")
+    .update({ signature_path: upload.path })
+    .eq("id", validated.memberId);
+
+  if (updateError) {
+    await deleteMemberSignature(upload.path).catch(() => {});
+    return { error: "Failed to update member" };
+  }
+
+  if (member.signature_path) {
+    await deleteMemberSignature(member.signature_path).catch(() => {});
+  }
+
+  await logActivity({
+    clubId: validated.clubId,
+    action: "admin_member_signature_replaced",
+    targetMemberCode: member.member_code,
+  });
+
+  revalidatePath(`/${validated.clubId}/admin`);
+  return { ok: true, path: upload.path };
+}
+
+export async function rebindMemberRfid(
+  memberId: string,
+  clubSlug: string,
+  newUidRaw: string | null,
+): Promise<{ error: string } | { ok: true }> {
+  const auth = await authorizeMemberOwner(memberId);
+  if ("error" in auth) return auth;
+
+  const newUid = newUidRaw?.trim() || null;
+
+  const supabase = createAdminClient();
+
+  if (newUid) {
+    const { data: conflict } = await supabase
+      .from("members")
+      .select("id, member_code")
+      .eq("club_id", auth.clubId)
+      .eq("rfid_uid", newUid)
+      .neq("id", memberId)
+      .maybeSingle();
+    if (conflict) {
+      return {
+        error: `This chip is already bound to member ${conflict.member_code}`,
+      };
+    }
+  }
+
+  const { error } = await supabase
+    .from("members")
+    .update({ rfid_uid: newUid })
+    .eq("id", memberId);
+
+  if (error) {
+    if (error.code === "23505") {
+      return { error: "This chip is already bound to another member" };
+    }
+    return { error: "Failed to update chip binding" };
+  }
+
+  await logActivity({
+    clubId: auth.clubId,
+    action: newUid ? "admin_member_rfid_bound" : "admin_member_rfid_unbound",
+    targetMemberCode: auth.memberCode,
+    details: newUid ?? undefined,
+  });
+
+  revalidatePath(`/${clubSlug}/admin`);
+  return { ok: true };
+}
+
+export async function adminMarkIdVerified(
+  memberId: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const auth = await authorizeMemberOwner(memberId);
+  if ("error" in auth) return auth;
+
+  const supabase = createAdminClient();
+  const { data: current } = await supabase
+    .from("members")
+    .select("date_of_birth, id_photo_path")
+    .eq("id", memberId)
+    .single();
+
+  if (!current) return { error: "Member not found" };
+  if (!current.date_of_birth) return { error: "Set date of birth before verifying" };
+
+  const { error } = await supabase
+    .from("members")
+    .update({
+      id_verified_at: new Date().toISOString(),
+      id_verified_by: null,
+    })
+    .eq("id", memberId);
+
+  if (error) return { error: "Failed to mark verified" };
+
+  await logActivity({
+    clubId: auth.clubId,
+    action: "admin_id_verified",
+    targetMemberCode: auth.memberCode,
+    details: current.id_photo_path ? "with photo" : "no photo",
+  });
+
+  revalidatePath(`/${clubSlug}/admin`);
+  return { ok: true };
+}
+
+export async function adminRevokeIdVerification(
+  memberId: string,
+  clubSlug: string,
+  reason?: string,
+): Promise<{ error: string } | { ok: true }> {
+  const auth = await authorizeMemberOwner(memberId);
+  if ("error" in auth) return auth;
+
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("members")
+    .update({ id_verified_at: null, id_verified_by: null })
+    .eq("id", memberId);
+
+  if (error) return { error: "Failed to revoke verification" };
+
+  await logActivity({
+    clubId: auth.clubId,
+    action: "admin_id_verification_revoked",
+    targetMemberCode: auth.memberCode,
+    details: reason ?? null,
+  });
+
+  revalidatePath(`/${clubSlug}/admin`);
   return { ok: true };
 }

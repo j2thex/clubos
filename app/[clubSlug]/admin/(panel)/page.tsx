@@ -3,6 +3,12 @@ import { notFound } from "next/navigation";
 import { PeopleManager } from "../people-manager";
 import { SetupChecklist } from "./setup-checklist";
 import type { ReferrerSummary, MemberOption } from "../referral-tree";
+import type { MemberDetailRecord } from "@/components/club/member-detail";
+import {
+  getMemberIdPhotoSignedUrl,
+  getMemberPhotoSignedUrl,
+  getMemberSignatureSignedUrl,
+} from "@/lib/supabase/storage";
 
 export default async function PeoplePage({
   params,
@@ -38,7 +44,7 @@ export default async function PeoplePage({
     supabase
       .from("members")
       .select(
-        "id, member_code, full_name, spin_balance, is_staff, status, member_roles(name)"
+        "id, member_code, full_name, first_name, last_name, date_of_birth, residency_status, id_number, phone, email, spin_balance, is_staff, status, rfid_uid, id_verified_at, id_photo_path, photo_path, signature_path, member_roles(name)"
       )
       .eq("club_id", club.id)
       .eq("is_staff", false)
@@ -98,6 +104,37 @@ export default async function PeoplePage({
     status: m.status,
     roleName: extractRoleName(m),
   }));
+
+  // Build MemberDetail records (signed URLs generated server-side, 1 hour expiry).
+  const memberDetails: MemberDetailRecord[] = await Promise.all(
+    (members ?? []).map(async (m) => {
+      const [idPhotoUrl, photoUrl, signatureUrl] = await Promise.all([
+        m.id_photo_path ? getMemberIdPhotoSignedUrl(m.id_photo_path) : Promise.resolve(null),
+        m.photo_path ? getMemberPhotoSignedUrl(m.photo_path) : Promise.resolve(null),
+        m.signature_path ? getMemberSignatureSignedUrl(m.signature_path) : Promise.resolve(null),
+      ]);
+      return {
+        id: m.id,
+        member_code: m.member_code,
+        full_name: m.full_name,
+        first_name: m.first_name ?? null,
+        last_name: m.last_name ?? null,
+        date_of_birth: m.date_of_birth ?? null,
+        residency_status:
+          m.residency_status === "local" || m.residency_status === "tourist"
+            ? m.residency_status
+            : null,
+        id_number: m.id_number ?? null,
+        phone: m.phone ?? null,
+        email: m.email ?? null,
+        rfid_uid: m.rfid_uid ?? null,
+        id_verified_at: m.id_verified_at ?? null,
+        id_photo_url: idPhotoUrl,
+        photo_url: photoUrl,
+        signature_url: signatureUrl,
+      };
+    }),
+  );
 
   const staffList = (staff ?? []).map((s) => ({
     id: s.id,
@@ -191,6 +228,7 @@ export default async function PeoplePage({
         clubId={club.id}
         clubSlug={clubSlug}
         members={memberList}
+        memberDetails={memberDetails}
         staff={staffList}
         referralSources={referralList}
         referralTree={referrers}

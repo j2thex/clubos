@@ -30,7 +30,7 @@ export function ReferralTree({
   const [expandedCode, setExpandedCode] = useState<string | null>(null);
   const [showAddPremium, setShowAddPremium] = useState(false);
   const [newPremiumId, setNewPremiumId] = useState("");
-  const [newPremiumSpins, setNewPremiumSpins] = useState("2");
+  const [newPremiumSpins, setNewPremiumSpins] = useState("");
   const [isPending, startTransition] = useTransition();
 
   function handleTogglePremium(referrer: ReferrerSummary) {
@@ -60,7 +60,7 @@ export function ReferralTree({
         clubSlug,
       );
       setNewPremiumId("");
-      setNewPremiumSpins("2");
+      setNewPremiumSpins("");
       setShowAddPremium(false);
     });
   }
@@ -85,7 +85,7 @@ export function ReferralTree({
             <select
               value={newPremiumId}
               onChange={(e) => setNewPremiumId(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 bg-white"
             >
               <option value="">Select member...</option>
               {memberOptions.map((m) => (
@@ -102,7 +102,8 @@ export function ReferralTree({
                 max={100}
                 value={newPremiumSpins}
                 onChange={(e) => setNewPremiumSpins(e.target.value)}
-                className="w-20 rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                placeholder="2"
+                className="w-20 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
               />
             </div>
             <div className="flex gap-2">
@@ -193,7 +194,7 @@ export function ReferralTree({
                             value={referrer.referralRewardSpins}
                             onChange={(e) => handleUpdateSpins(referrer, parseInt(e.target.value) || 0)}
                             disabled={isPending}
-                            className="w-16 rounded border border-gray-200 px-2 py-1 text-xs"
+                            className="w-16 rounded border border-gray-200 px-2 py-1 text-xs text-gray-900"
                           />
                         </div>
                       )}

@@ -35,6 +35,116 @@ export async function uploadQuestProof(
   return uploadToBucket("quest-proofs", clubId, file);
 }
 
+// --- Member ID photos (bucket: member-ids, PRIVATE) ---
+// Stores a storage path, not a public URL. Reads go through getMemberIdPhotoSignedUrl.
+
+export async function uploadMemberIdPhoto(
+  clubId: string,
+  file: File,
+): Promise<{ path: string } | { error: string }> {
+  const supabase = createAdminClient();
+
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+  const filename = `${clubId}/${crypto.randomUUID()}.${ext}`;
+
+  const { error } = await supabase.storage
+    .from("member-ids")
+    .upload(filename, file, { contentType: file.type, upsert: false });
+
+  if (error) return { error: "Failed to upload ID photo" };
+
+  return { path: filename };
+}
+
+export async function deleteMemberIdPhoto(path: string): Promise<void> {
+  const supabase = createAdminClient();
+  await supabase.storage.from("member-ids").remove([path]);
+}
+
+export async function getMemberIdPhotoSignedUrl(
+  path: string,
+  expiresInSeconds = 3600,
+): Promise<string | null> {
+  const supabase = createAdminClient();
+  const { data } = await supabase.storage
+    .from("member-ids")
+    .createSignedUrl(path, expiresInSeconds);
+  return data?.signedUrl ?? null;
+}
+
+// --- Member portrait photos (bucket: member-photos, PRIVATE) ---
+// Head-and-shoulders photo captured at onboarding. Mirrors the member-ids pattern.
+
+export async function uploadMemberPhoto(
+  clubId: string,
+  file: File,
+): Promise<{ path: string } | { error: string }> {
+  const supabase = createAdminClient();
+
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+  const filename = `${clubId}/${crypto.randomUUID()}.${ext}`;
+
+  const { error } = await supabase.storage
+    .from("member-photos")
+    .upload(filename, file, { contentType: file.type, upsert: false });
+
+  if (error) return { error: "Failed to upload member photo" };
+
+  return { path: filename };
+}
+
+export async function deleteMemberPhoto(path: string): Promise<void> {
+  const supabase = createAdminClient();
+  await supabase.storage.from("member-photos").remove([path]);
+}
+
+export async function getMemberPhotoSignedUrl(
+  path: string,
+  expiresInSeconds = 3600,
+): Promise<string | null> {
+  const supabase = createAdminClient();
+  const { data } = await supabase.storage
+    .from("member-photos")
+    .createSignedUrl(path, expiresInSeconds);
+  return data?.signedUrl ?? null;
+}
+
+// --- Member signatures (bucket: member-signatures, PRIVATE) ---
+// PNG exports from the canvas signature pad (or Signotec signoPAD later).
+
+export async function uploadMemberSignature(
+  clubId: string,
+  file: File,
+): Promise<{ path: string } | { error: string }> {
+  const supabase = createAdminClient();
+
+  const filename = `${clubId}/${crypto.randomUUID()}.png`;
+
+  const { error } = await supabase.storage
+    .from("member-signatures")
+    .upload(filename, file, { contentType: "image/png", upsert: false });
+
+  if (error) return { error: "Failed to upload signature" };
+
+  return { path: filename };
+}
+
+export async function deleteMemberSignature(path: string): Promise<void> {
+  const supabase = createAdminClient();
+  await supabase.storage.from("member-signatures").remove([path]);
+}
+
+export async function getMemberSignatureSignedUrl(
+  path: string,
+  expiresInSeconds = 3600,
+): Promise<string | null> {
+  const supabase = createAdminClient();
+  const { data } = await supabase.storage
+    .from("member-signatures")
+    .createSignedUrl(path, expiresInSeconds);
+  return data?.signedUrl ?? null;
+}
+
 // --- Feedback screenshots (bucket: feedback) ---
 
 export async function uploadFeedbackImage(

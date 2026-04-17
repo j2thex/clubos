@@ -55,6 +55,7 @@ export type Database = {
           spin_display_decimals: number;
           spin_cost: number;
           preregistration_enabled: boolean;
+          operations_module_enabled: boolean;
           created_at: string;
         };
         Insert: {
@@ -77,6 +78,7 @@ export type Database = {
           spin_display_decimals?: number;
           spin_cost?: number;
           preregistration_enabled?: boolean;
+          operations_module_enabled?: boolean;
           created_at?: string;
         };
         Update: {
@@ -99,6 +101,7 @@ export type Database = {
           spin_display_decimals?: number;
           spin_cost?: number;
           preregistration_enabled?: boolean;
+          operations_module_enabled?: boolean;
           created_at?: string;
         };
         Relationships: [
@@ -167,6 +170,234 @@ export type Database = {
           },
         ];
       };
+      product_categories: {
+        Row: {
+          id: string;
+          club_id: string;
+          name: string;
+          name_es: string | null;
+          display_order: number;
+          archived: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          club_id: string;
+          name: string;
+          name_es?: string | null;
+          display_order?: number;
+          archived?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          club_id?: string;
+          name?: string;
+          name_es?: string | null;
+          display_order?: number;
+          archived?: boolean;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "product_categories_club_id_fkey";
+            columns: ["club_id"];
+            isOneToOne: false;
+            referencedRelation: "clubs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      products: {
+        Row: {
+          id: string;
+          club_id: string;
+          category_id: string | null;
+          name: string;
+          name_es: string | null;
+          description: string | null;
+          description_es: string | null;
+          image_url: string | null;
+          unit: "gram" | "piece";
+          unit_price: number;
+          stock_on_hand: number;
+          active: boolean;
+          display_order: number;
+          archived: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          club_id: string;
+          category_id?: string | null;
+          name: string;
+          name_es?: string | null;
+          description?: string | null;
+          description_es?: string | null;
+          image_url?: string | null;
+          unit?: "gram" | "piece";
+          unit_price?: number;
+          stock_on_hand?: number;
+          active?: boolean;
+          display_order?: number;
+          archived?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          club_id?: string;
+          category_id?: string | null;
+          name?: string;
+          name_es?: string | null;
+          description?: string | null;
+          description_es?: string | null;
+          image_url?: string | null;
+          unit?: "gram" | "piece";
+          unit_price?: number;
+          stock_on_hand?: number;
+          active?: boolean;
+          display_order?: number;
+          archived?: boolean;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "products_club_id_fkey";
+            columns: ["club_id"];
+            isOneToOne: false;
+            referencedRelation: "clubs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "products_category_id_fkey";
+            columns: ["category_id"];
+            isOneToOne: false;
+            referencedRelation: "product_categories";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      product_transactions: {
+        Row: {
+          id: string;
+          club_id: string;
+          product_id: string;
+          member_id: string;
+          fulfilled_by: string | null;
+          quantity: number;
+          unit_price_at_sale: number;
+          total_price: number;
+          weight_source: "manual" | "scale";
+          scale_raw_reading: string | null;
+          voided_at: string | null;
+          voided_by: string | null;
+          void_reason: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          club_id: string;
+          product_id: string;
+          member_id: string;
+          fulfilled_by?: string | null;
+          quantity: number;
+          unit_price_at_sale: number;
+          total_price: number;
+          weight_source?: "manual" | "scale";
+          scale_raw_reading?: string | null;
+          voided_at?: string | null;
+          voided_by?: string | null;
+          void_reason?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          club_id?: string;
+          product_id?: string;
+          member_id?: string;
+          fulfilled_by?: string | null;
+          quantity?: number;
+          unit_price_at_sale?: number;
+          total_price?: number;
+          weight_source?: "manual" | "scale";
+          scale_raw_reading?: string | null;
+          voided_at?: string | null;
+          voided_by?: string | null;
+          void_reason?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "product_transactions_club_id_fkey";
+            columns: ["club_id"];
+            isOneToOne: false;
+            referencedRelation: "clubs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "product_transactions_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "product_transactions_member_id_fkey";
+            columns: ["member_id"];
+            isOneToOne: false;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      club_entries: {
+        Row: {
+          id: string;
+          club_id: string;
+          member_id: string;
+          checked_in_at: string;
+          checked_in_by: string | null;
+          checked_out_at: string | null;
+          checked_out_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          club_id: string;
+          member_id: string;
+          checked_in_at?: string;
+          checked_in_by?: string | null;
+          checked_out_at?: string | null;
+          checked_out_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          club_id?: string;
+          member_id?: string;
+          checked_in_at?: string;
+          checked_in_by?: string | null;
+          checked_out_at?: string | null;
+          checked_out_by?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "club_entries_club_id_fkey";
+            columns: ["club_id"];
+            isOneToOne: false;
+            referencedRelation: "clubs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "club_entries_member_id_fkey";
+            columns: ["member_id"];
+            isOneToOne: false;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       email_campaigns: {
         Row: {
           id: string;
@@ -213,10 +444,15 @@ export type Database = {
           id: string;
           club_id: string;
           member_code: string;
-          pin_hash: string;
+          pin_hash: string | null;
           full_name: string | null;
+          first_name: string | null;
+          last_name: string | null;
           email: string | null;
           email_opt_out: boolean;
+          phone: string | null;
+          id_number: string | null;
+          residency_status: string | null;
           role_id: string | null;
           spin_balance: number;
           status: string;
@@ -225,17 +461,30 @@ export type Database = {
           referred_by: string | null;
           is_premium_referrer: boolean;
           is_system_member: boolean;
+          is_staff: boolean;
           referral_reward_spins: number;
+          date_of_birth: string | null;
+          id_verified_at: string | null;
+          id_verified_by: string | null;
+          id_photo_path: string | null;
+          photo_path: string | null;
+          signature_path: string | null;
+          rfid_uid: string | null;
           created_at: string;
         };
         Insert: {
           id?: string;
           club_id: string;
           member_code: string;
-          pin_hash: string;
+          pin_hash?: string | null;
           full_name?: string | null;
+          first_name?: string | null;
+          last_name?: string | null;
           email?: string | null;
           email_opt_out?: boolean;
+          phone?: string | null;
+          id_number?: string | null;
+          residency_status?: string | null;
           role_id?: string | null;
           spin_balance?: number;
           status?: string;
@@ -244,17 +493,30 @@ export type Database = {
           referred_by?: string | null;
           is_premium_referrer?: boolean;
           is_system_member?: boolean;
+          is_staff?: boolean;
           referral_reward_spins?: number;
+          date_of_birth?: string | null;
+          id_verified_at?: string | null;
+          id_verified_by?: string | null;
+          id_photo_path?: string | null;
+          photo_path?: string | null;
+          signature_path?: string | null;
+          rfid_uid?: string | null;
           created_at?: string;
         };
         Update: {
           id?: string;
           club_id?: string;
           member_code?: string;
-          pin_hash?: string;
+          pin_hash?: string | null;
           full_name?: string | null;
+          first_name?: string | null;
+          last_name?: string | null;
           email?: string | null;
           email_opt_out?: boolean;
+          phone?: string | null;
+          id_number?: string | null;
+          residency_status?: string | null;
           role_id?: string | null;
           spin_balance?: number;
           status?: string;
@@ -263,7 +525,15 @@ export type Database = {
           referred_by?: string | null;
           is_premium_referrer?: boolean;
           is_system_member?: boolean;
+          is_staff?: boolean;
           referral_reward_spins?: number;
+          date_of_birth?: string | null;
+          id_verified_at?: string | null;
+          id_verified_by?: string | null;
+          id_photo_path?: string | null;
+          photo_path?: string | null;
+          signature_path?: string | null;
+          rfid_uid?: string | null;
           created_at?: string;
         };
         Relationships: [

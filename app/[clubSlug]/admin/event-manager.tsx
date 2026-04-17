@@ -82,7 +82,7 @@ export function EventManager({
   const [newEndTime, setNewEndTime] = useState("");
   const [newPrice, setNewPrice] = useState("");
   const [newLink, setNewLink] = useState("");
-  const [newReward, setNewReward] = useState("0");
+  const [newReward, setNewReward] = useState("");
   const [newIsPublic, setNewIsPublic] = useState(false);
   const [newImage, setNewImage] = useState<File | null>(null);
   const [newImageUrl, setNewImageUrl] = useState<string>("");
@@ -316,7 +316,7 @@ export function EventManager({
         setNewEndTime("");
         setNewPrice("");
         setNewLink("");
-        setNewReward("1");
+        setNewReward("");
         setNewIsPublic(false);
         setNewIcon(null);
         setNewImage(null);
@@ -938,8 +938,8 @@ export function EventManager({
                 step={spinStep}
                 value={newReward}
                 onChange={(e) => setNewReward(e.target.value)}
-                required
-                className="w-16 rounded-lg border border-gray-300 px-2 py-1.5 text-sm text-gray-900 text-center focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                placeholder="0"
+                className="w-16 rounded-lg border border-gray-300 px-2 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 text-center focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
               />
             </div>
           </div>

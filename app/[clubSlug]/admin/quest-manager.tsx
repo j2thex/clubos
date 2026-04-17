@@ -109,7 +109,7 @@ export function QuestManager({
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [newLink, setNewLink] = useState("");
-  const [newReward, setNewReward] = useState("0");
+  const [newReward, setNewReward] = useState("");
   const [newMultiUse, setNewMultiUse] = useState(false);
   const [newIsPublic, setNewIsPublic] = useState(false);
   const [newImage, setNewImage] = useState<File | null>(null);
@@ -417,7 +417,7 @@ export function QuestManager({
         setNewTitle("");
         setNewDesc("");
         setNewLink("");
-        setNewReward("0");
+        setNewReward("");
         setNewMultiUse(false);
         setNewIsPublic(false);
         setNewQuestType("default");
@@ -1073,8 +1073,8 @@ export function QuestManager({
                 step={spinStep}
                 value={newReward}
                 onChange={(e) => setNewReward(e.target.value)}
-                required
-                className="w-16 rounded-lg border border-gray-300 px-2 py-1.5 text-sm text-gray-900 text-center focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                placeholder="0"
+                className="w-16 rounded-lg border border-gray-300 px-2 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 text-center focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
               />
             </div>
           </div>

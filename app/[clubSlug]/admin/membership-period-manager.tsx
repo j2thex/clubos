@@ -20,7 +20,7 @@ export function MembershipPeriodManager({
   clubSlug: string;
 }) {
   const [newName, setNewName] = useState("");
-  const [newDuration, setNewDuration] = useState("12");
+  const [newDuration, setNewDuration] = useState("");
   const [newPrice, setNewPrice] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -31,12 +31,13 @@ export function MembershipPeriodManager({
 
     startTransition(async () => {
       const priceVal = newPrice.trim() ? Number(newPrice) : null;
-      const result = await addMembershipPeriod(clubId, newName, Number(newDuration), clubSlug, priceVal);
+      const durationVal = Number(newDuration) || 12;
+      const result = await addMembershipPeriod(clubId, newName, durationVal, clubSlug, priceVal);
       if ("error" in result) {
         setError(result.error);
       } else {
         setNewName("");
-        setNewDuration("12");
+        setNewDuration("");
         setNewPrice("");
       }
     });
@@ -101,7 +102,8 @@ export function MembershipPeriodManager({
               max="120"
               value={newDuration}
               onChange={(e) => setNewDuration(e.target.value)}
-              className="w-16 rounded-lg border border-gray-300 px-2 py-1.5 text-sm text-gray-900 text-center focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+              placeholder="12"
+              className="w-16 rounded-lg border border-gray-300 px-2 py-1.5 text-sm text-gray-900 text-center placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
             />
             <span className="text-xs text-gray-400">mo</span>
           </div>
