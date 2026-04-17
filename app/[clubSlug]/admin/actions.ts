@@ -1476,6 +1476,7 @@ export async function toggleOffer(
         club_id: clubId,
         offer_id: offerId,
         display_order: nextOrder,
+        is_public: true,
       });
       if (error) return { error: "Failed to enable offer" };
     }
