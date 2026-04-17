@@ -182,14 +182,14 @@ function CategoryRow({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Name (EN)"
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
         />
         <input
           type="text"
           value={nameEs}
           onChange={(e) => setNameEs(e.target.value)}
           placeholder="Nombre (ES)"
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
         />
         <div className="flex gap-2">
           <button
@@ -275,14 +275,14 @@ function CategoryNewForm({
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="New category (EN)"
-        className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+        className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
       />
       <input
         type="text"
         value={nameEs}
         onChange={(e) => setNameEs(e.target.value)}
         placeholder="(ES, optional)"
-        className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+        className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
       />
       <button
         type="submit"
@@ -474,14 +474,14 @@ function ProductEditForm({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Name (EN)"
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
         />
         <input
           type="text"
           value={nameEs}
           onChange={(e) => setNameEs(e.target.value)}
           placeholder="Nombre (ES)"
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
         />
       </div>
       <textarea
@@ -489,20 +489,20 @@ function ProductEditForm({
         onChange={(e) => setDescription(e.target.value)}
         placeholder="Description (EN)"
         rows={2}
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
       />
       <textarea
         value={descriptionEs}
         onChange={(e) => setDescriptionEs(e.target.value)}
         placeholder="Descripción (ES)"
         rows={2}
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
       />
       <div className="grid grid-cols-2 gap-2">
         <select
           value={categoryId}
           onChange={(e) => setCategoryId(e.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white"
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white"
         >
           <option value="">No category</option>
           {categories
@@ -516,7 +516,7 @@ function ProductEditForm({
         <select
           value={unit}
           onChange={(e) => setUnit(e.target.value as "gram" | "piece")}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white"
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white"
         >
           <option value="gram">Sold by gram</option>
           <option value="piece">Sold by piece</option>
@@ -533,7 +533,7 @@ function ProductEditForm({
             min="0"
             value={unitPrice}
             onChange={(e) => setUnitPrice(Number(e.target.value))}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
           />
         </label>
         <label className="block">
@@ -546,7 +546,7 @@ function ProductEditForm({
             min="0"
             value={stockOnHand}
             onChange={(e) => setStockOnHand(Number(e.target.value))}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
           />
         </label>
       </div>
@@ -603,14 +603,14 @@ function ProductEditForm({
             value={adjustValue}
             onChange={(e) => setAdjustValue(e.target.value)}
             placeholder="±g (e.g. -3.5 or +50)"
-            className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
           />
           <input
             type="text"
             value={adjustReason}
             onChange={(e) => setAdjustReason(e.target.value)}
             placeholder="Reason (optional)"
-            className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
           />
           <button
             type="button"
@@ -713,7 +713,7 @@ function ProductNewForm({
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
           autoFocus
         />
       </label>
@@ -723,7 +723,7 @@ function ProductNewForm({
           <select
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white"
           >
             <option value="">No category</option>
             {categories.map((c) => (
@@ -738,7 +738,7 @@ function ProductNewForm({
           <select
             value={unit}
             onChange={(e) => setUnit(e.target.value as "gram" | "piece")}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white"
           >
             <option value="gram">Sold by gram</option>
             <option value="piece">Sold by piece</option>
@@ -757,7 +757,7 @@ function ProductNewForm({
             value={unitPrice}
             onChange={(e) => setUnitPrice(e.target.value)}
             placeholder="0.00"
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
           />
         </label>
         <label className="block">
@@ -771,7 +771,7 @@ function ProductNewForm({
             value={stockOnHand}
             onChange={(e) => setStockOnHand(e.target.value)}
             placeholder="0"
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
           />
         </label>
       </div>
