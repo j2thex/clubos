@@ -6,6 +6,7 @@ import { useLanguage } from "@/lib/i18n/provider";
 
 interface AdminNavProps {
   clubSlug: string;
+  opsEnabled?: boolean;
 }
 
 const navItems = [
@@ -26,6 +27,17 @@ const navItems = [
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+      </svg>
+    ),
+  },
+  {
+    labelKey: "nav.products",
+    path: "/products",
+    activePaths: ["/products"],
+    opsOnly: true,
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
       </svg>
     ),
   },
@@ -52,7 +64,7 @@ const navItems = [
   },
 ];
 
-export function AdminNav({ clubSlug }: AdminNavProps) {
+export function AdminNav({ clubSlug, opsEnabled = false }: AdminNavProps) {
   const pathname = usePathname();
   const { t } = useLanguage();
   const basePath = `/${clubSlug}/admin`;
@@ -61,10 +73,15 @@ export function AdminNav({ clubSlug }: AdminNavProps) {
     return null;
   }
 
+  const visibleItems = navItems.filter((item) => {
+    if ("opsOnly" in item && item.opsOnly && !opsEnabled) return false;
+    return true;
+  });
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.08)]">
       <div className="mx-auto flex max-w-md items-center justify-around pb-2 pt-2">
-        {navItems.map((item) => {
+        {visibleItems.map((item) => {
           const href = `${basePath}${item.path}`;
           const isActive =
             item.path === ""
