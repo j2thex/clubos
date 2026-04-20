@@ -31,6 +31,7 @@ async function getClubs(): Promise<DiscoverClub[]> {
       .from("clubs")
       .select("id, name, slug, latitude, longitude, address, city, country, tags, club_branding(logo_url, primary_color)")
       .eq("active", true).eq("approved", true).eq("visibility", "public")
+      .is("archived_at", null)
       .order("created_at", { ascending: false });
 
     return (data ?? []).map((c) => {

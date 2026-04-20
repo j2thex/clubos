@@ -15,6 +15,7 @@ import { TagManager } from "../../tag-manager";
 import { LocationManager } from "../../location-manager";
 import { WorkingHoursManager } from "../../working-hours-manager";
 import { CollapsibleSection } from "@/components/collapsible-section";
+import { PanicButton } from "@/components/club/panic-button";
 import Link from "next/link";
 import { EmailCampaignManager } from "../../email-campaign-manager";
 import { getCampaignHistory, getEmailStats } from "../../email-actions";
@@ -32,7 +33,7 @@ export default async function SettingsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, login_mode, invite_only, invite_mode, hide_member_login, preregistration_enabled, auto_registration, tags, visibility, requested_visibility, telegram_bot_token, telegram_chat_id, notification_secret, latitude, longitude, address, city, country, spin_enabled, working_hours, spin_display_decimals, spin_cost, telegram_bot_enabled, telegram_bot_referral_name, telegram_bot_registration_price, telegram_bot_welcome_message, telegram_bot_keywords, telegram_bot_age_restricted, operations_module_enabled")
+    .select("id, login_mode, invite_only, invite_mode, hide_member_login, preregistration_enabled, auto_registration, tags, visibility, requested_visibility, telegram_bot_token, telegram_chat_id, notification_secret, latitude, longitude, address, city, country, spin_enabled, working_hours, spin_display_decimals, spin_cost, telegram_bot_enabled, telegram_bot_referral_name, telegram_bot_registration_price, telegram_bot_welcome_message, telegram_bot_keywords, telegram_bot_age_restricted, operations_module_enabled, locked_at, locked_reason")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -124,6 +125,21 @@ export default async function SettingsPage({
           clubSlug={clubSlug}
           initialHours={club.working_hours as Record<string, { open: string; close: string } | null> | null}
         />
+      </CollapsibleSection>
+      <CollapsibleSection title="Club Lockdown">
+        <div className="bg-white rounded-2xl shadow-lg p-5 space-y-3">
+          <p className="text-xs text-gray-600">
+            Pressing <strong>Panic</strong> blocks all member access to this club. Staff and admin routes continue to work. Use it when you need to cut off the member portal immediately — physical incident, emergency evacuation, hostile visitor. Reversible at any time.
+          </p>
+          {club.locked_at && (
+            <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-800">
+              <p className="font-semibold">🔒 Currently locked</p>
+              <p className="mt-0.5">Since {new Date(club.locked_at).toLocaleString()}</p>
+              {club.locked_reason && <p className="mt-0.5 italic">"{club.locked_reason}"</p>}
+            </div>
+          )}
+          <PanicButton clubSlug={clubSlug} locked={Boolean(club.locked_at)} />
+        </div>
       </CollapsibleSection>
       <CollapsibleSection title="QR Codes">
         <QrCodesManager clubSlug={clubSlug} />
