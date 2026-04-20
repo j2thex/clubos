@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useMemo } from "react";
+import { useState, useTransition, useMemo, useEffect } from "react";
 import { rsvpEvent, cancelRsvp } from "./actions";
 import { useLanguage } from "@/lib/i18n/provider";
 import { getDateLocale, localized } from "@/lib/i18n";
@@ -44,7 +44,7 @@ export function EventsClient({
   clubSlug: string;
 }) {
   const { t, locale } = useLanguage();
-  const [view, setView] = useState<View>("list");
+  const [view, setView] = useState<View>("calendar");
   const [showPast, setShowPast] = useState(false);
   const [rsvpState, setRsvpState] = useState<Record<string, boolean>>(
     Object.fromEntries(events.map((e) => [e.id, e.hasRsvp])),
@@ -70,6 +70,24 @@ export function EventsClient({
     () => new Set(events.filter((e) => e.checkedIn).map((e) => e.id)),
     [events],
   );
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem("clubos-events-view-member");
+    if (stored === "list" || stored === "calendar") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setView(stored);
+    }
+    if (stored !== "list") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedDate((curr) => curr ?? getInitialSelectedDate());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function changeView(next: View) {
+    setView(next);
+    window.localStorage.setItem("clubos-events-view-member", next);
+  }
 
   function handleRsvp(eventId: string) {
     if (checkedInSet.has(eventId)) return;
@@ -241,7 +259,7 @@ export function EventsClient({
       >
         <button
           type="button"
-          onClick={() => setView("list")}
+          onClick={() => changeView("list")}
           className={`min-h-[40px] rounded-[calc(var(--m-radius-sm)-1px)] px-4 text-[12px] font-semibold transition-colors ${
             view === "list" ? "m-btn-ink" : "text-[color:var(--m-ink-muted)]"
           }`}
@@ -251,7 +269,7 @@ export function EventsClient({
         <button
           type="button"
           onClick={() => {
-            setView("calendar");
+            changeView("calendar");
             setSelectedDate(getInitialSelectedDate());
           }}
           className={`min-h-[40px] rounded-[calc(var(--m-radius-sm)-1px)] px-4 text-[12px] font-semibold transition-colors ${
