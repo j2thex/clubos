@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 import { LanguageSwitcher } from "@/lib/i18n/switcher";
+import { PanicButton } from "@/components/club/panic-button";
 
 export default async function StaffConsoleLayout({
   children,
@@ -16,7 +17,7 @@ export default async function StaffConsoleLayout({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name")
+    .select("id, name, locked_at")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -48,7 +49,7 @@ export default async function StaffConsoleLayout({
               <p className="mt-1 text-gray-400 text-sm">{club.name}</p>
             </div>
           </div>
-          <div className="flex gap-3 mt-4">
+          <div className="flex flex-wrap gap-3 mt-4 items-center">
             <a
               href={`/${clubSlug}`}
               target="_blank"
@@ -66,6 +67,13 @@ export default async function StaffConsoleLayout({
               {t(locale, "staff.publicPage")}
             </a>
             <LanguageSwitcher variant="light" />
+            <div className="ml-auto">
+              <PanicButton
+                clubSlug={clubSlug}
+                locked={Boolean(club.locked_at)}
+                variant="compact"
+              />
+            </div>
           </div>
         </div>
       </div>

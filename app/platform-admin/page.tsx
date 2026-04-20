@@ -59,7 +59,7 @@ export default async function PlatformAdminPage({
     // All clubs with branding
     supabase
       .from("clubs")
-      .select("id, name, slug, active, approved, visibility, requested_visibility, claimed, invite_only, created_at, club_branding(logo_url, primary_color), club_owner_clubs(club_owners(email))")
+      .select("id, name, slug, active, approved, visibility, requested_visibility, claimed, invite_only, archived_at, locked_at, created_at, club_branding(logo_url, primary_color), club_owner_clubs(club_owners(email))")
       .order("created_at", { ascending: false }),
     // Recent activity
     supabase
@@ -125,7 +125,7 @@ export default async function PlatformAdminPage({
     clubNameMap.set(c.id, c.name);
   }
 
-  const clubList = (allClubs ?? []).map((c) => {
+  const mappedClubs = (allClubs ?? []).map((c) => {
     const branding = Array.isArray(c.club_branding) ? c.club_branding[0] : c.club_branding;
     // Extract owner email from nested join: club_owner_clubs -> club_owners
     let ownerEmail: string | null = null;
@@ -152,6 +152,8 @@ export default async function PlatformAdminPage({
       requestedVisibility: (c.requested_visibility ?? "public") as "public" | "unlisted" | "private",
       claimed: c.claimed,
       inviteOnly: c.invite_only,
+      archivedAt: c.archived_at ?? null,
+      lockedAt: c.locked_at ?? null,
       logoUrl: branding?.logo_url ?? null,
       primaryColor: branding?.primary_color ?? "#6b7280",
       createdAt: c.created_at,
@@ -162,6 +164,9 @@ export default async function PlatformAdminPage({
       ownerEmail,
     };
   });
+
+  const clubList = mappedClubs.filter((c) => !c.archivedAt);
+  const archivedClubList = mappedClubs.filter((c) => c.archivedAt);
 
   const activityFeed = (recentActivity ?? []).map((a) => ({
     id: a.id,
@@ -207,6 +212,7 @@ export default async function PlatformAdminPage({
         clubsAllTime: totalClubs ?? 0,
       }}
       clubs={clubList}
+      archivedClubs={archivedClubList}
       activityFeed={activityFeed}
       inviteRequests={inviteList}
       unapprovedOffers={(unapprovedOffers ?? []).map((o) => ({

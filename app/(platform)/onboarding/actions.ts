@@ -6,6 +6,7 @@ import { hashPassword, createOwnerToken, setOwnerCookie } from "@/lib/auth";
 import { generateSlug } from "@/lib/utils";
 import { RESERVED_SLUGS } from "@/lib/reserved-slugs";
 import { parseMapsUrl, reverseGeocode } from "@/lib/google-geocoding";
+import { DEFAULT_WORKING_HOURS } from "@/lib/working-hours";
 import { redirect } from "next/navigation";
 
 const DEFAULT_SOCIAL_TELEGRAM = "https://t.me/osociosbot";
@@ -104,6 +105,7 @@ export async function createOrgAndClub(formData: FormData): Promise<CreateOrgAnd
       timezone,
       currency,
       tags,
+      working_hours: DEFAULT_WORKING_HOURS,
     })
     .select()
     .single();

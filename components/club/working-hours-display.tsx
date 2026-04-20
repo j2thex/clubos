@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { type Locale } from "@/lib/i18n";
+import { isCurrentlyOpen, timeToMinutes, type DayKey } from "@/lib/working-hours";
 
 type WorkingHours = Record<string, { open: string; close: string } | null>;
 
@@ -60,9 +61,16 @@ function formatTime(time: string): string {
   return `${hour - 12}:${minute} PM`;
 }
 
-function timeToMinutes(time: string): number {
-  const [h, m] = time.split(":");
-  return parseInt(h, 10) * 60 + parseInt(m ?? "0", 10);
+function entryCoversMinute(
+  entry: { open: string; close: string } | null,
+  currentMinutes: number,
+): boolean {
+  if (!entry) return false;
+  const o = timeToMinutes(entry.open);
+  const c = timeToMinutes(entry.close);
+  if (c > o) return currentMinutes >= o && currentMinutes < c;
+  if (c < o) return currentMinutes >= o || currentMinutes < c;
+  return true; // 24h
 }
 
 function getNextOpenInfo(
@@ -99,36 +107,43 @@ export function WorkingHoursDisplay({
   const currentTime = getCurrentTime(timezone);
   const currentMinutes = timeToMinutes(currentTime);
 
-  const isOpen =
-    todayEntry != null &&
-    currentMinutes >= timeToMinutes(todayEntry.open) &&
-    currentMinutes < timeToMinutes(todayEntry.close);
+  const isOpen = isCurrentlyOpen(workingHours, todayKey as DayKey, currentMinutes);
+
+  // Closing time shown depends on which window is active: today's own
+  // hours, or yesterday's overnight tail (e.g. Sat 22:00 → Sun 02:00 when
+  // "today" is Sunday and it's 01:30).
+  const todayIdxForYest = DAYS.indexOf(todayKey as (typeof DAYS)[number]);
+  const yesterdayKey =
+    todayIdxForYest === -1 ? null : DAYS[(todayIdxForYest + 6) % 7];
+  const yesterdayEntry = yesterdayKey ? workingHours[yesterdayKey] ?? null : null;
+  const activeCloseEntry = isOpen
+    ? entryCoversMinute(todayEntry, currentMinutes)
+      ? todayEntry
+      : yesterdayEntry
+    : null;
 
   // Build summary text
   let statusText: string;
-  if (isOpen && todayEntry) {
+  if (isOpen && activeCloseEntry) {
+    const closeLabel = formatTime(activeCloseEntry.close);
     statusText =
       locale === "es"
-        ? `Abierto · Cierra ${formatTime(todayEntry.close)}`
-        : `Open · Closes ${formatTime(todayEntry.close)}`;
+        ? `Abierto · Cierra ${closeLabel}`
+        : `Open · Closes ${closeLabel}`;
+  } else if (todayEntry && currentMinutes < timeToMinutes(todayEntry.open)) {
+    statusText =
+      locale === "es"
+        ? `Cerrado · Abre ${formatTime(todayEntry.open)}`
+        : `Closed · Opens ${formatTime(todayEntry.open)}`;
   } else {
-    // Closed — find next opening
-    // If today still has hours ahead (not yet open), show today's open time
-    if (todayEntry && currentMinutes < timeToMinutes(todayEntry.open)) {
-      statusText =
-        locale === "es"
-          ? `Cerrado · Abre ${formatTime(todayEntry.open)}`
-          : `Closed · Opens ${formatTime(todayEntry.open)}`;
-    } else {
-      const nextOpen = getNextOpenInfo(workingHours, todayKey, locale);
-      statusText = nextOpen
-        ? locale === "es"
-          ? `Cerrado · Abre ${nextOpen}`
-          : `Closed · Opens ${nextOpen}`
-        : locale === "es"
-          ? "Cerrado"
-          : "Closed";
-    }
+    const nextOpen = getNextOpenInfo(workingHours, todayKey, locale);
+    statusText = nextOpen
+      ? locale === "es"
+        ? `Cerrado · Abre ${nextOpen}`
+        : `Closed · Opens ${nextOpen}`
+      : locale === "es"
+        ? "Cerrado"
+        : "Closed";
   }
 
   return (

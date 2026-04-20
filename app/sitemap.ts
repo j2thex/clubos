@@ -52,7 +52,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .from("clubs")
       .select("slug, updated_at")
       .eq("active", true)
-      .eq("approved", true);
+      .eq("approved", true)
+      .is("archived_at", null);
 
     if (clubs) {
       clubPages = clubs.map((club) => ({

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { createUnclaimedClub, createClubFromGoogleMaps, approveCustomOffer, approveClub, rejectClub, setClubVisibility, loginAsClubAdmin, setupStandardContent, bulkImportQuests } from "./actions";
+import { createUnclaimedClub, createClubFromGoogleMaps, approveCustomOffer, approveClub, rejectClub, setClubVisibility, loginAsClubAdmin, setupStandardContent, bulkImportQuests, archiveClub, unarchiveClub, renameClubSlug } from "./actions";
 
 type ClubVisibility = "public" | "unlisted" | "private";
 
@@ -14,6 +14,8 @@ interface ClubInfo {
   requestedVisibility: ClubVisibility;
   claimed: boolean;
   inviteOnly: boolean;
+  archivedAt: string | null;
+  lockedAt: string | null;
   logoUrl: string | null;
   primaryColor: string;
   createdAt: string;
@@ -203,6 +205,7 @@ export function PlatformAdminClient({
   stats,
   growth,
   clubs,
+  archivedClubs,
   activityFeed,
   inviteRequests,
   unapprovedOffers,
@@ -211,6 +214,7 @@ export function PlatformAdminClient({
   stats: Stats;
   growth: Growth;
   clubs: ClubInfo[];
+  archivedClubs: ClubInfo[];
   activityFeed: ActivityEntry[];
   inviteRequests: InviteRequest[];
   unapprovedOffers: UnapprovedOffer[];
@@ -232,6 +236,39 @@ export function PlatformAdminClient({
   const [csvText, setCsvText] = useState("");
   const [parsedQuests, setParsedQuests] = useState<ParsedQuest[] | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
+  const [renameClubId, setRenameClubId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+
+  function handleArchive(id: string, name: string) {
+    if (!window.confirm(`Archive "${name}"? Members will lose access and the club will be hidden from discover.`)) return;
+    startTransition(async () => {
+      const res = await archiveClub(id, secret);
+      if ("error" in res) setError(res.error);
+    });
+  }
+
+  function handleUnarchive(id: string) {
+    startTransition(async () => {
+      const res = await unarchiveClub(id, secret);
+      if ("error" in res) setError(res.error);
+    });
+  }
+
+  function handleRenameSlug(id: string) {
+    const v = renameValue.trim().toLowerCase();
+    if (!v) return;
+    startTransition(async () => {
+      const res = await renameClubSlug(id, v, secret);
+      if ("error" in res) setError(res.error);
+      else {
+        setSuccess(`Slug renamed to "${res.slug}"`);
+        setRenameClubId(null);
+        setRenameValue("");
+        setTimeout(() => setSuccess(null), 3000);
+      }
+    });
+  }
 
   function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -471,13 +508,21 @@ export function PlatformAdminClient({
                           </button>
                         ) : (
                           <button
-                            onClick={() => startTransition(async () => { await rejectClub(c.id); })}
+                            onClick={() => startTransition(async () => { await rejectClub(c.id, secret); })}
                             disabled={isPending}
                             className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50 transition-colors"
                           >
                             Take Offline
                           </button>
                         )}
+                        <button
+                          onClick={() => handleArchive(c.id, c.name)}
+                          disabled={isPending}
+                          className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50 transition-colors"
+                          title="Archive club (hides from discover, blocks member access)"
+                        >
+                          Archive
+                        </button>
                         <button
                           onClick={() => startTransition(async () => {
                             const res = await loginAsClubAdmin(c.id, c.slug, secret);
@@ -535,6 +580,120 @@ export function PlatformAdminClient({
               </tbody>
             </table>
           </div>
+        </div>
+
+        {/* Archived Clubs (collapsible) */}
+        <div className="bg-landing-surface rounded-xl border border-landing-border-subtle overflow-hidden">
+          <button
+            onClick={() => setShowArchived(!showArchived)}
+            className="w-full px-5 py-3 flex items-center justify-between text-sm font-medium text-landing-text-secondary hover:text-landing-text transition-colors"
+          >
+            <span>🗄️ Archived Clubs ({archivedClubs.length})</span>
+            <svg
+              className={`w-4 h-4 transition-transform ${showArchived ? "rotate-180" : ""}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          {showArchived && (
+            <div className="border-t border-landing-border-subtle">
+              {archivedClubs.length === 0 ? (
+                <p className="px-5 py-6 text-xs text-landing-text-tertiary text-center">No archived clubs.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-landing-text-tertiary text-xs uppercase tracking-wide">
+                        <th className="text-left px-5 py-2">Club</th>
+                        <th className="text-left px-3 py-2">Owner</th>
+                        <th className="text-right px-3 py-2">Members</th>
+                        <th className="text-right px-3 py-2">Archived</th>
+                        <th className="text-right px-3 py-2">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-landing-border-subtle">
+                      {archivedClubs.map((c) => (
+                        <tr key={c.id} className="hover:bg-white/[0.02] transition-colors">
+                          <td className="px-5 py-3">
+                            <div className="flex items-center gap-3">
+                              {c.logoUrl ? (
+                                <img src={c.logoUrl} alt="" className="w-8 h-8 rounded-lg object-cover opacity-60" />
+                              ) : (
+                                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white opacity-60" style={{ backgroundColor: c.primaryColor }}>
+                                  {c.name[0]}
+                                </div>
+                              )}
+                              <div>
+                                <span className="font-medium text-landing-text">{c.name}</span>
+                                <p className="text-xs text-landing-text-tertiary font-mono">{c.slug}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-3 py-3">
+                            {c.ownerEmail ? (
+                              <span className="text-xs text-gray-500 font-mono truncate block max-w-[180px]">{c.ownerEmail}</span>
+                            ) : (
+                              <span className="text-xs text-landing-text-tertiary">—</span>
+                            )}
+                          </td>
+                          <td className="text-right px-3 py-3 font-mono text-landing-text">{c.members}</td>
+                          <td className="text-right px-3 py-3 text-xs text-landing-text-tertiary">
+                            {c.archivedAt ? timeAgo(c.archivedAt) : "—"}
+                          </td>
+                          <td className="text-right px-3 py-3">
+                            <div className="flex gap-1 justify-end items-center">
+                              {renameClubId === c.id ? (
+                                <span className="flex items-center gap-1">
+                                  <input
+                                    value={renameValue}
+                                    onChange={(e) => setRenameValue(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                                    placeholder={c.slug}
+                                    className="text-[10px] bg-landing-surface-hover text-landing-text rounded px-1 py-0.5 border border-landing-border font-mono w-32"
+                                    autoFocus
+                                  />
+                                  <button
+                                    onClick={() => handleRenameSlug(c.id)}
+                                    disabled={isPending || !renameValue.trim()}
+                                    className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-50"
+                                  >
+                                    Save
+                                  </button>
+                                  <button
+                                    onClick={() => { setRenameClubId(null); setRenameValue(""); }}
+                                    className="text-[10px] text-landing-text-tertiary hover:text-landing-text-secondary"
+                                  >
+                                    ✕
+                                  </button>
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={() => { setRenameClubId(c.id); setRenameValue(c.slug); }}
+                                  className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors"
+                                >
+                                  Rename Slug
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleUnarchive(c.id)}
+                                disabled={isPending}
+                                className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 disabled:opacity-50 transition-colors"
+                              >
+                                Unarchive
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Recent Invite Requests */}

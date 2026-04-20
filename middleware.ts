@@ -64,6 +64,42 @@ export async function middleware(request: NextRequest) {
 
   const clubPath = "/" + segments.slice(1).join("/");
 
+  // Let the archived/locked landing pages render without further checks
+  if (clubPath === "/archived" || clubPath === "/locked") {
+    return applyLocale(request, NextResponse.next());
+  }
+
+  // Archived / locked gate: a single DB lookup per club-scoped request.
+  // Archived → everyone sees the archived page. Locked → members see the
+  // lockdown page, staff and admin routes continue normally so whoever
+  // pressed the button can un-press it.
+  const { data: clubState } = await supabaseAdmin
+    .from("clubs")
+    .select("archived_at, locked_at")
+    .eq("slug", clubSlug)
+    .maybeSingle();
+
+  if (clubState?.archived_at) {
+    return applyLocale(
+      request,
+      NextResponse.rewrite(new URL(`/${clubSlug}/archived`, request.url)),
+    );
+  }
+
+  if (
+    clubState?.locked_at &&
+    !clubPath.startsWith("/admin") &&
+    !clubPath.startsWith("/staff") &&
+    !clubPath.startsWith("/public") &&
+    clubPath !== "/manifest.webmanifest" &&
+    !clubPath.startsWith("/icon.png")
+  ) {
+    return applyLocale(
+      request,
+      NextResponse.rewrite(new URL(`/${clubSlug}/locked`, request.url)),
+    );
+  }
+
   // Admin routes — require owner token (except admin login)
   if (clubPath.startsWith("/admin")) {
     if (clubPath === "/admin/login" || clubPath === "/admin/reset-password") {

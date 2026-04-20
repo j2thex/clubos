@@ -3,6 +3,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hashPassword, createOwnerToken, setOwnerCookie } from "@/lib/auth";
 import { generateSlug } from "@/lib/utils";
+import { DEFAULT_WORKING_HOURS } from "@/lib/working-hours";
 import { revalidatePath } from "next/cache";
 
 /** Resolve shortened Google Maps URLs (maps.app.goo.gl) to full URLs */
@@ -105,6 +106,7 @@ export async function createClubFromGoogleMaps(
       latitude: parsed.lat,
       longitude: parsed.lng,
       claimed: false,
+      working_hours: DEFAULT_WORKING_HOURS,
     })
     .select("id")
     .single();
@@ -190,6 +192,7 @@ export async function createUnclaimedClub(
       slug,
       claimed: false,
       invite_only: true,
+      working_hours: DEFAULT_WORKING_HOURS,
     })
     .select("id")
     .single();
@@ -300,7 +303,12 @@ export async function setClubVisibility(
 
 export async function rejectClub(
   clubId: string,
+  secret: string,
 ): Promise<{ error: string } | { ok: true }> {
+  if (secret !== process.env.PLATFORM_ADMIN_SECRET) {
+    return { error: "Unauthorized" };
+  }
+
   const supabase = createAdminClient();
 
   const { error } = await supabase
@@ -312,6 +320,98 @@ export async function rejectClub(
 
   revalidatePath("/platform-admin");
   return { ok: true };
+}
+
+export async function archiveClub(
+  clubId: string,
+  secret: string,
+): Promise<{ error: string } | { ok: true }> {
+  if (secret !== process.env.PLATFORM_ADMIN_SECRET) {
+    return { error: "Unauthorized" };
+  }
+
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ archived_at: new Date().toISOString() })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to archive club" };
+
+  revalidatePath("/platform-admin");
+  revalidatePath("/discover");
+  return { ok: true };
+}
+
+export async function unarchiveClub(
+  clubId: string,
+  secret: string,
+): Promise<{ error: string } | { ok: true }> {
+  if (secret !== process.env.PLATFORM_ADMIN_SECRET) {
+    return { error: "Unauthorized" };
+  }
+
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ archived_at: null })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to unarchive club" };
+
+  revalidatePath("/platform-admin");
+  revalidatePath("/discover");
+  return { ok: true };
+}
+
+export async function renameClubSlug(
+  clubId: string,
+  newSlug: string,
+  secret: string,
+): Promise<{ error: string } | { ok: true; slug: string }> {
+  if (secret !== process.env.PLATFORM_ADMIN_SECRET) {
+    return { error: "Unauthorized" };
+  }
+
+  const trimmed = newSlug.trim().toLowerCase();
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(trimmed)) {
+    return { error: "Slug must be lowercase letters, numbers, and dashes only" };
+  }
+
+  const supabase = createAdminClient();
+
+  // Require club to be archived — slug rename is unsafe on a live club
+  const { data: club, error: fetchError } = await supabase
+    .from("clubs")
+    .select("slug, archived_at")
+    .eq("id", clubId)
+    .maybeSingle();
+
+  if (fetchError || !club) return { error: "Club not found" };
+  if (!club.archived_at) return { error: "Club must be archived before renaming its slug" };
+
+  if (club.slug === trimmed) return { ok: true, slug: trimmed };
+
+  // Check uniqueness
+  const { data: existing } = await supabase
+    .from("clubs")
+    .select("id")
+    .eq("slug", trimmed)
+    .maybeSingle();
+
+  if (existing) return { error: "Slug already taken" };
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ slug: trimmed })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to rename slug" };
+
+  revalidatePath("/platform-admin");
+  return { ok: true, slug: trimmed };
 }
 
 export async function setupStandardContent(
