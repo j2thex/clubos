@@ -901,6 +901,7 @@
   "landing.directoryTitle": "Explore clubs on osocios",
   "landing.directorySubtitle": "{count} clubs already building their community",
   "landing.directoryViewClub": "View public profile →",
+  "landing.directoryViewAll": "View all {count} clubs →",
 
   "landing.footerTagline": "The operating system for private clubs",
 

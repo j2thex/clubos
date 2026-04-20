@@ -12,11 +12,14 @@ interface ClubInfo {
 export function ClubDirectory({
   t,
   clubs,
+  totalClubs,
 }: {
   t: (key: string, params?: Record<string, string | number>) => string;
   clubs: ClubInfo[];
+  totalClubs?: number;
 }) {
   if (clubs.length === 0) return null;
+  const hasMore = typeof totalClubs === "number" && totalClubs > clubs.length;
 
   return (
     <section className="landing-dark px-6 py-20 sm:py-28 border-t border-landing-border-subtle">
@@ -74,6 +77,17 @@ export function ClubDirectory({
             </ScrollReveal>
           ))}
         </div>
+
+        {hasMore && (
+          <div className="mt-10 text-center">
+            <Link
+              href="/discover#clubs"
+              className="inline-block text-sm opacity-80 hover:opacity-100 transition-opacity underline underline-offset-4"
+            >
+              {t("landing.directoryViewAll", { count: totalClubs })}
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   );

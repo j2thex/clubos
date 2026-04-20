@@ -203,7 +203,8 @@ export default async function Home() {
 
   // Curated data for sections
   const upcomingEvents = events.slice(0, 8);
-  const clubsForDirectory = clubs.slice(0, 12).map((c) => ({
+  const DIRECTORY_LIMIT = 24;
+  const clubsForDirectory = clubs.slice(0, DIRECTORY_LIMIT).map((c) => ({
     name: c.name,
     slug: c.slug,
     logo_url: c.logo_url,
@@ -464,7 +465,7 @@ export default async function Home() {
       </section>
 
       {/* Clubs */}
-      <ClubDirectory t={tr} clubs={clubsForDirectory} />
+      <ClubDirectory t={tr} clubs={clubsForDirectory} totalClubs={clubs.length} />
 
       {/* Membership Deals */}
       {deals.length > 0 && (
