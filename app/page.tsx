@@ -67,6 +67,8 @@ async function getEvents(activeClubIds: string[]): Promise<DiscoverEvent[]> {
       .eq("active", true).eq("is_public", true)
       .in("club_id", activeClubIds)
       .gte("date", today)
+      .not("image_url", "is", null)
+      .neq("image_url", "")
       .order("date", { ascending: true })
       .limit(50);
 
