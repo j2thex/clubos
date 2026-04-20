@@ -220,6 +220,7 @@ export type Database = {
           image_url: string | null;
           unit: "gram" | "piece";
           unit_price: number;
+          cost_price: number;
           stock_on_hand: number;
           active: boolean;
           display_order: number;
@@ -237,6 +238,7 @@ export type Database = {
           image_url?: string | null;
           unit?: "gram" | "piece";
           unit_price?: number;
+          cost_price?: number;
           stock_on_hand?: number;
           active?: boolean;
           display_order?: number;
@@ -254,6 +256,7 @@ export type Database = {
           image_url?: string | null;
           unit?: "gram" | "piece";
           unit_price?: number;
+          cost_price?: number;
           stock_on_hand?: number;
           active?: boolean;
           display_order?: number;

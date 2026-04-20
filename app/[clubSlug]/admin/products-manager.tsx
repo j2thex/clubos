@@ -31,6 +31,7 @@ export type Product = {
   imageUrl: string | null;
   unit: "gram" | "piece";
   unitPrice: number;
+  costPrice: number;
   stockOnHand: number;
   archived: boolean;
   displayOrder: number;
@@ -415,6 +416,7 @@ function ProductEditForm({
   const [categoryId, setCategoryId] = useState(product.categoryId ?? "");
   const [unit, setUnit] = useState<"gram" | "piece">(product.unit);
   const [unitPrice, setUnitPrice] = useState(product.unitPrice);
+  const [costPrice, setCostPrice] = useState(product.costPrice);
   const [stockOnHand, setStockOnHand] = useState(product.stockOnHand);
   const [imageUrl, setImageUrl] = useState<string | null>(product.imageUrl);
   const [uploading, setUploading] = useState(false);
@@ -447,6 +449,7 @@ function ProductEditForm({
         imageUrl,
         unit,
         unitPrice,
+        costPrice,
         stockOnHand,
       });
       if ("error" in r) toast.error(r.error);
@@ -536,7 +539,7 @@ function ProductEditForm({
           <option value="piece">Sold by piece</option>
         </select>
       </div>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         <label className="block">
           <span className="text-[11px] text-gray-500">
             Unit price (€/{unit === "gram" ? "g" : "ea"})
@@ -547,6 +550,19 @@ function ProductEditForm({
             min="0"
             value={unitPrice}
             onChange={(e) => setUnitPrice(Number(e.target.value))}
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
+          />
+        </label>
+        <label className="block">
+          <span className="text-[11px] text-gray-500">
+            Cost price (€/{unit === "gram" ? "g" : "ea"})
+          </span>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            value={costPrice}
+            onChange={(e) => setCostPrice(Number(e.target.value))}
             className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
           />
         </label>
@@ -680,6 +696,7 @@ function ProductNewForm({
   const [categoryId, setCategoryId] = useState("");
   const [unit, setUnit] = useState<"gram" | "piece">("gram");
   const [unitPrice, setUnitPrice] = useState("");
+  const [costPrice, setCostPrice] = useState("");
   const [stockOnHand, setStockOnHand] = useState("");
   const [isPending, startTransition] = useTransition();
 
@@ -692,6 +709,7 @@ function ProductNewForm({
         name,
         unit,
         unitPrice: Number(unitPrice) || 0,
+        costPrice: Number(costPrice) || 0,
         stockOnHand: Number(stockOnHand) || 0,
       });
       if ("error" in r) toast.error(r.error);
@@ -701,6 +719,7 @@ function ProductNewForm({
         setCategoryId("");
         setUnit("gram");
         setUnitPrice("");
+        setCostPrice("");
         setStockOnHand("");
         setOpen(false);
       }
@@ -759,7 +778,7 @@ function ProductNewForm({
           </select>
         </label>
       </div>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         <label className="block">
           <span className="text-[11px] text-gray-500">
             Unit price (€/{unit === "gram" ? "g" : "ea"})
@@ -770,6 +789,20 @@ function ProductNewForm({
             min="0"
             value={unitPrice}
             onChange={(e) => setUnitPrice(e.target.value)}
+            placeholder="0.00"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
+          />
+        </label>
+        <label className="block">
+          <span className="text-[11px] text-gray-500">
+            Cost price (€/{unit === "gram" ? "g" : "ea"})
+          </span>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            value={costPrice}
+            onChange={(e) => setCostPrice(e.target.value)}
             placeholder="0.00"
             className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
           />

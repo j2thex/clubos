@@ -157,6 +157,7 @@ type ProductInput = {
   imageUrl?: string | null;
   unit: "gram" | "piece";
   unitPrice: number;
+  costPrice?: number;
   stockOnHand: number;
 };
 
@@ -165,6 +166,11 @@ function validateProductInput(input: ProductInput): string | null {
   if (input.unit !== "gram" && input.unit !== "piece") return "Invalid unit";
   if (!Number.isFinite(input.unitPrice) || input.unitPrice < 0)
     return "Unit price must be ≥ 0";
+  if (
+    input.costPrice !== undefined &&
+    (!Number.isFinite(input.costPrice) || input.costPrice < 0)
+  )
+    return "Cost price must be ≥ 0";
   if (!Number.isFinite(input.stockOnHand) || input.stockOnHand < 0)
     return "Stock must be ≥ 0";
   return null;
@@ -202,6 +208,7 @@ export async function addProduct(
     image_url: input.imageUrl || null,
     unit: input.unit,
     unit_price: input.unitPrice,
+    cost_price: input.costPrice ?? 0,
     stock_on_hand: input.stockOnHand,
     display_order: (last?.display_order ?? -1) + 1,
   });
@@ -257,6 +264,7 @@ export async function updateProduct(
       image_url: input.imageUrl || null,
       unit: input.unit,
       unit_price: input.unitPrice,
+      cost_price: input.costPrice ?? 0,
       stock_on_hand: input.stockOnHand,
     })
     .eq("id", productId);
