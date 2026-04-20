@@ -66,7 +66,27 @@ export function TelegramConfigManager({
               placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 font-mono placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
             />
-            <p className="text-[10px] text-gray-400 mt-1">{t("admin.telegramBotTokenHint")}</p>
+            <p className="text-[10px] text-gray-400 mt-1">
+              {(() => {
+                const hint = t("admin.telegramBotTokenHint");
+                const parts = hint.split("@BotFather");
+                if (parts.length === 1) return hint;
+                return (
+                  <>
+                    {parts[0]}
+                    <a
+                      href="https://t.me/BotFather"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline hover:text-gray-600"
+                    >
+                      @BotFather
+                    </a>
+                    {parts.slice(1).join("@BotFather")}
+                  </>
+                );
+              })()}
+            </p>
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.telegramChatId")}</label>

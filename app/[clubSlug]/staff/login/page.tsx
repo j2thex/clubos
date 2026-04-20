@@ -96,7 +96,7 @@ export default function StaffLoginPage() {
                 maxLength={4}
                 inputMode="numeric"
                 pattern="[0-9]{4}"
-                autoComplete="off"
+                autoComplete="one-time-code"
                 placeholder={t("login.pinPlaceholder")}
                 className="block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-lg tracking-[0.5em] text-gray-900 placeholder:tracking-[0.5em] placeholder:text-gray-400 transition focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400"
               />

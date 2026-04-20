@@ -269,21 +269,27 @@ function CategoryNewForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="px-5 py-3 flex gap-2 items-center bg-gray-50">
-      <input
-        type="text"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="New category (EN)"
-        className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
-      />
-      <input
-        type="text"
-        value={nameEs}
-        onChange={(e) => setNameEs(e.target.value)}
-        placeholder="(ES, optional)"
-        className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
-      />
+    <form onSubmit={handleSubmit} className="px-5 py-3 flex gap-2 items-end bg-gray-50">
+      <label className="block flex-1">
+        <span className="text-[11px] text-gray-500 mb-1 block">Name (EN)</span>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="New category"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
+        />
+      </label>
+      <label className="block flex-1">
+        <span className="text-[11px] text-gray-500 mb-1 block">Nombre (ES, optional)</span>
+        <input
+          type="text"
+          value={nameEs}
+          onChange={(e) => setNameEs(e.target.value)}
+          placeholder="Nombre"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
+        />
+      </label>
       <button
         type="submit"
         disabled={isPending || !name.trim()}
@@ -469,35 +475,43 @@ function ProductEditForm({
   return (
     <div className="px-5 py-4 space-y-3 bg-gray-50">
       <div className="grid grid-cols-2 gap-2">
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Name (EN)"
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
-        />
-        <input
-          type="text"
-          value={nameEs}
-          onChange={(e) => setNameEs(e.target.value)}
-          placeholder="Nombre (ES)"
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
-        />
+        <label className="block">
+          <span className="text-[11px] text-gray-500 mb-1 block">Name (EN)</span>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
+          />
+        </label>
+        <label className="block">
+          <span className="text-[11px] text-gray-500 mb-1 block">Nombre (ES)</span>
+          <input
+            type="text"
+            value={nameEs}
+            onChange={(e) => setNameEs(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
+          />
+        </label>
       </div>
-      <textarea
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        placeholder="Description (EN)"
-        rows={2}
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
-      />
-      <textarea
-        value={descriptionEs}
-        onChange={(e) => setDescriptionEs(e.target.value)}
-        placeholder="Descripción (ES)"
-        rows={2}
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
-      />
+      <label className="block">
+        <span className="text-[11px] text-gray-500 mb-1 block">Description (EN)</span>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={2}
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
+        />
+      </label>
+      <label className="block">
+        <span className="text-[11px] text-gray-500 mb-1 block">Descripción (ES)</span>
+        <textarea
+          value={descriptionEs}
+          onChange={(e) => setDescriptionEs(e.target.value)}
+          rows={2}
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
+        />
+      </label>
       <div className="grid grid-cols-2 gap-2">
         <select
           value={categoryId}
