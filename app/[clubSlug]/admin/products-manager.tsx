@@ -31,6 +31,7 @@ export type Product = {
   imageUrl: string | null;
   unit: "gram" | "piece";
   unitPrice: number;
+  costPrice: number;
   stockOnHand: number;
   archived: boolean;
   displayOrder: number;
@@ -269,21 +270,27 @@ function CategoryNewForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="px-5 py-3 flex gap-2 items-center bg-gray-50">
-      <input
-        type="text"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="New category (EN)"
-        className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
-      />
-      <input
-        type="text"
-        value={nameEs}
-        onChange={(e) => setNameEs(e.target.value)}
-        placeholder="(ES, optional)"
-        className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
-      />
+    <form onSubmit={handleSubmit} className="px-5 py-3 flex gap-2 items-end bg-gray-50">
+      <label className="block flex-1">
+        <span className="text-[11px] text-gray-500 mb-1 block">Name (EN)</span>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="New category"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
+        />
+      </label>
+      <label className="block flex-1">
+        <span className="text-[11px] text-gray-500 mb-1 block">Nombre (ES, optional)</span>
+        <input
+          type="text"
+          value={nameEs}
+          onChange={(e) => setNameEs(e.target.value)}
+          placeholder="Nombre"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
+        />
+      </label>
       <button
         type="submit"
         disabled={isPending || !name.trim()}
@@ -409,6 +416,7 @@ function ProductEditForm({
   const [categoryId, setCategoryId] = useState(product.categoryId ?? "");
   const [unit, setUnit] = useState<"gram" | "piece">(product.unit);
   const [unitPrice, setUnitPrice] = useState(product.unitPrice);
+  const [costPrice, setCostPrice] = useState(product.costPrice);
   const [stockOnHand, setStockOnHand] = useState(product.stockOnHand);
   const [imageUrl, setImageUrl] = useState<string | null>(product.imageUrl);
   const [uploading, setUploading] = useState(false);
@@ -441,6 +449,7 @@ function ProductEditForm({
         imageUrl,
         unit,
         unitPrice,
+        costPrice,
         stockOnHand,
       });
       if ("error" in r) toast.error(r.error);
@@ -469,35 +478,43 @@ function ProductEditForm({
   return (
     <div className="px-5 py-4 space-y-3 bg-gray-50">
       <div className="grid grid-cols-2 gap-2">
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Name (EN)"
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
-        />
-        <input
-          type="text"
-          value={nameEs}
-          onChange={(e) => setNameEs(e.target.value)}
-          placeholder="Nombre (ES)"
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
-        />
+        <label className="block">
+          <span className="text-[11px] text-gray-500 mb-1 block">Name (EN)</span>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
+          />
+        </label>
+        <label className="block">
+          <span className="text-[11px] text-gray-500 mb-1 block">Nombre (ES)</span>
+          <input
+            type="text"
+            value={nameEs}
+            onChange={(e) => setNameEs(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
+          />
+        </label>
       </div>
-      <textarea
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        placeholder="Description (EN)"
-        rows={2}
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
-      />
-      <textarea
-        value={descriptionEs}
-        onChange={(e) => setDescriptionEs(e.target.value)}
-        placeholder="Descripción (ES)"
-        rows={2}
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
-      />
+      <label className="block">
+        <span className="text-[11px] text-gray-500 mb-1 block">Description (EN)</span>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={2}
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
+        />
+      </label>
+      <label className="block">
+        <span className="text-[11px] text-gray-500 mb-1 block">Descripción (ES)</span>
+        <textarea
+          value={descriptionEs}
+          onChange={(e) => setDescriptionEs(e.target.value)}
+          rows={2}
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
+        />
+      </label>
       <div className="grid grid-cols-2 gap-2">
         <select
           value={categoryId}
@@ -522,7 +539,7 @@ function ProductEditForm({
           <option value="piece">Sold by piece</option>
         </select>
       </div>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         <label className="block">
           <span className="text-[11px] text-gray-500">
             Unit price (€/{unit === "gram" ? "g" : "ea"})
@@ -533,6 +550,19 @@ function ProductEditForm({
             min="0"
             value={unitPrice}
             onChange={(e) => setUnitPrice(Number(e.target.value))}
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
+          />
+        </label>
+        <label className="block">
+          <span className="text-[11px] text-gray-500">
+            Cost price (€/{unit === "gram" ? "g" : "ea"})
+          </span>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            value={costPrice}
+            onChange={(e) => setCostPrice(Number(e.target.value))}
             className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
           />
         </label>
@@ -666,6 +696,7 @@ function ProductNewForm({
   const [categoryId, setCategoryId] = useState("");
   const [unit, setUnit] = useState<"gram" | "piece">("gram");
   const [unitPrice, setUnitPrice] = useState("");
+  const [costPrice, setCostPrice] = useState("");
   const [stockOnHand, setStockOnHand] = useState("");
   const [isPending, startTransition] = useTransition();
 
@@ -678,6 +709,7 @@ function ProductNewForm({
         name,
         unit,
         unitPrice: Number(unitPrice) || 0,
+        costPrice: Number(costPrice) || 0,
         stockOnHand: Number(stockOnHand) || 0,
       });
       if ("error" in r) toast.error(r.error);
@@ -687,6 +719,7 @@ function ProductNewForm({
         setCategoryId("");
         setUnit("gram");
         setUnitPrice("");
+        setCostPrice("");
         setStockOnHand("");
         setOpen(false);
       }
@@ -745,7 +778,7 @@ function ProductNewForm({
           </select>
         </label>
       </div>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         <label className="block">
           <span className="text-[11px] text-gray-500">
             Unit price (€/{unit === "gram" ? "g" : "ea"})
@@ -756,6 +789,20 @@ function ProductNewForm({
             min="0"
             value={unitPrice}
             onChange={(e) => setUnitPrice(e.target.value)}
+            placeholder="0.00"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
+          />
+        </label>
+        <label className="block">
+          <span className="text-[11px] text-gray-500">
+            Cost price (€/{unit === "gram" ? "g" : "ea"})
+          </span>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            value={costPrice}
+            onChange={(e) => setCostPrice(e.target.value)}
             placeholder="0.00"
             className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
           />

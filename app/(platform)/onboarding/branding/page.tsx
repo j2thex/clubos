@@ -24,6 +24,8 @@ function BrandingForm() {
   const [heroContent, setHeroContent] = useState("");
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [logoUrlInput, setLogoUrlInput] = useState("");
+  const [coverUrlInput, setCoverUrlInput] = useState("");
 
   return (
     <div className="space-y-6">
@@ -67,14 +69,35 @@ function BrandingForm() {
                 accept="image/*"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
-                  if (file) setLogoPreview(URL.createObjectURL(file));
+                  if (file) {
+                    setLogoPreview(URL.createObjectURL(file));
+                    setLogoUrlInput("");
+                  }
                 }}
                 className="w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-green-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-green-700 hover:file:bg-green-100"
+              />
+              <div className="flex items-center gap-2 text-[10px] text-gray-400 uppercase tracking-wide pt-1">
+                <span className="h-px flex-1 bg-gray-200" />
+                <span>{t("onboarding.orUrl")}</span>
+                <span className="h-px flex-1 bg-gray-200" />
+              </div>
+              <input
+                type="url"
+                name="logoUrl"
+                placeholder="https://…"
+                value={logoUrlInput}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setLogoUrlInput(v);
+                  setLogoPreview(v && /^https?:\/\//.test(v) ? v : null);
+                }}
+                className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-green-500 focus-visible:ring-[3px] focus-visible:ring-green-500/30"
               />
               {logoPreview && (
                 <img
                   src={logoPreview}
                   alt="Logo preview"
+                  onError={() => setLogoPreview(null)}
                   className="h-16 w-16 rounded-lg object-cover border border-gray-200"
                 />
               )}
@@ -93,14 +116,35 @@ function BrandingForm() {
                 accept="image/*"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
-                  if (file) setCoverPreview(URL.createObjectURL(file));
+                  if (file) {
+                    setCoverPreview(URL.createObjectURL(file));
+                    setCoverUrlInput("");
+                  }
                 }}
                 className="w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-green-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-green-700 hover:file:bg-green-100"
+              />
+              <div className="flex items-center gap-2 text-[10px] text-gray-400 uppercase tracking-wide pt-1">
+                <span className="h-px flex-1 bg-gray-200" />
+                <span>{t("onboarding.orUrl")}</span>
+                <span className="h-px flex-1 bg-gray-200" />
+              </div>
+              <input
+                type="url"
+                name="coverUrl"
+                placeholder="https://…"
+                value={coverUrlInput}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setCoverUrlInput(v);
+                  setCoverPreview(v && /^https?:\/\//.test(v) ? v : null);
+                }}
+                className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-green-500 focus-visible:ring-[3px] focus-visible:ring-green-500/30"
               />
               {coverPreview && (
                 <img
                   src={coverPreview}
                   alt="Cover preview"
+                  onError={() => setCoverPreview(null)}
                   className="w-full h-24 rounded-lg object-cover border border-gray-200"
                 />
               )}

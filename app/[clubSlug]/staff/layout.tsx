@@ -36,12 +36,41 @@ export default async function StaffLayout({
   const supabase = createAdminClient();
   const { data: club } = await supabase
     .from("clubs")
-    .select("name, approved, spin_enabled, operations_module_enabled")
+    .select("id, name, approved, spin_enabled, operations_module_enabled")
     .eq("slug", clubSlug)
     .single();
 
   if (club && !club.approved) {
     return <PendingApproval clubName={club.name} clubSlug={clubSlug} />;
+  }
+
+  // Pending counts feed the red badge bubbles on the staff bottom nav.
+  // Fail-soft: any query error just yields 0, the nav still renders.
+  let pendingBadges: Record<string, number> = {};
+  if (club?.id) {
+    const [{ count: preregCount }, { count: offerCount }, { count: questCount }] =
+      await Promise.all([
+        supabase
+          .from("preregistrations")
+          .select("id", { count: "exact", head: true })
+          .eq("club_id", club.id)
+          .eq("status", "pending"),
+        supabase
+          .from("offer_orders")
+          .select("id", { count: "exact", head: true })
+          .eq("club_id", club.id)
+          .eq("status", "pending"),
+        supabase
+          .from("member_quests")
+          .select("id", { count: "exact", head: true })
+          .eq("club_id", club.id)
+          .eq("status", "pending"),
+      ]);
+    pendingBadges = {
+      "/preregistrations": preregCount ?? 0,
+      "/offers": offerCount ?? 0,
+      "/quests": questCount ?? 0,
+    };
   }
 
   return (
@@ -51,6 +80,7 @@ export default async function StaffLayout({
         clubSlug={clubSlug}
         spinEnabled={club?.spin_enabled ?? false}
         operationsEnabled={club?.operations_module_enabled ?? false}
+        badges={pendingBadges}
       />
     </div>
   );

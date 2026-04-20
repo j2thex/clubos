@@ -8,6 +8,7 @@ interface StaffNavProps {
   clubSlug: string;
   spinEnabled: boolean;
   operationsEnabled: boolean;
+  badges?: Record<string, number>;
 }
 
 const navItems = [
@@ -76,7 +77,7 @@ const navItems = [
   },
 ];
 
-export function StaffNav({ clubSlug, spinEnabled, operationsEnabled }: StaffNavProps) {
+export function StaffNav({ clubSlug, spinEnabled, operationsEnabled, badges }: StaffNavProps) {
   const pathname = usePathname();
   const { t } = useLanguage();
   const basePath = `/${clubSlug}/staff`;
@@ -102,6 +103,7 @@ export function StaffNav({ clubSlug, spinEnabled, operationsEnabled }: StaffNavP
                 ? pathname === basePath || pathname === `${basePath}/`
                 : pathname.startsWith(href);
 
+            const badge = badges?.[item.path] ?? 0;
             return (
               <Link
                 key={item.labelKey}
@@ -110,7 +112,14 @@ export function StaffNav({ clubSlug, spinEnabled, operationsEnabled }: StaffNavP
                   isActive ? "text-gray-900 font-semibold" : "text-gray-400 hover:text-gray-600"
                 }`}
               >
-                {item.icon}
+                <span className="relative inline-flex">
+                  {item.icon}
+                  {badge > 0 && (
+                    <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none flex items-center justify-center">
+                      {badge > 99 ? "99+" : badge}
+                    </span>
+                  )}
+                </span>
                 <span>{t(item.labelKey)}</span>
               </Link>
             );

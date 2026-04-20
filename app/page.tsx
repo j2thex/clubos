@@ -67,6 +67,8 @@ async function getEvents(activeClubIds: string[]): Promise<DiscoverEvent[]> {
       .eq("active", true).eq("is_public", true)
       .in("club_id", activeClubIds)
       .gte("date", today)
+      .not("image_url", "is", null)
+      .neq("image_url", "")
       .order("date", { ascending: true })
       .limit(50);
 
@@ -203,7 +205,8 @@ export default async function Home() {
 
   // Curated data for sections
   const upcomingEvents = events.slice(0, 8);
-  const clubsForDirectory = clubs.slice(0, 12).map((c) => ({
+  const DIRECTORY_LIMIT = 24;
+  const clubsForDirectory = clubs.slice(0, DIRECTORY_LIMIT).map((c) => ({
     name: c.name,
     slug: c.slug,
     logo_url: c.logo_url,
@@ -257,6 +260,18 @@ export default async function Home() {
       />
 
       <TopNav />
+
+      {/* Hero tagline */}
+      <section className="pt-10 sm:pt-14 pb-6 sm:pb-8">
+        <div className="max-w-5xl mx-auto px-6 text-center">
+          <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-landing-text">
+            {tr("landing.mapHeroHeadline")}
+          </h1>
+          <p className="mt-3 text-sm sm:text-base text-landing-text-secondary max-w-xl mx-auto">
+            {tr("landing.mapHeroSubtitle")}
+          </p>
+        </div>
+      </section>
 
       {/* Map Hero + Tabs */}
       <HomepageMap
@@ -452,7 +467,7 @@ export default async function Home() {
       </section>
 
       {/* Clubs */}
-      <ClubDirectory t={tr} clubs={clubsForDirectory} />
+      <ClubDirectory t={tr} clubs={clubsForDirectory} totalClubs={clubs.length} />
 
       {/* Membership Deals */}
       {deals.length > 0 && (

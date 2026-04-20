@@ -173,6 +173,11 @@ export async function createOrgAndClub(formData: FormData): Promise<CreateOrgAnd
   redirect(`/onboarding/branding?clubId=${club.id}`);
 }
 
+function isValidHttpUrl(value: string): boolean {
+  if (!value) return false;
+  return value.startsWith("http://") || value.startsWith("https://");
+}
+
 export async function updateBranding(formData: FormData) {
   const clubId = formData.get("clubId") as string;
   const primaryColor = formData.get("primaryColor") as string;
@@ -180,10 +185,12 @@ export async function updateBranding(formData: FormData) {
   const heroContent = formData.get("heroContent") as string;
   const logoFile = formData.get("logo") as File | null;
   const coverFile = formData.get("cover") as File | null;
+  const logoUrlInput = ((formData.get("logoUrl") as string) ?? "").trim();
+  const coverUrlInput = ((formData.get("coverUrl") as string) ?? "").trim();
 
   if (!clubId) return { error: "Club ID is required" };
 
-  // Upload images if provided
+  // Upload images if provided. File upload wins over URL when both are present.
   let logoUrl: string | undefined;
   let coverUrl: string | undefined;
 
@@ -191,12 +198,22 @@ export async function updateBranding(formData: FormData) {
     const result = await uploadClubImage(clubId, logoFile);
     if ("error" in result) return { error: result.error };
     logoUrl = result.url;
+  } else if (logoUrlInput) {
+    if (!isValidHttpUrl(logoUrlInput)) {
+      return { error: "Logo URL must start with http:// or https://" };
+    }
+    logoUrl = logoUrlInput;
   }
 
   if (coverFile && coverFile.size > 0) {
     const result = await uploadClubImage(clubId, coverFile);
     if ("error" in result) return { error: result.error };
     coverUrl = result.url;
+  } else if (coverUrlInput) {
+    if (!isValidHttpUrl(coverUrlInput)) {
+      return { error: "Cover URL must start with http:// or https://" };
+    }
+    coverUrl = coverUrlInput;
   }
 
   const supabase = createAdminClient();

@@ -41,12 +41,13 @@ export default async function AdminPanelLayout({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name")
+    .select("id, name, operations_module_enabled")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
 
   if (!club) notFound();
+  const opsEnabled = club.operations_module_enabled ?? false;
 
   const { data: branding } = await supabase
     .from("club_branding")
@@ -103,7 +104,7 @@ export default async function AdminPanelLayout({
         </div>
       </div>
 
-      <AdminNav clubSlug={clubSlug} />
+      <AdminNav clubSlug={clubSlug} opsEnabled={opsEnabled} />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 import { LanguageSwitcher } from "@/lib/i18n/switcher";
+import { StaffLogoutButton } from "@/components/club/staff-logout-button";
 
 export default async function StaffConsoleLayout({
   children,
@@ -66,6 +67,7 @@ export default async function StaffConsoleLayout({
               {t(locale, "staff.publicPage")}
             </a>
             <LanguageSwitcher variant="light" />
+            <StaffLogoutButton clubSlug={clubSlug} />
           </div>
         </div>
       </div>

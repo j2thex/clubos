@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/provider";
 import { getDateLocale, localized } from "@/lib/i18n";
@@ -29,7 +29,20 @@ export function PublicEventsClient({
   clubSlug: string;
 }) {
   const { t, locale } = useLanguage();
-  const [view, setView] = useState<View>("list");
+  const [view, setView] = useState<View>("calendar");
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem("clubos-events-view-public");
+    if (stored === "list" || stored === "calendar") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setView(stored);
+    }
+  }, []);
+
+  function changeView(next: View) {
+    setView(next);
+    window.localStorage.setItem("clubos-events-view-public", next);
+  }
 
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
@@ -161,7 +174,7 @@ export function PublicEventsClient({
       >
         <button
           type="button"
-          onClick={() => setView("list")}
+          onClick={() => changeView("list")}
           className={`min-h-[36px] rounded-[calc(var(--m-radius-sm)-1px)] px-4 text-[12px] font-semibold transition-colors ${
             view === "list" ? "m-btn-ink" : "text-[color:var(--m-ink-muted)]"
           }`}
@@ -171,7 +184,7 @@ export function PublicEventsClient({
         <button
           type="button"
           onClick={() => {
-            setView("calendar");
+            changeView("calendar");
             if (!selectedDate) {
               const upcoming = upcomingEvents[0];
               setSelectedDate(upcoming?.date ?? null);

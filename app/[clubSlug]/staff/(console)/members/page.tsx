@@ -55,7 +55,7 @@ export default async function StaffMembersPage({
     supabase
       .from("members")
       .select(
-        "id, member_code, full_name, first_name, last_name, spin_balance, status, role_id, membership_period_id, valid_till, date_of_birth, residency_status, id_number, phone, email, id_verified_at, id_photo_path, photo_path, signature_path, rfid_uid, member_roles(id, name)",
+        "id, member_code, full_name, first_name, last_name, spin_balance, status, role_id, membership_period_id, valid_till, date_of_birth, residency_status, id_number, phone, email, id_verified_at, id_photo_path, photo_path, signature_path, rfid_uid, created_at, member_roles(id, name)",
       )
       .eq("club_id", club.id)
       .order("created_at", { ascending: false }),
@@ -93,6 +93,7 @@ export default async function StaffMembersPage({
         dateOfBirth: m.date_of_birth ?? null,
         idVerifiedAt: m.id_verified_at ?? null,
         idPhotoSignedUrl: signed,
+        createdAt: m.created_at ?? null,
       };
     }),
   );

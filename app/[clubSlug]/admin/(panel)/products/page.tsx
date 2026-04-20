@@ -31,7 +31,7 @@ export default async function AdminProductsPage({
     supabase
       .from("products")
       .select(
-        "id, category_id, name, name_es, description, description_es, image_url, unit, unit_price, stock_on_hand, archived, display_order",
+        "id, category_id, name, name_es, description, description_es, image_url, unit, unit_price, cost_price, stock_on_hand, archived, display_order",
       )
       .eq("club_id", club.id)
       .order("display_order", { ascending: true }),
@@ -55,6 +55,7 @@ export default async function AdminProductsPage({
     imageUrl: p.image_url ?? null,
     unit: p.unit as "gram" | "piece",
     unitPrice: Number(p.unit_price),
+    costPrice: Number(p.cost_price ?? 0),
     stockOnHand: Number(p.stock_on_hand),
     archived: p.archived,
     displayOrder: p.display_order,
