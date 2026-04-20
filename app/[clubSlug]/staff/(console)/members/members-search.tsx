@@ -40,9 +40,15 @@ export type MembersSearchMember = {
   dateOfBirth: string | null;
   idVerifiedAt: string | null;
   idPhotoSignedUrl: string | null;
+  createdAt: string | null;
 };
 
-type Filter = "all" | "verified" | "unverified" | "expired";
+type GroupKey =
+  | "pendingActivation"
+  | "newThisWeek"
+  | "verified"
+  | "active"
+  | "expired";
 
 function computeAge(dob: string | null): number | null {
   if (!dob) return null;
@@ -127,9 +133,9 @@ function VerifyRow({
             onClick={handleVerify}
             disabled={isPending || !dateOfBirth}
             title={!dateOfBirth ? t("ops.memberForm.dobRequired") : ""}
-            className="text-xs rounded-full px-2 py-0.5 bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-50"
+            className="text-xs rounded-full px-3 py-0.5 bg-green-600 text-white font-semibold hover:bg-green-700 disabled:opacity-50"
           >
-            {isPending ? "..." : t("ops.entry.verified")}
+            {isPending ? "..." : t("staff.members.activate")}
           </button>
         </>
       )}
@@ -167,49 +173,177 @@ export function MembersSearch({
   deepLinks?: { entry: boolean; sell: boolean };
 }) {
   const [query, setQuery] = useState(initialQuery);
-  const [filter, setFilter] = useState<Filter>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const initialOpenGroups = useMemo<Set<GroupKey>>(
+    () =>
+      new Set<GroupKey>(
+        opsEnabled ? ["pendingActivation"] : ["newThisWeek"],
+      ),
+    [opsEnabled],
+  );
+  const [openGroups, setOpenGroups] = useState<Set<GroupKey>>(initialOpenGroups);
   const { t: tRoot } = useLanguage();
   const memberDetailById = useMemo(
     () => new Map(memberDetails.map((d) => [d.id, d])),
     [memberDetails],
   );
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const now = new Date();
-    return members.filter((m) => {
-      if (q) {
-        const haystack = `${m.memberCode} ${m.fullName ?? ""}`.toLowerCase();
-        if (!haystack.includes(q)) return false;
-      }
-      if (filter === "verified" && !m.idVerifiedAt) return false;
-      if (filter === "unverified" && m.idVerifiedAt) return false;
-      if (filter === "expired") {
-        if (!m.validTill) return false;
-        const v = new Date(m.validTill + "T00:00:00");
-        if (v >= now) return false;
-      }
-      return true;
-    });
-  }, [members, query, filter]);
+  const searching = query.trim().length > 0;
 
-  const chips: { id: Filter; label: string }[] = opsEnabled
-    ? [
-        { id: "all", label: `All (${members.length})` },
-        { id: "verified", label: `Verified (${members.filter((m) => m.idVerifiedAt).length})` },
-        { id: "unverified", label: `Unverified (${members.filter((m) => !m.idVerifiedAt).length})` },
-        { id: "expired", label: "Expired" },
-      ]
-    : [
-        { id: "all", label: `All (${members.length})` },
-        { id: "expired", label: "Expired" },
+  const searchFiltered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return members;
+    return members.filter((m) => {
+      const haystack = `${m.memberCode} ${m.fullName ?? ""}`.toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [members, query]);
+
+  const groups = useMemo(() => {
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const isExpired = (m: MembersSearchMember) => {
+      if (!m.validTill) return false;
+      const v = new Date(m.validTill + "T00:00:00");
+      return v < now;
+    };
+    const isNew = (m: MembersSearchMember) =>
+      !!m.createdAt && new Date(m.createdAt) >= sevenDaysAgo;
+
+    if (opsEnabled) {
+      const pendingActivation: MembersSearchMember[] = [];
+      const newThisWeek: MembersSearchMember[] = [];
+      const verified: MembersSearchMember[] = [];
+      const expired: MembersSearchMember[] = [];
+      for (const m of members) {
+        if (isExpired(m)) {
+          expired.push(m);
+          continue;
+        }
+        if (!m.idVerifiedAt) {
+          pendingActivation.push(m);
+          continue;
+        }
+        if (isNew(m)) {
+          newThisWeek.push(m);
+          continue;
+        }
+        verified.push(m);
+      }
+      return [
+        { key: "pendingActivation" as GroupKey, label: tRoot("staff.members.groupPendingActivation"), rows: pendingActivation },
+        { key: "newThisWeek" as GroupKey, label: tRoot("staff.members.groupNewThisWeek"), rows: newThisWeek },
+        { key: "verified" as GroupKey, label: tRoot("staff.members.groupVerified"), rows: verified },
+        { key: "expired" as GroupKey, label: tRoot("staff.members.groupExpired"), rows: expired },
       ];
+    }
+
+    const newThisWeek: MembersSearchMember[] = [];
+    const active: MembersSearchMember[] = [];
+    const expired: MembersSearchMember[] = [];
+    for (const m of members) {
+      if (isExpired(m)) {
+        expired.push(m);
+        continue;
+      }
+      if (isNew(m)) {
+        newThisWeek.push(m);
+        continue;
+      }
+      active.push(m);
+    }
+    return [
+      { key: "newThisWeek" as GroupKey, label: tRoot("staff.members.groupNewThisWeek"), rows: newThisWeek },
+      { key: "active" as GroupKey, label: tRoot("staff.members.groupActive"), rows: active },
+      { key: "expired" as GroupKey, label: tRoot("staff.members.groupExpired"), rows: expired },
+    ];
+  }, [members, opsEnabled, tRoot]);
+
+  function toggleGroup(key: GroupKey) {
+    setOpenGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  const renderMember = (m: MembersSearchMember) => {
+    const age = computeAge(m.dateOfBirth);
+    const detail = memberDetailById.get(m.id);
+    const isExpanded = expandedId === m.id;
+    return (
+      <div key={m.id}>
+        <div className="flex items-stretch">
+          <div className="flex-1 min-w-0">
+            <StaffMemberRow
+              member={{
+                id: m.id,
+                memberCode: m.memberCode,
+                fullName: m.fullName,
+                spinBalance: m.spinBalance,
+                roleId: m.roleId,
+                roleName: m.roleName,
+                validTill: m.validTill,
+              }}
+              roles={roles}
+              clubSlug={clubSlug}
+            />
+          </div>
+          {detail && (
+            <button
+              type="button"
+              onClick={() => setExpandedId(isExpanded ? null : m.id)}
+              className="px-4 text-gray-400 hover:text-gray-900 transition-colors"
+              title={
+                isExpanded
+                  ? tRoot("admin.memberDetail.collapse")
+                  : tRoot("admin.memberDetail.expand")
+              }
+            >
+              <svg
+                className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+          )}
+        </div>
+        {opsEnabled && !isExpanded && (
+          <VerifyRow
+            memberId={m.id}
+            clubSlug={clubSlug}
+            dateOfBirth={m.dateOfBirth}
+            idVerifiedAt={m.idVerifiedAt}
+            idPhotoSignedUrl={m.idPhotoSignedUrl}
+            age={age}
+          />
+        )}
+        {detail && isExpanded && (
+          <MemberDetail
+            member={detail}
+            clubId={clubId}
+            clubSlug={clubSlug}
+            actions={staffMemberDetailActions}
+            deepLinks={deepLinks}
+          />
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-3">
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-        <div className="px-4 py-3 space-y-3">
+        <div className="px-4 py-3">
           <input
             type="search"
             value={query}
@@ -217,104 +351,67 @@ export function MembersSearch({
             placeholder="Search by name or code"
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
           />
-          <div className="flex gap-2 flex-wrap">
-            {chips.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => setFilter(c.id)}
-                className={`text-xs font-semibold rounded-full px-3 py-1 transition ${
-                  filter === c.id
-                    ? "bg-gray-800 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                {c.label}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-        {filtered.length > 0 ? (
-          <div className="divide-y divide-gray-100">
-            {filtered.map((m) => {
-              const age = computeAge(m.dateOfBirth);
-              const detail = memberDetailById.get(m.id);
-              const isExpanded = expandedId === m.id;
-              return (
-                <div key={m.id}>
-                  <div className="flex items-stretch">
-                    <div className="flex-1 min-w-0">
-                      <StaffMemberRow
-                        member={{
-                          id: m.id,
-                          memberCode: m.memberCode,
-                          fullName: m.fullName,
-                          spinBalance: m.spinBalance,
-                          roleId: m.roleId,
-                          roleName: m.roleName,
-                          validTill: m.validTill,
-                        }}
-                        roles={roles}
-                        clubSlug={clubSlug}
-                      />
+      {searching ? (
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          {searchFiltered.length > 0 ? (
+            <div className="divide-y divide-gray-100">
+              {searchFiltered.map(renderMember)}
+            </div>
+          ) : (
+            <div className="p-8 text-center text-gray-400 text-sm">No members match.</div>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {groups.map((g) => {
+            const isOpen = openGroups.has(g.key);
+            const countClass =
+              g.key === "pendingActivation" && g.rows.length > 0
+                ? "bg-amber-100 text-amber-800"
+                : "bg-gray-100 text-gray-600";
+            return (
+              <div
+                key={g.key}
+                className="bg-white rounded-2xl shadow-lg overflow-hidden"
+              >
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(g.key)}
+                  className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors"
+                >
+                  <svg
+                    className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? "rotate-90" : ""}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                  <span className="text-sm font-semibold text-gray-800 flex-1 text-left">
+                    {g.label}
+                  </span>
+                  <span className={`text-xs font-semibold rounded-full px-2 py-0.5 ${countClass}`}>
+                    {g.rows.length}
+                  </span>
+                </button>
+                {isOpen && (
+                  g.rows.length > 0 ? (
+                    <div className="divide-y divide-gray-100 border-t border-gray-100">
+                      {g.rows.map(renderMember)}
                     </div>
-                    {detail && (
-                      <button
-                        type="button"
-                        onClick={() => setExpandedId(isExpanded ? null : m.id)}
-                        className="px-4 text-gray-400 hover:text-gray-900 transition-colors"
-                        title={
-                          isExpanded
-                            ? tRoot("admin.memberDetail.collapse")
-                            : tRoot("admin.memberDetail.expand")
-                        }
-                      >
-                        <svg
-                          className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      </button>
-                    )}
-                  </div>
-                  {opsEnabled && !isExpanded && (
-                    <VerifyRow
-                      memberId={m.id}
-                      clubSlug={clubSlug}
-                      dateOfBirth={m.dateOfBirth}
-                      idVerifiedAt={m.idVerifiedAt}
-                      idPhotoSignedUrl={m.idPhotoSignedUrl}
-                      age={age}
-                    />
-                  )}
-                  {detail && isExpanded && (
-                    <MemberDetail
-                      member={detail}
-                      clubId={clubId}
-                      clubSlug={clubSlug}
-                      actions={staffMemberDetailActions}
-                      deepLinks={deepLinks}
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="p-8 text-center text-gray-400 text-sm">No members match.</div>
-        )}
-      </div>
+                  ) : (
+                    <div className="px-5 pb-4 pt-2 text-xs text-gray-400 text-center">—</div>
+                  )
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
