@@ -258,6 +258,18 @@ export default async function Home() {
 
       <TopNav />
 
+      {/* Hero tagline */}
+      <section className="pt-10 sm:pt-14 pb-6 sm:pb-8">
+        <div className="max-w-5xl mx-auto px-6 text-center">
+          <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-landing-text">
+            {tr("landing.mapHeroHeadline")}
+          </h1>
+          <p className="mt-3 text-sm sm:text-base text-landing-text-secondary max-w-xl mx-auto">
+            {tr("landing.mapHeroSubtitle")}
+          </p>
+        </div>
+      </section>
+
       {/* Map Hero + Tabs */}
       <HomepageMap
         clubs={clubs}
