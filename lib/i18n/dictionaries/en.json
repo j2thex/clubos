@@ -759,6 +759,7 @@
   "onboarding.brandingSubtitle": "Choose your club colors and welcome message.",
   "onboarding.logoLabel": "Club Logo",
   "onboarding.logoHelp": "Square image recommended (e.g. 512×512px)",
+  "onboarding.orUrl": "or paste URL",
   "onboarding.coverLabel": "Cover Image",
   "onboarding.coverHelp": "Recommended size: 1200×400px (3:1 ratio)",
   "onboarding.primaryColor": "Primary Color",
