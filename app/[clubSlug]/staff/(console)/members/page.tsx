@@ -55,7 +55,7 @@ export default async function StaffMembersPage({
     supabase
       .from("members")
       .select(
-        "id, member_code, full_name, first_name, last_name, spin_balance, status, role_id, membership_period_id, valid_till, date_of_birth, residency_status, id_number, phone, email, id_verified_at, id_photo_path, photo_path, signature_path, rfid_uid, created_at, member_roles(id, name)",
+        "id, member_code, full_name, first_name, last_name, spin_balance, status, role_id, membership_period_id, valid_till, date_of_birth, residency_status, id_number, phone, email, marketing_channel, id_verified_at, id_photo_path, photo_path, signature_path, rfid_uid, created_at, member_roles(id, name)",
       )
       .eq("club_id", club.id)
       .order("created_at", { ascending: false }),
@@ -121,6 +121,7 @@ export default async function StaffMembersPage({
             id_number: m.id_number ?? null,
             phone: m.phone ?? null,
             email: m.email ?? null,
+            marketing_channel: m.marketing_channel ?? null,
             rfid_uid: m.rfid_uid ?? null,
             id_verified_at: m.id_verified_at ?? null,
             id_photo_url: idPhotoUrl,
