@@ -27,6 +27,7 @@ export function StaffMemberCreator({
   opsEnabled?: boolean;
 }) {
   const { t } = useLanguage();
+  const [memberCode, setMemberCode] = useState("");
   const [idNumber, setIdNumber] = useState("");
   const [referredBy, setReferredBy] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -105,6 +106,7 @@ export function StaffMemberCreator({
         periodId: selectedPeriodId || null,
         roleId: selectedRoleId || null,
         referredBy: referredBy || null,
+        memberCode: memberCode.trim() || null,
         idPhotoPath,
         photoPath,
         signaturePath,
@@ -119,6 +121,7 @@ export function StaffMemberCreator({
         );
       } else {
         setSuccess(t("ops.memberForm.created", { code: result.memberCode }));
+        setMemberCode("");
         setIdNumber("");
         setReferredBy("");
         setFirstName("");
@@ -142,19 +145,36 @@ export function StaffMemberCreator({
     <CollapsibleSection title={t("ops.memberForm.sectionTitle")} defaultOpen={false}>
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
         <form onSubmit={handleSubmit} className="p-5 space-y-3">
-          <label className="block">
-            <span className="text-xs font-medium text-gray-500">
-              {t("ops.memberForm.referredByLabel")}
-            </span>
-            <input
-              type="text"
-              value={referredBy}
-              onChange={(e) => setReferredBy(e.target.value.toUpperCase())}
-              placeholder={t("ops.memberForm.referredByPlaceholder")}
-              maxLength={8}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono tracking-wide uppercase text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
-            />
-          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label className="block">
+              <span className="text-xs font-medium text-gray-500">
+                {t("ops.memberForm.memberCodeLabel")}
+              </span>
+              <input
+                type="text"
+                value={memberCode}
+                onChange={(e) =>
+                  setMemberCode(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ""))
+                }
+                placeholder={t("ops.memberForm.memberCodePlaceholder")}
+                maxLength={16}
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono tracking-wide uppercase text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs font-medium text-gray-500">
+                {t("ops.memberForm.referredByLabel")}
+              </span>
+              <input
+                type="text"
+                value={referredBy}
+                onChange={(e) => setReferredBy(e.target.value.toUpperCase())}
+                placeholder={t("ops.memberForm.referredByPlaceholder")}
+                maxLength={8}
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono tracking-wide uppercase text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+              />
+            </label>
+          </div>
 
           <div className="pt-1">
             <button
