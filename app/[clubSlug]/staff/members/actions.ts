@@ -58,6 +58,7 @@ export type CreateMemberInput = {
   periodId?: string | null;
   roleId?: string | null;
   referredBy?: string | null;
+  memberCode?: string | null;
   idPhotoPath?: string | null;
   photoPath?: string | null;
   signaturePath?: string | null;
@@ -189,32 +190,57 @@ export async function createMember(
     }
   }
 
+  // Optional staff-supplied member code (migration path). When present it's
+  // used verbatim; when null we auto-generate.
+  const requestedCode = input.memberCode?.trim().toUpperCase() || null;
+  if (requestedCode !== null) {
+    if (!/^[A-Z0-9_-]{1,16}$/.test(requestedCode)) {
+      await cleanupOrphanedUploads(input);
+      return {
+        error: "Member ID must be 1–16 letters, digits, hyphens, or underscores",
+      };
+    }
+    const { data: codeConflict } = await supabase
+      .from("members")
+      .select("id")
+      .eq("club_id", clubId)
+      .eq("member_code", requestedCode)
+      .maybeSingle();
+    if (codeConflict) {
+      await cleanupOrphanedUploads(input);
+      return { error: `Member ID ${requestedCode} is already in use in this club` };
+    }
+  }
+
   // Auto-generate member code: <first2><last2><seq>. Retry a few times on
   // 23505 (uniqueness collision) in case of concurrent inserts. Quick-create
   // records with no name fall back to the MBR prefix (MBR01, MBR02, …).
   const base = firstName || lastName ? baseCodeFromNames(firstName, lastName) : "MBR";
-  const { data: existingCodes } = await supabase
-    .from("members")
-    .select("member_code")
-    .eq("club_id", clubId)
-    .like("member_code", `${base}%`);
-
-  const usedSeqs = new Set<number>();
-  for (const row of existingCodes ?? []) {
-    const suffix = row.member_code.slice(base.length);
-    if (/^\d+$/.test(suffix)) usedSeqs.add(parseInt(suffix, 10));
-  }
-
   let nextSeq = 1;
-  while (usedSeqs.has(nextSeq)) nextSeq += 1;
+  if (requestedCode === null) {
+    const { data: existingCodes } = await supabase
+      .from("members")
+      .select("member_code")
+      .eq("club_id", clubId)
+      .like("member_code", `${base}%`);
+
+    const usedSeqs = new Set<number>();
+    for (const row of existingCodes ?? []) {
+      const suffix = row.member_code.slice(base.length);
+      if (/^\d+$/.test(suffix)) usedSeqs.add(parseInt(suffix, 10));
+    }
+
+    while (usedSeqs.has(nextSeq)) nextSeq += 1;
+  }
 
   const trimmedFullName = `${firstName} ${lastName}`.trim();
   const fullName = trimmedFullName || null;
   let code = "";
   let insertError: { code?: string; message?: string } | null = null;
 
-  for (let attempt = 0; attempt < 5; attempt += 1) {
-    code = `${base}${String(nextSeq).padStart(2, "0")}`;
+  const maxAttempts = requestedCode !== null ? 1 : 5;
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    code = requestedCode ?? `${base}${String(nextSeq).padStart(2, "0")}`;
     const { error } = await supabase.from("members").insert({
       club_id: clubId,
       member_code: code,
@@ -250,7 +276,12 @@ export async function createMember(
       insertError = error;
       break;
     }
-    // 23505 on member_code — bump seq and try again.
+    // 23505 on member_code. For staff-supplied codes, don't auto-bump —
+    // surface as a code conflict. For auto-generated, bump seq and retry.
+    if (requestedCode !== null) {
+      insertError = error;
+      break;
+    }
     nextSeq += 1;
     insertError = error;
   }
@@ -261,7 +292,11 @@ export async function createMember(
       return { error: "This chip is already bound to another member" };
     }
     if (insertError.code === "23505") {
-      return { error: "Could not generate a unique member code — try different names" };
+      return {
+        error: requestedCode !== null
+          ? `Member ID ${requestedCode} is already in use in this club`
+          : "Could not generate a unique member code — try different names",
+      };
     }
     return { error: "Failed to create member" };
   }

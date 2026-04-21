@@ -364,6 +364,8 @@
   "ops.admin.toastDisabled": "Módulo de operaciones desactivado",
   "ops.memberForm.sectionTitle": "Alta de nuevo socio",
   "ops.memberForm.moreDetailsLabel": "Más detalles (opcional)",
+  "ops.memberForm.memberCodeLabel": "ID de socio (opcional)",
+  "ops.memberForm.memberCodePlaceholder": "Se genera si se deja vacío",
   "ops.memberForm.codeLabel": "Código de socio",
   "ops.memberForm.codePlaceholder": "ABC12",
   "ops.memberForm.create": "Crear",
