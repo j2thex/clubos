@@ -46,7 +46,7 @@ export async function loginStaff(clubSlug: string, locale: Locale, formData: For
     return { error: "Invalid staff code or PIN" };
   }
 
-  const token = await createStaffToken(member.id, club.id);
+  const token = await createStaffToken(member.id, club.id, clubSlug);
   await setStaffCookie(token);
 
   redirect(`/${clubSlug}/staff`);

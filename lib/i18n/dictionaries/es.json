@@ -106,6 +106,7 @@
   "login.contactAdminHelp": "Contacta al administrador de tu club si necesitas ayuda para acceder.",
   "login.visitClubPage": "Visitar Página del Club →",
   "login.staffTitle": "Acceso de staff",
+  "staff.login.wrongClubNotice": "Habías iniciado sesión como staff de otro club. Inicia sesión en este.",
   "login.staffSubtitle": "Introduce tu código de staff y PIN",
   "login.staffCodePlaceholder": "ABC123",
   "login.pinPlaceholder": "----",
