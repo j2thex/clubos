@@ -3,8 +3,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
-import { StaffLockClubButton } from "@/components/club/staff-lock-club-button";
-
 export const dynamic = "force-dynamic";
 
 export default async function StaffOperationsPage({
@@ -17,7 +15,7 @@ export default async function StaffOperationsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, locked_at")
+    .select("id")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -77,11 +75,6 @@ export default async function StaffOperationsPage({
 
   return (
     <div className="space-y-4">
-      <StaffLockClubButton
-        clubId={club.id}
-        clubSlug={clubSlug}
-        locked={club.locked_at !== null}
-      />
       <h1 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-1">
         {t(locale, "ops.title")}
       </h1>
