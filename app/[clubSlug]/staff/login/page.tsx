@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { loginStaff } from "./actions";
 import { useLanguage } from "@/lib/i18n/provider";
@@ -8,6 +8,8 @@ import { useLanguage } from "@/lib/i18n/provider";
 export default function StaffLoginPage() {
   const params = useParams<{ clubSlug: string }>();
   const clubSlug = params.clubSlug;
+  const searchParams = useSearchParams();
+  const wrongClub = searchParams.get("reason") === "wrong-club";
 
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -50,6 +52,12 @@ export default function StaffLoginPage() {
               {t("login.staffSubtitle")}
             </p>
           </div>
+
+          {wrongClub && !error && (
+            <div className="mb-6 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+              {t("staff.login.wrongClubNotice")}
+            </div>
+          )}
 
           {error && (
             <div className="mb-6 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">

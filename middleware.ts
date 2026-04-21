@@ -145,6 +145,19 @@ export async function middleware(request: NextRequest) {
       const { payload } = await jwtVerify(token, secret);
       if (!payload.is_staff) throw new Error("Not staff");
 
+      // Cross-club guard: staff cookies have path: "/" so a cookie from
+      // club A persists across all clubs on the domain. Block here before
+      // rendering any page of a different club's staff console, so users
+      // aren't surprised by an "Unauthorized" on submit. Cookies issued
+      // before this check shipped lack `club_slug` — treat as mismatch.
+      if (payload.club_slug !== clubSlug) {
+        const res = NextResponse.redirect(
+          new URL(`/${clubSlug}/staff/login?reason=wrong-club`, request.url),
+        );
+        res.cookies.delete(STAFF_COOKIE);
+        return res;
+      }
+
       const isServerAction = request.headers.has("next-action");
       // Allow the lock action itself through even when locked, so staff
       // that just hit the Lock button can complete the server action. All
