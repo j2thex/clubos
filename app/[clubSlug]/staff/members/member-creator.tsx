@@ -2,28 +2,19 @@
 
 import { useState, useTransition } from "react";
 import { useLanguage } from "@/lib/i18n/provider";
-import {
-  createMember,
-  uploadMemberIdPhotoAction,
-  uploadMemberPhotoAction,
-  uploadMemberSignatureAction,
-} from "./actions";
-import { PhotoCapture } from "@/components/club/photo-capture";
-import { SignaturePad } from "@/components/club/signature-pad";
-import { RfidCapture } from "@/components/club/rfid-capture";
+import { createMember } from "./actions";
+import { CollapsibleSection } from "@/components/collapsible-section";
 
 export function StaffMemberCreator({
   clubId,
   clubSlug,
   periods,
   roles = [],
-  opsEnabled = false,
 }: {
   clubId: string;
   clubSlug: string;
   periods: { id: string; name: string; duration_months: number }[];
   roles?: { id: string; name: string }[];
-  opsEnabled?: boolean;
 }) {
   const { t } = useLanguage();
   const [firstName, setFirstName] = useState("");
@@ -36,10 +27,6 @@ export function StaffMemberCreator({
   const [selectedPeriodId, setSelectedPeriodId] = useState("");
   const [selectedRoleId, setSelectedRoleId] = useState("");
   const [referredBy, setReferredBy] = useState("");
-  const [portraitFile, setPortraitFile] = useState<File | null>(null);
-  const [idPhotoFile, setIdPhotoFile] = useState<File | null>(null);
-  const [signatureFile, setSignatureFile] = useState<File | null>(null);
-  const [rfidUid, setRfidUid] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -51,8 +38,7 @@ export function StaffMemberCreator({
     !lastName.trim() ||
     !dateOfBirth ||
     !idNumber.trim() ||
-    !phone.trim() ||
-    (opsEnabled && (!portraitFile || !idPhotoFile || !signatureFile));
+    !phone.trim();
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -60,46 +46,6 @@ export function StaffMemberCreator({
     setSuccess(null);
 
     startTransition(async () => {
-      let idPhotoPath: string | null = null;
-      let photoPath: string | null = null;
-      let signaturePath: string | null = null;
-
-      if (idPhotoFile) {
-        const fd = new FormData();
-        fd.set("clubId", clubId);
-        fd.set("file", idPhotoFile);
-        const r = await uploadMemberIdPhotoAction(fd);
-        if ("error" in r) {
-          setError(r.error);
-          return;
-        }
-        idPhotoPath = r.path;
-      }
-
-      if (portraitFile) {
-        const fd = new FormData();
-        fd.set("clubId", clubId);
-        fd.set("file", portraitFile);
-        const r = await uploadMemberPhotoAction(fd);
-        if ("error" in r) {
-          setError(r.error);
-          return;
-        }
-        photoPath = r.path;
-      }
-
-      if (signatureFile) {
-        const fd = new FormData();
-        fd.set("clubId", clubId);
-        fd.set("file", signatureFile);
-        const r = await uploadMemberSignatureAction(fd);
-        if ("error" in r) {
-          setError(r.error);
-          return;
-        }
-        signaturePath = r.path;
-      }
-
       const result = await createMember(clubId, clubSlug, {
         firstName,
         lastName,
@@ -111,14 +57,13 @@ export function StaffMemberCreator({
         periodId: selectedPeriodId || null,
         roleId: selectedRoleId || null,
         referredBy: referredBy || null,
-        idPhotoPath,
-        photoPath,
-        signaturePath,
-        rfidUid,
+        idPhotoPath: null,
+        photoPath: null,
+        signaturePath: null,
+        rfidUid: null,
       });
 
       if ("error" in result) {
-        // Localize the one user-facing legal error; other errors stay as-is.
         setError(
           result.error.startsWith("This club requires members to be 18")
             ? t("ops.memberForm.under18Error")
@@ -136,20 +81,13 @@ export function StaffMemberCreator({
         setSelectedPeriodId("");
         setSelectedRoleId("");
         setReferredBy("");
-        setPortraitFile(null);
-        setIdPhotoFile(null);
-        setSignatureFile(null);
-        setRfidUid(null);
         setTimeout(() => setSuccess(null), 5000);
       }
     });
   }
 
   return (
-    <div className="space-y-2">
-      <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-1">
-        {t("ops.memberForm.sectionTitle")}
-      </h2>
+    <CollapsibleSection title={t("ops.memberForm.sectionTitle")} defaultOpen={false}>
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
         <form onSubmit={handleSubmit} className="p-5 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -331,38 +269,6 @@ export function StaffMemberCreator({
             </label>
           )}
 
-          {opsEnabled && (
-            <div className="space-y-3 pt-1">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <PhotoCapture
-                  label={t("ops.memberForm.portraitLabel")}
-                  required
-                  facingMode="user"
-                  value={portraitFile}
-                  onChange={setPortraitFile}
-                />
-                <PhotoCapture
-                  label={t("ops.memberForm.idPhotoRequiredLabel")}
-                  required
-                  facingMode="environment"
-                  value={idPhotoFile}
-                  onChange={setIdPhotoFile}
-                />
-              </div>
-              <SignaturePad
-                label={t("ops.memberForm.signatureLabel")}
-                required
-                value={signatureFile}
-                onChange={setSignatureFile}
-              />
-              <RfidCapture
-                label={t("ops.memberForm.rfidLabel")}
-                value={rfidUid}
-                onChange={setRfidUid}
-              />
-            </div>
-          )}
-
           <div className="pt-1">
             <button
               type="submit"
@@ -385,6 +291,6 @@ export function StaffMemberCreator({
           </div>
         )}
       </div>
-    </div>
+    </CollapsibleSection>
   );
 }

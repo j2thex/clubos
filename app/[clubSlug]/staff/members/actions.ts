@@ -142,29 +142,6 @@ export async function createMember(
 
   const supabase = createAdminClient();
 
-  // Server-verified ops flag — don't trust the client's flag alone.
-  const { data: clubRow } = await supabase
-    .from("clubs")
-    .select("operations_module_enabled")
-    .eq("id", clubId)
-    .single();
-  const opsEnabled = Boolean(clubRow?.operations_module_enabled);
-
-  if (opsEnabled) {
-    if (!input.idPhotoPath) {
-      await cleanupOrphanedUploads(input);
-      return { error: "ID photo is required for this club" };
-    }
-    if (!input.photoPath) {
-      await cleanupOrphanedUploads(input);
-      return { error: "Member portrait is required for this club" };
-    }
-    if (!input.signaturePath) {
-      await cleanupOrphanedUploads(input);
-      return { error: "Signature is required for this club" };
-    }
-  }
-
   // Validate referral code if provided
   let referredByCode: string | null = null;
   if (input.referredBy) {
