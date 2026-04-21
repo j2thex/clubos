@@ -42,14 +42,13 @@ export default async function AdminPanelLayout({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name, operations_module_enabled, locked_at")
+    .select("id, name, operations_module_enabled")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
 
   if (!club) notFound();
   const opsEnabled = club.operations_module_enabled ?? false;
-  const isLocked = club.locked_at !== null;
 
   const { data: branding } = await supabase
     .from("club_branding")
@@ -75,7 +74,6 @@ export default async function AdminPanelLayout({
             <PanicIconButton
               clubId={club.id}
               clubSlug={clubSlug}
-              locked={isLocked}
               actor="owner"
             />
             <div className="min-w-0">
@@ -110,12 +108,6 @@ export default async function AdminPanelLayout({
 
       <div className={`relative z-10 ${coverUrl ? "mt-4" : "-mt-12 bg-gray-50 rounded-t-3xl pt-6"}`}>
         <div className="px-4 pb-10 max-w-2xl mx-auto space-y-6">
-          {isLocked && (
-            <div className="rounded-2xl border border-red-300 bg-red-50 p-4 text-sm text-red-900">
-              <p className="font-semibold">{t(locale, "panic.lockedBanner")}</p>
-              <p className="text-xs mt-1">{t(locale, "panic.lockedBannerHint")}</p>
-            </div>
-          )}
           {children}
         </div>
       </div>

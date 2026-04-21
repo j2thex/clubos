@@ -6,6 +6,8 @@ import { logActivity } from "@/lib/activity-log";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+const LOCK_REDIRECT_URL = "https://www.google.com/";
+
 export async function logoutStaff(clubSlug: string) {
   await clearStaffCookie();
   redirect(`/${clubSlug}/staff/login`);
@@ -14,7 +16,7 @@ export async function logoutStaff(clubSlug: string) {
 export async function lockClubFromStaff(
   clubId: string,
   clubSlug: string,
-): Promise<{ error: string } | { ok: true }> {
+): Promise<{ error: string } | { ok: true; redirect: string }> {
   let session;
   try {
     session = await requireStaffForClub(clubId);
@@ -49,6 +51,8 @@ export async function lockClubFromStaff(
     details: `staff:${member?.member_code ?? session.member_id}`,
   });
 
+  // Log the locker out immediately — their cookie must not survive the lock.
+  await clearStaffCookie();
   revalidatePath(`/${clubSlug}`, "layout");
-  return { ok: true };
+  return { ok: true, redirect: LOCK_REDIRECT_URL };
 }

@@ -2241,10 +2241,12 @@ export async function adminRevokeIdVerification(
   return { ok: true };
 }
 
+const LOCK_REDIRECT_URL = "https://www.google.com/";
+
 export async function lockClubFromOwner(
   clubId: string,
   clubSlug: string,
-): Promise<{ error: string } | { ok: true }> {
+): Promise<{ error: string } | { ok: true; redirect: string }> {
   let session;
   try {
     session = await requireOwnerForClub(clubId);
@@ -2278,42 +2280,9 @@ export async function lockClubFromOwner(
     details: `owner:${owner?.email ?? session.owner_id}`,
   });
 
+  // Log the locker out immediately — lockdown is intentionally irrevocable
+  // from the club side; only /platform-admin can reopen the club.
+  await clearOwnerCookie();
   revalidatePath(`/${clubSlug}`, "layout");
-  return { ok: true };
-}
-
-export async function unlockClub(
-  clubId: string,
-  clubSlug: string,
-): Promise<{ error: string } | { ok: true }> {
-  let session;
-  try {
-    session = await requireOwnerForClub(clubId);
-  } catch (err) {
-    return { error: err instanceof Error ? err.message : "Unauthorized" };
-  }
-
-  const supabase = createAdminClient();
-
-  const { data: owner } = await supabase
-    .from("club_owners")
-    .select("email")
-    .eq("id", session.owner_id)
-    .single();
-
-  const { error } = await supabase
-    .from("clubs")
-    .update({ locked_at: null, locked_by_id: null, locked_by_type: null })
-    .eq("id", clubId);
-
-  if (error) return { error: "Failed to unlock club" };
-
-  await logActivity({
-    clubId,
-    action: "club_unlock",
-    details: `owner:${owner?.email ?? session.owner_id}`,
-  });
-
-  revalidatePath(`/${clubSlug}`, "layout");
-  return { ok: true };
+  return { ok: true, redirect: LOCK_REDIRECT_URL };
 }
