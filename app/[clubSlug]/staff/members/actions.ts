@@ -48,12 +48,12 @@ export async function updateMemberRole(memberId: string, roleId: string | null, 
 }
 
 export type CreateMemberInput = {
-  firstName: string;
-  lastName: string;
-  dateOfBirth: string;
-  residencyStatus: "local" | "tourist";
+  firstName: string | null;
+  lastName: string | null;
+  dateOfBirth: string | null;
+  residencyStatus: "local" | "tourist" | null;
   idNumber: string;
-  phone: string;
+  phone: string | null;
   email?: string | null;
   periodId?: string | null;
   roleId?: string | null;
@@ -106,38 +106,33 @@ export async function createMember(
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
 
-  const firstName = input.firstName.trim();
-  const lastName = input.lastName.trim();
+  const firstName = input.firstName?.trim() ?? "";
+  const lastName = input.lastName?.trim() ?? "";
   const idNumber = input.idNumber.trim();
-  const phone = input.phone.trim();
+  const phone = input.phone?.trim() || null;
   const email = input.email?.trim() || null;
+  const dateOfBirth = input.dateOfBirth || null;
+  const residencyStatus: "local" | "tourist" | null =
+    input.residencyStatus === "local" || input.residencyStatus === "tourist"
+      ? input.residencyStatus
+      : null;
 
-  if (!firstName || !lastName) {
-    await cleanupOrphanedUploads(input);
-    return { error: "First name and last name are required" };
-  }
-  if (!input.dateOfBirth || !/^\d{4}-\d{2}-\d{2}$/.test(input.dateOfBirth)) {
-    await cleanupOrphanedUploads(input);
-    return { error: "Valid date of birth is required" };
-  }
-  if (ageFromDob(input.dateOfBirth) < 18) {
-    await cleanupOrphanedUploads(input);
-    return {
-      error:
-        "This club requires members to be 18 or older. The account was not created.",
-    };
-  }
-  if (input.residencyStatus !== "local" && input.residencyStatus !== "tourist") {
-    await cleanupOrphanedUploads(input);
-    return { error: "Residency must be local or tourist" };
-  }
   if (!idNumber) {
     await cleanupOrphanedUploads(input);
     return { error: "ID number is required" };
   }
-  if (!phone) {
-    await cleanupOrphanedUploads(input);
-    return { error: "Phone number is required" };
+  if (dateOfBirth) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)) {
+      await cleanupOrphanedUploads(input);
+      return { error: "Valid date of birth is required" };
+    }
+    if (ageFromDob(dateOfBirth) < 18) {
+      await cleanupOrphanedUploads(input);
+      return {
+        error:
+          "This club requires members to be 18 or older. The account was not created.",
+      };
+    }
   }
 
   const supabase = createAdminClient();
@@ -199,8 +194,9 @@ export async function createMember(
   }
 
   // Auto-generate member code: <first2><last2><seq>. Retry a few times on
-  // 23505 (uniqueness collision) in case of concurrent inserts.
-  const base = baseCodeFromNames(firstName, lastName);
+  // 23505 (uniqueness collision) in case of concurrent inserts. Quick-create
+  // records with no name fall back to the MBR prefix (MBR01, MBR02, …).
+  const base = firstName || lastName ? baseCodeFromNames(firstName, lastName) : "MBR";
   const { data: existingCodes } = await supabase
     .from("members")
     .select("member_code")
@@ -216,7 +212,8 @@ export async function createMember(
   let nextSeq = 1;
   while (usedSeqs.has(nextSeq)) nextSeq += 1;
 
-  const fullName = `${firstName} ${lastName}`;
+  const trimmedFullName = `${firstName} ${lastName}`.trim();
+  const fullName = trimmedFullName || null;
   let code = "";
   let insertError: { code?: string; message?: string } | null = null;
 
@@ -226,10 +223,10 @@ export async function createMember(
       club_id: clubId,
       member_code: code,
       full_name: fullName,
-      first_name: firstName,
-      last_name: lastName,
-      date_of_birth: input.dateOfBirth,
-      residency_status: input.residencyStatus,
+      first_name: firstName || null,
+      last_name: lastName || null,
+      date_of_birth: dateOfBirth,
+      residency_status: residencyStatus,
       id_number: idNumber,
       phone,
       email,
@@ -369,15 +366,24 @@ export async function createMember(
     }
   }
 
+  const missing: string[] = [];
+  if (!firstName) missing.push("first name");
+  if (!lastName) missing.push("last name");
+  if (!dateOfBirth) missing.push("DOB");
+  if (!residencyStatus) missing.push("residency");
+  if (!phone) missing.push("phone");
+  const isIncomplete = missing.length > 0;
+
   const details = [
+    isIncomplete ? `INCOMPLETE (missing: ${missing.join(", ")})` : null,
     validTill ? `Period till ${validTill}` : null,
     referredByCode ? `Referred by ${referredByCode}` : null,
-  ].filter(Boolean).join(", ");
+  ].filter(Boolean).join(" · ");
 
   await logActivity({
     clubId,
     staffMemberId: staff?.member_id,
-    action: "member_created",
+    action: isIncomplete ? "member_created_incomplete" : "member_created",
     targetMemberCode: code,
     details: details || undefined,
   });

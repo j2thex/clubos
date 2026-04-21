@@ -363,6 +363,7 @@
   "ops.admin.toastEnabled": "Operations module enabled",
   "ops.admin.toastDisabled": "Operations module disabled",
   "ops.memberForm.sectionTitle": "Onboard New Member",
+  "ops.memberForm.moreDetailsLabel": "More details (optional)",
   "ops.memberForm.codeLabel": "Member Code",
   "ops.memberForm.codePlaceholder": "ABC12",
   "ops.memberForm.create": "Create",
