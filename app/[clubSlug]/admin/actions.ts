@@ -1785,6 +1785,7 @@ export type UpdateMemberIdentityInput = {
   idNumber: string | null;
   phone: string | null;
   email: string | null;
+  marketingChannel?: string | null;
 };
 
 async function authorizeMemberOwner(
@@ -1862,18 +1863,24 @@ export async function updateMemberIdentity(
   }
 
   const supabase = createAdminClient();
+  const updatePayload: Record<string, unknown> = {
+    first_name: firstName,
+    last_name: lastName,
+    full_name: `${firstName} ${lastName}`,
+    date_of_birth: input.dateOfBirth || null,
+    residency_status: input.residencyStatus,
+    id_number: input.idNumber?.trim() || null,
+    phone: input.phone?.trim() || null,
+    email: input.email?.trim() || null,
+  };
+  if (input.marketingChannel !== undefined) {
+    const channel = input.marketingChannel?.trim().toLowerCase() || null;
+    updatePayload.marketing_channel = channel;
+  }
+
   const { error } = await supabase
     .from("members")
-    .update({
-      first_name: firstName,
-      last_name: lastName,
-      full_name: `${firstName} ${lastName}`,
-      date_of_birth: input.dateOfBirth || null,
-      residency_status: input.residencyStatus,
-      id_number: input.idNumber?.trim() || null,
-      phone: input.phone?.trim() || null,
-      email: input.email?.trim() || null,
-    })
+    .update(updatePayload)
     .eq("id", memberId);
 
   if (error) return { error: "Failed to update member" };
@@ -2201,5 +2208,82 @@ export async function adminRevokeIdVerification(
   });
 
   revalidatePath(`/${clubSlug}/admin`);
+  return { ok: true };
+}
+
+export async function lockClubFromOwner(
+  clubId: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  let session;
+  try {
+    session = await requireOwnerForClub(clubId);
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+
+  const supabase = createAdminClient();
+
+  const { data: owner } = await supabase
+    .from("club_owners")
+    .select("email")
+    .eq("id", session.owner_id)
+    .single();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({
+      locked_at: new Date().toISOString(),
+      locked_by_id: session.owner_id,
+      locked_by_type: "owner",
+    })
+    .eq("id", clubId)
+    .is("locked_at", null);
+
+  if (error) return { error: "Failed to lock club" };
+
+  await logActivity({
+    clubId,
+    action: "club_lockdown",
+    details: `owner:${owner?.email ?? session.owner_id}`,
+  });
+
+  revalidatePath(`/${clubSlug}`, "layout");
+  return { ok: true };
+}
+
+export async function unlockClub(
+  clubId: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  let session;
+  try {
+    session = await requireOwnerForClub(clubId);
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+
+  const supabase = createAdminClient();
+
+  const { data: owner } = await supabase
+    .from("club_owners")
+    .select("email")
+    .eq("id", session.owner_id)
+    .single();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ locked_at: null, locked_by_id: null, locked_by_type: null })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to unlock club" };
+
+  await logActivity({
+    clubId,
+    action: "club_unlock",
+    details: `owner:${owner?.email ?? session.owner_id}`,
+  });
+
+  revalidatePath(`/${clubSlug}`, "layout");
   return { ok: true };
 }

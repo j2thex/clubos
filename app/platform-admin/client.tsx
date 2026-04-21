@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { createUnclaimedClub, createClubFromGoogleMaps, approveCustomOffer, approveClub, rejectClub, setClubVisibility, loginAsClubAdmin, setupStandardContent, bulkImportQuests } from "./actions";
+import { createUnclaimedClub, createClubFromGoogleMaps, approveCustomOffer, approveClub, rejectClub, setClubVisibility, loginAsClubAdmin, setupStandardContent, bulkImportQuests, unlockClubFromPlatform } from "./actions";
 
 type ClubVisibility = "public" | "unlisted" | "private";
 
@@ -14,6 +14,7 @@ interface ClubInfo {
   requestedVisibility: ClubVisibility;
   claimed: boolean;
   inviteOnly: boolean;
+  locked: boolean;
   logoUrl: string | null;
   primaryColor: string;
   createdAt: string;
@@ -424,6 +425,7 @@ export function PlatformAdminClient({
                           <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-300">Live</span>
                         )}
                         {c.inviteOnly && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300">invite-only</span>}
+                        {c.locked && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/30 text-red-300 font-semibold">🔒 locked</span>}
                         <span
                           className={`text-[10px] px-1.5 py-0.5 rounded-full ${
                             c.visibility === "public"
@@ -489,6 +491,22 @@ export function PlatformAdminClient({
                         >
                           Admin ↗
                         </button>
+                        {c.locked && (
+                          <button
+                            onClick={() => {
+                              if (!window.confirm(`Unlock ${c.name}?`)) return;
+                              startTransition(async () => {
+                                const res = await unlockClubFromPlatform(c.id, c.slug, secret);
+                                if ("error" in res) setError(res.error);
+                                else setSuccess(`Unlocked ${c.name}`);
+                              });
+                            }}
+                            disabled={isPending}
+                            className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-200 text-red-800 hover:bg-red-300 disabled:opacity-50 transition-colors"
+                          >
+                            Unlock
+                          </button>
+                        )}
                         {setupClubId === c.id ? (
                           <span className="flex items-center gap-1">
                             <select

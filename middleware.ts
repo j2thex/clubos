@@ -15,6 +15,27 @@ const OWNER_COOKIE = "clubos-owner-token";
 const LOCALE_COOKIE = "clubos-lang";
 const MEMBER_TOKEN_MAX_AGE = 60 * 60 * 24 * 365;
 
+// Lock state cache: avoid a Supabase round-trip for every member/staff request.
+// 30s TTL is short enough that unlock propagates quickly and the owner who
+// toggles is revalidated atomically on their own request via revalidatePath.
+const LOCK_TTL_MS = 30_000;
+const lockCache = new Map<string, { locked: boolean; expires: number }>();
+
+async function isClubLocked(slug: string): Promise<boolean> {
+  const now = Date.now();
+  const cached = lockCache.get(slug);
+  if (cached && cached.expires > now) return cached.locked;
+
+  const { data } = await supabaseAdmin
+    .from("clubs")
+    .select("locked_at")
+    .eq("slug", slug)
+    .maybeSingle();
+  const locked = !!data?.locked_at;
+  lockCache.set(slug, { locked, expires: now + LOCK_TTL_MS });
+  return locked;
+}
+
 // Routes that are not club-scoped
 const PLATFORM_PATHS = ["/onboarding", "/privacy", "/terms", "/platform-admin", "/examples", "/discover", "/for-clubs", "/contact"];
 
@@ -97,6 +118,12 @@ export async function middleware(request: NextRequest) {
     return applyLocale(request, NextResponse.next());
   }
 
+  // Offline page is the lock rewrite target — let it render without re-checking
+  // the lock (would loop) and without requiring a cookie.
+  if (clubPath.startsWith("/offline")) {
+    return applyLocale(request, NextResponse.next());
+  }
+
   // Per-club PWA manifest and apple-touch-icon must be fetchable by iOS
   // without a member cookie — iOS fetches them anonymously during A2HS.
   if (clubPath === "/manifest.webmanifest" || clubPath.startsWith("/icon.png")) {
@@ -118,9 +145,21 @@ export async function middleware(request: NextRequest) {
       const { payload } = await jwtVerify(token, secret);
       if (!payload.is_staff) throw new Error("Not staff");
 
+      const isServerAction = request.headers.has("next-action");
+      // Allow the lock action itself through even when locked, so staff
+      // that just hit the Lock button can complete the server action. All
+      // other server actions are blocked at the RPC/action layer.
+
+      // Lockdown: route staff page loads to the offline page, not RSC actions.
+      if (!isServerAction) {
+        const locked = await isClubLocked(clubSlug);
+        if (locked) {
+          return NextResponse.rewrite(new URL(`/${clubSlug}/offline`, request.url));
+        }
+      }
+
       // Check DB status for page loads and RSC navigation,
       // but skip for server actions (handled by requireActiveStaff)
-      const isServerAction = request.headers.has("next-action");
       if (!isServerAction) {
         const { data: staffMember } = await supabaseAdmin
           .from("members")
@@ -154,6 +193,14 @@ export async function middleware(request: NextRequest) {
 
   try {
     const { payload } = await jwtVerify(token, secret);
+
+    // Lockdown: rewrite member traffic to the offline page.
+    if (!request.headers.has("next-action")) {
+      const locked = await isClubLocked(clubSlug);
+      if (locked) {
+        return NextResponse.rewrite(new URL(`/${clubSlug}/offline`, request.url));
+      }
+    }
 
     // Check membership expiry from JWT claim (no DB query needed)
     if (payload.valid_till) {

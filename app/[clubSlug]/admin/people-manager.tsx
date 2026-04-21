@@ -68,6 +68,7 @@ export function PeopleManager({
   referralSources = [],
   referralTree = [],
   referralMemberOptions = [],
+  knownMarketingChannels = [],
 }: {
   clubId: string;
   clubSlug: string;
@@ -77,6 +78,7 @@ export function PeopleManager({
   referralSources?: Member[];
   referralTree?: ReferrerSummary[];
   referralMemberOptions?: MemberOption[];
+  knownMarketingChannels?: string[];
 }) {
   const [tab, setTab] = useState<"members" | "staff" | "referrals" | "tree">("members");
   const [expandedMemberId, setExpandedMemberId] = useState<string | null>(null);
@@ -422,6 +424,8 @@ export function PeopleManager({
                           clubId={clubId}
                           clubSlug={clubSlug}
                           actions={adminMemberDetailActions}
+                          allowMarketingChannel
+                          knownMarketingChannels={knownMarketingChannels}
                         />
                       )}
                     </div>

@@ -21,6 +21,7 @@ import { getCampaignHistory, getEmailStats } from "../../email-actions";
 import { getOwnerFromCookie } from "@/lib/auth";
 import { QrCodesManager } from "../../qr-codes-manager";
 import { OperationsModuleManager } from "../../operations-module-manager";
+import { PanicSwitchManager } from "@/components/club/panic-switch-manager";
 
 export default async function SettingsPage({
   params,
@@ -32,7 +33,7 @@ export default async function SettingsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, login_mode, invite_only, invite_mode, hide_member_login, preregistration_enabled, auto_registration, tags, visibility, requested_visibility, telegram_bot_token, telegram_chat_id, notification_secret, latitude, longitude, address, city, country, spin_enabled, working_hours, spin_display_decimals, spin_cost, telegram_bot_enabled, telegram_bot_referral_name, telegram_bot_registration_price, telegram_bot_welcome_message, telegram_bot_keywords, telegram_bot_age_restricted, operations_module_enabled")
+    .select("id, login_mode, invite_only, invite_mode, hide_member_login, preregistration_enabled, auto_registration, tags, visibility, requested_visibility, telegram_bot_token, telegram_chat_id, notification_secret, latitude, longitude, address, city, country, spin_enabled, working_hours, spin_display_decimals, spin_cost, telegram_bot_enabled, telegram_bot_referral_name, telegram_bot_registration_price, telegram_bot_welcome_message, telegram_bot_keywords, telegram_bot_age_restricted, operations_module_enabled, locked_at, locked_by_id, locked_by_type")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -100,8 +101,36 @@ export default async function SettingsPage({
     getOwnerFromCookie(),
   ]);
 
+  // Resolve the "who locked it" label for PanicSwitchManager
+  let lockedByLabel: string | null = null;
+  if (club.locked_at && club.locked_by_id && club.locked_by_type) {
+    if (club.locked_by_type === "staff") {
+      const { data: staff } = await supabase
+        .from("members")
+        .select("member_code")
+        .eq("id", club.locked_by_id)
+        .maybeSingle();
+      lockedByLabel = staff?.member_code ?? null;
+    } else if (club.locked_by_type === "owner") {
+      const { data: owner } = await supabase
+        .from("club_owners")
+        .select("email")
+        .eq("id", club.locked_by_id)
+        .maybeSingle();
+      lockedByLabel = owner?.email ?? null;
+    }
+  }
+
   return (
     <div className="space-y-6">
+      <PanicSwitchManager
+        clubId={club.id}
+        clubSlug={clubSlug}
+        locked={club.locked_at !== null}
+        lockedAt={club.locked_at ?? null}
+        lockedByType={(club.locked_by_type ?? null) as "staff" | "owner" | "platform" | null}
+        lockedByLabel={lockedByLabel}
+      />
       <TagManager
         tags={club.tags ?? []}
         clubId={club.id}
