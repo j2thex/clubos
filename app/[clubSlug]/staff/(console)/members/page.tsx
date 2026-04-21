@@ -141,6 +141,7 @@ export default async function StaffMembersPage({
         clubSlug={clubSlug}
         periods={periods ?? []}
         roles={roles ?? []}
+        opsEnabled={opsEnabled}
       />
 
       <div className="space-y-2">
