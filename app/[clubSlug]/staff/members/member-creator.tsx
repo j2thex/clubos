@@ -32,7 +32,7 @@ export function StaffMemberCreator({
   const [isPending, startTransition] = useTransition();
 
   const todayIso = new Date().toISOString().split("T")[0];
-  const disabled = isPending || !idNumber.trim();
+  const disabled = isPending;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -84,35 +84,19 @@ export function StaffMemberCreator({
     <CollapsibleSection title={t("ops.memberForm.sectionTitle")} defaultOpen={false}>
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
         <form onSubmit={handleSubmit} className="p-5 space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <label className="block">
-              <span className="text-xs font-medium text-gray-500">
-                {t("ops.memberForm.idNumberLabelLocal")}{" "}
-                <span className="text-red-500">*</span>
-              </span>
-              <input
-                type="text"
-                value={idNumber}
-                onChange={(e) => setIdNumber(e.target.value)}
-                placeholder={t("ops.memberForm.idNumberPlaceholderLocal")}
-                required
-                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
-              />
-            </label>
-            <label className="block">
-              <span className="text-xs font-medium text-gray-500">
-                {t("ops.memberForm.referredByLabel")}
-              </span>
-              <input
-                type="text"
-                value={referredBy}
-                onChange={(e) => setReferredBy(e.target.value.toUpperCase())}
-                placeholder={t("ops.memberForm.referredByPlaceholder")}
-                maxLength={8}
-                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono tracking-wide uppercase text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
-              />
-            </label>
-          </div>
+          <label className="block">
+            <span className="text-xs font-medium text-gray-500">
+              {t("ops.memberForm.referredByLabel")}
+            </span>
+            <input
+              type="text"
+              value={referredBy}
+              onChange={(e) => setReferredBy(e.target.value.toUpperCase())}
+              placeholder={t("ops.memberForm.referredByPlaceholder")}
+              maxLength={8}
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono tracking-wide uppercase text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+            />
+          </label>
 
           <div className="pt-1">
             <button
@@ -130,6 +114,25 @@ export function StaffMemberCreator({
               defaultOpen={false}
             >
               <div className="space-y-3">
+                <label className="block">
+                  <span className="text-xs font-medium text-gray-500">
+                    {residencyStatus === "tourist"
+                      ? t("ops.memberForm.idNumberLabelTourist")
+                      : t("ops.memberForm.idNumberLabelLocal")}
+                  </span>
+                  <input
+                    type="text"
+                    value={idNumber}
+                    onChange={(e) => setIdNumber(e.target.value)}
+                    placeholder={
+                      residencyStatus === "tourist"
+                        ? t("ops.memberForm.idNumberPlaceholderTourist")
+                        : t("ops.memberForm.idNumberPlaceholderLocal")
+                    }
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                  />
+                </label>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <label className="block">
                     <span className="text-xs font-medium text-gray-500">
