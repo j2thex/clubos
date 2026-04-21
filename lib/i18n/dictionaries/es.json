@@ -373,6 +373,7 @@
   "ops.memberForm.referredByLabel": "Referido por",
   "ops.memberForm.referredByPlaceholder": "Código de socio (opcional)",
   "ops.memberForm.periodLabel": "Periodo de membresía",
+  "ops.memberForm.periodHelp": "Se selecciona automáticamente el plan por defecto; cambia solo si este socio tiene otro.",
   "ops.memberForm.noPeriod": "Sin periodo",
   "ops.memberForm.roleLabel": "Rol",
   "ops.memberForm.noRole": "Sin rol",

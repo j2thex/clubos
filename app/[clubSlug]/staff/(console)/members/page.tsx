@@ -66,7 +66,7 @@ export default async function StaffMembersPage({
       .order("display_order", { ascending: true }),
     supabase
       .from("membership_periods")
-      .select("id, name, duration_months")
+      .select("id, name, duration_months, is_default")
       .eq("club_id", club.id)
       .eq("active", true)
       .order("display_order", { ascending: true }),
