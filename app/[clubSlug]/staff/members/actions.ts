@@ -52,7 +52,7 @@ export type CreateMemberInput = {
   lastName: string | null;
   dateOfBirth: string | null;
   residencyStatus: "local" | "tourist" | null;
-  idNumber: string;
+  idNumber: string | null;
   phone: string | null;
   email?: string | null;
   periodId?: string | null;
@@ -108,7 +108,7 @@ export async function createMember(
 
   const firstName = input.firstName?.trim() ?? "";
   const lastName = input.lastName?.trim() ?? "";
-  const idNumber = input.idNumber.trim();
+  const idNumber = input.idNumber?.trim() || null;
   const phone = input.phone?.trim() || null;
   const email = input.email?.trim() || null;
   const dateOfBirth = input.dateOfBirth || null;
@@ -117,10 +117,6 @@ export async function createMember(
       ? input.residencyStatus
       : null;
 
-  if (!idNumber) {
-    await cleanupOrphanedUploads(input);
-    return { error: "ID number is required" };
-  }
   if (dateOfBirth) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)) {
       await cleanupOrphanedUploads(input);
@@ -371,6 +367,7 @@ export async function createMember(
   if (!lastName) missing.push("last name");
   if (!dateOfBirth) missing.push("DOB");
   if (!residencyStatus) missing.push("residency");
+  if (!idNumber) missing.push("ID number");
   if (!phone) missing.push("phone");
   const isIncomplete = missing.length > 0;
 
