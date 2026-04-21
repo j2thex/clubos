@@ -15,6 +15,41 @@ const OWNER_COOKIE = "clubos-owner-token";
 const LOCALE_COOKIE = "clubos-lang";
 const MEMBER_TOKEN_MAX_AGE = 60 * 60 * 24 * 365;
 
+// When a club is locked, all traffic gets bounced here. External target
+// intentionally: the URL must not mention osocios or the club slug.
+const LOCK_REDIRECT_URL = "https://www.google.com/";
+
+// Lock state cache: avoid a Supabase round-trip for every request to a
+// club-scoped URL. 30s TTL is short enough that platform-admin unlock
+// propagates quickly.
+const LOCK_TTL_MS = 30_000;
+const lockCache = new Map<string, { locked: boolean; expires: number }>();
+
+async function isClubLocked(slug: string): Promise<boolean> {
+  const now = Date.now();
+  const cached = lockCache.get(slug);
+  if (cached && cached.expires > now) return cached.locked;
+
+  const { data } = await supabaseAdmin
+    .from("clubs")
+    .select("locked_at")
+    .eq("slug", slug)
+    .maybeSingle();
+  const locked = !!data?.locked_at;
+  lockCache.set(slug, { locked, expires: now + LOCK_TTL_MS });
+  return locked;
+}
+
+function lockoutResponse(): NextResponse {
+  const res = NextResponse.redirect(LOCK_REDIRECT_URL);
+  // Kill every app cookie so the locker (and anyone else who held a
+  // session for this club) can't walk back in on a cached token.
+  res.cookies.delete(MEMBER_COOKIE);
+  res.cookies.delete(STAFF_COOKIE);
+  res.cookies.delete(OWNER_COOKIE);
+  return res;
+}
+
 // Routes that are not club-scoped
 const PLATFORM_PATHS = ["/onboarding", "/privacy", "/terms", "/platform-admin", "/examples", "/discover", "/for-clubs", "/contact"];
 
@@ -63,6 +98,13 @@ export async function middleware(request: NextRequest) {
   }
 
   const clubPath = "/" + segments.slice(1).join("/");
+
+  // Lockdown: if the club is locked, bounce every request — admin, staff,
+  // member, login pages, public profile — straight off the domain. Done
+  // before any auth branch so no login page is reachable either.
+  if (await isClubLocked(clubSlug)) {
+    return lockoutResponse();
+  }
 
   // Admin routes — require owner token (except admin login)
   if (clubPath.startsWith("/admin")) {
@@ -117,6 +159,19 @@ export async function middleware(request: NextRequest) {
     try {
       const { payload } = await jwtVerify(token, secret);
       if (!payload.is_staff) throw new Error("Not staff");
+
+      // Cross-club guard: staff cookies have path: "/" so a cookie from
+      // club A persists across all clubs on the domain. Block here before
+      // rendering any page of a different club's staff console, so users
+      // aren't surprised by an "Unauthorized" on submit. Cookies issued
+      // before this check shipped lack `club_slug` — treat as mismatch.
+      if (payload.club_slug !== clubSlug) {
+        const res = NextResponse.redirect(
+          new URL(`/${clubSlug}/staff/login?reason=wrong-club`, request.url),
+        );
+        res.cookies.delete(STAFF_COOKIE);
+        return res;
+      }
 
       // Check DB status for page loads and RSC navigation,
       // but skip for server actions (handled by requireActiveStaff)

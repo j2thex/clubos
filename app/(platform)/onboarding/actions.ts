@@ -269,6 +269,7 @@ export async function seedClubDefaults(clubId: string) {
     duration_months: 12,
     display_order: 0,
     active: true,
+    is_default: true,
   }, { onConflict: "club_id,name", ignoreDuplicates: true });
 
   // Auto-enable tag-suggested offers

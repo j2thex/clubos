@@ -1357,6 +1357,36 @@ export async function deleteMembershipPeriod(
   return { ok: true };
 }
 
+export async function setDefaultMembershipPeriod(
+  clubId: string,
+  periodId: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  // Clear the current default before setting the new one so the partial
+  // unique index (one is_default=true per club) never sees two.
+  const { error: clearError } = await supabase
+    .from("membership_periods")
+    .update({ is_default: false })
+    .eq("club_id", clubId)
+    .eq("is_default", true);
+
+  if (clearError) return { error: "Failed to update default plan" };
+
+  const { error } = await supabase
+    .from("membership_periods")
+    .update({ is_default: true })
+    .eq("id", periodId)
+    .eq("club_id", clubId);
+
+  if (error) return { error: "Failed to set default plan" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/staff/members`);
+  return { ok: true };
+}
+
 // Badges are created implicitly via the `award_badge` checkbox on quests
 // (see addQuest/updateQuest above). There is no standalone badge CRUD UI —
 // the rows are displayed on members' profiles via BadgeCollection, and the
@@ -1785,6 +1815,7 @@ export type UpdateMemberIdentityInput = {
   idNumber: string | null;
   phone: string | null;
   email: string | null;
+  marketingChannel?: string | null;
 };
 
 async function authorizeMemberOwner(
@@ -1862,18 +1893,24 @@ export async function updateMemberIdentity(
   }
 
   const supabase = createAdminClient();
+  const updatePayload: Record<string, unknown> = {
+    first_name: firstName,
+    last_name: lastName,
+    full_name: `${firstName} ${lastName}`,
+    date_of_birth: input.dateOfBirth || null,
+    residency_status: input.residencyStatus,
+    id_number: input.idNumber?.trim() || null,
+    phone: input.phone?.trim() || null,
+    email: input.email?.trim() || null,
+  };
+  if (input.marketingChannel !== undefined) {
+    const channel = input.marketingChannel?.trim().toLowerCase() || null;
+    updatePayload.marketing_channel = channel;
+  }
+
   const { error } = await supabase
     .from("members")
-    .update({
-      first_name: firstName,
-      last_name: lastName,
-      full_name: `${firstName} ${lastName}`,
-      date_of_birth: input.dateOfBirth || null,
-      residency_status: input.residencyStatus,
-      id_number: input.idNumber?.trim() || null,
-      phone: input.phone?.trim() || null,
-      email: input.email?.trim() || null,
-    })
+    .update(updatePayload)
     .eq("id", memberId);
 
   if (error) return { error: "Failed to update member" };
@@ -2202,4 +2239,50 @@ export async function adminRevokeIdVerification(
 
   revalidatePath(`/${clubSlug}/admin`);
   return { ok: true };
+}
+
+const LOCK_REDIRECT_URL = "https://www.google.com/";
+
+export async function lockClubFromOwner(
+  clubId: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true; redirect: string }> {
+  let session;
+  try {
+    session = await requireOwnerForClub(clubId);
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+
+  const supabase = createAdminClient();
+
+  const { data: owner } = await supabase
+    .from("club_owners")
+    .select("email")
+    .eq("id", session.owner_id)
+    .single();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({
+      locked_at: new Date().toISOString(),
+      locked_by_id: session.owner_id,
+      locked_by_type: "owner",
+    })
+    .eq("id", clubId)
+    .is("locked_at", null);
+
+  if (error) return { error: "Failed to lock club" };
+
+  await logActivity({
+    clubId,
+    action: "club_lockdown",
+    details: `owner:${owner?.email ?? session.owner_id}`,
+  });
+
+  // Log the locker out immediately — lockdown is intentionally irrevocable
+  // from the club side; only /platform-admin can reopen the club.
+  await clearOwnerCookie();
+  revalidatePath(`/${clubSlug}`, "layout");
+  return { ok: true, redirect: LOCK_REDIRECT_URL };
 }

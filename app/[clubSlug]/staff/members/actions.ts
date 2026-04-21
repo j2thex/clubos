@@ -48,16 +48,17 @@ export async function updateMemberRole(memberId: string, roleId: string | null, 
 }
 
 export type CreateMemberInput = {
-  firstName: string;
-  lastName: string;
-  dateOfBirth: string;
-  residencyStatus: "local" | "tourist";
-  idNumber: string;
-  phone: string;
+  firstName: string | null;
+  lastName: string | null;
+  dateOfBirth: string | null;
+  residencyStatus: "local" | "tourist" | null;
+  idNumber: string | null;
+  phone: string | null;
   email?: string | null;
   periodId?: string | null;
   roleId?: string | null;
   referredBy?: string | null;
+  memberCode?: string | null;
   idPhotoPath?: string | null;
   photoPath?: string | null;
   signaturePath?: string | null;
@@ -106,64 +107,32 @@ export async function createMember(
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
 
-  const firstName = input.firstName.trim();
-  const lastName = input.lastName.trim();
-  const idNumber = input.idNumber.trim();
-  const phone = input.phone.trim();
+  const firstName = input.firstName?.trim() ?? "";
+  const lastName = input.lastName?.trim() ?? "";
+  const idNumber = input.idNumber?.trim() || null;
+  const phone = input.phone?.trim() || null;
   const email = input.email?.trim() || null;
+  const dateOfBirth = input.dateOfBirth || null;
+  const residencyStatus: "local" | "tourist" | null =
+    input.residencyStatus === "local" || input.residencyStatus === "tourist"
+      ? input.residencyStatus
+      : null;
 
-  if (!firstName || !lastName) {
-    await cleanupOrphanedUploads(input);
-    return { error: "First name and last name are required" };
-  }
-  if (!input.dateOfBirth || !/^\d{4}-\d{2}-\d{2}$/.test(input.dateOfBirth)) {
-    await cleanupOrphanedUploads(input);
-    return { error: "Valid date of birth is required" };
-  }
-  if (ageFromDob(input.dateOfBirth) < 18) {
-    await cleanupOrphanedUploads(input);
-    return {
-      error:
-        "This club requires members to be 18 or older. The account was not created.",
-    };
-  }
-  if (input.residencyStatus !== "local" && input.residencyStatus !== "tourist") {
-    await cleanupOrphanedUploads(input);
-    return { error: "Residency must be local or tourist" };
-  }
-  if (!idNumber) {
-    await cleanupOrphanedUploads(input);
-    return { error: "ID number is required" };
-  }
-  if (!phone) {
-    await cleanupOrphanedUploads(input);
-    return { error: "Phone number is required" };
+  if (dateOfBirth) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)) {
+      await cleanupOrphanedUploads(input);
+      return { error: "Valid date of birth is required" };
+    }
+    if (ageFromDob(dateOfBirth) < 18) {
+      await cleanupOrphanedUploads(input);
+      return {
+        error:
+          "This club requires members to be 18 or older. The account was not created.",
+      };
+    }
   }
 
   const supabase = createAdminClient();
-
-  // Server-verified ops flag — don't trust the client's flag alone.
-  const { data: clubRow } = await supabase
-    .from("clubs")
-    .select("operations_module_enabled")
-    .eq("id", clubId)
-    .single();
-  const opsEnabled = Boolean(clubRow?.operations_module_enabled);
-
-  if (opsEnabled) {
-    if (!input.idPhotoPath) {
-      await cleanupOrphanedUploads(input);
-      return { error: "ID photo is required for this club" };
-    }
-    if (!input.photoPath) {
-      await cleanupOrphanedUploads(input);
-      return { error: "Member portrait is required for this club" };
-    }
-    if (!input.signaturePath) {
-      await cleanupOrphanedUploads(input);
-      return { error: "Signature is required for this club" };
-    }
-  }
 
   // Validate referral code if provided
   let referredByCode: string | null = null;
@@ -221,38 +190,65 @@ export async function createMember(
     }
   }
 
-  // Auto-generate member code: <first2><last2><seq>. Retry a few times on
-  // 23505 (uniqueness collision) in case of concurrent inserts.
-  const base = baseCodeFromNames(firstName, lastName);
-  const { data: existingCodes } = await supabase
-    .from("members")
-    .select("member_code")
-    .eq("club_id", clubId)
-    .like("member_code", `${base}%`);
-
-  const usedSeqs = new Set<number>();
-  for (const row of existingCodes ?? []) {
-    const suffix = row.member_code.slice(base.length);
-    if (/^\d+$/.test(suffix)) usedSeqs.add(parseInt(suffix, 10));
+  // Optional staff-supplied member code (migration path). When present it's
+  // used verbatim; when null we auto-generate.
+  const requestedCode = input.memberCode?.trim().toUpperCase() || null;
+  if (requestedCode !== null) {
+    if (!/^[A-Z0-9_-]{1,16}$/.test(requestedCode)) {
+      await cleanupOrphanedUploads(input);
+      return {
+        error: "Member ID must be 1–16 letters, digits, hyphens, or underscores",
+      };
+    }
+    const { data: codeConflict } = await supabase
+      .from("members")
+      .select("id")
+      .eq("club_id", clubId)
+      .eq("member_code", requestedCode)
+      .maybeSingle();
+    if (codeConflict) {
+      await cleanupOrphanedUploads(input);
+      return { error: `Member ID ${requestedCode} is already in use in this club` };
+    }
   }
 
+  // Auto-generate member code: <first2><last2><seq>. Retry a few times on
+  // 23505 (uniqueness collision) in case of concurrent inserts. Quick-create
+  // records with no name fall back to the MBR prefix (MBR01, MBR02, …).
+  const base = firstName || lastName ? baseCodeFromNames(firstName, lastName) : "MBR";
   let nextSeq = 1;
-  while (usedSeqs.has(nextSeq)) nextSeq += 1;
+  if (requestedCode === null) {
+    const { data: existingCodes } = await supabase
+      .from("members")
+      .select("member_code")
+      .eq("club_id", clubId)
+      .like("member_code", `${base}%`);
 
-  const fullName = `${firstName} ${lastName}`;
+    const usedSeqs = new Set<number>();
+    for (const row of existingCodes ?? []) {
+      const suffix = row.member_code.slice(base.length);
+      if (/^\d+$/.test(suffix)) usedSeqs.add(parseInt(suffix, 10));
+    }
+
+    while (usedSeqs.has(nextSeq)) nextSeq += 1;
+  }
+
+  const trimmedFullName = `${firstName} ${lastName}`.trim();
+  const fullName = trimmedFullName || null;
   let code = "";
   let insertError: { code?: string; message?: string } | null = null;
 
-  for (let attempt = 0; attempt < 5; attempt += 1) {
-    code = `${base}${String(nextSeq).padStart(2, "0")}`;
+  const maxAttempts = requestedCode !== null ? 1 : 5;
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    code = requestedCode ?? `${base}${String(nextSeq).padStart(2, "0")}`;
     const { error } = await supabase.from("members").insert({
       club_id: clubId,
       member_code: code,
       full_name: fullName,
-      first_name: firstName,
-      last_name: lastName,
-      date_of_birth: input.dateOfBirth,
-      residency_status: input.residencyStatus,
+      first_name: firstName || null,
+      last_name: lastName || null,
+      date_of_birth: dateOfBirth,
+      residency_status: residencyStatus,
       id_number: idNumber,
       phone,
       email,
@@ -280,7 +276,12 @@ export async function createMember(
       insertError = error;
       break;
     }
-    // 23505 on member_code — bump seq and try again.
+    // 23505 on member_code. For staff-supplied codes, don't auto-bump —
+    // surface as a code conflict. For auto-generated, bump seq and retry.
+    if (requestedCode !== null) {
+      insertError = error;
+      break;
+    }
     nextSeq += 1;
     insertError = error;
   }
@@ -291,7 +292,11 @@ export async function createMember(
       return { error: "This chip is already bound to another member" };
     }
     if (insertError.code === "23505") {
-      return { error: "Could not generate a unique member code — try different names" };
+      return {
+        error: requestedCode !== null
+          ? `Member ID ${requestedCode} is already in use in this club`
+          : "Could not generate a unique member code — try different names",
+      };
     }
     return { error: "Failed to create member" };
   }
@@ -392,15 +397,25 @@ export async function createMember(
     }
   }
 
+  const missing: string[] = [];
+  if (!firstName) missing.push("first name");
+  if (!lastName) missing.push("last name");
+  if (!dateOfBirth) missing.push("DOB");
+  if (!residencyStatus) missing.push("residency");
+  if (!idNumber) missing.push("ID number");
+  if (!phone) missing.push("phone");
+  const isIncomplete = missing.length > 0;
+
   const details = [
+    isIncomplete ? `INCOMPLETE (missing: ${missing.join(", ")})` : null,
     validTill ? `Period till ${validTill}` : null,
     referredByCode ? `Referred by ${referredByCode}` : null,
-  ].filter(Boolean).join(", ");
+  ].filter(Boolean).join(" · ");
 
   await logActivity({
     clubId,
     staffMemberId: staff?.member_id,
-    action: "member_created",
+    action: isIncomplete ? "member_created_incomplete" : "member_created",
     targetMemberCode: code,
     details: details || undefined,
   });

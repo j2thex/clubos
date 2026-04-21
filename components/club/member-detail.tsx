@@ -19,6 +19,7 @@ export type MemberDetailRecord = {
   id_number: string | null;
   phone: string | null;
   email: string | null;
+  marketing_channel: string | null;
   rfid_uid: string | null;
   id_verified_at: string | null;
   id_photo_url: string | null;
@@ -34,6 +35,7 @@ export type UpdateMemberIdentityInput = {
   idNumber: string | null;
   phone: string | null;
   email: string | null;
+  marketingChannel?: string | null;
 };
 
 export type MemberDetailActions = {
@@ -81,12 +83,16 @@ export function MemberDetail({
   clubSlug,
   actions,
   deepLinks,
+  allowMarketingChannel = false,
+  knownMarketingChannels = [],
 }: {
   member: MemberDetailRecord;
   clubId: string;
   clubSlug: string;
   actions: MemberDetailActions;
   deepLinks?: { entry: boolean; sell: boolean };
+  allowMarketingChannel?: boolean;
+  knownMarketingChannels?: string[];
 }) {
   const { t } = useLanguage();
   const [firstName, setFirstName] = useState(member.first_name ?? "");
@@ -98,6 +104,7 @@ export function MemberDetail({
   const [idNumber, setIdNumber] = useState(member.id_number ?? "");
   const [phone, setPhone] = useState(member.phone ?? "");
   const [email, setEmail] = useState(member.email ?? "");
+  const [marketingChannel, setMarketingChannel] = useState(member.marketing_channel ?? "");
 
   const [replaceTarget, setReplaceTarget] = useState<
     null | "portrait" | "idphoto" | "signature"
@@ -123,6 +130,9 @@ export function MemberDetail({
         idNumber: idNumber || null,
         phone: phone || null,
         email: email || null,
+        ...(allowMarketingChannel
+          ? { marketingChannel: marketingChannel || null }
+          : {}),
       });
       if ("error" in r) toast.error(r.error);
       else toast.success(t("admin.memberDetail.identitySaved"));
@@ -358,6 +368,30 @@ export function MemberDetail({
             className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
           />
         </label>
+
+        {allowMarketingChannel && (
+          <label className="block">
+            <span className="text-xs font-medium text-gray-500">
+              {t("admin.memberDetail.marketingChannelLabel")}
+            </span>
+            <input
+              type="text"
+              value={marketingChannel}
+              onChange={(e) => setMarketingChannel(e.target.value)}
+              placeholder={t("admin.memberDetail.marketingChannelPlaceholder")}
+              list={`mc-${member.id}`}
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
+            />
+            <datalist id={`mc-${member.id}`}>
+              {knownMarketingChannels.map((c) => (
+                <option key={c} value={c} />
+              ))}
+            </datalist>
+            <p className="mt-1 text-[10px] text-gray-400">
+              {t("admin.memberDetail.marketingChannelHint")}
+            </p>
+          </label>
+        )}
 
         <button
           type="button"

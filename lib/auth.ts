@@ -59,8 +59,17 @@ export async function clearMemberCookie() {
 
 // --- Staff auth (code + PIN) ---
 
-export async function createStaffToken(memberId: string, clubId: string): Promise<string> {
-  return new SignJWT({ member_id: memberId, club_id: clubId, is_staff: true })
+export async function createStaffToken(
+  memberId: string,
+  clubId: string,
+  clubSlug: string,
+): Promise<string> {
+  return new SignJWT({
+    member_id: memberId,
+    club_id: clubId,
+    club_slug: clubSlug,
+    is_staff: true,
+  })
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("12h")
     .sign(secret);
@@ -70,7 +79,12 @@ export async function verifyStaffToken(token: string) {
   try {
     const { payload } = await jwtVerify(token, secret);
     if (!payload.is_staff) return null;
-    return payload as { member_id: string; club_id: string; is_staff: true };
+    return payload as {
+      member_id: string;
+      club_id: string;
+      club_slug?: string;
+      is_staff: true;
+    };
   } catch {
     return null;
   }
@@ -138,7 +152,7 @@ export async function requireStaffForClub(
 ): Promise<{ member_id: string; club_id: string }> {
   const session = await requireActiveStaff();
   if (session.club_id !== clubId) {
-    throw new Error("Unauthorized");
+    throw new Error("You're logged in as staff for a different club. Please log in again.");
   }
   return session;
 }

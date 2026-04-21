@@ -507,3 +507,32 @@ export async function loginAsClubAdmin(
 
   return { ok: true, redirectUrl: `/${clubSlug}/admin` };
 }
+
+export async function unlockClubFromPlatform(
+  clubId: string,
+  clubSlug: string,
+  secret: string,
+): Promise<{ error: string } | { ok: true }> {
+  if (secret !== process.env.PLATFORM_ADMIN_SECRET) {
+    return { error: "Unauthorized" };
+  }
+
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ locked_at: null, locked_by_id: null, locked_by_type: null })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to unlock club" };
+
+  await supabase.from("activity_log").insert({
+    club_id: clubId,
+    action: "club_unlock",
+    details: "platform",
+  });
+
+  revalidatePath("/platform-admin");
+  revalidatePath(`/${clubSlug}`, "layout");
+  return { ok: true };
+}

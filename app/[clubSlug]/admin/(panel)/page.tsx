@@ -44,7 +44,7 @@ export default async function PeoplePage({
     supabase
       .from("members")
       .select(
-        "id, member_code, full_name, first_name, last_name, date_of_birth, residency_status, id_number, phone, email, spin_balance, is_staff, status, rfid_uid, id_verified_at, id_photo_path, photo_path, signature_path, member_roles(name)"
+        "id, member_code, full_name, first_name, last_name, date_of_birth, residency_status, id_number, phone, email, marketing_channel, spin_balance, is_staff, status, rfid_uid, id_verified_at, id_photo_path, photo_path, signature_path, member_roles(name)"
       )
       .eq("club_id", club.id)
       .eq("is_staff", false)
@@ -127,6 +127,7 @@ export default async function PeoplePage({
         id_number: m.id_number ?? null,
         phone: m.phone ?? null,
         email: m.email ?? null,
+        marketing_channel: m.marketing_channel ?? null,
         rfid_uid: m.rfid_uid ?? null,
         id_verified_at: m.id_verified_at ?? null,
         id_photo_url: idPhotoUrl,
@@ -223,6 +224,14 @@ export default async function PeoplePage({
     .filter((m) => !referrerGroups.has(m.member_code))
     .map((m) => ({ id: m.id, code: m.member_code, name: m.full_name }));
 
+  const knownMarketingChannels = Array.from(
+    new Set(
+      (members ?? [])
+        .map((m) => m.marketing_channel)
+        .filter((c): c is string => typeof c === "string" && c.length > 0),
+    ),
+  ).sort();
+
   return (
     <>
       <SetupChecklist clubId={club.id} clubSlug={clubSlug} />
@@ -236,6 +245,7 @@ export default async function PeoplePage({
         referralSources={referralList}
         referralTree={referrers}
         referralMemberOptions={memberOptions}
+        knownMarketingChannels={knownMarketingChannels}
       />
       </div>
     </>

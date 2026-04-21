@@ -4,6 +4,7 @@ import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 import { LanguageSwitcher } from "@/lib/i18n/switcher";
 import { StaffLogoutButton } from "@/components/club/staff-logout-button";
+import { PanicIconButton } from "@/components/club/panic-icon-button";
 
 export default async function StaffConsoleLayout({
   children,
@@ -43,10 +44,17 @@ export default async function StaffConsoleLayout({
           <div className="absolute inset-0 bg-black/60" />
         )}
         <div className="relative max-w-2xl mx-auto">
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-white">{t(locale, "staff.consoleTitle")}</h1>
-              <p className="mt-1 text-gray-400 text-sm">{club.name}</p>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex items-center gap-3">
+              <PanicIconButton
+                clubId={club.id}
+                clubSlug={clubSlug}
+                actor="staff"
+              />
+              <div className="min-w-0">
+                <h1 className="text-2xl font-bold text-white truncate">{t(locale, "staff.consoleTitle")}</h1>
+                <p className="mt-1 text-gray-400 text-sm truncate">{club.name}</p>
+              </div>
             </div>
           </div>
           <div className="flex gap-3 mt-4">

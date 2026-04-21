@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { LogoutButton } from "../logout-button";
 import { AdminNav } from "@/components/club/admin-nav";
+import { PanicIconButton } from "@/components/club/panic-icon-button";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 import { LanguageSwitcher } from "@/lib/i18n/switcher";
@@ -69,9 +70,16 @@ export default async function AdminPanelLayout({
           <div className="absolute inset-0 bg-black/60" />
         )}
         <div className="relative flex items-start justify-between max-w-2xl mx-auto">
-          <div>
-            <h1 className="text-2xl font-bold text-white">{t(locale, "admin.title")}</h1>
-            <p className="mt-1 text-gray-400 text-sm">{club.name}</p>
+          <div className="min-w-0 flex items-center gap-3">
+            <PanicIconButton
+              clubId={club.id}
+              clubSlug={clubSlug}
+              actor="owner"
+            />
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold text-white truncate">{t(locale, "admin.title")}</h1>
+              <p className="mt-1 text-gray-400 text-sm truncate">{club.name}</p>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
