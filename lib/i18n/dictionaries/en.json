@@ -373,6 +373,7 @@
   "ops.memberForm.referredByLabel": "Referred by",
   "ops.memberForm.referredByPlaceholder": "Member code (optional)",
   "ops.memberForm.periodLabel": "Membership Period",
+  "ops.memberForm.periodHelp": "Auto-selected from your default plan — change only if this member is on a different one.",
   "ops.memberForm.noPeriod": "No period",
   "ops.memberForm.roleLabel": "Role",
   "ops.memberForm.noRole": "No role",

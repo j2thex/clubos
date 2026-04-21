@@ -1357,6 +1357,36 @@ export async function deleteMembershipPeriod(
   return { ok: true };
 }
 
+export async function setDefaultMembershipPeriod(
+  clubId: string,
+  periodId: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  // Clear the current default before setting the new one so the partial
+  // unique index (one is_default=true per club) never sees two.
+  const { error: clearError } = await supabase
+    .from("membership_periods")
+    .update({ is_default: false })
+    .eq("club_id", clubId)
+    .eq("is_default", true);
+
+  if (clearError) return { error: "Failed to update default plan" };
+
+  const { error } = await supabase
+    .from("membership_periods")
+    .update({ is_default: true })
+    .eq("id", periodId)
+    .eq("club_id", clubId);
+
+  if (error) return { error: "Failed to set default plan" };
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/staff/members`);
+  return { ok: true };
+}
+
 // Badges are created implicitly via the `award_badge` checkbox on quests
 // (see addQuest/updateQuest above). There is no standalone badge CRUD UI —
 // the rows are displayed on members' profiles via BadgeCollection, and the

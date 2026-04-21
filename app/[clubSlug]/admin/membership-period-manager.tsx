@@ -1,13 +1,18 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { addMembershipPeriod, deleteMembershipPeriod } from "./actions";
+import {
+  addMembershipPeriod,
+  deleteMembershipPeriod,
+  setDefaultMembershipPeriod,
+} from "./actions";
 
 interface Period {
   id: string;
   name: string;
   duration_months: number;
   price: number | null;
+  is_default: boolean;
 }
 
 export function MembershipPeriodManager({
@@ -53,17 +58,30 @@ export function MembershipPeriodManager({
     });
   }
 
+  function handleSetDefault(periodId: string) {
+    setError(null);
+    startTransition(async () => {
+      const result = await setDefaultMembershipPeriod(clubId, periodId, clubSlug);
+      if ("error" in result) {
+        setError(result.error);
+      }
+    });
+  }
+
   return (
     <div className="space-y-2">
       <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-1">
         Membership Periods
       </h2>
+      <p className="text-xs text-gray-500 px-1">
+        The default plan is pre-selected when staff create new members.
+      </p>
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
         {periods.length > 0 && (
           <div className="divide-y divide-gray-100">
             {periods.map((p) => (
-              <div key={p.id} className="px-5 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div key={p.id} className="px-5 py-3 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0 flex-wrap">
                   <span className="text-sm font-medium text-gray-900">{p.name}</span>
                   <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
                     {p.duration_months} {p.duration_months === 1 ? "month" : "months"}
@@ -73,14 +91,30 @@ export function MembershipPeriodManager({
                       ${p.price}
                     </span>
                   )}
+                  {p.is_default && (
+                    <span className="text-xs text-gray-700 bg-amber-100 px-2 py-0.5 rounded-full font-semibold">
+                      Default
+                    </span>
+                  )}
                 </div>
-                <button
-                  onClick={() => handleDelete(p.id)}
-                  disabled={isPending}
-                  className="text-xs text-red-500 hover:text-red-700 disabled:opacity-50 transition-colors"
-                >
-                  Remove
-                </button>
+                <div className="flex items-center gap-3 shrink-0">
+                  {!p.is_default && (
+                    <button
+                      onClick={() => handleSetDefault(p.id)}
+                      disabled={isPending}
+                      className="text-xs text-gray-600 hover:text-gray-900 disabled:opacity-50 transition-colors"
+                    >
+                      Set as default
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleDelete(p.id)}
+                    disabled={isPending}
+                    className="text-xs text-red-500 hover:text-red-700 disabled:opacity-50 transition-colors"
+                  >
+                    Remove
+                  </button>
+                </div>
               </div>
             ))}
           </div>

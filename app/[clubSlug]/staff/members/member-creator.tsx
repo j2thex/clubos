@@ -22,7 +22,7 @@ export function StaffMemberCreator({
 }: {
   clubId: string;
   clubSlug: string;
-  periods: { id: string; name: string; duration_months: number }[];
+  periods: { id: string; name: string; duration_months: number; is_default: boolean }[];
   roles?: { id: string; name: string }[];
   opsEnabled?: boolean;
 }) {
@@ -36,7 +36,9 @@ export function StaffMemberCreator({
   const [residencyStatus, setResidencyStatus] = useState<"local" | "tourist" | null>(null);
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [selectedPeriodId, setSelectedPeriodId] = useState("");
+  const defaultPeriodId =
+    periods.find((p) => p.is_default)?.id ?? periods[0]?.id ?? "";
+  const [selectedPeriodId, setSelectedPeriodId] = useState(defaultPeriodId);
   const [selectedRoleId, setSelectedRoleId] = useState("");
   const [portraitFile, setPortraitFile] = useState<File | null>(null);
   const [idPhotoFile, setIdPhotoFile] = useState<File | null>(null);
@@ -130,7 +132,7 @@ export function StaffMemberCreator({
         setResidencyStatus(null);
         setPhone("");
         setEmail("");
-        setSelectedPeriodId("");
+        setSelectedPeriodId(defaultPeriodId);
         setSelectedRoleId("");
         setPortraitFile(null);
         setIdPhotoFile(null);
@@ -329,6 +331,9 @@ export function StaffMemberCreator({
                             </option>
                           ))}
                         </select>
+                        <span className="mt-1 block text-[11px] text-gray-400">
+                          {t("ops.memberForm.periodHelp")}
+                        </span>
                       </label>
                     )}
                     {roles.length > 0 && (

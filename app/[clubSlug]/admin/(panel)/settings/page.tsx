@@ -60,7 +60,7 @@ export default async function SettingsPage({
       .order("display_order", { ascending: true }),
     supabase
       .from("membership_periods")
-      .select("id, name, duration_months, price, display_order")
+      .select("id, name, duration_months, price, display_order, is_default")
       .eq("club_id", club.id)
       .eq("active", true)
       .order("display_order", { ascending: true }),
@@ -163,6 +163,7 @@ export default async function SettingsPage({
           name: p.name,
           duration_months: p.duration_months,
           price: p.price ?? null,
+          is_default: p.is_default ?? false,
         }))}
         clubId={club.id}
         clubSlug={clubSlug}
