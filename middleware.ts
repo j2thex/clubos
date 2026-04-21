@@ -15,9 +15,13 @@ const OWNER_COOKIE = "clubos-owner-token";
 const LOCALE_COOKIE = "clubos-lang";
 const MEMBER_TOKEN_MAX_AGE = 60 * 60 * 24 * 365;
 
-// Lock state cache: avoid a Supabase round-trip for every member/staff request.
-// 30s TTL is short enough that unlock propagates quickly and the owner who
-// toggles is revalidated atomically on their own request via revalidatePath.
+// When a club is locked, all traffic gets bounced here. External target
+// intentionally: the URL must not mention osocios or the club slug.
+const LOCK_REDIRECT_URL = "https://www.google.com/";
+
+// Lock state cache: avoid a Supabase round-trip for every request to a
+// club-scoped URL. 30s TTL is short enough that platform-admin unlock
+// propagates quickly.
 const LOCK_TTL_MS = 30_000;
 const lockCache = new Map<string, { locked: boolean; expires: number }>();
 
@@ -34,6 +38,16 @@ async function isClubLocked(slug: string): Promise<boolean> {
   const locked = !!data?.locked_at;
   lockCache.set(slug, { locked, expires: now + LOCK_TTL_MS });
   return locked;
+}
+
+function lockoutResponse(): NextResponse {
+  const res = NextResponse.redirect(LOCK_REDIRECT_URL);
+  // Kill every app cookie so the locker (and anyone else who held a
+  // session for this club) can't walk back in on a cached token.
+  res.cookies.delete(MEMBER_COOKIE);
+  res.cookies.delete(STAFF_COOKIE);
+  res.cookies.delete(OWNER_COOKIE);
+  return res;
 }
 
 // Routes that are not club-scoped
@@ -85,6 +99,13 @@ export async function middleware(request: NextRequest) {
 
   const clubPath = "/" + segments.slice(1).join("/");
 
+  // Lockdown: if the club is locked, bounce every request — admin, staff,
+  // member, login pages, public profile — straight off the domain. Done
+  // before any auth branch so no login page is reachable either.
+  if (await isClubLocked(clubSlug)) {
+    return lockoutResponse();
+  }
+
   // Admin routes — require owner token (except admin login)
   if (clubPath.startsWith("/admin")) {
     if (clubPath === "/admin/login" || clubPath === "/admin/reset-password") {
@@ -115,12 +136,6 @@ export async function middleware(request: NextRequest) {
 
   // Public club profile is public
   if (clubPath.startsWith("/public")) {
-    return applyLocale(request, NextResponse.next());
-  }
-
-  // Offline page is the lock rewrite target — let it render without re-checking
-  // the lock (would loop) and without requiring a cookie.
-  if (clubPath.startsWith("/offline")) {
     return applyLocale(request, NextResponse.next());
   }
 
@@ -158,21 +173,9 @@ export async function middleware(request: NextRequest) {
         return res;
       }
 
-      const isServerAction = request.headers.has("next-action");
-      // Allow the lock action itself through even when locked, so staff
-      // that just hit the Lock button can complete the server action. All
-      // other server actions are blocked at the RPC/action layer.
-
-      // Lockdown: route staff page loads to the offline page, not RSC actions.
-      if (!isServerAction) {
-        const locked = await isClubLocked(clubSlug);
-        if (locked) {
-          return NextResponse.rewrite(new URL(`/${clubSlug}/offline`, request.url));
-        }
-      }
-
       // Check DB status for page loads and RSC navigation,
       // but skip for server actions (handled by requireActiveStaff)
+      const isServerAction = request.headers.has("next-action");
       if (!isServerAction) {
         const { data: staffMember } = await supabaseAdmin
           .from("members")
@@ -206,14 +209,6 @@ export async function middleware(request: NextRequest) {
 
   try {
     const { payload } = await jwtVerify(token, secret);
-
-    // Lockdown: rewrite member traffic to the offline page.
-    if (!request.headers.has("next-action")) {
-      const locked = await isClubLocked(clubSlug);
-      if (locked) {
-        return NextResponse.rewrite(new URL(`/${clubSlug}/offline`, request.url));
-      }
-    }
 
     // Check membership expiry from JWT claim (no DB query needed)
     if (payload.valid_till) {

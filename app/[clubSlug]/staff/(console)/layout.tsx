@@ -18,13 +18,12 @@ export default async function StaffConsoleLayout({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name, locked_at")
+    .select("id, name")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
 
   if (!club) notFound();
-  const isLocked = club.locked_at !== null;
   const locale = await getServerLocale();
 
   const { data: branding } = await supabase
@@ -50,7 +49,6 @@ export default async function StaffConsoleLayout({
               <PanicIconButton
                 clubId={club.id}
                 clubSlug={clubSlug}
-                locked={isLocked}
                 actor="staff"
               />
               <div className="min-w-0">
