@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyStaff } from "@/lib/staff-notify";
 import { logActivity } from "@/lib/activity-log";
@@ -64,6 +65,7 @@ export async function submitQuest(
     `🎯 Quest validation needed\n<b>${quest.title}</b>\nMember: ${member?.member_code ?? "Unknown"}`,
   );
 
+  revalidatePath(`/${clubSlug}/staff`, "layout");
   return { ok: true };
 }
 
@@ -174,5 +176,6 @@ export async function submitEmailQuest(
     details: email,
   });
 
+  revalidatePath(`/${clubSlug}/staff`, "layout");
   return { ok: true };
 }

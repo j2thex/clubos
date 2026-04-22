@@ -59,6 +59,7 @@ export async function confirmPreregistration(
 
   revalidatePath(`/${clubSlug}/staff/preregistrations`);
   revalidatePath(`/${clubSlug}/staff/members`);
+  revalidatePath(`/${clubSlug}/staff`, "layout");
   return { ok: true };
 }
 
@@ -105,5 +106,6 @@ export async function denyPreregistration(
 
   revalidatePath(`/${clubSlug}/staff/preregistrations`);
   revalidatePath(`/${clubSlug}/staff/members`);
+  revalidatePath(`/${clubSlug}/staff`, "layout");
   return { ok: true };
 }

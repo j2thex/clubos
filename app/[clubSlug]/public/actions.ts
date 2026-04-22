@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyPlatform, notifyStaff } from "@/lib/staff-notify";
 import { sendPreregistrationConfirmation, sendAutoRegistrationEmail } from "@/lib/email";
@@ -65,10 +66,10 @@ export async function submitPreregistration(
 
   if (error || !prereg) return { error: "Failed to submit pre-registration" };
 
-  // Fetch club info including auto_registration flag
+  // Fetch club info including auto_registration flag + slug (for revalidation)
   const { data: clubInfo } = await supabase
     .from("clubs")
-    .select("address, city, auto_registration")
+    .select("slug, address, city, auto_registration")
     .eq("id", clubId)
     .single();
   const clubAddress = [clubInfo?.address, clubInfo?.city].filter(Boolean).join(", ") || null;
@@ -133,6 +134,10 @@ export async function submitPreregistration(
     targetMemberCode: memberCode,
     details: `${normalizedEmail} — ${visitDate} (${numVisitors} visitors)${autoReg ? " [auto-registered]" : ""}`,
   });
+
+  if (clubInfo?.slug) {
+    revalidatePath(`/${clubInfo.slug}/staff`, "layout");
+  }
 
   return { ok: true };
 }

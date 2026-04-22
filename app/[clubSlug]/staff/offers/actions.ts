@@ -56,6 +56,7 @@ export async function fulfillOfferOrder(
   }
 
   revalidatePath(`/${clubSlug}/staff/offers`);
+  revalidatePath(`/${clubSlug}/staff`, "layout");
   return { ok: true };
 }
 
@@ -112,5 +113,6 @@ export async function addWalkinOfferOrder(
   });
 
   revalidatePath(`/${clubSlug}/staff/offers`);
+  revalidatePath(`/${clubSlug}/staff`, "layout");
   return { ok: true };
 }
