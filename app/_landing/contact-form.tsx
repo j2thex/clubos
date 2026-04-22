@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ const INITIAL: ContactState = { status: "idle" };
 export function ContactForm() {
   const { t } = useLanguage();
   const [state, dispatch, pending] = useActionState(submitContact, INITIAL);
+  const [renderedAt] = useState(() => Date.now());
 
   if (state.status === "success") {
     return (
@@ -23,6 +24,15 @@ export function ContactForm() {
 
   return (
     <form action={dispatch} className="space-y-4">
+      <input
+        type="text"
+        name="website"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        className="absolute left-[-9999px] h-0 w-0 opacity-0"
+      />
+      <input type="hidden" name="rendered_at" value={renderedAt} />
       <div className="space-y-1.5">
         <Label htmlFor="name">{t("contact.formName")}</Label>
         <Input id="name" name="name" required autoComplete="name" />

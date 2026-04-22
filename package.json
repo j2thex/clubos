@@ -20,7 +20,6 @@
     "@yudiel/react-qr-scanner": "^2.5.1",
     "ai": "^6.0.159",
     "bcryptjs": "^3.0.3",
-    "botid": "^1.5.11",
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
