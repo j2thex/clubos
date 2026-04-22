@@ -1,5 +1,4 @@
 import type { NextConfig } from "next";
-import { withBotId } from "botid/next/config";
 
 const nextConfig: NextConfig = {
   experimental: {
@@ -21,17 +20,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Declare rewrites as an object so withBotId merges its proxy routes into
-  // beforeFiles. Without this, withBotId appends to a plain array (afterFiles),
-  // which runs too late — the dynamic [clubSlug] route catches BotID's UUID
-  // prefix paths first and 404s.
-  async rewrites() {
-    return {
-      beforeFiles: [],
-      afterFiles: [],
-      fallback: [],
-    };
-  },
 };
 
-export default withBotId(nextConfig);
+export default nextConfig;

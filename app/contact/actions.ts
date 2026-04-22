@@ -1,7 +1,6 @@
 "use server";
 
 import { Resend } from "resend";
-import { checkBotId } from "botid/server";
 
 export type ContactState =
   | { status: "idle" }
@@ -24,18 +23,20 @@ export async function submitContact(
     return { status: "error", message: "invalid-email" };
   }
 
-  // Silently drop bot submissions: return success without sending email,
-  // so operators get no signal to iterate around the check.
-  // If BotID throws (missing OIDC token, external outage, etc.), fail open —
-  // we'd rather deliver a legitimate email than block the form on a BotID issue.
-  try {
-    const verification = await checkBotId();
-    if (verification.isBot) {
-      console.warn("[contact] botid blocked submission", { email });
-      return { status: "success" };
-    }
-  } catch (err) {
-    console.error("[contact] botid check threw, proceeding", err);
+  // Honeypot: invisible field real users never see. Bots that fill every
+  // input populate it. Stealth success so operators get no signal.
+  const website = String(formData.get("website") ?? "").trim();
+  if (website) {
+    console.warn("[contact] honeypot triggered");
+    return { status: "success" };
+  }
+
+  // Any submit under 2 s is almost certainly a script.
+  const renderedAt = Number(formData.get("rendered_at") ?? 0);
+  const elapsed = Date.now() - renderedAt;
+  if (!renderedAt || elapsed < 2000) {
+    console.warn("[contact] too-fast submit", { elapsed });
+    return { status: "success" };
   }
 
   const apiKey = process.env.RESEND_API_KEY;
