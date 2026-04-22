@@ -15,16 +15,16 @@ export default async function OffersPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id")
+    .select("id, operations_module_enabled")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
 
   if (!club) notFound();
   const locale = await getServerLocale();
+  const opsEnabled = !!club.operations_module_enabled;
 
-  // Fetch full catalog + club's enabled offers
-  const [{ data: catalog }, { data: clubOffers }] = await Promise.all([
+  const [{ data: catalog }, { data: clubOffers }, { data: products }] = await Promise.all([
     supabase
       .from("offer_catalog")
       .select("id, name, name_es, subtype, icon")
@@ -32,8 +32,25 @@ export default async function OffersPage({
       .order("name", { ascending: true }),
     supabase
       .from("club_offers")
-      .select("id, offer_id, orderable, price, description, description_es, image_url, icon, link, is_public, archived")
+      .select("id, offer_id, orderable, price, description, description_es, image_url, icon, link, is_public, archived, product_id, product_quantity")
       .eq("club_id", club.id),
+    opsEnabled
+      ? supabase
+          .from("products")
+          .select("id, name, name_es, unit, unit_price, stock_on_hand, category_id")
+          .eq("club_id", club.id)
+          .eq("active", true)
+          .eq("archived", false)
+          .order("display_order", { ascending: true })
+      : Promise.resolve({ data: [] as Array<{
+          id: string;
+          name: string;
+          name_es: string | null;
+          unit: string;
+          unit_price: number;
+          stock_on_hand: number;
+          category_id: string | null;
+        }> }),
   ]);
 
   return (
@@ -67,6 +84,17 @@ export default async function OffersPage({
           link: ca.link ?? null,
           is_public: ca.is_public ?? false,
           archived: ca.archived ?? false,
+          product_id: ca.product_id ?? null,
+          product_quantity: ca.product_quantity != null ? Number(ca.product_quantity) : null,
+        }))}
+        opsEnabled={opsEnabled}
+        products={(products ?? []).map((p) => ({
+          id: p.id,
+          name: p.name,
+          name_es: p.name_es,
+          unit: p.unit,
+          unit_price: Number(p.unit_price),
+          stock_on_hand: Number(p.stock_on_hand),
         }))}
         clubId={club.id}
         clubSlug={clubSlug}

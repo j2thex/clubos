@@ -7,6 +7,15 @@ import { localized } from "@/lib/i18n";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { OfferDetailModal, type OfferDetail } from "../../(member)/offers/offer-detail-modal";
 
+interface ProductInfo {
+  id: string;
+  name: string;
+  unit: string;
+  quantity: number;
+  stock: number;
+  active: boolean;
+}
+
 interface Order {
   id: string;
   status: string;
@@ -16,6 +25,7 @@ interface Order {
   member_name: string;
   fulfilled_by_name: string | null;
   offer_title: string;
+  product: ProductInfo | null;
 }
 
 interface Offer {
@@ -32,6 +42,7 @@ interface Offer {
   link: string | null;
   orderable: boolean;
   price: number | null;
+  product: ProductInfo | null;
 }
 
 export function StaffOfferClient({
@@ -77,6 +88,10 @@ export function StaffOfferClient({
   const pendingOrders = orders.filter((o) => o.status === "pending");
   const fulfilledOrders = orders.filter((o) => o.status === "fulfilled").slice(0, 20);
 
+  const walkinProduct = offers.find((o) => o.id === walkinOfferId)?.product ?? null;
+  const walkinBlocked =
+    !!walkinProduct && (!walkinProduct.active || walkinProduct.stock < walkinProduct.quantity);
+
   function handleFulfill(orderId: string) {
     setError(null);
     setSuccess(null);
@@ -111,7 +126,8 @@ export function StaffOfferClient({
         setError(res.error);
         return;
       }
-      const offerName = offers.find((a) => a.id === walkinOfferId)?.title ?? "";
+      const walkinOffer = offers.find((a) => a.id === walkinOfferId);
+      const offerName = walkinOffer?.title ?? "";
       setOrders((prev) => [
         {
           id: crypto.randomUUID(),
@@ -122,6 +138,7 @@ export function StaffOfferClient({
           member_name: "",
           fulfilled_by_name: null,
           offer_title: offerName,
+          product: walkinOffer?.product ?? null,
         },
         ...prev,
       ]);
@@ -150,9 +167,22 @@ export function StaffOfferClient({
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           {pendingOrders.length > 0 ? (
             <div className="divide-y divide-gray-100">
-              {pendingOrders.map((o) => (
+              {pendingOrders.map((o) => {
+                const stockBlocked =
+                  !!o.product && (!o.product.active || o.product.stock < o.product.quantity);
+                const stockBadge = o.product
+                  ? !o.product.active
+                    ? { label: t("staff.offerProductInactive"), cls: "bg-amber-100 text-amber-700" }
+                    : o.product.stock < o.product.quantity
+                      ? { label: t("staff.offerOutOfStock"), cls: "bg-red-100 text-red-700" }
+                      : {
+                          label: t("staff.offerStock", { n: String(o.product.stock) }),
+                          cls: "bg-green-50 text-green-700",
+                        }
+                  : null;
+                return (
                 <div key={o.id} className="px-5 py-3 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-gray-900">
                       {o.offer_title}
                     </p>
@@ -160,17 +190,32 @@ export function StaffOfferClient({
                       <span className="font-mono font-semibold">{o.member_code}</span>
                       {o.member_name ? ` \u2014 ${o.member_name}` : ""}
                     </p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">{formatDate(o.created_at)}</p>
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <p className="text-[10px] text-gray-400">{formatDate(o.created_at)}</p>
+                      {o.product && (
+                        <span className="text-[10px] font-medium text-gray-500">
+                          {"→"} {o.product.name} {"×"}{o.product.quantity}
+                          {o.product.unit === "gram" ? "g" : ""}
+                        </span>
+                      )}
+                      {stockBadge && (
+                        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${stockBadge.cls}`}>
+                          {stockBadge.label}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <button
                     onClick={() => handleFulfill(o.id)}
-                    disabled={isPending}
-                    className="rounded-lg bg-green-600 text-white px-4 py-2 text-xs font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors shrink-0"
+                    disabled={isPending || stockBlocked}
+                    title={stockBlocked ? stockBadge?.label : undefined}
+                    className="rounded-lg bg-green-600 text-white px-4 py-2 text-xs font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
                   >
                     {t("staff.fulfillOrder")}
                   </button>
                 </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="px-5 py-6 text-center text-sm text-gray-400">
@@ -186,7 +231,7 @@ export function StaffOfferClient({
           {t("staff.walkinOrder")}
         </h2>
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-          <form onSubmit={handleWalkin} className="px-5 py-4">
+          <form onSubmit={handleWalkin} className="px-5 py-4 space-y-2">
             <div className="flex gap-3 items-end">
               <div className="flex-1">
                 <label className="block text-xs font-medium text-gray-500 mb-1">{t("staff.offerLabel")}</label>
@@ -213,12 +258,24 @@ export function StaffOfferClient({
               </div>
               <button
                 type="submit"
-                disabled={isPending || !memberCode.trim()}
+                disabled={isPending || !memberCode.trim() || walkinBlocked}
                 className="rounded-lg bg-gray-800 text-white px-4 py-2 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
               >
                 {t("staff.fulfillOrder")}
               </button>
             </div>
+            {walkinProduct && (
+              <p className="text-[11px] text-gray-500">
+                {"→"} {walkinProduct.name} {"×"}{walkinProduct.quantity}
+                {walkinProduct.unit === "gram" ? "g" : ""}
+                {" · "}
+                {!walkinProduct.active
+                  ? <span className="text-amber-600 font-semibold">{t("staff.offerProductInactive")}</span>
+                  : walkinProduct.stock < walkinProduct.quantity
+                    ? <span className="text-red-600 font-semibold">{t("staff.offerOutOfStock")}</span>
+                    : <span className="text-green-700 font-semibold">{t("staff.offerStock", { n: String(walkinProduct.stock) })}</span>}
+              </p>
+            )}
           </form>
         </div>
       </div>

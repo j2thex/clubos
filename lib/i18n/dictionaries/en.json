@@ -245,6 +245,7 @@
   "offers.detail.pending": "Pending — tap to cancel",
   "offers.detail.pendingHint": "Staff will confirm when it's ready.",
   "offers.detail.notOrderable": "Info only — ask staff at the counter for details.",
+  "offers.detail.unavailable": "Currently unavailable — out of stock.",
   "offers.detail.staffInfo": "Catalog info — tap an offer to see what it is.",
   "offers.detail.staffBrowseTitle": "Offer Catalog",
 
@@ -635,6 +636,9 @@
   "staff.orderFulfilled": "Order fulfilled",
   "staff.walkinFulfilled": "Walk-in order fulfilled for {code}",
   "staff.recentlyFulfilled": "Recently Fulfilled",
+  "staff.offerStock": "Stock: {n}",
+  "staff.offerOutOfStock": "Out of stock",
+  "staff.offerProductInactive": "Product inactive",
   "staff.checkedInSuccess": "Checked in! +{spins} spin(s) awarded",
   "staff.questCompleted": "Quest completed! +{spins} spin(s) awarded (balance: {balance})",
   "staff.completeQuest": "Complete +{spins}",

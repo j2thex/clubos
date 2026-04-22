@@ -245,6 +245,7 @@
   "offers.detail.pending": "Pendiente — toca para cancelar",
   "offers.detail.pendingHint": "El staff confirmará cuando esté listo.",
   "offers.detail.notOrderable": "Solo informativo — pregunta al staff en el mostrador.",
+  "offers.detail.unavailable": "No disponible — sin stock.",
   "offers.detail.staffInfo": "Catálogo informativo — toca una oferta para ver qué es.",
   "offers.detail.staffBrowseTitle": "Catálogo de Ofertas",
 
@@ -635,6 +636,9 @@
   "staff.orderFulfilled": "Pedido completado",
   "staff.walkinFulfilled": "Pedido sin cita completado para {code}",
   "staff.recentlyFulfilled": "Completados recientemente",
+  "staff.offerStock": "Stock: {n}",
+  "staff.offerOutOfStock": "Sin stock",
+  "staff.offerProductInactive": "Producto inactivo",
   "staff.checkedInSuccess": "Registrado! +{spins} tirada(s) otorgadas",
   "staff.questCompleted": "Misión completada! +{spins} tirada(s) otorgadas (saldo: {balance})",
   "staff.completeQuest": "Completar +{spins}",

@@ -20,6 +20,7 @@ interface OfferItem {
   link: string | null;
   orderable: boolean;
   price: number | null;
+  unavailable: boolean;
   order: { id: string; club_offer_id: string; status: string } | null;
 }
 
@@ -55,7 +56,7 @@ export function OfferListClient({
 
   const selectedOffer = offers.find((o) => o.id === selectedOfferId) ?? null;
   const selectedOfferDetail = selectedOffer
-    ? { ...selectedOffer, hasPendingOrder: !!selectedOffer.order }
+    ? { ...selectedOffer, hasPendingOrder: !!selectedOffer.order, unavailable: selectedOffer.unavailable }
     : null;
 
   function handleRequest(clubOfferId: string) {

@@ -37,16 +37,31 @@ interface ClubOffer {
   link: string | null;
   is_public: boolean;
   archived: boolean;
+  product_id: string | null;
+  product_quantity: number | null;
+}
+
+interface LinkableProduct {
+  id: string;
+  name: string;
+  name_es: string | null;
+  unit: string;
+  unit_price: number;
+  stock_on_hand: number;
 }
 
 export function OfferManager({
   catalog,
   clubOffers,
+  opsEnabled,
+  products,
   clubId,
   clubSlug,
 }: {
   catalog: CatalogOffer[];
   clubOffers: ClubOffer[];
+  opsEnabled: boolean;
+  products: LinkableProduct[];
   clubId: string;
   clubSlug: string;
 }) {
@@ -247,6 +262,8 @@ export function OfferManager({
                   isEnabled={!!activeEnabledMap.get(offer.id)}
                   isExpanded={expandedOfferId === offer.id}
                   isPending={isPending}
+                  opsEnabled={opsEnabled}
+                  products={products}
                   onToggle={handleToggle}
                   onUpdateOptions={handleUpdateOptions}
                   onDirtyChange={handleDirtyChange}
@@ -367,6 +384,8 @@ function OfferRow({
   isEnabled,
   isExpanded,
   isPending,
+  opsEnabled,
+  products,
   onToggle,
   onUpdateOptions,
   onToggleExpand,
@@ -379,6 +398,8 @@ function OfferRow({
   isEnabled: boolean;
   isExpanded: boolean;
   isPending: boolean;
+  opsEnabled: boolean;
+  products: LinkableProduct[];
   onToggle: (offerId: string, enabled: boolean) => void;
   onUpdateOptions: (clubOfferId: string, formData: FormData) => void;
   onToggleExpand: (offerId: string) => void;
@@ -396,7 +417,19 @@ function OfferRow({
   const [localIcon, setLocalIcon] = useState<string | null>(clubOffer?.icon ?? null);
   const [localImage, setLocalImage] = useState<File | null>(null);
   const [localIsPublic, setLocalIsPublic] = useState(clubOffer?.is_public ?? true);
+  const [localProductId, setLocalProductId] = useState<string | null>(clubOffer?.product_id ?? null);
+  const [localProductQuantity, setLocalProductQuantity] = useState<string>(
+    clubOffer?.product_quantity != null ? String(clubOffer.product_quantity) : "",
+  );
   const [descLang, setDescLang] = useState<"en" | "es">("en");
+
+  const linkedProduct = localProductId ? products.find((p) => p.id === localProductId) ?? null : null;
+  const derivedPrice = (() => {
+    if (!linkedProduct) return null;
+    const qty = Number(localProductQuantity);
+    if (!Number.isFinite(qty) || qty <= 0) return null;
+    return Math.round(linkedProduct.unit_price * qty * 100) / 100;
+  })();
 
   // Track whether options have been changed from server values
   const serverOrderable = clubOffer?.orderable ?? false;
@@ -406,6 +439,8 @@ function OfferRow({
   const serverLink = clubOffer?.link ?? "";
   const serverIcon = clubOffer?.icon ?? null;
   const serverIsPublic = clubOffer?.is_public ?? false;
+  const serverProductId = clubOffer?.product_id ?? null;
+  const serverProductQuantity = clubOffer?.product_quantity != null ? String(clubOffer.product_quantity) : "";
   const optionsDirty =
     isEnabled &&
     (localOrderable !== serverOrderable ||
@@ -415,6 +450,8 @@ function OfferRow({
       localLink !== serverLink ||
       localIcon !== serverIcon ||
       localIsPublic !== serverIsPublic ||
+      localProductId !== serverProductId ||
+      localProductQuantity !== serverProductQuantity ||
       localImage !== null);
 
   useEffect(() => {
@@ -431,6 +468,13 @@ function OfferRow({
     fd.set("link", localLink);
     fd.set("icon", localIcon ?? "");
     fd.set("is_public", localIsPublic ? "1" : "0");
+    if (opsEnabled && localProductId) {
+      fd.set("product_id", localProductId);
+      fd.set("product_quantity", localProductQuantity || "1");
+    } else {
+      fd.set("product_id", "");
+      fd.set("product_quantity", "");
+    }
     if (localImage) fd.set("image", localImage);
     onUpdateOptions(clubOffer.id, fd);
     setLocalImage(null);
@@ -501,11 +545,20 @@ function OfferRow({
               {t("offers.public")}
             </span>
           )}
-          {clubOffer.price != null && clubOffer.price > 0 && (
+          {linkedProduct && (
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-600">
+              → {linkedProduct.name} ×{localProductQuantity || 1}
+            </span>
+          )}
+          {linkedProduct && derivedPrice != null ? (
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
+              €{derivedPrice.toFixed(2)}
+            </span>
+          ) : clubOffer.price != null && clubOffer.price > 0 ? (
             <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
               ${clubOffer.price}
             </span>
-          )}
+          ) : null}
           <div className="ml-auto flex items-center gap-2">
             <button
               type="button"
@@ -550,7 +603,7 @@ function OfferRow({
               <span className="text-xs text-gray-600">Show on public profile</span>
             </label>
 
-            {localOrderable && (
+            {localOrderable && !linkedProduct && (
               <div className="flex items-center gap-1.5">
                 <label className="text-xs text-gray-500">Price</label>
                 <input
@@ -565,6 +618,63 @@ function OfferRow({
               </div>
             )}
           </div>
+
+          {/* Link to product (ops module) */}
+          {opsEnabled && (
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-2.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-gray-600">Link to product</label>
+                <span className="text-[10px] text-gray-400">Operations</span>
+              </div>
+              <select
+                value={localProductId ?? ""}
+                onChange={(e) => {
+                  const next = e.target.value || null;
+                  setLocalProductId(next);
+                  if (next && !localProductQuantity) setLocalProductQuantity("1");
+                  if (!next) setLocalProductQuantity("");
+                }}
+                className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-xs text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+              >
+                <option value="">— Not linked —</option>
+                {products.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} ({p.unit === "gram" ? "g" : "pc"} · €{p.unit_price.toFixed(2)} · stock {p.stock_on_hand})
+                  </option>
+                ))}
+              </select>
+
+              {linkedProduct && (
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-xs text-gray-500">Quantity</label>
+                    <input
+                      type="number"
+                      step={linkedProduct.unit === "gram" ? "0.001" : "1"}
+                      min={linkedProduct.unit === "gram" ? "0.001" : "1"}
+                      value={localProductQuantity}
+                      onChange={(e) => setLocalProductQuantity(e.target.value)}
+                      className="w-24 rounded-lg border border-gray-300 px-2 py-1 text-xs text-gray-900 text-center focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                    />
+                    <span className="text-[10px] text-gray-500">
+                      {linkedProduct.unit === "gram" ? "g" : "pc"}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-600">
+                    Price: <span className="font-semibold text-gray-900">
+                      {derivedPrice != null ? `€${derivedPrice.toFixed(2)}` : "—"}
+                    </span>
+                    <span className="text-[10px] text-gray-400 ml-1">(from product)</span>
+                  </div>
+                </div>
+              )}
+              {localProductId && !linkedProduct && (
+                <p className="text-[10px] text-amber-600">
+                  Linked product is no longer active. Pick another or unlink.
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Description with language tabs */}
           <div>

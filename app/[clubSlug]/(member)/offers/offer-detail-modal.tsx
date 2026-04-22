@@ -19,6 +19,7 @@ export interface OfferDetail {
   orderable: boolean;
   price: number | null;
   hasPendingOrder?: boolean;
+  unavailable?: boolean;
 }
 
 const SUBTYPE_LABELS: Record<string, { en: string; es: string }> = {
@@ -148,6 +149,10 @@ export function OfferDetailModal({
                       {t("offers.detail.pendingHint")}
                     </p>
                   </>
+                ) : offer.unavailable ? (
+                  <p className="text-xs text-red-600 text-center bg-red-50 rounded-lg px-4 py-3 font-medium">
+                    {t("offers.detail.unavailable")}
+                  </p>
                 ) : (
                   <>
                     <button

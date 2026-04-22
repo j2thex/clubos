@@ -1620,31 +1620,70 @@ export async function updateOfferOptions(
   const icon = (formData.get("icon") as string)?.trim() || null;
   const isPublic = formData.get("is_public") === "1";
   const imageFile = formData.get("image") as File | null;
+  const productIdRaw = (formData.get("product_id") as string)?.trim() || "";
+  const productQuantityRaw = (formData.get("product_quantity") as string)?.trim() || "";
 
   const supabase = createAdminClient();
 
+  // Resolve the offer's club so we can validate product ownership + ops gating.
+  const { data: coRow } = await supabase
+    .from("club_offers")
+    .select("club_id")
+    .eq("id", clubOfferId)
+    .single();
+  if (!coRow) return { error: "Offer not found" };
+  const clubId = coRow.club_id as string;
+
+  let productId: string | null = null;
+  let productQuantity: number | null = null;
+
+  if (productIdRaw) {
+    // Must be a product owned by this club, active + not archived. Also
+    // the club must have ops enabled — otherwise silently drop rather than
+    // error so re-saves from an older form don't break.
+    const { data: club } = await supabase
+      .from("clubs")
+      .select("operations_module_enabled")
+      .eq("id", clubId)
+      .single();
+    if (club?.operations_module_enabled) {
+      const { data: product } = await supabase
+        .from("products")
+        .select("id, active, archived")
+        .eq("id", productIdRaw)
+        .eq("club_id", clubId)
+        .maybeSingle();
+      if (!product) return { error: "Product not found" };
+      if (product.archived || !product.active) return { error: "Product is inactive" };
+
+      const qty = Number(productQuantityRaw);
+      if (!Number.isFinite(qty) || qty <= 0) {
+        return { error: "Product quantity must be greater than 0" };
+      }
+      productId = product.id;
+      productQuantity = qty;
+    }
+  }
+
   const updates: Record<string, unknown> = {
     orderable,
-    price: orderable && price ? Number(price) : null,
+    // Manual price is ignored when a product is linked (price derives from
+    // product.unit_price * product_quantity at read time).
+    price: productId ? null : (orderable && price ? Number(price) : null),
     description,
     description_es: descriptionEs,
     link,
     icon,
     is_public: isPublic,
+    product_id: productId,
+    product_quantity: productQuantity,
   };
 
   if (imageFile && imageFile.size > 0) {
-    const { data: co } = await supabase
-      .from("club_offers")
-      .select("club_id")
-      .eq("id", clubOfferId)
-      .single();
-    if (co) {
-      const { uploadClubImage } = await import("@/lib/supabase/storage");
-      const result = await uploadClubImage(co.club_id, imageFile);
-      if ("error" in result) return { error: result.error };
-      updates.image_url = result.url;
-    }
+    const { uploadClubImage } = await import("@/lib/supabase/storage");
+    const result = await uploadClubImage(clubId, imageFile);
+    if ("error" in result) return { error: result.error };
+    updates.image_url = result.url;
   }
 
   const { error } = await supabase
@@ -1655,6 +1694,8 @@ export async function updateOfferOptions(
   if (error) return { error: "Failed to update offer options" };
 
   revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/offers`);
+  revalidatePath(`/${clubSlug}/staff`, "layout");
   return { ok: true };
 }
 

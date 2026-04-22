@@ -36,7 +36,7 @@ export default async function StaffOffersPage({
   const { data: offers } = await supabase
     .from("club_offers")
     .select(
-      "id, orderable, price, description, description_es, image_url, icon, link, offer_catalog(id, name, name_es, subtype, icon)",
+      "id, orderable, price, description, description_es, image_url, icon, link, product_id, product_quantity, offer_catalog(id, name, name_es, subtype, icon), products(id, name, unit, unit_price, stock_on_hand, active, archived)",
     )
     .eq("club_id", club.id)
     .eq("orderable", true)
@@ -45,6 +45,23 @@ export default async function StaffOffersPage({
 
   const offerList = (offers ?? []).map((a) => {
     const catalog = Array.isArray(a.offer_catalog) ? a.offer_catalog[0] : a.offer_catalog;
+    const product = Array.isArray(a.products) ? a.products[0] : a.products;
+    const quantity = a.product_quantity != null ? Number(a.product_quantity) : null;
+    const derivedPrice =
+      product && quantity != null
+        ? Math.round(Number(product.unit_price) * quantity * 100) / 100
+        : null;
+    const productInfo = product
+      ? {
+          id: product.id,
+          name: product.name,
+          unit: product.unit,
+          quantity: quantity ?? 0,
+          stock: Number(product.stock_on_hand),
+          active: !!product.active && !product.archived,
+        }
+      : null;
+
     return {
       id: a.id,
       title: catalog?.name ?? "",
@@ -58,7 +75,8 @@ export default async function StaffOffersPage({
       image_url: a.image_url ?? null,
       link: a.link ?? null,
       orderable: a.orderable ?? false,
-      price: a.price != null ? Number(a.price) : null,
+      price: derivedPrice != null ? derivedPrice : (a.price != null ? Number(a.price) : null),
+      product: productInfo,
     };
   });
 
@@ -85,8 +103,9 @@ export default async function StaffOffersPage({
     .order("created_at", { ascending: false })
     .limit(100);
 
-  // Build offer title map
+  // Build lookup maps for title + linked product
   const offerTitleMap = new Map(offerList.map((a) => [a.id, a.title]));
+  const offerProductMap = new Map(offerList.map((a) => [a.id, a.product]));
 
   // Fetch member info
   const memberIds = [
@@ -116,6 +135,7 @@ export default async function StaffOffersPage({
       ? memberMap.get(o.fulfilled_by)?.name || memberMap.get(o.fulfilled_by)?.code || ""
       : null,
     offer_title: offerTitleMap.get(o.club_offer_id) ?? "",
+    product: offerProductMap.get(o.club_offer_id) ?? null,
   }));
 
   return (
