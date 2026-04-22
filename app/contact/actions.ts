@@ -26,10 +26,16 @@ export async function submitContact(
 
   // Silently drop bot submissions: return success without sending email,
   // so operators get no signal to iterate around the check.
-  const verification = await checkBotId();
-  if (verification.isBot) {
-    console.warn("[contact] botid blocked submission", { email });
-    return { status: "success" };
+  // If BotID throws (missing OIDC token, external outage, etc.), fail open —
+  // we'd rather deliver a legitimate email than block the form on a BotID issue.
+  try {
+    const verification = await checkBotId();
+    if (verification.isBot) {
+      console.warn("[contact] botid blocked submission", { email });
+      return { status: "success" };
+    }
+  } catch (err) {
+    console.error("[contact] botid check threw, proceeding", err);
   }
 
   const apiKey = process.env.RESEND_API_KEY;
