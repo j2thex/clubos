@@ -420,23 +420,11 @@ function ProductEditForm({
   const [stockOnHand, setStockOnHand] = useState(product.stockOnHand);
   const [imageUrl, setImageUrl] = useState<string | null>(product.imageUrl);
   const [uploading, setUploading] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
   const [isPending, startTransition] = useTransition();
 
   // Quick stock adjust
   const [adjustValue, setAdjustValue] = useState("");
   const [adjustReason, setAdjustReason] = useState("");
-
-  async function handleUpload(file: File) {
-    setUploading(true);
-    const fd = new FormData();
-    fd.set("clubId", clubId);
-    fd.set("file", file);
-    const res = await uploadProductImageAction(fd);
-    setUploading(false);
-    if ("error" in res) toast.error(res.error);
-    else setImageUrl(res.url);
-  }
 
   function handleSave() {
     startTransition(async () => {
@@ -583,43 +571,12 @@ function ProductEditForm({
 
       <div>
         <span className="text-[11px] text-gray-500 block mb-1">Image</span>
-        <div className="flex items-center gap-3">
-          {imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={imageUrl}
-              alt=""
-              className="w-14 h-14 rounded-lg object-cover bg-gray-100"
-            />
-          ) : (
-            <div className="w-14 h-14 rounded-lg bg-gray-200" />
-          )}
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) handleUpload(f);
-            }}
-            className="text-xs"
-          />
-          {imageUrl && (
-            <button
-              type="button"
-              onClick={() => {
-                setImageUrl(null);
-                if (fileRef.current) fileRef.current.value = "";
-              }}
-              className="text-xs text-gray-500 hover:text-red-600"
-            >
-              Remove
-            </button>
-          )}
-        </div>
-        {uploading && (
-          <p className="text-xs text-gray-400 mt-1">Uploading…</p>
-        )}
+        <ProductImageField
+          clubId={clubId}
+          imageUrl={imageUrl}
+          onChange={setImageUrl}
+          onUploadingChange={setUploading}
+        />
       </div>
 
       <div className="rounded-lg bg-white border border-gray-200 p-3 space-y-2">
@@ -682,6 +639,77 @@ function ProductEditForm({
   );
 }
 
+function ProductImageField({
+  clubId,
+  imageUrl,
+  onChange,
+  onUploadingChange,
+}: {
+  clubId: string;
+  imageUrl: string | null;
+  onChange: (url: string | null) => void;
+  onUploadingChange?: (uploading: boolean) => void;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  async function handleFiles(files: FileList | null) {
+    const file = files?.[0];
+    if (!file) return;
+    setUploading(true);
+    onUploadingChange?.(true);
+    const fd = new FormData();
+    fd.set("clubId", clubId);
+    fd.set("file", file);
+    const res = await uploadProductImageAction(fd);
+    setUploading(false);
+    onUploadingChange?.(false);
+    if (fileRef.current) fileRef.current.value = "";
+    if ("error" in res) toast.error(res.error);
+    else onChange(res.url);
+  }
+
+  return (
+    <div>
+      <div className="flex items-center gap-3">
+        {imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={imageUrl}
+            alt=""
+            className="w-14 h-14 rounded-lg object-cover bg-gray-100"
+          />
+        ) : (
+          <div className="w-14 h-14 rounded-lg bg-gray-200" />
+        )}
+        <label className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer">
+          {imageUrl ? "Change image" : "Upload image"}
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={(e) => handleFiles(e.target.files)}
+            className="sr-only"
+          />
+        </label>
+        {imageUrl && (
+          <button
+            type="button"
+            onClick={() => {
+              onChange(null);
+              if (fileRef.current) fileRef.current.value = "";
+            }}
+            className="text-xs text-gray-500 hover:text-red-600"
+          >
+            Remove
+          </button>
+        )}
+      </div>
+      {uploading && <p className="text-xs text-gray-400 mt-1">Uploading…</p>}
+    </div>
+  );
+}
+
 function ProductNewForm({
   clubId,
   clubSlug,
@@ -698,6 +726,7 @@ function ProductNewForm({
   const [unitPrice, setUnitPrice] = useState("");
   const [costPrice, setCostPrice] = useState("");
   const [stockOnHand, setStockOnHand] = useState("");
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   function handleSubmit(e: React.FormEvent) {
@@ -707,6 +736,7 @@ function ProductNewForm({
       const r = await addProduct(clubId, clubSlug, {
         categoryId: categoryId || null,
         name,
+        imageUrl,
         unit,
         unitPrice: Number(unitPrice) || 0,
         costPrice: Number(costPrice) || 0,
@@ -721,6 +751,7 @@ function ProductNewForm({
         setUnitPrice("");
         setCostPrice("");
         setStockOnHand("");
+        setImageUrl(null);
         setOpen(false);
       }
     });
@@ -821,6 +852,10 @@ function ProductNewForm({
             className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
           />
         </label>
+      </div>
+      <div>
+        <span className="text-[11px] text-gray-500 block mb-1">Image</span>
+        <ProductImageField clubId={clubId} imageUrl={imageUrl} onChange={setImageUrl} />
       </div>
       <div className="flex gap-2">
         <button
