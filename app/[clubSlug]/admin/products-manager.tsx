@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Search, X } from "lucide-react";
+import { Search } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/provider";
 import { localized } from "@/lib/i18n";
 import { CollapsibleSection } from "@/components/collapsible-section";
@@ -123,18 +123,8 @@ export function ProductsManager({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t("admin.products.searchPlaceholder")}
-                className="w-full rounded-lg border border-gray-200 bg-gray-50 pl-9 pr-9 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-emerald-500 focus:bg-white"
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 pl-9 pr-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-emerald-500 focus:bg-white"
               />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 rounded"
-                  aria-label="Clear search"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
             </div>
             {view === "active" && (
               <button
