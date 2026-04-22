@@ -78,21 +78,26 @@ export default async function StaffMembersPage({
       const roleName = Array.isArray(m.member_roles)
         ? m.member_roles[0]?.name ?? null
         : (m.member_roles as { id: string; name: string } | null)?.name ?? null;
-      const signed =
+      const [signedIdPhoto, signedPhoto] = await Promise.all([
         opsEnabled && m.id_photo_path
-          ? await getMemberIdPhotoSignedUrl(m.id_photo_path, 1800)
-          : null;
+          ? getMemberIdPhotoSignedUrl(m.id_photo_path, 1800)
+          : Promise.resolve(null),
+        m.photo_path ? getMemberPhotoSignedUrl(m.photo_path, 1800) : Promise.resolve(null),
+      ]);
       return {
         id: m.id,
         memberCode: m.member_code,
         fullName: m.full_name,
+        firstName: m.first_name ?? null,
+        lastName: m.last_name ?? null,
         spinBalance: m.spin_balance,
         roleId: m.role_id,
         roleName,
         validTill: m.valid_till ?? null,
         dateOfBirth: m.date_of_birth ?? null,
         idVerifiedAt: m.id_verified_at ?? null,
-        idPhotoSignedUrl: signed,
+        idPhotoSignedUrl: signedIdPhoto,
+        photoSignedUrl: signedPhoto,
         createdAt: m.created_at ?? null,
       };
     }),

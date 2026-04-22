@@ -34,6 +34,8 @@ export type MembersSearchMember = {
   id: string;
   memberCode: string;
   fullName: string | null;
+  firstName: string | null;
+  lastName: string | null;
   spinBalance: number;
   roleId: string | null;
   roleName: string | null;
@@ -41,6 +43,7 @@ export type MembersSearchMember = {
   dateOfBirth: string | null;
   idVerifiedAt: string | null;
   idPhotoSignedUrl: string | null;
+  photoSignedUrl: string | null;
   createdAt: string | null;
 };
 
@@ -67,14 +70,12 @@ function VerifyRow({
   clubSlug,
   dateOfBirth,
   idVerifiedAt,
-  idPhotoSignedUrl,
   age,
 }: {
   memberId: string;
   clubSlug: string;
   dateOfBirth: string | null;
   idVerifiedAt: string | null;
-  idPhotoSignedUrl: string | null;
   age: number | null;
 }) {
   const { t } = useLanguage();
@@ -139,16 +140,6 @@ function VerifyRow({
             {isPending ? "..." : t("staff.members.activate")}
           </button>
         </>
-      )}
-      {idPhotoSignedUrl && (
-        <a
-          href={idPhotoSignedUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs rounded-full px-2 py-0.5 bg-blue-100 text-blue-700 hover:bg-blue-200"
-        >
-          {t("ops.memberForm.photoLabel")}
-        </a>
       )}
     </div>
   );
@@ -320,10 +311,14 @@ export function MembersSearch({
                 id: m.id,
                 memberCode: m.memberCode,
                 fullName: m.fullName,
+                firstName: m.firstName,
+                lastName: m.lastName,
                 spinBalance: m.spinBalance,
                 roleId: m.roleId,
                 roleName: m.roleName,
                 validTill: m.validTill,
+                photoSignedUrl: m.photoSignedUrl,
+                idPhotoSignedUrl: m.idPhotoSignedUrl,
               }}
               roles={roles}
               clubSlug={clubSlug}
@@ -362,7 +357,6 @@ export function MembersSearch({
             clubSlug={clubSlug}
             dateOfBirth={m.dateOfBirth}
             idVerifiedAt={m.idVerifiedAt}
-            idPhotoSignedUrl={m.idPhotoSignedUrl}
             age={age}
           />
         )}
