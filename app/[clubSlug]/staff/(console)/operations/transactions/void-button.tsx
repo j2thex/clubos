@@ -50,7 +50,7 @@ export function VoidButton({
         value={reason}
         onChange={(e) => setReason(e.target.value)}
         placeholder={t("ops.tx.voidReason")}
-        className="rounded-lg border border-gray-300 px-2 py-1 text-xs w-32"
+        className="rounded-lg border border-gray-300 px-2 py-1 text-xs w-32 text-gray-900 placeholder:text-gray-400"
         autoFocus
       />
       <button

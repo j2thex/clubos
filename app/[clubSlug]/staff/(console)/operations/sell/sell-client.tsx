@@ -737,7 +737,7 @@ function CartPanel({
             min="0"
             value={cart.discount}
             onChange={(e) => dispatch({ type: "SET_DISCOUNT", value: e.target.value })}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm tabular-nums text-right"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm tabular-nums text-right text-gray-900 placeholder:text-gray-400"
           />
           {discountTooLarge && (
             <p className="text-[11px] text-red-600 mt-1">{t("ops.sell.discountTooLarge")}</p>
@@ -750,7 +750,7 @@ function CartPanel({
             onChange={(e) => dispatch({ type: "SET_COMMENT", value: e.target.value })}
             placeholder={t("ops.sell.commentPlaceholder")}
             rows={2}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-xs"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-xs text-gray-900 placeholder:text-gray-400"
           />
         </label>
         <div className="flex items-center justify-between pt-1">
@@ -836,7 +836,7 @@ function CartLineRow({
           >
             −
           </button>
-          <span className="w-6 text-center text-sm font-semibold tabular-nums">{line.quantity}</span>
+          <span className="w-6 text-center text-sm font-semibold tabular-nums text-gray-900">{line.quantity}</span>
           <button
             type="button"
             onClick={onInc}
