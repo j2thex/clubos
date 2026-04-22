@@ -25,29 +25,37 @@ export default async function StaffMembersPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name, operations_module_enabled")
+    .select("id, name, operations_module_enabled, currency_mode")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
 
   if (!club) notFound();
   const opsEnabled = club.operations_module_enabled ?? false;
+  const currencyMode = (club.currency_mode as "saldo" | "cash") ?? "cash";
 
   // Load the current staff viewer's own permissions so the member-detail
   // panel can show deep-link chips keyed to what the viewer can actually do.
   // Non-blocking: middleware already guaranteed a staff cookie exists to
   // reach this route, but we defensive-check in case session state drifted.
   const viewerSession = opsEnabled ? await getStaffFromCookie() : null;
-  let viewerPerms: { entry: boolean; sell: boolean } = { entry: false, sell: false };
+  let viewerPerms: { entry: boolean; sell: boolean; topup: boolean } = {
+    entry: false,
+    sell: false,
+    topup: false,
+  };
   if (opsEnabled && viewerSession?.member_id) {
     const { data: viewer } = await supabase
       .from("members")
-      .select("can_do_entry, can_do_sell")
+      .select("can_do_entry, can_do_sell, can_do_topup")
       .eq("id", viewerSession.member_id)
       .single();
     viewerPerms = {
       entry: viewer?.can_do_entry ?? false,
       sell: viewer?.can_do_sell ?? false,
+      // Top-up only relevant in saldo mode; gate at the source so the
+      // members-search component doesn't need to know about currency_mode.
+      topup: (viewer?.can_do_topup ?? false) && currencyMode === "saldo",
     };
   }
 

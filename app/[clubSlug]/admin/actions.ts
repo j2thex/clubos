@@ -2202,6 +2202,51 @@ export async function adminMarkIdVerified(
   return { ok: true };
 }
 
+export type SaldoLedgerEntry = {
+  id: string;
+  type: "topup" | "sale" | "refund" | "admin_adjustment";
+  amount: number;
+  balanceAfter: number;
+  method: string | null;
+  comment: string | null;
+  createdAt: string;
+};
+
+export async function getMemberSaldoLedger(
+  memberId: string,
+): Promise<
+  | { error: string }
+  | { ok: true; balance: number; entries: SaldoLedgerEntry[] }
+> {
+  const auth = await authorizeMemberOwner(memberId);
+  if ("error" in auth) return auth;
+
+  const supabase = createAdminClient();
+  const [{ data: member }, { data: rows }] = await Promise.all([
+    supabase.from("members").select("saldo_balance").eq("id", memberId).single(),
+    supabase
+      .from("member_saldo_transactions")
+      .select("id, type, amount, balance_after, method, comment, created_at")
+      .eq("member_id", memberId)
+      .order("created_at", { ascending: false })
+      .limit(50),
+  ]);
+
+  return {
+    ok: true,
+    balance: Number(member?.saldo_balance ?? 0),
+    entries: (rows ?? []).map((r) => ({
+      id: r.id,
+      type: r.type as SaldoLedgerEntry["type"],
+      amount: Number(r.amount),
+      balanceAfter: Number(r.balance_after),
+      method: r.method,
+      comment: r.comment,
+      createdAt: r.created_at,
+    })),
+  };
+}
+
 export async function adminAdjustSaldo(
   memberId: string,
   clubSlug: string,
