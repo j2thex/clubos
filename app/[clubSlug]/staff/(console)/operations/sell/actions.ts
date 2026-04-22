@@ -3,6 +3,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireStaffPermission } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { lookupMemberForEntry, type LookedUpMember } from "../entry/actions";
 
 // ---------- Types ----------
 
@@ -71,6 +72,69 @@ const RPC_ERRORS: Record<string, string> = {
 
 function mapRpcError(message: string, fallback: string): string {
   return RPC_ERRORS[message] ?? fallback;
+}
+
+// ---------- lookupMemberForSell: cart-page member lookup ----------
+//
+// Wraps the entry lookup and adds POS-specific data: saldo balance and the
+// member's last 10 sales. Reused by the SellClient when scanning a QR or
+// switching member.
+
+export type RecentSale = {
+  saleId: string;
+  total: number;
+  paidWith: "saldo" | "cash";
+  comment: string | null;
+  voidedAt: string | null;
+  createdAt: string;
+  lineCount: number;
+};
+
+export type MemberForSell = {
+  member: LookedUpMember;
+  saldoBalance: number;
+  recentSales: RecentSale[];
+};
+
+export async function lookupMemberForSell(
+  clubId: string,
+  rawCode: string,
+): Promise<{ error: string } | { ok: true; data: MemberForSell }> {
+  const inner = await lookupMemberForEntry(clubId, rawCode);
+  if ("error" in inner) return { error: inner.error };
+
+  const supabase = createAdminClient();
+  const memberId = inner.member.id;
+
+  const [{ data: memberRow }, { data: salesRows }] = await Promise.all([
+    supabase.from("members").select("saldo_balance").eq("id", memberId).single(),
+    supabase
+      .from("sales")
+      .select("id, total, paid_with, comment, voided_at, created_at, lines:product_transactions(id)")
+      .eq("club_id", clubId)
+      .eq("member_id", memberId)
+      .order("created_at", { ascending: false })
+      .limit(10),
+  ]);
+
+  const recentSales: RecentSale[] = (salesRows ?? []).map((s) => ({
+    saleId: s.id,
+    total: Number(s.total),
+    paidWith: s.paid_with as "saldo" | "cash",
+    comment: s.comment,
+    voidedAt: s.voided_at,
+    createdAt: s.created_at,
+    lineCount: Array.isArray(s.lines) ? s.lines.length : 0,
+  }));
+
+  return {
+    ok: true,
+    data: {
+      member: inner.member,
+      saldoBalance: Number(memberRow?.saldo_balance ?? 0),
+      recentSales,
+    },
+  };
 }
 
 // ---------- recordSale: multi-item cart ----------
