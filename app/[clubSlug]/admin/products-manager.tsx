@@ -2,6 +2,8 @@
 
 import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { useLanguage } from "@/lib/i18n/provider";
+import { localized } from "@/lib/i18n";
 import {
   addProductCategory,
   updateProductCategory,
@@ -48,15 +50,26 @@ export function ProductsManager({
   categories: Category[];
   products: Product[];
 }) {
+  const { t, locale } = useLanguage();
   const [view, setView] = useState<"active" | "archived">("active");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
+  const [newProductOpen, setNewProductOpen] = useState(false);
 
   const visibleCategories = categories.filter((c) =>
     view === "active" ? !c.archived : c.archived,
   );
-  const visibleProducts = products.filter((p) =>
+  const baseVisibleProducts = products.filter((p) =>
     view === "active" ? !p.archived : p.archived,
   );
+  const visibleProducts =
+    view === "active" && activeCategoryId !== null
+      ? baseVisibleProducts.filter((p) => p.categoryId === activeCategoryId)
+      : baseVisibleProducts;
+
+  const tabCategories = categories
+    .filter((c) => !c.archived)
+    .sort((a, b) => a.displayOrder - b.displayOrder);
 
   return (
     <div className="space-y-6">
@@ -68,7 +81,7 @@ export function ProductsManager({
             view === "active" ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-700"
           }`}
         >
-          Active
+          {t("admin.products.filter.active")}
         </button>
         <button
           type="button"
@@ -77,7 +90,7 @@ export function ProductsManager({
             view === "archived" ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-700"
           }`}
         >
-          Archived
+          {t("admin.products.filter.archived")}
           {" "}
           ({products.filter((p) => p.archived).length + categories.filter((c) => c.archived).length})
         </button>
@@ -85,7 +98,7 @@ export function ProductsManager({
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-1">
-          Categories
+          {t("admin.categories.heading")}
         </h2>
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden divide-y divide-gray-100">
           {visibleCategories.map((c) => (
@@ -104,37 +117,100 @@ export function ProductsManager({
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-1">
-          Products
+          {t("admin.products.heading")}
         </h2>
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden divide-y divide-gray-100">
-          {visibleProducts.map((p) => (
-            <ProductRow
-              key={p.id}
-              product={p}
-              categories={categories}
-              clubId={clubId}
-              clubSlug={clubSlug}
-              isExpanded={expandedId === p.id}
-              onToggleExpand={() =>
-                setExpandedId(expandedId === p.id ? null : p.id)
-              }
-            />
-          ))}
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           {view === "active" && (
-            <ProductNewForm
-              clubId={clubId}
-              clubSlug={clubSlug}
-              categories={categories.filter((c) => !c.archived)}
-            />
+            <>
+              <div className="flex items-center justify-end gap-3 px-5 py-3 border-b border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setNewProductOpen((o) => !o)}
+                  className="rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-4 py-2 transition-colors"
+                >
+                  {t("admin.products.addProduct")}
+                </button>
+              </div>
+              {tabCategories.length > 0 && (
+                <div className="flex gap-1 overflow-x-auto px-3 pt-2 border-b border-gray-100">
+                  <CategoryTab
+                    label={t("admin.products.tabs.all")}
+                    active={activeCategoryId === null}
+                    onClick={() => setActiveCategoryId(null)}
+                  />
+                  {tabCategories.map((c) => (
+                    <CategoryTab
+                      key={c.id}
+                      label={localized(c.name, c.nameEs, locale)}
+                      active={activeCategoryId === c.id}
+                      onClick={() => setActiveCategoryId(c.id)}
+                    />
+                  ))}
+                </div>
+              )}
+              <ProductNewForm
+                clubId={clubId}
+                clubSlug={clubSlug}
+                categories={categories.filter((c) => !c.archived)}
+                open={newProductOpen}
+                onOpenChange={setNewProductOpen}
+              />
+            </>
           )}
-          {visibleProducts.length === 0 && view === "archived" && (
-            <div className="p-6 text-center text-gray-400 text-sm">
-              No archived products.
-            </div>
-          )}
+          <div className="divide-y divide-gray-100">
+            {visibleProducts.map((p) => (
+              <ProductRow
+                key={p.id}
+                product={p}
+                categories={categories}
+                clubId={clubId}
+                clubSlug={clubSlug}
+                isExpanded={expandedId === p.id}
+                onToggleExpand={() =>
+                  setExpandedId(expandedId === p.id ? null : p.id)
+                }
+              />
+            ))}
+            {visibleProducts.length === 0 && view === "archived" && (
+              <div className="p-6 text-center text-gray-400 text-sm">
+                No archived products.
+              </div>
+            )}
+            {visibleProducts.length === 0 && view === "active" && (
+              <div className="p-6 text-center text-gray-400 text-sm">
+                {activeCategoryId === null
+                  ? "No products yet."
+                  : "No products in this category."}
+              </div>
+            )}
+          </div>
         </div>
       </section>
     </div>
+  );
+}
+
+function CategoryTab({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`whitespace-nowrap text-sm font-semibold px-3 py-2 border-b-2 transition-colors ${
+        active
+          ? "text-emerald-700 border-emerald-600"
+          : "text-gray-500 border-transparent hover:text-gray-700"
+      }`}
+    >
+      {label}
+    </button>
   );
 }
 
@@ -714,12 +790,15 @@ function ProductNewForm({
   clubId,
   clubSlug,
   categories,
+  open,
+  onOpenChange,
 }: {
   clubId: string;
   clubSlug: string;
   categories: Category[];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [unit, setUnit] = useState<"gram" | "piece">("gram");
@@ -752,25 +831,15 @@ function ProductNewForm({
         setCostPrice("");
         setStockOnHand("");
         setImageUrl(null);
-        setOpen(false);
+        onOpenChange(false);
       }
     });
   }
 
-  if (!open) {
-    return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="w-full py-3 text-sm font-semibold text-blue-600 hover:bg-blue-50 transition-colors"
-      >
-        + Add product
-      </button>
-    );
-  }
+  if (!open) return null;
 
   return (
-    <form onSubmit={handleSubmit} className="px-5 py-4 space-y-3 bg-gray-50">
+    <form onSubmit={handleSubmit} className="px-5 py-4 space-y-3 bg-gray-50 border-b border-gray-100">
       <label className="block">
         <span className="text-[11px] text-gray-500">Product name</span>
         <input
@@ -867,7 +936,7 @@ function ProductNewForm({
         </button>
         <button
           type="button"
-          onClick={() => setOpen(false)}
+          onClick={() => onOpenChange(false)}
           className="rounded-lg border border-gray-300 text-xs font-semibold text-gray-600 px-4 py-2"
         >
           Cancel
