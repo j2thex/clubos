@@ -57,13 +57,13 @@ export default async function StaffLayout({
           .eq("status", "pending"),
         supabase
           .from("offer_orders")
-          .select("id", { count: "exact", head: true })
-          .eq("club_id", club.id)
+          .select("id, club_offers!inner(club_id)", { count: "exact", head: true })
+          .eq("club_offers.club_id", club.id)
           .eq("status", "pending"),
         supabase
           .from("member_quests")
-          .select("id", { count: "exact", head: true })
-          .eq("club_id", club.id)
+          .select("id, quests!inner(club_id)", { count: "exact", head: true })
+          .eq("quests.club_id", club.id)
           .eq("status", "pending"),
       ]);
     pendingBadges = {

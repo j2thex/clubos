@@ -51,6 +51,7 @@ export async function requestOffer(
   }
 
   revalidatePath(`/${clubSlug}/offers`);
+  revalidatePath(`/${clubSlug}/staff`, "layout");
   return { ok: true };
 }
 
@@ -71,5 +72,6 @@ export async function cancelOfferRequest(
   if (error) return { error: "Failed to cancel request" };
 
   revalidatePath(`/${clubSlug}/offers`);
+  revalidatePath(`/${clubSlug}/staff`, "layout");
   return { ok: true };
 }

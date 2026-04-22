@@ -251,7 +251,7 @@ export async function approveQuest(
 
   if (clubSlug) {
     revalidatePath(`/${clubSlug}`);
-    revalidatePath(`/${clubSlug}/staff`);
+    revalidatePath(`/${clubSlug}/staff`, "layout");
   }
 
   return { ok: true, rewardSpins: quest.reward_spins };
@@ -305,7 +305,7 @@ export async function declineQuest(
 
   if (clubSlug) {
     revalidatePath(`/${clubSlug}`);
-    revalidatePath(`/${clubSlug}/staff`);
+    revalidatePath(`/${clubSlug}/staff`, "layout");
   }
 
   return { ok: true };
