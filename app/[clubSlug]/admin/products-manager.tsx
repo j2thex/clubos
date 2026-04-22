@@ -104,15 +104,13 @@ export function ProductsManager({
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           {view === "active" && (
             <>
-              <div className="flex items-center justify-end gap-3 px-5 py-3 border-b border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => setNewProductOpen((o) => !o)}
-                  className="rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-4 py-2 transition-colors"
-                >
-                  {t("admin.products.addProduct")}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setNewProductOpen((o) => !o)}
+                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold py-3 transition-colors border-b border-emerald-700"
+              >
+                {t("admin.products.addProduct")}
+              </button>
               {tabCategories.length > 0 && (
                 <div className="flex gap-1 overflow-x-auto px-3 pt-2 border-b border-gray-100">
                   <CategoryTab
