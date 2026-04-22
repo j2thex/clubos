@@ -157,7 +157,7 @@ export async function requireStaffForClub(
   return session;
 }
 
-export type StaffPermission = "entry" | "sell" | "transactions";
+export type StaffPermission = "entry" | "sell" | "topup" | "transactions";
 
 /**
  * Verify the current staff session is active, belongs to the given club,
@@ -176,7 +176,7 @@ export async function requireStaffPermission(
   const supabase = createAdminClient();
   const { data: member } = await supabase
     .from("members")
-    .select("can_do_entry, can_do_sell, can_do_transactions")
+    .select("can_do_entry, can_do_sell, can_do_topup, can_do_transactions")
     .eq("id", session.member_id)
     .single();
   const column = `can_do_${permission}` as const;

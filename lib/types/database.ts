@@ -56,6 +56,7 @@ export type Database = {
           spin_cost: number;
           preregistration_enabled: boolean;
           operations_module_enabled: boolean;
+          currency_mode: "saldo" | "cash";
           created_at: string;
         };
         Insert: {
@@ -79,6 +80,7 @@ export type Database = {
           spin_cost?: number;
           preregistration_enabled?: boolean;
           operations_module_enabled?: boolean;
+          currency_mode?: "saldo" | "cash";
           created_at?: string;
         };
         Update: {
@@ -102,6 +104,7 @@ export type Database = {
           spin_cost?: number;
           preregistration_enabled?: boolean;
           operations_module_enabled?: boolean;
+          currency_mode?: "saldo" | "cash";
           created_at?: string;
         };
         Relationships: [
@@ -295,6 +298,7 @@ export type Database = {
           voided_at: string | null;
           voided_by: string | null;
           void_reason: string | null;
+          sale_id: string | null;
           created_at: string;
         };
         Insert: {
@@ -311,6 +315,7 @@ export type Database = {
           voided_at?: string | null;
           voided_by?: string | null;
           void_reason?: string | null;
+          sale_id?: string | null;
           created_at?: string;
         };
         Update: {
@@ -327,6 +332,7 @@ export type Database = {
           voided_at?: string | null;
           voided_by?: string | null;
           void_reason?: string | null;
+          sale_id?: string | null;
           created_at?: string;
         };
         Relationships: [
@@ -349,6 +355,140 @@ export type Database = {
             columns: ["member_id"];
             isOneToOne: false;
             referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "product_transactions_sale_id_fkey";
+            columns: ["sale_id"];
+            isOneToOne: false;
+            referencedRelation: "sales";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      sales: {
+        Row: {
+          id: string;
+          club_id: string;
+          member_id: string;
+          fulfilled_by: string | null;
+          subtotal: number;
+          discount: number;
+          total: number;
+          paid_with: "saldo" | "cash";
+          comment: string | null;
+          voided_at: string | null;
+          voided_by: string | null;
+          void_reason: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          club_id: string;
+          member_id: string;
+          fulfilled_by?: string | null;
+          subtotal: number;
+          discount?: number;
+          total: number;
+          paid_with: "saldo" | "cash";
+          comment?: string | null;
+          voided_at?: string | null;
+          voided_by?: string | null;
+          void_reason?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          club_id?: string;
+          member_id?: string;
+          fulfilled_by?: string | null;
+          subtotal?: number;
+          discount?: number;
+          total?: number;
+          paid_with?: "saldo" | "cash";
+          comment?: string | null;
+          voided_at?: string | null;
+          voided_by?: string | null;
+          void_reason?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "sales_club_id_fkey";
+            columns: ["club_id"];
+            isOneToOne: false;
+            referencedRelation: "clubs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "sales_member_id_fkey";
+            columns: ["member_id"];
+            isOneToOne: false;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      member_saldo_transactions: {
+        Row: {
+          id: string;
+          club_id: string;
+          member_id: string;
+          type: "topup" | "sale" | "refund" | "admin_adjustment";
+          amount: number;
+          balance_after: number;
+          sale_id: string | null;
+          method: string | null;
+          comment: string | null;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          club_id: string;
+          member_id: string;
+          type: "topup" | "sale" | "refund" | "admin_adjustment";
+          amount: number;
+          balance_after: number;
+          sale_id?: string | null;
+          method?: string | null;
+          comment?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          club_id?: string;
+          member_id?: string;
+          type?: "topup" | "sale" | "refund" | "admin_adjustment";
+          amount?: number;
+          balance_after?: number;
+          sale_id?: string | null;
+          method?: string | null;
+          comment?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "member_saldo_transactions_club_id_fkey";
+            columns: ["club_id"];
+            isOneToOne: false;
+            referencedRelation: "clubs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "member_saldo_transactions_member_id_fkey";
+            columns: ["member_id"];
+            isOneToOne: false;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "member_saldo_transactions_sale_id_fkey";
+            columns: ["sale_id"];
+            isOneToOne: false;
+            referencedRelation: "sales";
             referencedColumns: ["id"];
           },
         ];
@@ -475,7 +615,9 @@ export type Database = {
           rfid_uid: string | null;
           can_do_entry: boolean;
           can_do_sell: boolean;
+          can_do_topup: boolean;
           can_do_transactions: boolean;
+          saldo_balance: number;
           created_at: string;
         };
         Insert: {
@@ -510,7 +652,9 @@ export type Database = {
           rfid_uid?: string | null;
           can_do_entry?: boolean;
           can_do_sell?: boolean;
+          can_do_topup?: boolean;
           can_do_transactions?: boolean;
+          saldo_balance?: number;
           created_at?: string;
         };
         Update: {
@@ -545,7 +689,9 @@ export type Database = {
           rfid_uid?: string | null;
           can_do_entry?: boolean;
           can_do_sell?: boolean;
+          can_do_topup?: boolean;
           can_do_transactions?: boolean;
+          saldo_balance?: number;
           created_at?: string;
         };
         Relationships: [

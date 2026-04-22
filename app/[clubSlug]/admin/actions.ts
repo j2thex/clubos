@@ -99,6 +99,36 @@ export async function toggleOperationsModule(
   return { ok: true };
 }
 
+export async function setCurrencyMode(
+  clubId: string,
+  mode: "saldo" | "cash",
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  if (mode !== "saldo" && mode !== "cash") return { error: "Invalid currency mode" };
+
+  try { await requireOwnerForClub(clubId); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ currency_mode: mode })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to update currency mode" };
+
+  await logActivity({
+    clubId,
+    action: "currency_mode_set",
+    details: mode,
+  });
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/staff`, "layout");
+  return { ok: true };
+}
+
 export type ClubVisibility = "public" | "unlisted" | "private";
 
 const VISIBILITY_RANK: Record<ClubVisibility, number> = {
@@ -2172,12 +2202,55 @@ export async function adminMarkIdVerified(
   return { ok: true };
 }
 
+export async function adminAdjustSaldo(
+  memberId: string,
+  clubSlug: string,
+  amount: number,
+  comment: string,
+): Promise<{ error: string } | { ok: true; balanceAfter: number }> {
+  if (!Number.isFinite(amount) || amount === 0) {
+    return { error: "Amount must be non-zero" };
+  }
+  if (!comment || !comment.trim()) {
+    return { error: "Comment is required" };
+  }
+
+  const auth = await authorizeMemberOwner(memberId);
+  if ("error" in auth) return auth;
+
+  const supabase = createAdminClient();
+  const { data, error } = await supabase.rpc("admin_adjust_saldo", {
+    p_club_id: auth.clubId,
+    p_member_id: memberId,
+    p_amount: amount,
+    p_comment: comment.trim(),
+    p_staff_id: null,
+  });
+
+  if (error) {
+    const map: Record<string, string> = {
+      invalid_amount: "Amount must be non-zero",
+      comment_required: "Comment is required",
+      member_not_found: "Member not found",
+      wrong_currency_mode: "This club is not in saldo mode",
+      would_go_negative: "Adjustment would push the balance below zero",
+      club_not_found: "Club not found",
+    };
+    return { error: map[error.message] ?? "Failed to adjust saldo" };
+  }
+
+  const result = data as { balance_after: number };
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true, balanceAfter: Number(result.balance_after) };
+}
+
 export async function updateStaffPermissions(
   memberId: string,
   clubSlug: string,
   input: {
     canDoEntry?: boolean;
     canDoSell?: boolean;
+    canDoTopup?: boolean;
     canDoTransactions?: boolean;
   },
 ): Promise<{ error: string } | { ok: true }> {
@@ -2187,10 +2260,12 @@ export async function updateStaffPermissions(
   const patch: {
     can_do_entry?: boolean;
     can_do_sell?: boolean;
+    can_do_topup?: boolean;
     can_do_transactions?: boolean;
   } = {};
   if (typeof input.canDoEntry === "boolean") patch.can_do_entry = input.canDoEntry;
   if (typeof input.canDoSell === "boolean") patch.can_do_sell = input.canDoSell;
+  if (typeof input.canDoTopup === "boolean") patch.can_do_topup = input.canDoTopup;
   if (typeof input.canDoTransactions === "boolean") patch.can_do_transactions = input.canDoTransactions;
 
   if (Object.keys(patch).length === 0) return { ok: true };
