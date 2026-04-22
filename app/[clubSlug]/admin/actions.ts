@@ -2334,6 +2334,7 @@ export async function updateStaffPermissions(
     canDoSell?: boolean;
     canDoTopup?: boolean;
     canDoTransactions?: boolean;
+    canDoQebo?: boolean;
   },
 ): Promise<{ error: string } | { ok: true }> {
   const auth = await authorizeMemberOwner(memberId);
@@ -2344,11 +2345,13 @@ export async function updateStaffPermissions(
     can_do_sell?: boolean;
     can_do_topup?: boolean;
     can_do_transactions?: boolean;
+    can_do_qebo?: boolean;
   } = {};
   if (typeof input.canDoEntry === "boolean") patch.can_do_entry = input.canDoEntry;
   if (typeof input.canDoSell === "boolean") patch.can_do_sell = input.canDoSell;
   if (typeof input.canDoTopup === "boolean") patch.can_do_topup = input.canDoTopup;
   if (typeof input.canDoTransactions === "boolean") patch.can_do_transactions = input.canDoTransactions;
+  if (typeof input.canDoQebo === "boolean") patch.can_do_qebo = input.canDoQebo;
 
   if (Object.keys(patch).length === 0) return { ok: true };
 

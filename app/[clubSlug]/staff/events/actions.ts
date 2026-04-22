@@ -2,7 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logActivity } from "@/lib/activity-log";
-import { requireActiveStaff } from "@/lib/auth";
+import { requireOpsAccess } from "@/lib/auth";
 
 export async function checkinMember(
   memberCode: string,
@@ -10,7 +10,9 @@ export async function checkinMember(
   clubId: string,
   staffMemberId: string,
 ): Promise<{ error: string } | { ok: true; newBalance: number }> {
-  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
+  try { await requireOpsAccess(clubId, "qebo"); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
   const code = memberCode.trim().toUpperCase();
 
   if (!code || code.length < 3 || code.length > 6) {
@@ -83,7 +85,6 @@ export async function checkinMemberById(
   eventId: string,
   staffMemberId: string,
 ): Promise<{ error: string } | { ok: true; newBalance: number }> {
-  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
   if (memberId === staffMemberId) return { error: "Cannot check in yourself" };
   const supabase = createAdminClient();
 
@@ -104,6 +105,10 @@ export async function checkinMemberById(
 
   if (!event) return { error: "Event not found" };
   if (event.date < today) return { error: "Cannot check in for a past event" };
+
+  try { await requireOpsAccess(event.club_id, "qebo"); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
 
   const { error: insertError } = await supabase
     .from("event_checkins")

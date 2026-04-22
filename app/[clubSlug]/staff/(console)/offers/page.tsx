@@ -1,7 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getStaffFromCookie } from "@/lib/auth";
+import { getStaffFromCookie, requireOpsAccess } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { StaffOfferClient } from "../../offers/staff-offer-client";
+import { NoAccessCard } from "@/components/club/no-access-card";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 
@@ -22,6 +23,14 @@ export default async function StaffOffersPage({
     .single();
 
   if (!club) notFound();
+
+  const locale = await getServerLocale();
+
+  try {
+    await requireOpsAccess(club.id, "qebo");
+  } catch {
+    return <NoAccessCard permission="qebo" clubSlug={clubSlug} locale={locale} />;
+  }
 
   // Get orderable offers for this club
   const { data: offers } = await supabase
@@ -52,8 +61,6 @@ export default async function StaffOffersPage({
       price: a.price != null ? Number(a.price) : null,
     };
   });
-
-  const locale = await getServerLocale();
 
   if (offerList.length === 0) {
     return (

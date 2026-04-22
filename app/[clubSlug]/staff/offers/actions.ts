@@ -3,15 +3,31 @@
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logActivity } from "@/lib/activity-log";
-import { requireActiveStaff } from "@/lib/auth";
+import { requireOpsAccess } from "@/lib/auth";
 
 export async function fulfillOfferOrder(
   orderId: string,
   staffMemberId: string,
   clubSlug: string,
 ): Promise<{ error: string } | { ok: true }> {
-  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
   const supabase = createAdminClient();
+
+  // Resolve the order's club via the club_offer for authorization,
+  // then fetch details for logging below.
+  const { data: orderForAuth } = await supabase
+    .from("offer_orders")
+    .select("club_offers!inner(club_id)")
+    .eq("id", orderId)
+    .single();
+  const authClubId = orderForAuth
+    ? (Array.isArray(orderForAuth.club_offers)
+        ? orderForAuth.club_offers[0]?.club_id
+        : (orderForAuth.club_offers as { club_id: string } | null)?.club_id)
+    : null;
+  if (!authClubId) return { error: "Order not found" };
+  try { await requireOpsAccess(authClubId, "qebo"); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
 
   // Get order details for logging before updating
   const { data: order } = await supabase
@@ -67,7 +83,9 @@ export async function addWalkinOfferOrder(
   staffMemberId: string,
   clubSlug: string,
 ): Promise<{ error: string } | { ok: true }> {
-  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
+  try { await requireOpsAccess(clubId, "qebo"); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
   const code = memberCode.trim().toUpperCase();
   if (!code || code.length < 3 || code.length > 6) return { error: "Invalid member code" };
   if (!/^[A-Z0-9]+$/.test(code)) return { error: "Invalid member code" };

@@ -1,15 +1,18 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireActiveStaff } from "@/lib/auth";
+import { requireOpsAccess } from "@/lib/auth";
+import type { OpsSession } from "@/lib/auth";
 import { logActivity } from "@/lib/activity-log";
 
 export async function approveBonus(
   spinId: string,
   clubId: string,
 ): Promise<{ error: string } | { success: true }> {
-  let staffSession: { member_id: string; club_id: string };
-  try { staffSession = await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
+  let staffSession: OpsSession;
+  try { staffSession = await requireOpsAccess(clubId, "qebo"); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
 
   const supabase = createAdminClient();
 

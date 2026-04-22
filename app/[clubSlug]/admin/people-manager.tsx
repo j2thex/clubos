@@ -49,6 +49,7 @@ interface Member {
   canDoSell?: boolean;
   canDoTopup?: boolean;
   canDoTransactions?: boolean;
+  canDoQebo?: boolean;
 }
 
 const PRESET_SOURCES = [
@@ -421,6 +422,7 @@ export function PeopleManager({
                           initialSell={person.canDoSell ?? true}
                           initialTopup={person.canDoTopup ?? true}
                           initialTransactions={person.canDoTransactions ?? true}
+                          initialQebo={person.canDoQebo ?? true}
                         />
                       )}
                       {detail && isExpanded && (
@@ -500,6 +502,7 @@ function StaffPermissionRow({
   initialSell,
   initialTopup,
   initialTransactions,
+  initialQebo,
 }: {
   memberId: string;
   clubSlug: string;
@@ -507,26 +510,30 @@ function StaffPermissionRow({
   initialSell: boolean;
   initialTopup: boolean;
   initialTransactions: boolean;
+  initialQebo: boolean;
 }) {
   const { t } = useLanguage();
   const [canDoEntry, setCanDoEntry] = useState(initialEntry);
   const [canDoSell, setCanDoSell] = useState(initialSell);
   const [canDoTopup, setCanDoTopup] = useState(initialTopup);
   const [canDoTransactions, setCanDoTransactions] = useState(initialTransactions);
+  const [canDoQebo, setCanDoQebo] = useState(initialQebo);
   const [isPending, startTransition] = useTransition();
 
   function toggle(
-    field: "canDoEntry" | "canDoSell" | "canDoTopup" | "canDoTransactions",
+    field: "canDoEntry" | "canDoSell" | "canDoTopup" | "canDoTransactions" | "canDoQebo",
     next: boolean,
   ) {
     const prevEntry = canDoEntry;
     const prevSell = canDoSell;
     const prevTopup = canDoTopup;
     const prevTransactions = canDoTransactions;
+    const prevQebo = canDoQebo;
     if (field === "canDoEntry") setCanDoEntry(next);
     if (field === "canDoSell") setCanDoSell(next);
     if (field === "canDoTopup") setCanDoTopup(next);
     if (field === "canDoTransactions") setCanDoTransactions(next);
+    if (field === "canDoQebo") setCanDoQebo(next);
 
     startTransition(async () => {
       const r = await updateStaffPermissions(memberId, clubSlug, {
@@ -538,12 +545,13 @@ function StaffPermissionRow({
         if (field === "canDoSell") setCanDoSell(prevSell);
         if (field === "canDoTopup") setCanDoTopup(prevTopup);
         if (field === "canDoTransactions") setCanDoTransactions(prevTransactions);
+        if (field === "canDoQebo") setCanDoQebo(prevQebo);
       }
     });
   }
 
   const rows: {
-    key: "canDoEntry" | "canDoSell" | "canDoTopup" | "canDoTransactions";
+    key: "canDoEntry" | "canDoSell" | "canDoTopup" | "canDoTransactions" | "canDoQebo";
     label: string;
     value: boolean;
   }[] = [
@@ -555,6 +563,7 @@ function StaffPermissionRow({
       label: t("admin.staff.permissions.transactions"),
       value: canDoTransactions,
     },
+    { key: "canDoQebo", label: t("admin.staff.permissions.qebo"), value: canDoQebo },
   ];
 
   return (
