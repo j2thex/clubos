@@ -46,6 +46,7 @@ interface Member {
   roleName: string | null;
   canDoEntry?: boolean;
   canDoSell?: boolean;
+  canDoTopup?: boolean;
   canDoTransactions?: boolean;
 }
 
@@ -415,6 +416,7 @@ export function PeopleManager({
                           clubSlug={clubSlug}
                           initialEntry={person.canDoEntry ?? true}
                           initialSell={person.canDoSell ?? true}
+                          initialTopup={person.canDoTopup ?? true}
                           initialTransactions={person.canDoTransactions ?? true}
                         />
                       )}
@@ -482,29 +484,34 @@ function StaffPermissionRow({
   clubSlug,
   initialEntry,
   initialSell,
+  initialTopup,
   initialTransactions,
 }: {
   memberId: string;
   clubSlug: string;
   initialEntry: boolean;
   initialSell: boolean;
+  initialTopup: boolean;
   initialTransactions: boolean;
 }) {
   const { t } = useLanguage();
   const [canDoEntry, setCanDoEntry] = useState(initialEntry);
   const [canDoSell, setCanDoSell] = useState(initialSell);
+  const [canDoTopup, setCanDoTopup] = useState(initialTopup);
   const [canDoTransactions, setCanDoTransactions] = useState(initialTransactions);
   const [isPending, startTransition] = useTransition();
 
   function toggle(
-    field: "canDoEntry" | "canDoSell" | "canDoTransactions",
+    field: "canDoEntry" | "canDoSell" | "canDoTopup" | "canDoTransactions",
     next: boolean,
   ) {
     const prevEntry = canDoEntry;
     const prevSell = canDoSell;
+    const prevTopup = canDoTopup;
     const prevTransactions = canDoTransactions;
     if (field === "canDoEntry") setCanDoEntry(next);
     if (field === "canDoSell") setCanDoSell(next);
+    if (field === "canDoTopup") setCanDoTopup(next);
     if (field === "canDoTransactions") setCanDoTransactions(next);
 
     startTransition(async () => {
@@ -515,18 +522,20 @@ function StaffPermissionRow({
         toast.error(r.error);
         if (field === "canDoEntry") setCanDoEntry(prevEntry);
         if (field === "canDoSell") setCanDoSell(prevSell);
+        if (field === "canDoTopup") setCanDoTopup(prevTopup);
         if (field === "canDoTransactions") setCanDoTransactions(prevTransactions);
       }
     });
   }
 
   const rows: {
-    key: "canDoEntry" | "canDoSell" | "canDoTransactions";
+    key: "canDoEntry" | "canDoSell" | "canDoTopup" | "canDoTransactions";
     label: string;
     value: boolean;
   }[] = [
     { key: "canDoEntry", label: t("admin.staff.permissions.door"), value: canDoEntry },
     { key: "canDoSell", label: t("admin.staff.permissions.sell"), value: canDoSell },
+    { key: "canDoTopup", label: t("admin.staff.permissions.topup"), value: canDoTopup },
     {
       key: "canDoTransactions",
       label: t("admin.staff.permissions.transactions"),
