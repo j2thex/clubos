@@ -5,6 +5,7 @@ import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { useLanguage } from "@/lib/i18n/provider";
 import { StaffMemberRow } from "../../members/member-row";
+import { TopupDialog } from "../operations/sell/topup-dialog";
 import {
   markIdVerified,
   revokeIdVerification,
@@ -146,15 +147,20 @@ function VerifyRow({
 }
 
 function OpsActionsRow({
+  clubId,
   clubSlug,
+  memberId,
   memberCode,
   deepLinks,
 }: {
+  clubId: string;
   clubSlug: string;
+  memberId: string;
   memberCode: string;
-  deepLinks: { entry: boolean; sell: boolean };
+  deepLinks: { entry: boolean; sell: boolean; topup: boolean };
 }) {
   const { t } = useLanguage();
+  const [topupOpen, setTopupOpen] = useState(false);
   return (
     <div className="px-5 pb-3 -mt-1 flex items-center gap-2 flex-wrap">
       {deepLinks.entry && (
@@ -179,6 +185,27 @@ function OpsActionsRow({
           {t("ops.deepLink.sellToMember")}
         </Link>
       )}
+      {deepLinks.topup && (
+        <button
+          type="button"
+          onClick={() => setTopupOpen(true)}
+          className="inline-flex items-center gap-1.5 rounded-full bg-blue-600 text-white text-xs font-semibold px-3 py-2 hover:bg-blue-700 transition-colors"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          {t("ops.topup.button")}
+        </button>
+      )}
+      <TopupDialog
+        open={topupOpen}
+        clubId={clubId}
+        clubSlug={clubSlug}
+        memberId={memberId}
+        memberCode={memberCode}
+        onClose={() => setTopupOpen(false)}
+        onSuccess={() => setTopupOpen(false)}
+      />
     </div>
   );
 }
@@ -200,7 +227,7 @@ export function MembersSearch({
   clubSlug: string;
   opsEnabled: boolean;
   initialQuery?: string;
-  deepLinks?: { entry: boolean; sell: boolean };
+  deepLinks?: { entry: boolean; sell: boolean; topup: boolean };
 }) {
   const [query, setQuery] = useState(initialQuery);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -360,9 +387,11 @@ export function MembersSearch({
             age={age}
           />
         )}
-        {deepLinks && (deepLinks.entry || deepLinks.sell) && (
+        {deepLinks && (deepLinks.entry || deepLinks.sell || deepLinks.topup) && (
           <OpsActionsRow
+            clubId={clubId}
             clubSlug={clubSlug}
+            memberId={m.id}
             memberCode={m.memberCode}
             deepLinks={deepLinks}
           />

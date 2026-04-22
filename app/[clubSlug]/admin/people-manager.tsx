@@ -18,6 +18,7 @@ import {
   adminRevokeIdVerification,
   updateStaffPermissions,
 } from "./actions";
+import { SaldoLedgerCard } from "./saldo-ledger";
 import { useLanguage } from "@/lib/i18n/provider";
 import { ReferralTree, type ReferrerSummary, type MemberOption } from "./referral-tree";
 import {
@@ -63,6 +64,7 @@ const PRESET_SOURCES = [
 export function PeopleManager({
   clubId,
   clubSlug,
+  currencyMode = "cash",
   members,
   memberDetails = [],
   staff,
@@ -73,6 +75,7 @@ export function PeopleManager({
 }: {
   clubId: string;
   clubSlug: string;
+  currencyMode?: "saldo" | "cash";
   members: Member[];
   memberDetails?: MemberDetailRecord[];
   staff: Member[];
@@ -421,14 +424,25 @@ export function PeopleManager({
                         />
                       )}
                       {detail && isExpanded && (
-                        <MemberDetail
-                          member={detail}
-                          clubId={clubId}
-                          clubSlug={clubSlug}
-                          actions={adminMemberDetailActions}
-                          allowMarketingChannel
-                          knownMarketingChannels={knownMarketingChannels}
-                        />
+                        <>
+                          <MemberDetail
+                            member={detail}
+                            clubId={clubId}
+                            clubSlug={clubSlug}
+                            actions={adminMemberDetailActions}
+                            allowMarketingChannel
+                            knownMarketingChannels={knownMarketingChannels}
+                          />
+                          {currencyMode === "saldo" && (
+                            <div className="px-4 pb-3">
+                              <SaldoLedgerCard
+                                memberId={person.id}
+                                memberCode={person.member_code}
+                                clubSlug={clubSlug}
+                              />
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   );

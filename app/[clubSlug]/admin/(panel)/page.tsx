@@ -20,12 +20,13 @@ export default async function PeoplePage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id")
+    .select("id, currency_mode")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
 
   if (!club) notFound();
+  const currencyMode = (club.currency_mode as "saldo" | "cash") ?? "cash";
 
   const [
     { data: roles },
@@ -240,6 +241,7 @@ export default async function PeoplePage({
       <PeopleManager
         clubId={club.id}
         clubSlug={clubSlug}
+        currencyMode={currencyMode}
         members={memberList}
         memberDetails={memberDetails}
         staff={staffList}
