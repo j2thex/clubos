@@ -43,7 +43,7 @@ export default async function StaffConsoleLayout({
         {coverUrl && (
           <div className="absolute inset-0 bg-black/60" />
         )}
-        <div className="relative max-w-2xl mx-auto">
+        <div className="relative max-w-7xl mx-auto">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex items-center gap-3">
               <PanicIconButton
@@ -80,7 +80,7 @@ export default async function StaffConsoleLayout({
         </div>
       </div>
       <div className={`relative z-10 ${coverUrl ? "mt-4" : "-mt-12 bg-gray-50 rounded-t-3xl pt-6"}`}>
-        <div className="px-4 pb-10 max-w-2xl mx-auto space-y-6">
+        <div className="px-4 pb-10 max-w-7xl mx-auto space-y-6">
           {children}
         </div>
       </div>

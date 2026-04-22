@@ -462,11 +462,15 @@ function CategoryTabs({
 }) {
   const { t } = useLanguage();
   return (
-    <div className="flex gap-1 overflow-x-auto px-3 py-2 border-b border-gray-100">
-      <CategoryTab label={t("ops.sell.allCategories")} active={activeId === null} onClick={() => onChange(null)} />
-      {categories.map((c) => (
-        <CategoryTab key={c.id} label={c.name} active={activeId === c.id} onClick={() => onChange(c.id)} />
-      ))}
+    <div className="relative border-b border-gray-100">
+      <div className="flex gap-1 overflow-x-auto px-3 py-2">
+        <CategoryTab label={t("ops.sell.allCategories")} active={activeId === null} onClick={() => onChange(null)} />
+        {categories.map((c) => (
+          <CategoryTab key={c.id} label={c.name} active={activeId === c.id} onClick={() => onChange(c.id)} />
+        ))}
+      </div>
+      {/* Right-edge fade tells staff there's more if the strip overflows. */}
+      <div className="pointer-events-none absolute top-0 right-0 h-full w-8 bg-gradient-to-l from-white to-transparent" />
     </div>
   );
 }
@@ -504,7 +508,7 @@ function ProductGrid({
 }) {
   const { t } = useLanguage();
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 p-3">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2 p-3">
       {products.map((p) => {
         const out = p.stockOnHand <= 0;
         return (
@@ -518,16 +522,7 @@ function ProductGrid({
             }`}
           >
             <div className="flex items-stretch gap-2 p-2">
-              {p.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={p.imageUrl}
-                  alt=""
-                  className="w-12 h-12 rounded-lg object-cover bg-gray-100 shrink-0"
-                />
-              ) : (
-                <div className="w-12 h-12 rounded-lg bg-gray-100 shrink-0" />
-              )}
+              <ProductThumb imageUrl={p.imageUrl} name={p.name} />
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-semibold text-gray-900 leading-tight line-clamp-2">
                   {p.name}
@@ -547,6 +542,54 @@ function ProductGrid({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+// Empty-image fallback: deterministic colored circle with the product's
+// first 1-2 letters. Beats a blank gray rectangle for scannability.
+function ProductThumb({
+  imageUrl,
+  name,
+  size = "lg",
+}: {
+  imageUrl: string | null;
+  name: string;
+  size?: "sm" | "lg";
+}) {
+  const dim = size === "sm" ? "w-9 h-9" : "w-12 h-12";
+  if (imageUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={imageUrl}
+        alt=""
+        className={`${dim} rounded-lg object-cover bg-gray-100 shrink-0`}
+      />
+    );
+  }
+  const initials = name.trim().slice(0, 2).toUpperCase() || "?";
+  // Hash the name to a stable color so the same product always gets the
+  // same color across sessions.
+  const palette = [
+    "bg-rose-200 text-rose-900",
+    "bg-amber-200 text-amber-900",
+    "bg-emerald-200 text-emerald-900",
+    "bg-sky-200 text-sky-900",
+    "bg-violet-200 text-violet-900",
+    "bg-pink-200 text-pink-900",
+    "bg-lime-200 text-lime-900",
+    "bg-cyan-200 text-cyan-900",
+  ];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) | 0;
+  const cls = palette[Math.abs(hash) % palette.length];
+  const textSize = size === "sm" ? "text-[11px]" : "text-sm";
+  return (
+    <div
+      className={`${dim} rounded-lg shrink-0 flex items-center justify-center font-bold ${textSize} ${cls}`}
+    >
+      {initials}
     </div>
   );
 }
@@ -675,16 +718,7 @@ function CartLineRow({
   const lineTotal = Math.round(line.unitPrice * line.quantity * 100) / 100;
   return (
     <div className="px-4 py-2 flex items-center gap-2">
-      {line.imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={line.imageUrl}
-          alt=""
-          className="w-9 h-9 rounded-lg object-cover bg-gray-100 shrink-0"
-        />
-      ) : (
-        <div className="w-9 h-9 rounded-lg bg-gray-100 shrink-0" />
-      )}
+      <ProductThumb imageUrl={line.imageUrl} name={line.name} size="sm" />
       <div className="flex-1 min-w-0">
         <p className="text-xs font-semibold text-gray-900 truncate">{line.name}</p>
         <p className="text-[11px] text-gray-500 tabular-nums">
