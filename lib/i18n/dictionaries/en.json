@@ -373,6 +373,7 @@
   "ops.admin.consumptionLimit.toastSaved": "Consumption limit updated",
   "ops.admin.consumptionLimit.toastDisabled": "Consumption limit disabled",
   "ops.admin.consumptionLimit.invalid": "Enter a positive number of grams",
+  "ops.admin.consumptionLimit.unit": "g / month",
   "ops.memberForm.sectionTitle": "Onboard New Member",
   "ops.memberForm.moreDetailsLabel": "More details (optional)",
   "ops.memberForm.memberCodeLabel": "Member ID (optional)",

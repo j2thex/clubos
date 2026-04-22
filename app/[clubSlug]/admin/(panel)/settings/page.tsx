@@ -21,7 +21,6 @@ import { getCampaignHistory, getEmailStats } from "../../email-actions";
 import { getOwnerFromCookie } from "@/lib/auth";
 import { QrCodesManager } from "../../qr-codes-manager";
 import { OperationsModuleManager } from "../../operations-module-manager";
-import { ConsumptionLimitManager } from "../../consumption-limit-manager";
 
 export default async function SettingsPage({
   params,
@@ -223,26 +222,18 @@ export default async function SettingsPage({
         />
       </CollapsibleSection>
       <CollapsibleSection title="Operations Module">
-        <div className="space-y-3">
-          <OperationsModuleManager
-            clubId={club.id}
-            clubSlug={clubSlug}
-            initialEnabled={club.operations_module_enabled ?? false}
-            initialCurrencyMode={(club.currency_mode as "saldo" | "cash") ?? "cash"}
-          />
-          {club.operations_module_enabled && (
-            <ConsumptionLimitManager
-              clubId={club.id}
-              clubSlug={clubSlug}
-              initialLimitGrams={
-                club.monthly_consumption_limit_grams === null ||
-                club.monthly_consumption_limit_grams === undefined
-                  ? null
-                  : Number(club.monthly_consumption_limit_grams)
-              }
-            />
-          )}
-        </div>
+        <OperationsModuleManager
+          clubId={club.id}
+          clubSlug={clubSlug}
+          initialEnabled={club.operations_module_enabled ?? false}
+          initialCurrencyMode={(club.currency_mode as "saldo" | "cash") ?? "cash"}
+          initialLimitGrams={
+            club.monthly_consumption_limit_grams === null ||
+            club.monthly_consumption_limit_grams === undefined
+              ? null
+              : Number(club.monthly_consumption_limit_grams)
+          }
+        />
       </CollapsibleSection>
       <CollapsibleSection title="Push Notifications">
         <Link

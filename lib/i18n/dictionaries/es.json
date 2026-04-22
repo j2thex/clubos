@@ -373,6 +373,7 @@
   "ops.admin.consumptionLimit.toastSaved": "Límite de consumo actualizado",
   "ops.admin.consumptionLimit.toastDisabled": "Límite de consumo desactivado",
   "ops.admin.consumptionLimit.invalid": "Introduce un número positivo de gramos",
+  "ops.admin.consumptionLimit.unit": "g / mes",
   "ops.memberForm.sectionTitle": "Alta de nuevo socio",
   "ops.memberForm.moreDetailsLabel": "Más detalles (opcional)",
   "ops.memberForm.memberCodeLabel": "ID de socio (opcional)",
