@@ -216,13 +216,28 @@ export function SellClient({
     [products, activeCategoryId],
   );
 
+  const cartGramsTotal = useMemo(
+    () =>
+      Math.round(
+        cart.lines
+          .filter((l) => l.unit === "gram")
+          .reduce((sum, l) => sum + l.quantity, 0) * 1000,
+      ) / 1000,
+    [cart.lines],
+  );
+  const monthlyLimit = memberData?.monthlyLimitGrams ?? null;
+  const monthlyUsed = memberData?.monthlyConsumedGrams ?? 0;
+  const overMonthlyLimit =
+    monthlyLimit !== null && monthlyUsed + cartGramsTotal > monthlyLimit;
+
   const canConfirm =
     !isPending &&
     !!memberData &&
     cart.lines.length > 0 &&
     discountValid &&
     !discountTooLarge &&
-    !insufficientSaldo;
+    !insufficientSaldo &&
+    !overMonthlyLimit;
 
   function handleConfirm() {
     if (!memberData || !canConfirm) return;
@@ -349,6 +364,10 @@ export function SellClient({
           isPending={isPending}
           canConfirm={canConfirm}
           onConfirm={handleConfirm}
+          monthlyLimitGrams={monthlyLimit}
+          monthlyUsedGrams={monthlyUsed}
+          cartGramsTotal={cartGramsTotal}
+          overMonthlyLimit={overMonthlyLimit}
         />
       </div>
 
@@ -429,6 +448,12 @@ function MemberHeaderBar({
           </p>
         </div>
       )}
+      {member.monthlyLimitGrams !== null && (
+        <MonthlyUsageChip
+          used={member.monthlyConsumedGrams}
+          limit={member.monthlyLimitGrams}
+        />
+      )}
       <div className="flex items-center gap-2">
         {currencyMode === "saldo" && canDoTopup && (
           <button
@@ -447,6 +472,35 @@ function MemberHeaderBar({
           {t("ops.sell.changeMember")}
         </button>
       </div>
+    </div>
+  );
+}
+
+function MonthlyUsageChip({ used, limit }: { used: number; limit: number }) {
+  const { t } = useLanguage();
+  const remaining = Math.max(0, limit - used);
+  const ratio = limit > 0 ? used / limit : 0;
+  const tone =
+    ratio >= 1
+      ? "bg-red-100 text-red-800"
+      : ratio >= 0.8
+        ? "bg-amber-100 text-amber-900"
+        : "bg-gray-100 text-gray-700";
+  const formatGrams = (v: number) =>
+    Number.isInteger(v) ? v.toString() : v.toFixed(1);
+  return (
+    <div className={`rounded-lg px-3 py-1.5 text-[11px] font-semibold ${tone}`}>
+      <span className="block text-[9px] font-normal uppercase tracking-wide opacity-70">
+        {t("ops.sell.monthlyUsage")}
+      </span>
+      <span className="tabular-nums">
+        {formatGrams(used)} / {formatGrams(limit)} g
+      </span>
+      {ratio < 1 && (
+        <span className="block text-[9px] font-normal opacity-70">
+          {t("ops.sell.monthlyRemaining", { remaining: formatGrams(remaining) })}
+        </span>
+      )}
     </div>
   );
 }
@@ -607,6 +661,10 @@ function CartPanel({
   isPending,
   canConfirm,
   onConfirm,
+  monthlyLimitGrams,
+  monthlyUsedGrams,
+  cartGramsTotal,
+  overMonthlyLimit,
 }: {
   cart: CartState;
   dispatch: React.Dispatch<CartAction>;
@@ -620,6 +678,10 @@ function CartPanel({
   isPending: boolean;
   canConfirm: boolean;
   onConfirm: () => void;
+  monthlyLimitGrams: number | null;
+  monthlyUsedGrams: number;
+  cartGramsTotal: number;
+  overMonthlyLimit: boolean;
 }) {
   const { t } = useLanguage();
   return (
@@ -688,6 +750,25 @@ function CartPanel({
             {insufficientSaldo
               ? `${t("ops.sell.insufficientSaldo")} (${memberBalance.toFixed(2)} €)`
               : `${t("ops.sell.balanceAfter")}: ${balanceAfter.toFixed(2)} €`}
+          </div>
+        )}
+        {monthlyLimitGrams !== null && cartGramsTotal > 0 && (
+          <div
+            className={`rounded-lg px-3 py-2 text-xs ${
+              overMonthlyLimit
+                ? "bg-red-50 text-red-700 font-semibold"
+                : "bg-gray-50 text-gray-600"
+            }`}
+          >
+            {overMonthlyLimit
+              ? t("ops.sell.overMonthlyLimit", {
+                  remaining: Math.max(0, monthlyLimitGrams - monthlyUsedGrams).toString(),
+                  limit: monthlyLimitGrams.toString(),
+                })
+              : t("ops.sell.monthlyAfter", {
+                  after: (monthlyUsedGrams + cartGramsTotal).toString(),
+                  limit: monthlyLimitGrams.toString(),
+                })}
           </div>
         )}
         <button

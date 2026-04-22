@@ -71,6 +71,19 @@ const RPC_ERRORS: Record<string, string> = {
 };
 
 function mapRpcError(message: string, fallback: string): string {
+  // over_consumption_limit:<used>:<limit>:<attempted> — encoded so the client
+  // can display remaining allowance without a second round trip.
+  if (message.startsWith("over_consumption_limit:")) {
+    const parts = message.split(":");
+    const used = Number(parts[1]);
+    const limit = Number(parts[2]);
+    const attempted = Number(parts[3]);
+    const remaining = Math.max(0, limit - used);
+    if (Number.isFinite(used) && Number.isFinite(limit) && Number.isFinite(attempted)) {
+      return `Monthly limit reached — ${remaining}g of ${limit}g remaining this month (tried to add ${attempted}g).`;
+    }
+    return "Monthly consumption limit reached for this member";
+  }
   return RPC_ERRORS[message] ?? fallback;
 }
 
@@ -94,6 +107,8 @@ export type MemberForSell = {
   member: LookedUpMember;
   saldoBalance: number;
   recentSales: RecentSale[];
+  monthlyLimitGrams: number | null;
+  monthlyConsumedGrams: number;
 };
 
 export async function lookupMemberForSell(
@@ -106,7 +121,17 @@ export async function lookupMemberForSell(
   const supabase = createAdminClient();
   const memberId = inner.member.id;
 
-  const [{ data: memberRow }, { data: salesRows }] = await Promise.all([
+  const now = new Date();
+  const monthStartIso = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
+  ).toISOString();
+
+  const [
+    { data: memberRow },
+    { data: salesRows },
+    { data: clubRow },
+    { data: monthGramsRows },
+  ] = await Promise.all([
     supabase.from("members").select("saldo_balance").eq("id", memberId).single(),
     supabase
       .from("sales")
@@ -115,6 +140,19 @@ export async function lookupMemberForSell(
       .eq("member_id", memberId)
       .order("created_at", { ascending: false })
       .limit(10),
+    supabase
+      .from("clubs")
+      .select("monthly_consumption_limit_grams")
+      .eq("id", clubId)
+      .single(),
+    supabase
+      .from("product_transactions")
+      .select("quantity, products!inner(unit)")
+      .eq("club_id", clubId)
+      .eq("member_id", memberId)
+      .is("voided_at", null)
+      .eq("products.unit", "gram")
+      .gte("created_at", monthStartIso),
   ]);
 
   const recentSales: RecentSale[] = (salesRows ?? []).map((s) => ({
@@ -127,12 +165,22 @@ export async function lookupMemberForSell(
     lineCount: Array.isArray(s.lines) ? s.lines.length : 0,
   }));
 
+  const monthlyConsumedGrams = (monthGramsRows ?? []).reduce(
+    (sum, row) => sum + Number(row.quantity ?? 0),
+    0,
+  );
+  const limitRaw = clubRow?.monthly_consumption_limit_grams;
+  const monthlyLimitGrams =
+    limitRaw === null || limitRaw === undefined ? null : Number(limitRaw);
+
   return {
     ok: true,
     data: {
       member: inner.member,
       saldoBalance: Number(memberRow?.saldo_balance ?? 0),
       recentSales,
+      monthlyLimitGrams,
+      monthlyConsumedGrams,
     },
   };
 }

@@ -129,6 +129,43 @@ export async function setCurrencyMode(
   return { ok: true };
 }
 
+export async function setMonthlyConsumptionLimit(
+  clubId: string,
+  grams: number | null,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  if (grams !== null) {
+    if (!Number.isFinite(grams) || grams <= 0) {
+      return { error: "Limit must be greater than zero" };
+    }
+    if (grams > 9999.999) {
+      return { error: "Limit is too large" };
+    }
+  }
+
+  try { await requireOwnerForClub(clubId); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ monthly_consumption_limit_grams: grams })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to update consumption limit" };
+
+  await logActivity({
+    clubId,
+    action: "consumption_limit_set",
+    details: grams === null ? "disabled" : `${grams} g`,
+  });
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/staff`, "layout");
+  return { ok: true };
+}
+
 export type ClubVisibility = "public" | "unlisted" | "private";
 
 const VISIBILITY_RANK: Record<ClubVisibility, number> = {

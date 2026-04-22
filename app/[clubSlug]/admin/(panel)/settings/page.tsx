@@ -21,6 +21,7 @@ import { getCampaignHistory, getEmailStats } from "../../email-actions";
 import { getOwnerFromCookie } from "@/lib/auth";
 import { QrCodesManager } from "../../qr-codes-manager";
 import { OperationsModuleManager } from "../../operations-module-manager";
+import { ConsumptionLimitManager } from "../../consumption-limit-manager";
 
 export default async function SettingsPage({
   params,
@@ -32,7 +33,7 @@ export default async function SettingsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, login_mode, invite_only, invite_mode, hide_member_login, preregistration_enabled, auto_registration, tags, visibility, requested_visibility, telegram_bot_token, telegram_chat_id, notification_secret, latitude, longitude, address, city, country, spin_enabled, working_hours, spin_display_decimals, spin_cost, telegram_bot_enabled, telegram_bot_referral_name, telegram_bot_registration_price, telegram_bot_welcome_message, telegram_bot_keywords, telegram_bot_age_restricted, operations_module_enabled, currency_mode")
+    .select("id, login_mode, invite_only, invite_mode, hide_member_login, preregistration_enabled, auto_registration, tags, visibility, requested_visibility, telegram_bot_token, telegram_chat_id, notification_secret, latitude, longitude, address, city, country, spin_enabled, working_hours, spin_display_decimals, spin_cost, telegram_bot_enabled, telegram_bot_referral_name, telegram_bot_registration_price, telegram_bot_welcome_message, telegram_bot_keywords, telegram_bot_age_restricted, operations_module_enabled, currency_mode, monthly_consumption_limit_grams")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -222,12 +223,26 @@ export default async function SettingsPage({
         />
       </CollapsibleSection>
       <CollapsibleSection title="Operations Module">
-        <OperationsModuleManager
-          clubId={club.id}
-          clubSlug={clubSlug}
-          initialEnabled={club.operations_module_enabled ?? false}
-          initialCurrencyMode={(club.currency_mode as "saldo" | "cash") ?? "cash"}
-        />
+        <div className="space-y-3">
+          <OperationsModuleManager
+            clubId={club.id}
+            clubSlug={clubSlug}
+            initialEnabled={club.operations_module_enabled ?? false}
+            initialCurrencyMode={(club.currency_mode as "saldo" | "cash") ?? "cash"}
+          />
+          {club.operations_module_enabled && (
+            <ConsumptionLimitManager
+              clubId={club.id}
+              clubSlug={clubSlug}
+              initialLimitGrams={
+                club.monthly_consumption_limit_grams === null ||
+                club.monthly_consumption_limit_grams === undefined
+                  ? null
+                  : Number(club.monthly_consumption_limit_grams)
+              }
+            />
+          )}
+        </div>
       </CollapsibleSection>
       <CollapsibleSection title="Push Notifications">
         <Link
