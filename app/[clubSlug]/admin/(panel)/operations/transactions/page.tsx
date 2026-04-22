@@ -4,15 +4,14 @@ import Link from "next/link";
 import { t, getDateLocale } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 import { requireOpsAccess } from "@/lib/auth";
-import { NoAccessCard } from "@/components/club/no-access-card";
-import { VoidSaleButton } from "./void-sale-button";
-import { ExportCsvButton } from "./export-button";
+import { VoidSaleButton } from "@/app/[clubSlug]/staff/(console)/operations/transactions/void-sale-button";
+import { ExportCsvButton } from "@/app/[clubSlug]/staff/(console)/operations/transactions/export-button";
 
 export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 50;
 
-export default async function StaffOperationsTransactionsPage({
+export default async function AdminOperationsTransactionsPage({
   params,
   searchParams,
 }: {
@@ -34,19 +33,12 @@ export default async function StaffOperationsTransactionsPage({
 
   if (!club) notFound();
 
-  try {
-    await requireOpsAccess(club.id, "transactions");
-  } catch {
-    return <NoAccessCard permission="transactions" clubSlug={clubSlug} locale={locale} />;
-  }
+  await requireOpsAccess(club.id, "transactions");
 
   const from = page * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
   const dayStart = new Date(new Date().toDateString()).toISOString();
 
-  // Sales are the source of truth post-PR-#79 backfill: every legacy
-  // product_transactions row got wrapped in a synthetic 'cash' sale, so a
-  // single sales-first query renders both legacy and new entries uniformly.
   const [
     { data: sales, count },
     { data: totals },
@@ -126,7 +118,7 @@ export default async function StaffOperationsTransactionsPage({
         <div className="flex items-center gap-3">
           <ExportCsvButton clubId={club.id} />
           <Link
-            href={`/${clubSlug}/staff/operations/sell`}
+            href={`/${clubSlug}/admin/operations/sell`}
             className="text-xs text-gray-500 hover:text-gray-900"
           >
             ← {t(locale, "ops.sellLink")}
@@ -294,7 +286,7 @@ export default async function StaffOperationsTransactionsPage({
         <div className="flex gap-2 justify-center">
           {page > 0 && (
             <Link
-              href={`/${clubSlug}/staff/operations/transactions?page=${page - 1}`}
+              href={`/${clubSlug}/admin/operations/transactions?page=${page - 1}`}
               className="text-xs rounded-full px-3 py-1 bg-gray-100 text-gray-700 hover:bg-gray-200"
             >
               {t(locale, "ops.tx.newer")}
@@ -302,7 +294,7 @@ export default async function StaffOperationsTransactionsPage({
           )}
           {from + PAGE_SIZE < totalCount && (
             <Link
-              href={`/${clubSlug}/staff/operations/transactions?page=${page + 1}`}
+              href={`/${clubSlug}/admin/operations/transactions?page=${page + 1}`}
               className="text-xs rounded-full px-3 py-1 bg-gray-100 text-gray-700 hover:bg-gray-200"
             >
               {t(locale, "ops.tx.older")}

@@ -3,10 +3,11 @@ import { notFound } from "next/navigation";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 import { requireOpsAccess } from "@/lib/auth";
-import { NoAccessCard } from "@/components/club/no-access-card";
-import { EntryClient } from "./entry-client";
+import { EntryClient } from "@/app/[clubSlug]/staff/(console)/operations/entry/entry-client";
 
-export default async function StaffOperationsEntryPage({
+export const dynamic = "force-dynamic";
+
+export default async function AdminOperationsEntryPage({
   params,
   searchParams,
 }: {
@@ -27,18 +28,14 @@ export default async function StaffOperationsEntryPage({
   if (!club) notFound();
   const locale = await getServerLocale();
 
-  try {
-    await requireOpsAccess(club.id, "entry");
-  } catch {
-    return <NoAccessCard permission="entry" clubSlug={clubSlug} locale={locale} />;
-  }
+  await requireOpsAccess(club.id, "entry");
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
           <a
-            href={`/${clubSlug}/staff/operations`}
+            href={`/${clubSlug}/admin/operations`}
             className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-900"
             aria-label={t(locale, "common.back")}
           >
@@ -59,7 +56,7 @@ export default async function StaffOperationsEntryPage({
           </h1>
         </div>
         <a
-          href={`/${clubSlug}/staff/operations/capacity`}
+          href={`/${clubSlug}/admin/operations/capacity`}
           className="text-xs text-gray-500 hover:text-gray-900"
         >
           {t(locale, "ops.capacityLink")} →
@@ -69,6 +66,7 @@ export default async function StaffOperationsEntryPage({
         clubId={club.id}
         clubSlug={clubSlug}
         initialMemberCode={initialMemberCode ?? null}
+        membersHrefBase={`/${clubSlug}/admin`}
       />
     </div>
   );

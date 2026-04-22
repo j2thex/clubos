@@ -1,7 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireStaffPermission } from "@/lib/auth";
+import { requireOpsAccess } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { lookupMemberForEntry, type LookedUpMember } from "../entry/actions";
 
@@ -186,9 +186,9 @@ export async function recordSale(
   | { error: string }
   | { ok: true; saleId: string; total: number; balanceAfter: number | null }
 > {
-  let staff: { member_id: string; club_id: string };
+  let actor: Awaited<ReturnType<typeof requireOpsAccess>>;
   try {
-    staff = await requireStaffPermission(input.clubId, "sell");
+    actor = await requireOpsAccess(input.clubId, "sell");
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
@@ -215,7 +215,7 @@ export async function recordSale(
   const { data, error } = await supabase.rpc("record_sale", {
     p_club_id: input.clubId,
     p_member_id: input.memberId,
-    p_staff_id: staff.member_id,
+    p_staff_id: actor.member_id,
     p_lines: lines,
     p_discount: input.discount,
     p_comment: input.comment,
@@ -229,6 +229,8 @@ export async function recordSale(
   revalidatePath(`/${clubSlug}/staff/operations/products`);
   revalidatePath(`/${clubSlug}/staff/operations/sell`);
   revalidatePath(`/${clubSlug}/staff/operations/transactions`);
+  revalidatePath(`/${clubSlug}/admin/operations/sell`);
+  revalidatePath(`/${clubSlug}/admin/operations/transactions`);
 
   return {
     ok: true,
@@ -244,9 +246,9 @@ export async function topupSaldo(
   clubSlug: string,
   input: TopupInput,
 ): Promise<{ error: string } | { ok: true; balanceAfter: number }> {
-  let staff: { member_id: string; club_id: string };
+  let actor: Awaited<ReturnType<typeof requireOpsAccess>>;
   try {
-    staff = await requireStaffPermission(input.clubId, "topup");
+    actor = await requireOpsAccess(input.clubId, "topup");
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
@@ -263,7 +265,7 @@ export async function topupSaldo(
     p_amount: input.amount,
     p_method: input.method,
     p_comment: input.comment,
-    p_staff_id: staff.member_id,
+    p_staff_id: actor.member_id,
   });
 
   if (error) return { error: mapRpcError(error.message, "Failed to top up") };
@@ -271,6 +273,7 @@ export async function topupSaldo(
   const result = data as { balance_after: number };
 
   revalidatePath(`/${clubSlug}/staff/operations/sell`);
+  revalidatePath(`/${clubSlug}/admin/operations/sell`);
   revalidatePath(`/${clubSlug}/admin`, "layout");
 
   return { ok: true, balanceAfter: Number(result.balance_after) };
@@ -300,9 +303,9 @@ export async function voidSale(
 
   if (!sale) return { error: "Sale not found" };
 
-  let staff: { member_id: string; club_id: string };
+  let actor: Awaited<ReturnType<typeof requireOpsAccess>>;
   try {
-    staff = await requireStaffPermission(sale.club_id, "transactions");
+    actor = await requireOpsAccess(sale.club_id, "transactions");
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
@@ -310,7 +313,7 @@ export async function voidSale(
   const { data, error } = await supabase.rpc("void_sale", {
     p_sale_id: saleId,
     p_club_id: sale.club_id,
-    p_staff_id: staff.member_id,
+    p_staff_id: actor.member_id,
     p_reason: trimmed,
   });
 
@@ -321,6 +324,8 @@ export async function voidSale(
   revalidatePath(`/${clubSlug}/staff/operations/transactions`);
   revalidatePath(`/${clubSlug}/staff/operations/products`);
   revalidatePath(`/${clubSlug}/staff/operations/sell`);
+  revalidatePath(`/${clubSlug}/admin/operations/transactions`);
+  revalidatePath(`/${clubSlug}/admin/operations/sell`);
   revalidatePath(`/${clubSlug}/admin`, "layout");
 
   return {
@@ -376,7 +381,7 @@ export async function exportTodayTransactionsCsv(
   clubId: string,
 ): Promise<{ error: string } | { ok: true; csv: string; filename: string }> {
   try {
-    await requireStaffPermission(clubId, "transactions");
+    await requireOpsAccess(clubId, "transactions");
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
@@ -477,9 +482,9 @@ export async function voidTransaction(
     return { ok: true };
   }
 
-  let staff: { member_id: string; club_id: string };
+  let actor: Awaited<ReturnType<typeof requireOpsAccess>>;
   try {
-    staff = await requireStaffPermission(tx.club_id, "transactions");
+    actor = await requireOpsAccess(tx.club_id, "transactions");
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
@@ -487,7 +492,7 @@ export async function voidTransaction(
   const { error } = await supabase.rpc("void_product_sale", {
     p_transaction_id: transactionId,
     p_club_id: tx.club_id,
-    p_staff_id: staff.member_id,
+    p_staff_id: actor.member_id,
     p_reason: trimmed,
   });
 
@@ -495,5 +500,6 @@ export async function voidTransaction(
 
   revalidatePath(`/${clubSlug}/staff/operations/transactions`);
   revalidatePath(`/${clubSlug}/staff/operations/products`);
+  revalidatePath(`/${clubSlug}/admin/operations/transactions`);
   return { ok: true };
 }

@@ -4,13 +4,19 @@ import Link from "next/link";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 import { requireOpsAccess } from "@/lib/auth";
-import { NoAccessCard } from "@/components/club/no-access-card";
-import { SellClient, type SellCategory, type SellProduct } from "./sell-client";
-import { lookupMemberForSell, type MemberForSell } from "./actions";
+import {
+  SellClient,
+  type SellCategory,
+  type SellProduct,
+} from "@/app/[clubSlug]/staff/(console)/operations/sell/sell-client";
+import {
+  lookupMemberForSell,
+  type MemberForSell,
+} from "@/app/[clubSlug]/staff/(console)/operations/sell/actions";
 
 export const dynamic = "force-dynamic";
 
-export default async function StaffOperationsSellPage({
+export default async function AdminOperationsSellPage({
   params,
   searchParams,
 }: {
@@ -31,16 +37,11 @@ export default async function StaffOperationsSellPage({
 
   if (!club) notFound();
 
-  let actor: Awaited<ReturnType<typeof requireOpsAccess>>;
-  try {
-    actor = await requireOpsAccess(club.id, "sell");
-  } catch {
-    return <NoAccessCard permission="sell" clubSlug={clubSlug} locale={locale} />;
-  }
+  await requireOpsAccess(club.id, "sell");
 
   const currencyMode = (club.currency_mode as "saldo" | "cash") ?? "cash";
 
-  const [{ data: categories }, { data: products }, { data: staffRow }] = await Promise.all([
+  const [{ data: categories }, { data: products }] = await Promise.all([
     supabase
       .from("product_categories")
       .select("id, name, name_es, display_order")
@@ -56,11 +57,6 @@ export default async function StaffOperationsSellPage({
       .eq("archived", false)
       .eq("active", true)
       .order("display_order", { ascending: true }),
-    supabase
-      .from("members")
-      .select("can_do_topup")
-      .eq("id", actor.member_id)
-      .single(),
   ]);
 
   const categoryRows: SellCategory[] = (categories ?? []).map((c) => ({
@@ -91,7 +87,7 @@ export default async function StaffOperationsSellPage({
           {t(locale, "ops.sellTitle")}
         </h1>
         <Link
-          href={`/${clubSlug}/staff/operations/transactions`}
+          href={`/${clubSlug}/admin/operations/transactions`}
           className="text-xs text-gray-500 hover:text-gray-900"
         >
           {t(locale, "ops.transactionsLink")} →
@@ -101,7 +97,7 @@ export default async function StaffOperationsSellPage({
         clubId={club.id}
         clubSlug={clubSlug}
         currencyMode={currencyMode}
-        canDoTopup={actor.kind === "owner" ? true : (staffRow?.can_do_topup ?? false)}
+        canDoTopup={true}
         categories={categoryRows}
         products={productRows}
         initialMember={initialMember}
