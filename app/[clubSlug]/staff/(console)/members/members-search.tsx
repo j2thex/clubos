@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { useLanguage } from "@/lib/i18n/provider";
@@ -148,6 +149,44 @@ function VerifyRow({
         >
           {t("ops.memberForm.photoLabel")}
         </a>
+      )}
+    </div>
+  );
+}
+
+function OpsActionsRow({
+  clubSlug,
+  memberCode,
+  deepLinks,
+}: {
+  clubSlug: string;
+  memberCode: string;
+  deepLinks: { entry: boolean; sell: boolean };
+}) {
+  const { t } = useLanguage();
+  return (
+    <div className="px-5 pb-3 -mt-1 flex items-center gap-2 flex-wrap">
+      {deepLinks.entry && (
+        <Link
+          href={`/${clubSlug}/staff/operations/entry?memberCode=${memberCode}`}
+          className="inline-flex items-center gap-1.5 rounded-full bg-gray-800 text-white text-xs font-semibold px-3 py-2 hover:bg-gray-700 transition-colors"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12H3m0 0l4-4m-4 4l4 4m8-12v16" />
+          </svg>
+          {t("ops.deepLink.openAtDoor")}
+        </Link>
+      )}
+      {deepLinks.sell && (
+        <Link
+          href={`/${clubSlug}/staff/operations/sell?memberCode=${memberCode}`}
+          className="inline-flex items-center gap-1.5 rounded-full bg-gray-800 text-white text-xs font-semibold px-3 py-2 hover:bg-gray-700 transition-colors"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+          {t("ops.deepLink.sellToMember")}
+        </Link>
       )}
     </div>
   );
@@ -327,13 +366,19 @@ export function MembersSearch({
             age={age}
           />
         )}
+        {deepLinks && (deepLinks.entry || deepLinks.sell) && (
+          <OpsActionsRow
+            clubSlug={clubSlug}
+            memberCode={m.memberCode}
+            deepLinks={deepLinks}
+          />
+        )}
         {detail && isExpanded && (
           <MemberDetail
             member={detail}
             clubId={clubId}
             clubSlug={clubSlug}
             actions={staffMemberDetailActions}
-            deepLinks={deepLinks}
           />
         )}
       </div>
