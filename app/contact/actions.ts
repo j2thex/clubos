@@ -1,6 +1,7 @@
 "use server";
 
 import { Resend } from "resend";
+import { checkBotId } from "botid/server";
 
 export type ContactState =
   | { status: "idle" }
@@ -21,6 +22,14 @@ export async function submitContact(
   }
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
     return { status: "error", message: "invalid-email" };
+  }
+
+  // Silently drop bot submissions: return success without sending email,
+  // so operators get no signal to iterate around the check.
+  const verification = await checkBotId();
+  if (verification.isBot) {
+    console.warn("[contact] botid blocked submission", { email });
+    return { status: "success" };
   }
 
   const apiKey = process.env.RESEND_API_KEY;
