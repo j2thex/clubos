@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { Search, X } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/provider";
 import { localized } from "@/lib/i18n";
 import { CollapsibleSection } from "@/components/collapsible-section";
@@ -56,6 +57,10 @@ export function ProductsManager({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const [newProductOpen, setNewProductOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const trimmedQuery = searchQuery.trim().toLowerCase();
+  const isSearching = trimmedQuery.length > 0;
 
   const visibleCategories = categories.filter((c) =>
     view === "active" ? !c.archived : c.archived,
@@ -63,10 +68,15 @@ export function ProductsManager({
   const baseVisibleProducts = products.filter((p) =>
     view === "active" ? !p.archived : p.archived,
   );
-  const visibleProducts =
-    view === "active" && activeCategoryId !== null
-      ? baseVisibleProducts.filter((p) => p.categoryId === activeCategoryId)
-      : baseVisibleProducts;
+  const visibleProducts = isSearching
+    ? baseVisibleProducts.filter(
+        (p) =>
+          p.name.toLowerCase().includes(trimmedQuery) ||
+          (p.nameEs ?? "").toLowerCase().includes(trimmedQuery),
+      )
+    : view === "active" && activeCategoryId !== null
+    ? baseVisibleProducts.filter((p) => p.categoryId === activeCategoryId)
+    : baseVisibleProducts;
 
   const tabCategories = categories
     .filter((c) => !c.archived)
@@ -102,40 +112,65 @@ export function ProductsManager({
           {t("admin.products.heading")}
         </h2>
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-          {view === "active" && (
-            <>
+          <div className="flex items-center gap-3 px-5 py-3 border-b border-gray-100">
+            <div className="relative flex-1">
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+                aria-hidden="true"
+              />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t("admin.products.searchPlaceholder")}
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 pl-9 pr-9 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-emerald-500 focus:bg-white"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 rounded"
+                  aria-label="Clear search"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            {view === "active" && (
               <button
                 type="button"
                 onClick={() => setNewProductOpen((o) => !o)}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold py-3 transition-colors border-b border-emerald-700"
+                className="whitespace-nowrap rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-4 py-2 transition-colors"
               >
                 {t("admin.products.addProduct")}
               </button>
-              {tabCategories.length > 0 && (
-                <div className="flex gap-1 overflow-x-auto px-3 pt-2 border-b border-gray-100">
-                  <CategoryTab
-                    label={t("admin.products.tabs.all")}
-                    active={activeCategoryId === null}
-                    onClick={() => setActiveCategoryId(null)}
-                  />
-                  {tabCategories.map((c) => (
-                    <CategoryTab
-                      key={c.id}
-                      label={localized(c.name, c.nameEs, locale)}
-                      active={activeCategoryId === c.id}
-                      onClick={() => setActiveCategoryId(c.id)}
-                    />
-                  ))}
-                </div>
-              )}
-              <ProductNewForm
-                clubId={clubId}
-                clubSlug={clubSlug}
-                categories={categories.filter((c) => !c.archived)}
-                open={newProductOpen}
-                onOpenChange={setNewProductOpen}
+            )}
+          </div>
+          {view === "active" && !isSearching && tabCategories.length > 0 && (
+            <div className="flex gap-1 overflow-x-auto px-3 pt-2 border-b border-gray-100">
+              <CategoryTab
+                label={t("admin.products.tabs.all")}
+                active={activeCategoryId === null}
+                onClick={() => setActiveCategoryId(null)}
               />
-            </>
+              {tabCategories.map((c) => (
+                <CategoryTab
+                  key={c.id}
+                  label={localized(c.name, c.nameEs, locale)}
+                  active={activeCategoryId === c.id}
+                  onClick={() => setActiveCategoryId(c.id)}
+                />
+              ))}
+            </div>
+          )}
+          {view === "active" && (
+            <ProductNewForm
+              clubId={clubId}
+              clubSlug={clubSlug}
+              categories={categories.filter((c) => !c.archived)}
+              open={newProductOpen}
+              onOpenChange={setNewProductOpen}
+            />
           )}
           <div className="divide-y divide-gray-100">
             {visibleProducts.map((p) => (
@@ -151,14 +186,13 @@ export function ProductsManager({
                 }
               />
             ))}
-            {visibleProducts.length === 0 && view === "archived" && (
+            {visibleProducts.length === 0 && (
               <div className="p-6 text-center text-gray-400 text-sm">
-                No archived products.
-              </div>
-            )}
-            {visibleProducts.length === 0 && view === "active" && (
-              <div className="p-6 text-center text-gray-400 text-sm">
-                {activeCategoryId === null
+                {isSearching
+                  ? t("admin.products.searchNoResults", { query: searchQuery.trim() })
+                  : view === "archived"
+                  ? "No archived products."
+                  : activeCategoryId === null
                   ? "No products yet."
                   : "No products in this category."}
               </div>

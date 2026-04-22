@@ -336,6 +336,8 @@
   "admin.contentProducts": "Products",
   "admin.products.heading": "Products",
   "admin.products.addProduct": "+ Add product",
+  "admin.products.searchPlaceholder": "Search products…",
+  "admin.products.searchNoResults": "No products match \"{query}\".",
   "admin.products.tabs.all": "All",
   "admin.products.filter.active": "Active",
   "admin.products.filter.archived": "Archived",

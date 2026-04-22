@@ -336,6 +336,8 @@
   "admin.contentProducts": "Productos",
   "admin.products.heading": "Productos",
   "admin.products.addProduct": "+ Nuevo producto",
+  "admin.products.searchPlaceholder": "Buscar productos…",
+  "admin.products.searchNoResults": "Ningún producto coincide con \"{query}\".",
   "admin.products.tabs.all": "Todos",
   "admin.products.filter.active": "Activos",
   "admin.products.filter.archived": "Archivados",
