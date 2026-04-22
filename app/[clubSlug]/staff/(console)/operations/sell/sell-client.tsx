@@ -257,6 +257,24 @@ export function SellClient({
         paidWith: currencyMode,
       });
       if ("error" in r) {
+        if (r.error === "over_consumption_limit" && memberData.monthlyLimitGrams !== null) {
+          const limit = memberData.monthlyLimitGrams;
+          const used = memberData.monthlyConsumedGrams;
+          const remaining = Math.max(0, limit - used);
+          const fmt = (v: number) => (Number.isInteger(v) ? v.toString() : v.toFixed(1));
+          toast.error(
+            t("ops.sell.overMonthlyLimit", {
+              remaining: fmt(remaining),
+              limit: fmt(limit),
+            }),
+          );
+          // Another station may have sold in between — refresh so the chip
+          // reflects the current month-to-date.
+          lookupMemberForSell(clubId, memberData.member.memberCode).then((lookup) => {
+            if ("ok" in lookup) setMemberData(lookup.data);
+          });
+          return;
+        }
         toast.error(r.error);
         return;
       }

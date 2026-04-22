@@ -70,20 +70,12 @@ const RPC_ERRORS: Record<string, string> = {
   reason_required: "Void reason is required",
 };
 
+// Sentinel string returned to the client on the limit error. The client
+// recognises it and builds a rich message from local state (current cart +
+// month-to-date consumed grams), which is safer than parsing the RPC's
+// formatted message — PostgREST sometimes wraps it unpredictably.
 function mapRpcError(message: string, fallback: string): string {
-  // over_consumption_limit:<used>:<limit>:<attempted> — encoded so the client
-  // can display remaining allowance without a second round trip.
-  if (message.startsWith("over_consumption_limit:")) {
-    const parts = message.split(":");
-    const used = Number(parts[1]);
-    const limit = Number(parts[2]);
-    const attempted = Number(parts[3]);
-    const remaining = Math.max(0, limit - used);
-    if (Number.isFinite(used) && Number.isFinite(limit) && Number.isFinite(attempted)) {
-      return `Monthly limit reached — ${remaining}g of ${limit}g remaining this month (tried to add ${attempted}g).`;
-    }
-    return "Monthly consumption limit reached for this member";
-  }
+  if (message.includes("over_consumption_limit")) return "over_consumption_limit";
   return RPC_ERRORS[message] ?? fallback;
 }
 
