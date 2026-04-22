@@ -54,7 +54,7 @@ export default async function PeoplePage({
     supabase
       .from("members")
       .select(
-        "id, member_code, full_name, spin_balance, is_staff, status, can_do_entry, can_do_sell, can_do_topup, can_do_transactions, member_roles(name)"
+        "id, member_code, full_name, spin_balance, is_staff, status, can_do_entry, can_do_sell, can_do_topup, can_do_transactions, can_do_qebo, member_roles(name)"
       )
       .eq("club_id", club.id)
       .eq("is_staff", true)
@@ -150,6 +150,7 @@ export default async function PeoplePage({
     canDoSell: s.can_do_sell ?? true,
     canDoTopup: s.can_do_topup ?? true,
     canDoTransactions: s.can_do_transactions ?? true,
+    canDoQebo: s.can_do_qebo ?? true,
   }));
 
   const referralList = (referralSources ?? []).map((r) => ({

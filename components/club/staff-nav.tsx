@@ -8,8 +8,11 @@ interface StaffNavProps {
   clubSlug: string;
   spinEnabled: boolean;
   operationsEnabled: boolean;
+  qeboEnabled: boolean;
   badges?: Record<string, number>;
 }
+
+const QEBO_LABELS = new Set(["nav.bonuses", "nav.quests", "nav.events", "nav.offers"]);
 
 const navItems = [
   {
@@ -77,7 +80,13 @@ const navItems = [
   },
 ];
 
-export function StaffNav({ clubSlug, spinEnabled, operationsEnabled, badges }: StaffNavProps) {
+export function StaffNav({
+  clubSlug,
+  spinEnabled,
+  operationsEnabled,
+  qeboEnabled,
+  badges,
+}: StaffNavProps) {
   const pathname = usePathname();
   const { t } = useLanguage();
   const basePath = `/${clubSlug}/staff`;
@@ -89,6 +98,7 @@ export function StaffNav({ clubSlug, spinEnabled, operationsEnabled, badges }: S
   const visibleItems = navItems.filter((item) => {
     if (!spinEnabled && item.labelKey === "nav.bonuses") return false;
     if (!operationsEnabled && item.labelKey === "nav.operations") return false;
+    if (!qeboEnabled && QEBO_LABELS.has(item.labelKey)) return false;
     return true;
   });
 

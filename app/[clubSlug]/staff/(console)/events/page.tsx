@@ -1,7 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getStaffFromCookie } from "@/lib/auth";
+import { getStaffFromCookie, requireOpsAccess } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { StaffEventClient } from "../../events/staff-event-client";
+import { NoAccessCard } from "@/components/club/no-access-card";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 
@@ -23,6 +24,14 @@ export default async function StaffEventsPage({
 
   if (!club) notFound();
 
+  const locale = await getServerLocale();
+
+  try {
+    await requireOpsAccess(club.id, "qebo");
+  } catch {
+    return <NoAccessCard permission="qebo" clubSlug={clubSlug} locale={locale} />;
+  }
+
   const { data: events } = await supabase
     .from("events")
     .select("id, title, date, reward_spins")
@@ -30,8 +39,6 @@ export default async function StaffEventsPage({
     .eq("active", true)
     .gte("date", new Date().toISOString().split("T")[0])
     .order("date", { ascending: true });
-
-  const locale = await getServerLocale();
 
   return events && events.length > 0 ? (
     <StaffEventClient

@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { PendingPrizes } from "../spin/pending-prizes";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
+import { requireOpsAccess } from "@/lib/auth";
+import { NoAccessCard } from "@/components/club/no-access-card";
 
 export default async function StaffBonusesPage({
   params,
@@ -29,6 +31,12 @@ export default async function StaffBonusesPage({
         {t(locale, "staff.spinDisabledByAdmin")}
       </div>
     );
+  }
+
+  try {
+    await requireOpsAccess(club.id, "qebo");
+  } catch {
+    return <NoAccessCard permission="qebo" clubSlug={clubSlug} locale={locale} />;
   }
 
   const { data: pendingBonuses } = await supabase
