@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { useLanguage } from "@/lib/i18n/provider";
 import { StaffMemberRow } from "../../members/member-row";
@@ -218,6 +218,7 @@ export function MembersSearch({
   clubSlug,
   opsEnabled,
   initialQuery = "",
+  initialOpenCode = null,
   deepLinks,
 }: {
   clubId: string;
@@ -227,10 +228,27 @@ export function MembersSearch({
   clubSlug: string;
   opsEnabled: boolean;
   initialQuery?: string;
+  initialOpenCode?: string | null;
   deepLinks?: { entry: boolean; sell: boolean; topup: boolean };
 }) {
   const [query, setQuery] = useState(initialQuery);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const rowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const didApplyDeepLink = useRef(false);
+
+  useEffect(() => {
+    if (didApplyDeepLink.current) return;
+    if (!initialOpenCode) return;
+    const code = initialOpenCode.toUpperCase();
+    const match = members.find((m) => m.memberCode.toUpperCase() === code);
+    if (!match) return;
+    didApplyDeepLink.current = true;
+    setExpandedId(match.id);
+    requestAnimationFrame(() => {
+      rowRefs.current.get(match.id)?.scrollIntoView({ block: "center", behavior: "smooth" });
+    });
+  }, [initialOpenCode, members]);
+
   const initialOpenGroups = useMemo<Set<GroupKey>>(
     () =>
       new Set<GroupKey>(
@@ -330,7 +348,13 @@ export function MembersSearch({
     const detail = memberDetailById.get(m.id);
     const isExpanded = expandedId === m.id;
     return (
-      <div key={m.id}>
+      <div
+        key={m.id}
+        ref={(el) => {
+          if (el) rowRefs.current.set(m.id, el);
+          else rowRefs.current.delete(m.id);
+        }}
+      >
         <div className="flex items-stretch">
           <div className="flex-1 min-w-0">
             <StaffMemberRow

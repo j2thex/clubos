@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
   createMember,
@@ -73,6 +73,7 @@ export function PeopleManager({
   referralTree = [],
   referralMemberOptions = [],
   knownMarketingChannels = [],
+  initialOpenMemberCode = null,
 }: {
   clubId: string;
   clubSlug: string;
@@ -84,9 +85,29 @@ export function PeopleManager({
   referralTree?: ReferrerSummary[];
   referralMemberOptions?: MemberOption[];
   knownMarketingChannels?: string[];
+  initialOpenMemberCode?: string | null;
 }) {
   const [tab, setTab] = useState<"members" | "staff" | "referrals" | "tree">("members");
   const [expandedMemberId, setExpandedMemberId] = useState<string | null>(null);
+  const rowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const didApplyDeepLink = useRef(false);
+
+  useEffect(() => {
+    if (didApplyDeepLink.current) return;
+    if (!initialOpenMemberCode) return;
+    const code = initialOpenMemberCode.toUpperCase();
+    const inMembers = members.find((m) => m.member_code.toUpperCase() === code);
+    const inStaff = inMembers ? null : staff.find((s) => s.member_code.toUpperCase() === code);
+    const match = inMembers ?? inStaff;
+    if (!match) return;
+    didApplyDeepLink.current = true;
+    setTab(inMembers ? "members" : "staff");
+    setExpandedMemberId(match.id);
+    requestAnimationFrame(() => {
+      rowRefs.current.get(match.id)?.scrollIntoView({ block: "center", behavior: "smooth" });
+    });
+  }, [initialOpenMemberCode, members, staff]);
+
   const memberDetailById = new Map(memberDetails.map((d) => [d.id, d]));
   const totalReferrals = referralTree.reduce((sum, r) => sum + r.referrals.length, 0);
   const [code, setCode] = useState("");
@@ -338,7 +359,13 @@ export function PeopleManager({
                   const detail = tab === "members" ? memberDetailById.get(person.id) : undefined;
                   const isExpanded = expandedMemberId === person.id;
                   return (
-                    <div key={person.id}>
+                    <div
+                      key={person.id}
+                      ref={(el) => {
+                        if (el) rowRefs.current.set(person.id, el);
+                        else rowRefs.current.delete(person.id);
+                      }}
+                    >
                       <div className="px-4 py-3 flex items-center gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">

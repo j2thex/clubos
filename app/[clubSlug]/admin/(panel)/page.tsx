@@ -12,10 +12,14 @@ import {
 
 export default async function PeoplePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ clubSlug: string }>;
+  searchParams: Promise<{ q?: string }>;
 }) {
   const { clubSlug } = await params;
+  const { q: rawOpenCode } = await searchParams;
+  const initialOpenMemberCode = rawOpenCode?.trim().toUpperCase() || null;
   const supabase = createAdminClient();
 
   const { data: club } = await supabase
@@ -250,6 +254,7 @@ export default async function PeoplePage({
         referralTree={referrers}
         referralMemberOptions={memberOptions}
         knownMarketingChannels={knownMarketingChannels}
+        initialOpenMemberCode={initialOpenMemberCode}
       />
       </div>
     </>

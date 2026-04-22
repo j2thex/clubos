@@ -169,6 +169,7 @@ export default async function StaffMembersPage({
           clubSlug={clubSlug}
           opsEnabled={opsEnabled}
           initialQuery={initialQuery ?? ""}
+          initialOpenCode={initialQuery ?? null}
           deepLinks={opsEnabled ? viewerPerms : undefined}
         />
       </div>
