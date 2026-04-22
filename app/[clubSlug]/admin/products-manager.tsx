@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { useLanguage } from "@/lib/i18n/provider";
 import { localized } from "@/lib/i18n";
+import { CollapsibleSection } from "@/components/collapsible-section";
 import {
   addProductCategory,
   updateProductCategory,
@@ -98,25 +99,6 @@ export function ProductsManager({
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-1">
-          {t("admin.categories.heading")}
-        </h2>
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden divide-y divide-gray-100">
-          {visibleCategories.map((c) => (
-            <CategoryRow key={c.id} category={c} clubSlug={clubSlug} />
-          ))}
-          {view === "active" && (
-            <CategoryNewForm clubId={clubId} clubSlug={clubSlug} />
-          )}
-          {visibleCategories.length === 0 && view === "archived" && (
-            <div className="p-6 text-center text-gray-400 text-sm">
-              No archived categories.
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-1">
           {t("admin.products.heading")}
         </h2>
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
@@ -186,6 +168,22 @@ export function ProductsManager({
           </div>
         </div>
       </section>
+
+      <CollapsibleSection title={t("admin.categories.heading")} defaultOpen={false}>
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden divide-y divide-gray-100">
+          {visibleCategories.map((c) => (
+            <CategoryRow key={c.id} category={c} clubSlug={clubSlug} />
+          ))}
+          {view === "active" && (
+            <CategoryNewForm clubId={clubId} clubSlug={clubSlug} />
+          )}
+          {visibleCategories.length === 0 && view === "archived" && (
+            <div className="p-6 text-center text-gray-400 text-sm">
+              No archived categories.
+            </div>
+          )}
+        </div>
+      </CollapsibleSection>
     </div>
   );
 }
