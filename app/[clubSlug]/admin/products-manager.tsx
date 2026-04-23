@@ -10,10 +10,12 @@ import {
   addProductCategory,
   updateProductCategory,
   archiveProductCategory,
+  reorderProductCategory,
   addProduct,
   updateProduct,
   adjustProductStock,
   archiveProduct,
+  bulkSetProductsUnit,
   uploadProductImageAction,
 } from "./products-actions";
 
@@ -62,9 +64,9 @@ export function ProductsManager({
   const trimmedQuery = searchQuery.trim().toLowerCase();
   const isSearching = trimmedQuery.length > 0;
 
-  const visibleCategories = categories.filter((c) =>
-    view === "active" ? !c.archived : c.archived,
-  );
+  const visibleCategories = categories
+    .filter((c) => (view === "active" ? !c.archived : c.archived))
+    .sort((a, b) => a.displayOrder - b.displayOrder);
   const baseVisibleProducts = products.filter((p) =>
     view === "active" ? !p.archived : p.archived,
   );
@@ -162,6 +164,9 @@ export function ProductsManager({
               onOpenChange={setNewProductOpen}
             />
           )}
+          {view === "active" && baseVisibleProducts.length > 0 && (
+            <BulkUnitActions clubId={clubId} clubSlug={clubSlug} />
+          )}
           <div className="divide-y divide-gray-100">
             {visibleProducts.map((p) => (
               <ProductRow
@@ -193,8 +198,14 @@ export function ProductsManager({
 
       <CollapsibleSection title={t("admin.categories.heading")} defaultOpen={false}>
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden divide-y divide-gray-100">
-          {visibleCategories.map((c) => (
-            <CategoryRow key={c.id} category={c} clubSlug={clubSlug} />
+          {visibleCategories.map((c, idx) => (
+            <CategoryRow
+              key={c.id}
+              category={c}
+              clubSlug={clubSlug}
+              canMoveUp={idx > 0}
+              canMoveDown={idx < visibleCategories.length - 1}
+            />
           ))}
           {view === "active" && (
             <CategoryNewForm clubId={clubId} clubSlug={clubSlug} />
@@ -234,14 +245,66 @@ function CategoryTab({
   );
 }
 
+function BulkUnitActions({
+  clubId,
+  clubSlug,
+}: {
+  clubId: string;
+  clubSlug: string;
+}) {
+  const [isPending, startTransition] = useTransition();
+
+  function handleSet(unit: "gram" | "piece") {
+    const label = unit === "gram" ? "grams" : "units";
+    if (
+      !window.confirm(
+        `Set ALL active products to be sold by ${label}? Existing prices stay the same.`,
+      )
+    )
+      return;
+    startTransition(async () => {
+      const r = await bulkSetProductsUnit(clubId, clubSlug, unit);
+      if ("error" in r) toast.error(r.error);
+      else if (r.updated === 0) toast.success(`Already sold by ${label}`);
+      else toast.success(`Updated ${r.updated} product${r.updated === 1 ? "" : "s"}`);
+    });
+  }
+
+  return (
+    <div className="px-5 py-2 flex items-center gap-3 border-b border-gray-100 bg-gray-50 text-xs">
+      <span className="text-gray-500">Bulk set unit:</span>
+      <button
+        type="button"
+        onClick={() => handleSet("piece")}
+        disabled={isPending}
+        className="font-semibold text-gray-700 hover:text-gray-900 disabled:opacity-50 underline-offset-2 hover:underline"
+      >
+        Units
+      </button>
+      <button
+        type="button"
+        onClick={() => handleSet("gram")}
+        disabled={isPending}
+        className="font-semibold text-gray-700 hover:text-gray-900 disabled:opacity-50 underline-offset-2 hover:underline"
+      >
+        Grams
+      </button>
+    </div>
+  );
+}
+
 // ------------------------- Category components -------------------------
 
 function CategoryRow({
   category,
   clubSlug,
+  canMoveUp,
+  canMoveDown,
 }: {
   category: Category;
   clubSlug: string;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(category.name);
@@ -268,6 +331,13 @@ function CategoryRow({
       );
       if ("error" in r) toast.error(r.error);
       else toast.success(category.archived ? "Restored" : "Archived");
+    });
+  }
+
+  function handleMove(direction: "up" | "down") {
+    startTransition(async () => {
+      const r = await reorderProductCategory(category.id, clubSlug, direction);
+      if ("error" in r) toast.error(r.error);
     });
   }
 
@@ -315,6 +385,28 @@ function CategoryRow({
 
   return (
     <div className="px-5 py-3 flex items-center gap-3">
+      {!category.archived && (
+        <div className="flex flex-col shrink-0">
+          <button
+            type="button"
+            onClick={() => handleMove("up")}
+            disabled={isPending || !canMoveUp}
+            aria-label="Move up"
+            className="text-gray-400 hover:text-gray-700 disabled:opacity-30 leading-none text-sm"
+          >
+            ▲
+          </button>
+          <button
+            type="button"
+            onClick={() => handleMove("down")}
+            disabled={isPending || !canMoveDown}
+            aria-label="Move down"
+            className="text-gray-400 hover:text-gray-700 disabled:opacity-30 leading-none text-sm"
+          >
+            ▼
+          </button>
+        </div>
+      )}
       <div className="flex-1">
         <p className="text-sm font-semibold text-gray-900">{category.name}</p>
         {category.nameEs && (

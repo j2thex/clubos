@@ -91,9 +91,12 @@ export default async function StaffOperationsCapacityPage({
                   className="px-5 py-3 flex items-center justify-between gap-3"
                 >
                   <div className="min-w-0">
-                    <p className="font-mono font-semibold text-sm text-gray-900">
+                    <a
+                      href={`/${clubSlug}/staff/members?q=${encodeURIComponent(member.member_code)}`}
+                      className="font-mono font-semibold text-sm text-gray-900 hover:text-gray-700 hover:underline"
+                    >
                       {member.member_code}
-                    </p>
+                    </a>
                     {member.full_name && (
                       <p className="text-xs text-gray-500 truncate">
                         {member.full_name}

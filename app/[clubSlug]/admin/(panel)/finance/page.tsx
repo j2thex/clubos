@@ -76,7 +76,7 @@ export default async function FinancePage({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-1">
+        <h1 className="text-base font-semibold text-gray-500 uppercase tracking-wide px-1">
           {t(locale, "finance.title")}
         </h1>
         <ExportFinanceButton
@@ -91,7 +91,7 @@ export default async function FinancePage({
       {summary.productsWithoutCost > 0 && (
         <Link
           href={`/${clubSlug}/admin/products`}
-          className="block rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
+          className="block rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
         >
           {t(locale, "finance.missingCostWarning", {
             count: summary.productsWithoutCost,
@@ -132,7 +132,7 @@ export default async function FinancePage({
 
       {/* Daily revenue */}
       <div>
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-1 mb-2">
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-1 mb-2">
           {t(locale, "finance.dailyRevenue")}
         </h2>
         <RevenueChart data={daily} />
@@ -140,7 +140,7 @@ export default async function FinancePage({
 
       {/* Category breakdown */}
       <div>
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-1 mb-2">
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-1 mb-2">
           {t(locale, "finance.byCategory")}
         </h2>
         <CategoryBreakdownChart data={categories} />
@@ -148,31 +148,31 @@ export default async function FinancePage({
 
       {/* Top products */}
       <div className="bg-white rounded-2xl shadow-lg p-4 space-y-3">
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
           {t(locale, "finance.topByRevenue")}
         </h2>
         <ProductList products={topByRevenue} locale={locale} showMarginPct={false} />
       </div>
 
       <div className="bg-white rounded-2xl shadow-lg p-4 space-y-3">
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
           {t(locale, "finance.topByMargin")}
         </h2>
-        <p className="text-[10px] text-gray-400">{t(locale, "finance.topByMarginHint")}</p>
+        <p className="text-xs text-gray-400">{t(locale, "finance.topByMarginHint")}</p>
         <ProductList products={topByMargin} locale={locale} showMarginPct={true} />
       </div>
 
       {/* Channel breakdown */}
       <div className="bg-white rounded-2xl shadow-lg p-4 space-y-3">
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
           {t(locale, "finance.byChannel")}
         </h2>
         {channelRows.length === 0 ? (
-          <p className="text-xs text-gray-400">{t(locale, "finance.noChannels")}</p>
+          <p className="text-sm text-gray-400">{t(locale, "finance.noChannels")}</p>
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-[11px] text-gray-400 uppercase tracking-wide">
+              <tr className="text-xs text-gray-400 uppercase tracking-wide">
                 <th className="text-left font-semibold py-1">{t(locale, "finance.channelCol")}</th>
                 <th className="text-right font-semibold py-1">{t(locale, "finance.newMembersCol")}</th>
                 <th className="text-right font-semibold py-1">{t(locale, "finance.revenueCol")}</th>
@@ -209,12 +209,12 @@ function Tile({
 }) {
   return (
     <div className="bg-white rounded-2xl shadow-lg p-4">
-      <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{label}</p>
+      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{label}</p>
       <p className="text-xl font-bold text-gray-900 mt-1">{value}</p>
       {delta && delta !== "—" && (
-        <p className="text-[11px] text-gray-500 mt-0.5">{delta}</p>
+        <p className="text-xs text-gray-500 mt-0.5">{delta}</p>
       )}
-      {sub && <p className="text-[11px] text-gray-400 mt-0.5">{sub}</p>}
+      {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
     </div>
   );
 }
@@ -237,7 +237,7 @@ function ProductList({
   showMarginPct: boolean;
 }) {
   if (products.length === 0) {
-    return <p className="text-xs text-gray-400">—</p>;
+    return <p className="text-sm text-gray-400">—</p>;
   }
   return (
     <ul className="divide-y divide-gray-100">
@@ -245,13 +245,13 @@ function ProductList({
         <li key={p.product_id} className="py-2 flex items-center justify-between">
           <div className="min-w-0">
             <p className="text-sm font-medium text-gray-900 truncate">{p.product_name}</p>
-            <p className="text-[11px] text-gray-400 truncate">{p.category_name ?? "—"}</p>
+            <p className="text-xs text-gray-400 truncate">{p.category_name ?? "—"}</p>
           </div>
           <div className="text-right ml-3 shrink-0">
             <p className="text-sm font-mono text-gray-900">
               {formatMoney(showMarginPct ? p.margin : p.gross, "EUR", locale)}
             </p>
-            <p className="text-[11px] text-gray-400 font-mono">
+            <p className="text-xs text-gray-400 font-mono">
               {showMarginPct && p.marginPct !== null
                 ? `${p.marginPct.toFixed(1)}%`
                 : `×${p.qty.toFixed(p.qty % 1 === 0 ? 0 : 1)}`}

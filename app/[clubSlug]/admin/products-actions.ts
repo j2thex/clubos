@@ -92,6 +92,63 @@ export async function updateProductCategory(
   return { ok: true };
 }
 
+export async function reorderProductCategory(
+  categoryId: string,
+  clubSlug: string,
+  direction: "up" | "down",
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+
+  const { data: current } = await supabase
+    .from("product_categories")
+    .select("club_id, display_order, archived")
+    .eq("id", categoryId)
+    .single();
+
+  if (!current) return { error: "Category not found" };
+
+  try { await requireOwnerForClub(current.club_id); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+
+  let q = supabase
+    .from("product_categories")
+    .select("id, display_order")
+    .eq("club_id", current.club_id)
+    .eq("archived", current.archived)
+    .neq("id", categoryId);
+  q = direction === "down"
+    ? q.gt("display_order", current.display_order).order("display_order", { ascending: true })
+    : q.lt("display_order", current.display_order).order("display_order", { ascending: false });
+  const { data: neighbor } = await q.limit(1).maybeSingle();
+
+  if (!neighbor) return { ok: true };
+
+  // Swap display_order. Use a temporary high value to avoid any unique-ish constraint.
+  const tmp = 2_000_000_000;
+  const { error: e1 } = await supabase
+    .from("product_categories")
+    .update({ display_order: tmp })
+    .eq("id", categoryId);
+  if (e1) return { error: "Failed to reorder" };
+
+  const { error: e2 } = await supabase
+    .from("product_categories")
+    .update({ display_order: current.display_order })
+    .eq("id", neighbor.id);
+  if (e2) return { error: "Failed to reorder" };
+
+  const { error: e3 } = await supabase
+    .from("product_categories")
+    .update({ display_order: neighbor.display_order })
+    .eq("id", categoryId);
+  if (e3) return { error: "Failed to reorder" };
+
+  revalidatePath(`/${clubSlug}/admin/products`);
+  revalidatePath(`/${clubSlug}/staff/operations/products`);
+  return { ok: true };
+}
+
 export async function archiveProductCategory(
   categoryId: string,
   clubSlug: string,
@@ -324,6 +381,41 @@ export async function adjustProductStock(
   revalidatePath(`/${clubSlug}/admin/products`);
   revalidatePath(`/${clubSlug}/staff/operations/products`);
   return { ok: true, newStock: after };
+}
+
+export async function bulkSetProductsUnit(
+  clubId: string,
+  clubSlug: string,
+  unit: "gram" | "piece",
+): Promise<{ error: string } | { ok: true; updated: number }> {
+  try { await requireOwnerForClub(clubId); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("products")
+    .update({ unit })
+    .eq("club_id", clubId)
+    .eq("archived", false)
+    .neq("unit", unit)
+    .select("id");
+
+  if (error) return { error: "Failed to update products" };
+
+  const updated = data?.length ?? 0;
+
+  if (updated > 0) {
+    await logActivity({
+      clubId,
+      action: "products_bulk_unit_updated",
+      details: `${updated} product(s) set to ${unit}`,
+    });
+  }
+
+  revalidatePath(`/${clubSlug}/admin/products`);
+  revalidatePath(`/${clubSlug}/staff/operations/products`);
+  return { ok: true, updated };
 }
 
 export async function archiveProduct(

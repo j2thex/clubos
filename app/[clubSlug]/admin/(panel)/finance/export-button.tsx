@@ -41,7 +41,7 @@ export function ExportFinanceButton({
       type="button"
       onClick={handleClick}
       disabled={isPending}
-      className="rounded-full bg-gray-100 text-gray-700 text-xs font-semibold px-4 py-1.5 hover:bg-gray-200 disabled:opacity-50"
+      className="rounded-full bg-gray-100 text-gray-700 text-sm font-semibold px-4 py-1.5 hover:bg-gray-200 disabled:opacity-50"
     >
       {isPending ? "…" : t("finance.export")}
     </button>
