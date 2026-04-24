@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { StaffNav } from "@/components/club/staff-nav";
 import { PendingApproval } from "@/components/pending-approval";
-import { getOwnerFromCookie, getStaffFromCookie } from "@/lib/auth";
+import { getStaffFromCookie } from "@/lib/auth";
 
 export async function generateMetadata({
   params,
@@ -74,20 +74,18 @@ export default async function StaffLayout({
     };
   }
 
-  // QEBO nav visibility: owners proxying the staff console always see
-  // everything; logged-in staff are gated by their can_do_qebo flag.
+  // QEBO nav visibility: always read the current staff's flag.
+  // Middleware guarantees a staff cookie on /staff, so an owner-cookie
+  // present in the same browser must not override the staff's perms.
   let qeboEnabled = true;
-  const owner = await getOwnerFromCookie();
-  if (!(owner && club?.id && owner.club_id === club.id)) {
-    const staffSession = await getStaffFromCookie();
-    if (staffSession?.member_id) {
-      const { data: staffRow } = await supabase
-        .from("members")
-        .select("can_do_qebo")
-        .eq("id", staffSession.member_id)
-        .single();
-      qeboEnabled = staffRow?.can_do_qebo ?? true;
-    }
+  const staffSession = await getStaffFromCookie();
+  if (staffSession?.member_id) {
+    const { data: staffRow } = await supabase
+      .from("members")
+      .select("can_do_qebo")
+      .eq("id", staffSession.member_id)
+      .single();
+    qeboEnabled = staffRow?.can_do_qebo ?? true;
   }
 
   return (
