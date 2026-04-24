@@ -23,13 +23,20 @@ async function loadClubContext(clubId: string): Promise<{
   name: string;
   description: string;
   primaryColor: string;
+  socialInstagram: string;
+  socialWhatsapp: string;
+  socialTelegram: string;
+  socialGoogleMaps: string;
+  socialWebsite: string;
 }> {
   const supabase = createAdminClient();
   const [{ data: club }, { data: branding }] = await Promise.all([
     supabase.from("clubs").select("name").eq("id", clubId).single(),
     supabase
       .from("club_branding")
-      .select("hero_content, primary_color")
+      .select(
+        "hero_content, primary_color, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website",
+      )
       .eq("club_id", clubId)
       .maybeSingle(),
   ]);
@@ -38,6 +45,11 @@ async function loadClubContext(clubId: string): Promise<{
     name: club?.name ?? "the club",
     description: branding?.hero_content ?? "",
     primaryColor: branding?.primary_color ?? "#16a34a",
+    socialInstagram: branding?.social_instagram ?? "",
+    socialWhatsapp: branding?.social_whatsapp ?? "",
+    socialTelegram: branding?.social_telegram ?? "",
+    socialGoogleMaps: branding?.social_google_maps ?? "",
+    socialWebsite: branding?.social_website ?? "",
   };
 }
 
@@ -74,6 +86,11 @@ export async function generateQuestDraftAction(
         club_name: ctx.name,
         club_description: ctx.description,
         primary_color: ctx.primaryColor,
+        social_instagram: ctx.socialInstagram,
+        social_whatsapp: ctx.socialWhatsapp,
+        social_telegram: ctx.socialTelegram,
+        social_google_maps: ctx.socialGoogleMaps,
+        social_website: ctx.socialWebsite,
       },
     });
     return { ok: true, draft: result.draft };
@@ -167,6 +184,11 @@ export async function generateSetupDraftAction(
         club_description: ctx.description,
         primary_color: ctx.primaryColor,
         current_date: today,
+        social_instagram: ctx.socialInstagram,
+        social_whatsapp: ctx.socialWhatsapp,
+        social_telegram: ctx.socialTelegram,
+        social_google_maps: ctx.socialGoogleMaps,
+        social_website: ctx.socialWebsite,
       },
     });
     return { ok: true, draft: result.draft };
