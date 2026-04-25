@@ -71,6 +71,63 @@ export async function toggleSpinEnabled(
   return { ok: true };
 }
 
+// Source-of-truth club whose product categories are copied into any other
+// club that turns ops on for the first time. Hardcoded to "ice" because
+// that's the canonical dispensary in our deployment; bump to a flag on
+// clubs if more template sources show up.
+const TEMPLATE_CATEGORIES_CLUB_SLUG = "ice";
+
+async function seedDefaultProductCategoriesIfEmpty(
+  clubId: string,
+  clubSlug: string,
+): Promise<void> {
+  if (clubSlug === TEMPLATE_CATEGORIES_CLUB_SLUG) return;
+  const supabase = createAdminClient();
+
+  const { count: existingCount, error: countErr } = await supabase
+    .from("product_categories")
+    .select("id", { count: "exact", head: true })
+    .eq("club_id", clubId);
+  if (countErr) {
+    console.error("[seedDefaultProductCategories] count failed", clubId, countErr);
+    return;
+  }
+  if ((existingCount ?? 0) > 0) return;
+
+  const { data: templateClub, error: templateErr } = await supabase
+    .from("clubs")
+    .select("id")
+    .eq("slug", TEMPLATE_CATEGORIES_CLUB_SLUG)
+    .maybeSingle();
+  if (templateErr || !templateClub) {
+    if (templateErr) console.error("[seedDefaultProductCategories] template lookup failed", templateErr);
+    return;
+  }
+
+  const { data: templates, error: tplErr } = await supabase
+    .from("product_categories")
+    .select("name, name_es, display_order")
+    .eq("club_id", templateClub.id)
+    .eq("archived", false)
+    .order("display_order", { ascending: true });
+  if (tplErr) {
+    console.error("[seedDefaultProductCategories] template fetch failed", tplErr);
+    return;
+  }
+  if (!templates || templates.length === 0) return;
+
+  const rows = templates.map((t, i) => ({
+    club_id: clubId,
+    name: t.name,
+    name_es: t.name_es,
+    display_order: t.display_order ?? i,
+  }));
+  const { error: insertErr } = await supabase.from("product_categories").insert(rows);
+  if (insertErr) {
+    console.error("[seedDefaultProductCategories] insert failed", clubId, insertErr);
+  }
+}
+
 export async function toggleOperationsModule(
   clubId: string,
   enabled: boolean,
@@ -87,6 +144,10 @@ export async function toggleOperationsModule(
     .eq("id", clubId);
 
   if (error) return { error: "Failed to update operations module" };
+
+  if (enabled) {
+    await seedDefaultProductCategoriesIfEmpty(clubId, clubSlug);
+  }
 
   await logActivity({
     clubId,
