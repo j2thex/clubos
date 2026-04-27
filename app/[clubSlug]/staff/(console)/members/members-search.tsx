@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { useLanguage } from "@/lib/i18n/provider";
 import { StaffMemberRow } from "../../members/member-row";
+import { TopupDialog } from "../operations/sell/topup-dialog";
 import {
   markIdVerified,
   revokeIdVerification,
@@ -33,6 +35,8 @@ export type MembersSearchMember = {
   id: string;
   memberCode: string;
   fullName: string | null;
+  firstName: string | null;
+  lastName: string | null;
   spinBalance: number;
   roleId: string | null;
   roleName: string | null;
@@ -40,6 +44,7 @@ export type MembersSearchMember = {
   dateOfBirth: string | null;
   idVerifiedAt: string | null;
   idPhotoSignedUrl: string | null;
+  photoSignedUrl: string | null;
   createdAt: string | null;
 };
 
@@ -66,14 +71,12 @@ function VerifyRow({
   clubSlug,
   dateOfBirth,
   idVerifiedAt,
-  idPhotoSignedUrl,
   age,
 }: {
   memberId: string;
   clubSlug: string;
   dateOfBirth: string | null;
   idVerifiedAt: string | null;
-  idPhotoSignedUrl: string | null;
   age: number | null;
 }) {
   const { t } = useLanguage();
@@ -139,16 +142,70 @@ function VerifyRow({
           </button>
         </>
       )}
-      {idPhotoSignedUrl && (
-        <a
-          href={idPhotoSignedUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs rounded-full px-2 py-0.5 bg-blue-100 text-blue-700 hover:bg-blue-200"
+    </div>
+  );
+}
+
+function OpsActionsRow({
+  clubId,
+  clubSlug,
+  memberId,
+  memberCode,
+  deepLinks,
+}: {
+  clubId: string;
+  clubSlug: string;
+  memberId: string;
+  memberCode: string;
+  deepLinks: { entry: boolean; sell: boolean; topup: boolean };
+}) {
+  const { t } = useLanguage();
+  const [topupOpen, setTopupOpen] = useState(false);
+  return (
+    <div className="px-5 pb-3 -mt-1 flex items-center gap-2 flex-wrap">
+      {deepLinks.entry && (
+        <Link
+          href={`/${clubSlug}/staff/operations/entry?memberCode=${memberCode}`}
+          className="inline-flex items-center gap-1.5 rounded-full bg-gray-800 text-white text-xs font-semibold px-3 py-2 hover:bg-gray-700 transition-colors"
         >
-          {t("ops.memberForm.photoLabel")}
-        </a>
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12H3m0 0l4-4m-4 4l4 4m8-12v16" />
+          </svg>
+          {t("ops.deepLink.openAtDoor")}
+        </Link>
       )}
+      {deepLinks.sell && (
+        <Link
+          href={`/${clubSlug}/staff/operations/sell?memberCode=${memberCode}`}
+          className="inline-flex items-center gap-1.5 rounded-full bg-gray-800 text-white text-xs font-semibold px-3 py-2 hover:bg-gray-700 transition-colors"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+          {t("ops.deepLink.sellToMember")}
+        </Link>
+      )}
+      {deepLinks.topup && (
+        <button
+          type="button"
+          onClick={() => setTopupOpen(true)}
+          className="inline-flex items-center gap-1.5 rounded-full bg-blue-600 text-white text-xs font-semibold px-3 py-2 hover:bg-blue-700 transition-colors"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          {t("ops.topup.button")}
+        </button>
+      )}
+      <TopupDialog
+        open={topupOpen}
+        clubId={clubId}
+        clubSlug={clubSlug}
+        memberId={memberId}
+        memberCode={memberCode}
+        onClose={() => setTopupOpen(false)}
+        onSuccess={() => setTopupOpen(false)}
+      />
     </div>
   );
 }
@@ -161,6 +218,7 @@ export function MembersSearch({
   clubSlug,
   opsEnabled,
   initialQuery = "",
+  initialOpenCode = null,
   deepLinks,
 }: {
   clubId: string;
@@ -170,10 +228,27 @@ export function MembersSearch({
   clubSlug: string;
   opsEnabled: boolean;
   initialQuery?: string;
-  deepLinks?: { entry: boolean; sell: boolean };
+  initialOpenCode?: string | null;
+  deepLinks?: { entry: boolean; sell: boolean; topup: boolean };
 }) {
   const [query, setQuery] = useState(initialQuery);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const rowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const didApplyDeepLink = useRef(false);
+
+  useEffect(() => {
+    if (didApplyDeepLink.current) return;
+    if (!initialOpenCode) return;
+    const code = initialOpenCode.toUpperCase();
+    const match = members.find((m) => m.memberCode.toUpperCase() === code);
+    if (!match) return;
+    didApplyDeepLink.current = true;
+    setExpandedId(match.id);
+    requestAnimationFrame(() => {
+      rowRefs.current.get(match.id)?.scrollIntoView({ block: "center", behavior: "smooth" });
+    });
+  }, [initialOpenCode, members]);
+
   const initialOpenGroups = useMemo<Set<GroupKey>>(
     () =>
       new Set<GroupKey>(
@@ -273,7 +348,13 @@ export function MembersSearch({
     const detail = memberDetailById.get(m.id);
     const isExpanded = expandedId === m.id;
     return (
-      <div key={m.id}>
+      <div
+        key={m.id}
+        ref={(el) => {
+          if (el) rowRefs.current.set(m.id, el);
+          else rowRefs.current.delete(m.id);
+        }}
+      >
         <div className="flex items-stretch">
           <div className="flex-1 min-w-0">
             <StaffMemberRow
@@ -281,10 +362,14 @@ export function MembersSearch({
                 id: m.id,
                 memberCode: m.memberCode,
                 fullName: m.fullName,
+                firstName: m.firstName,
+                lastName: m.lastName,
                 spinBalance: m.spinBalance,
                 roleId: m.roleId,
                 roleName: m.roleName,
                 validTill: m.validTill,
+                photoSignedUrl: m.photoSignedUrl,
+                idPhotoSignedUrl: m.idPhotoSignedUrl,
               }}
               roles={roles}
               clubSlug={clubSlug}
@@ -323,8 +408,16 @@ export function MembersSearch({
             clubSlug={clubSlug}
             dateOfBirth={m.dateOfBirth}
             idVerifiedAt={m.idVerifiedAt}
-            idPhotoSignedUrl={m.idPhotoSignedUrl}
             age={age}
+          />
+        )}
+        {deepLinks && (deepLinks.entry || deepLinks.sell || deepLinks.topup) && (
+          <OpsActionsRow
+            clubId={clubId}
+            clubSlug={clubSlug}
+            memberId={m.id}
+            memberCode={m.memberCode}
+            deepLinks={deepLinks}
           />
         )}
         {detail && isExpanded && (
@@ -333,7 +426,6 @@ export function MembersSearch({
             clubId={clubId}
             clubSlug={clubSlug}
             actions={staffMemberDetailActions}
-            deepLinks={deepLinks}
           />
         )}
       </div>

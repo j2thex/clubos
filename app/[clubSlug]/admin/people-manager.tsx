@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
   createMember,
@@ -18,6 +18,7 @@ import {
   adminRevokeIdVerification,
   updateStaffPermissions,
 } from "./actions";
+import { SaldoLedgerCard } from "./saldo-ledger";
 import { useLanguage } from "@/lib/i18n/provider";
 import { ReferralTree, type ReferrerSummary, type MemberOption } from "./referral-tree";
 import {
@@ -46,7 +47,9 @@ interface Member {
   roleName: string | null;
   canDoEntry?: boolean;
   canDoSell?: boolean;
+  canDoTopup?: boolean;
   canDoTransactions?: boolean;
+  canDoQebo?: boolean;
 }
 
 const PRESET_SOURCES = [
@@ -62,6 +65,7 @@ const PRESET_SOURCES = [
 export function PeopleManager({
   clubId,
   clubSlug,
+  currencyMode = "cash",
   members,
   memberDetails = [],
   staff,
@@ -69,9 +73,11 @@ export function PeopleManager({
   referralTree = [],
   referralMemberOptions = [],
   knownMarketingChannels = [],
+  initialOpenMemberCode = null,
 }: {
   clubId: string;
   clubSlug: string;
+  currencyMode?: "saldo" | "cash";
   members: Member[];
   memberDetails?: MemberDetailRecord[];
   staff: Member[];
@@ -79,9 +85,29 @@ export function PeopleManager({
   referralTree?: ReferrerSummary[];
   referralMemberOptions?: MemberOption[];
   knownMarketingChannels?: string[];
+  initialOpenMemberCode?: string | null;
 }) {
   const [tab, setTab] = useState<"members" | "staff" | "referrals" | "tree">("members");
   const [expandedMemberId, setExpandedMemberId] = useState<string | null>(null);
+  const rowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const didApplyDeepLink = useRef(false);
+
+  useEffect(() => {
+    if (didApplyDeepLink.current) return;
+    if (!initialOpenMemberCode) return;
+    const code = initialOpenMemberCode.toUpperCase();
+    const inMembers = members.find((m) => m.member_code.toUpperCase() === code);
+    const inStaff = inMembers ? null : staff.find((s) => s.member_code.toUpperCase() === code);
+    const match = inMembers ?? inStaff;
+    if (!match) return;
+    didApplyDeepLink.current = true;
+    setTab(inMembers ? "members" : "staff");
+    setExpandedMemberId(match.id);
+    requestAnimationFrame(() => {
+      rowRefs.current.get(match.id)?.scrollIntoView({ block: "center", behavior: "smooth" });
+    });
+  }, [initialOpenMemberCode, members, staff]);
+
   const memberDetailById = new Map(memberDetails.map((d) => [d.id, d]));
   const totalReferrals = referralTree.reduce((sum, r) => sum + r.referrals.length, 0);
   const [code, setCode] = useState("");
@@ -333,7 +359,13 @@ export function PeopleManager({
                   const detail = tab === "members" ? memberDetailById.get(person.id) : undefined;
                   const isExpanded = expandedMemberId === person.id;
                   return (
-                    <div key={person.id}>
+                    <div
+                      key={person.id}
+                      ref={(el) => {
+                        if (el) rowRefs.current.set(person.id, el);
+                        else rowRefs.current.delete(person.id);
+                      }}
+                    >
                       <div className="px-4 py-3 flex items-center gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
@@ -415,18 +447,31 @@ export function PeopleManager({
                           clubSlug={clubSlug}
                           initialEntry={person.canDoEntry ?? true}
                           initialSell={person.canDoSell ?? true}
+                          initialTopup={person.canDoTopup ?? true}
                           initialTransactions={person.canDoTransactions ?? true}
+                          initialQebo={person.canDoQebo ?? true}
                         />
                       )}
                       {detail && isExpanded && (
-                        <MemberDetail
-                          member={detail}
-                          clubId={clubId}
-                          clubSlug={clubSlug}
-                          actions={adminMemberDetailActions}
-                          allowMarketingChannel
-                          knownMarketingChannels={knownMarketingChannels}
-                        />
+                        <>
+                          <MemberDetail
+                            member={detail}
+                            clubId={clubId}
+                            clubSlug={clubSlug}
+                            actions={adminMemberDetailActions}
+                            allowMarketingChannel
+                            knownMarketingChannels={knownMarketingChannels}
+                          />
+                          {currencyMode === "saldo" && (
+                            <div className="px-4 pb-3">
+                              <SaldoLedgerCard
+                                memberId={person.id}
+                                memberCode={person.member_code}
+                                clubSlug={clubSlug}
+                              />
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   );
@@ -482,30 +527,40 @@ function StaffPermissionRow({
   clubSlug,
   initialEntry,
   initialSell,
+  initialTopup,
   initialTransactions,
+  initialQebo,
 }: {
   memberId: string;
   clubSlug: string;
   initialEntry: boolean;
   initialSell: boolean;
+  initialTopup: boolean;
   initialTransactions: boolean;
+  initialQebo: boolean;
 }) {
   const { t } = useLanguage();
   const [canDoEntry, setCanDoEntry] = useState(initialEntry);
   const [canDoSell, setCanDoSell] = useState(initialSell);
+  const [canDoTopup, setCanDoTopup] = useState(initialTopup);
   const [canDoTransactions, setCanDoTransactions] = useState(initialTransactions);
+  const [canDoQebo, setCanDoQebo] = useState(initialQebo);
   const [isPending, startTransition] = useTransition();
 
   function toggle(
-    field: "canDoEntry" | "canDoSell" | "canDoTransactions",
+    field: "canDoEntry" | "canDoSell" | "canDoTopup" | "canDoTransactions" | "canDoQebo",
     next: boolean,
   ) {
     const prevEntry = canDoEntry;
     const prevSell = canDoSell;
+    const prevTopup = canDoTopup;
     const prevTransactions = canDoTransactions;
+    const prevQebo = canDoQebo;
     if (field === "canDoEntry") setCanDoEntry(next);
     if (field === "canDoSell") setCanDoSell(next);
+    if (field === "canDoTopup") setCanDoTopup(next);
     if (field === "canDoTransactions") setCanDoTransactions(next);
+    if (field === "canDoQebo") setCanDoQebo(next);
 
     startTransition(async () => {
       const r = await updateStaffPermissions(memberId, clubSlug, {
@@ -515,23 +570,27 @@ function StaffPermissionRow({
         toast.error(r.error);
         if (field === "canDoEntry") setCanDoEntry(prevEntry);
         if (field === "canDoSell") setCanDoSell(prevSell);
+        if (field === "canDoTopup") setCanDoTopup(prevTopup);
         if (field === "canDoTransactions") setCanDoTransactions(prevTransactions);
+        if (field === "canDoQebo") setCanDoQebo(prevQebo);
       }
     });
   }
 
   const rows: {
-    key: "canDoEntry" | "canDoSell" | "canDoTransactions";
+    key: "canDoEntry" | "canDoSell" | "canDoTopup" | "canDoTransactions" | "canDoQebo";
     label: string;
     value: boolean;
   }[] = [
     { key: "canDoEntry", label: t("admin.staff.permissions.door"), value: canDoEntry },
     { key: "canDoSell", label: t("admin.staff.permissions.sell"), value: canDoSell },
+    { key: "canDoTopup", label: t("admin.staff.permissions.topup"), value: canDoTopup },
     {
       key: "canDoTransactions",
       label: t("admin.staff.permissions.transactions"),
       value: canDoTransactions,
     },
+    { key: "canDoQebo", label: t("admin.staff.permissions.qebo"), value: canDoQebo },
   ];
 
   return (

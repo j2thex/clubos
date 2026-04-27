@@ -71,6 +71,63 @@ export async function toggleSpinEnabled(
   return { ok: true };
 }
 
+// Source-of-truth club whose product categories are copied into any other
+// club that turns ops on for the first time. Hardcoded to "ice" because
+// that's the canonical dispensary in our deployment; bump to a flag on
+// clubs if more template sources show up.
+const TEMPLATE_CATEGORIES_CLUB_SLUG = "ice";
+
+async function seedDefaultProductCategoriesIfEmpty(
+  clubId: string,
+  clubSlug: string,
+): Promise<void> {
+  if (clubSlug === TEMPLATE_CATEGORIES_CLUB_SLUG) return;
+  const supabase = createAdminClient();
+
+  const { count: existingCount, error: countErr } = await supabase
+    .from("product_categories")
+    .select("id", { count: "exact", head: true })
+    .eq("club_id", clubId);
+  if (countErr) {
+    console.error("[seedDefaultProductCategories] count failed", clubId, countErr);
+    return;
+  }
+  if ((existingCount ?? 0) > 0) return;
+
+  const { data: templateClub, error: templateErr } = await supabase
+    .from("clubs")
+    .select("id")
+    .eq("slug", TEMPLATE_CATEGORIES_CLUB_SLUG)
+    .maybeSingle();
+  if (templateErr || !templateClub) {
+    if (templateErr) console.error("[seedDefaultProductCategories] template lookup failed", templateErr);
+    return;
+  }
+
+  const { data: templates, error: tplErr } = await supabase
+    .from("product_categories")
+    .select("name, name_es, display_order")
+    .eq("club_id", templateClub.id)
+    .eq("archived", false)
+    .order("display_order", { ascending: true });
+  if (tplErr) {
+    console.error("[seedDefaultProductCategories] template fetch failed", tplErr);
+    return;
+  }
+  if (!templates || templates.length === 0) return;
+
+  const rows = templates.map((t, i) => ({
+    club_id: clubId,
+    name: t.name,
+    name_es: t.name_es,
+    display_order: t.display_order ?? i,
+  }));
+  const { error: insertErr } = await supabase.from("product_categories").insert(rows);
+  if (insertErr) {
+    console.error("[seedDefaultProductCategories] insert failed", clubId, insertErr);
+  }
+}
+
 export async function toggleOperationsModule(
   clubId: string,
   enabled: boolean,
@@ -88,10 +145,81 @@ export async function toggleOperationsModule(
 
   if (error) return { error: "Failed to update operations module" };
 
+  if (enabled) {
+    await seedDefaultProductCategoriesIfEmpty(clubId, clubSlug);
+  }
+
   await logActivity({
     clubId,
     action: "operations_module_toggled",
     details: enabled ? "enabled" : "disabled",
+  });
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/staff`, "layout");
+  return { ok: true };
+}
+
+export async function setCurrencyMode(
+  clubId: string,
+  mode: "saldo" | "cash",
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  if (mode !== "saldo" && mode !== "cash") return { error: "Invalid currency mode" };
+
+  try { await requireOwnerForClub(clubId); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ currency_mode: mode })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to update currency mode" };
+
+  await logActivity({
+    clubId,
+    action: "currency_mode_set",
+    details: mode,
+  });
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/staff`, "layout");
+  return { ok: true };
+}
+
+export async function setMonthlyConsumptionLimit(
+  clubId: string,
+  grams: number | null,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  if (grams !== null) {
+    if (!Number.isFinite(grams) || grams <= 0) {
+      return { error: "Limit must be greater than zero" };
+    }
+    if (grams > 9999.999) {
+      return { error: "Limit is too large" };
+    }
+  }
+
+  try { await requireOwnerForClub(clubId); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ monthly_consumption_limit_grams: grams })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to update consumption limit" };
+
+  await logActivity({
+    clubId,
+    action: "consumption_limit_set",
+    details: grams === null ? "disabled" : `${grams} g`,
   });
 
   revalidatePath(`/${clubSlug}/admin`, "layout");
@@ -1553,31 +1681,70 @@ export async function updateOfferOptions(
   const icon = (formData.get("icon") as string)?.trim() || null;
   const isPublic = formData.get("is_public") === "1";
   const imageFile = formData.get("image") as File | null;
+  const productIdRaw = (formData.get("product_id") as string)?.trim() || "";
+  const productQuantityRaw = (formData.get("product_quantity") as string)?.trim() || "";
 
   const supabase = createAdminClient();
 
+  // Resolve the offer's club so we can validate product ownership + ops gating.
+  const { data: coRow } = await supabase
+    .from("club_offers")
+    .select("club_id")
+    .eq("id", clubOfferId)
+    .single();
+  if (!coRow) return { error: "Offer not found" };
+  const clubId = coRow.club_id as string;
+
+  let productId: string | null = null;
+  let productQuantity: number | null = null;
+
+  if (productIdRaw) {
+    // Must be a product owned by this club, active + not archived. Also
+    // the club must have ops enabled — otherwise silently drop rather than
+    // error so re-saves from an older form don't break.
+    const { data: club } = await supabase
+      .from("clubs")
+      .select("operations_module_enabled")
+      .eq("id", clubId)
+      .single();
+    if (club?.operations_module_enabled) {
+      const { data: product } = await supabase
+        .from("products")
+        .select("id, active, archived")
+        .eq("id", productIdRaw)
+        .eq("club_id", clubId)
+        .maybeSingle();
+      if (!product) return { error: "Product not found" };
+      if (product.archived || !product.active) return { error: "Product is inactive" };
+
+      const qty = Number(productQuantityRaw);
+      if (!Number.isFinite(qty) || qty <= 0) {
+        return { error: "Product quantity must be greater than 0" };
+      }
+      productId = product.id;
+      productQuantity = qty;
+    }
+  }
+
   const updates: Record<string, unknown> = {
     orderable,
-    price: orderable && price ? Number(price) : null,
+    // Manual price is ignored when a product is linked (price derives from
+    // product.unit_price * product_quantity at read time).
+    price: productId ? null : (orderable && price ? Number(price) : null),
     description,
     description_es: descriptionEs,
     link,
     icon,
     is_public: isPublic,
+    product_id: productId,
+    product_quantity: productQuantity,
   };
 
   if (imageFile && imageFile.size > 0) {
-    const { data: co } = await supabase
-      .from("club_offers")
-      .select("club_id")
-      .eq("id", clubOfferId)
-      .single();
-    if (co) {
-      const { uploadClubImage } = await import("@/lib/supabase/storage");
-      const result = await uploadClubImage(co.club_id, imageFile);
-      if ("error" in result) return { error: result.error };
-      updates.image_url = result.url;
-    }
+    const { uploadClubImage } = await import("@/lib/supabase/storage");
+    const result = await uploadClubImage(clubId, imageFile);
+    if ("error" in result) return { error: result.error };
+    updates.image_url = result.url;
   }
 
   const { error } = await supabase
@@ -1588,6 +1755,8 @@ export async function updateOfferOptions(
   if (error) return { error: "Failed to update offer options" };
 
   revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/offers`);
+  revalidatePath(`/${clubSlug}/staff`, "layout");
   return { ok: true };
 }
 
@@ -2172,13 +2341,102 @@ export async function adminMarkIdVerified(
   return { ok: true };
 }
 
+export type SaldoLedgerEntry = {
+  id: string;
+  type: "topup" | "sale" | "refund" | "admin_adjustment";
+  amount: number;
+  balanceAfter: number;
+  method: string | null;
+  comment: string | null;
+  createdAt: string;
+};
+
+export async function getMemberSaldoLedger(
+  memberId: string,
+): Promise<
+  | { error: string }
+  | { ok: true; balance: number; entries: SaldoLedgerEntry[] }
+> {
+  const auth = await authorizeMemberOwner(memberId);
+  if ("error" in auth) return auth;
+
+  const supabase = createAdminClient();
+  const [{ data: member }, { data: rows }] = await Promise.all([
+    supabase.from("members").select("saldo_balance").eq("id", memberId).single(),
+    supabase
+      .from("member_saldo_transactions")
+      .select("id, type, amount, balance_after, method, comment, created_at")
+      .eq("member_id", memberId)
+      .order("created_at", { ascending: false })
+      .limit(50),
+  ]);
+
+  return {
+    ok: true,
+    balance: Number(member?.saldo_balance ?? 0),
+    entries: (rows ?? []).map((r) => ({
+      id: r.id,
+      type: r.type as SaldoLedgerEntry["type"],
+      amount: Number(r.amount),
+      balanceAfter: Number(r.balance_after),
+      method: r.method,
+      comment: r.comment,
+      createdAt: r.created_at,
+    })),
+  };
+}
+
+export async function adminAdjustSaldo(
+  memberId: string,
+  clubSlug: string,
+  amount: number,
+  comment: string,
+): Promise<{ error: string } | { ok: true; balanceAfter: number }> {
+  if (!Number.isFinite(amount) || amount === 0) {
+    return { error: "Amount must be non-zero" };
+  }
+  if (!comment || !comment.trim()) {
+    return { error: "Comment is required" };
+  }
+
+  const auth = await authorizeMemberOwner(memberId);
+  if ("error" in auth) return auth;
+
+  const supabase = createAdminClient();
+  const { data, error } = await supabase.rpc("admin_adjust_saldo", {
+    p_club_id: auth.clubId,
+    p_member_id: memberId,
+    p_amount: amount,
+    p_comment: comment.trim(),
+    p_staff_id: null,
+  });
+
+  if (error) {
+    const map: Record<string, string> = {
+      invalid_amount: "Amount must be non-zero",
+      comment_required: "Comment is required",
+      member_not_found: "Member not found",
+      wrong_currency_mode: "This club is not in saldo mode",
+      would_go_negative: "Adjustment would push the balance below zero",
+      club_not_found: "Club not found",
+    };
+    return { error: map[error.message] ?? "Failed to adjust saldo" };
+  }
+
+  const result = data as { balance_after: number };
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true, balanceAfter: Number(result.balance_after) };
+}
+
 export async function updateStaffPermissions(
   memberId: string,
   clubSlug: string,
   input: {
     canDoEntry?: boolean;
     canDoSell?: boolean;
+    canDoTopup?: boolean;
     canDoTransactions?: boolean;
+    canDoQebo?: boolean;
   },
 ): Promise<{ error: string } | { ok: true }> {
   const auth = await authorizeMemberOwner(memberId);
@@ -2187,11 +2445,15 @@ export async function updateStaffPermissions(
   const patch: {
     can_do_entry?: boolean;
     can_do_sell?: boolean;
+    can_do_topup?: boolean;
     can_do_transactions?: boolean;
+    can_do_qebo?: boolean;
   } = {};
   if (typeof input.canDoEntry === "boolean") patch.can_do_entry = input.canDoEntry;
   if (typeof input.canDoSell === "boolean") patch.can_do_sell = input.canDoSell;
+  if (typeof input.canDoTopup === "boolean") patch.can_do_topup = input.canDoTopup;
   if (typeof input.canDoTransactions === "boolean") patch.can_do_transactions = input.canDoTransactions;
+  if (typeof input.canDoQebo === "boolean") patch.can_do_qebo = input.canDoQebo;
 
   if (Object.keys(patch).length === 0) return { ok: true };
 

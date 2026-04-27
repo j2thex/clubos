@@ -23,6 +23,22 @@ export async function submitContact(
     return { status: "error", message: "invalid-email" };
   }
 
+  // Honeypot: invisible field real users never see. Bots that fill every
+  // input populate it. Stealth success so operators get no signal.
+  const website = String(formData.get("website") ?? "").trim();
+  if (website) {
+    console.warn("[contact] honeypot triggered");
+    return { status: "success" };
+  }
+
+  // Any submit under 2 s is almost certainly a script.
+  const renderedAt = Number(formData.get("rendered_at") ?? 0);
+  const elapsed = Date.now() - renderedAt;
+  if (!renderedAt || elapsed < 2000) {
+    console.warn("[contact] too-fast submit", { elapsed });
+    return { status: "success" };
+  }
+
   const apiKey = process.env.RESEND_API_KEY;
   const inbox = process.env.CONTACT_INBOX_EMAIL;
   if (!apiKey || !inbox) {

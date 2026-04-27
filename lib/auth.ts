@@ -157,7 +157,7 @@ export async function requireStaffForClub(
   return session;
 }
 
-export type StaffPermission = "entry" | "sell" | "transactions";
+export type StaffPermission = "entry" | "sell" | "topup" | "transactions" | "qebo";
 
 /**
  * Verify the current staff session is active, belongs to the given club,
@@ -176,7 +176,7 @@ export async function requireStaffPermission(
   const supabase = createAdminClient();
   const { data: member } = await supabase
     .from("members")
-    .select("can_do_entry, can_do_sell, can_do_transactions")
+    .select("can_do_entry, can_do_sell, can_do_topup, can_do_transactions, can_do_qebo")
     .eq("id", session.member_id)
     .single();
   const column = `can_do_${permission}` as const;
@@ -255,4 +255,132 @@ export async function requireOwnerForClub(
     throw new Error("Unauthorized");
   }
   return { owner_id: session.owner_id, club_id: session.club_id };
+}
+
+// --- Shared ops access (staff OR admin/owner) ---
+
+/**
+ * Find-or-create the synthetic "owner-proxy" member row used to attribute
+ * ops actions performed by an admin/owner. Ops RPCs and FK columns all
+ * require a members(id) uuid; owners have no members row of their own,
+ * so we back them with one hidden proxy per (owner, club).
+ */
+async function getOrCreateOwnerProxyMember(
+  ownerId: string,
+  clubId: string,
+): Promise<string> {
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const supabase = createAdminClient();
+
+  const { data: existing } = await supabase
+    .from("members")
+    .select("id")
+    .eq("owner_id", ownerId)
+    .eq("club_id", clubId)
+    .maybeSingle();
+
+  if (existing) return existing.id;
+
+  const { data: owner } = await supabase
+    .from("club_owners")
+    .select("full_name, email")
+    .eq("id", ownerId)
+    .single();
+
+  const displayName = owner?.full_name?.trim() || owner?.email || "Admin";
+
+  // Unique human-ish member_code; collisions are astronomically unlikely.
+  // Kept short so any debugger scanning members can spot proxy rows.
+  const suffix = Math.random().toString(36).slice(2, 8).toUpperCase();
+  const memberCode = `OWN-${suffix}`;
+
+  const { data: inserted, error } = await supabase
+    .from("members")
+    .insert({
+      club_id: clubId,
+      owner_id: ownerId,
+      member_code: memberCode,
+      full_name: `(Owner) ${displayName}`,
+      is_staff: true,
+      is_system_member: true,
+      can_do_entry: true,
+      can_do_sell: true,
+      can_do_topup: true,
+      can_do_transactions: true,
+      status: "active",
+    })
+    .select("id")
+    .single();
+
+  if (error || !inserted) {
+    throw new Error(`Failed to create owner proxy: ${error?.message ?? "unknown"}`);
+  }
+  return inserted.id;
+}
+
+export type OpsSession =
+  | { kind: "staff"; member_id: string; owner_id: null; club_id: string }
+  | { kind: "owner"; member_id: string; owner_id: string; club_id: string };
+
+export type OpsPermission = StaffPermission;
+
+/**
+ * Resolve the current caller for an ops action: admin/owner first, then
+ * staff. Owners implicitly hold every ops permission; staff are checked
+ * via requireStaffPermission.
+ *
+ * Returns an OpsSession whose member_id is suitable for RPC p_staff_id
+ * and FK columns (fulfilled_by, checked_in_by, etc.). For owners this is
+ * the owner-proxy member row (auto-created on first use).
+ *
+ * Throws (caller wraps in try/catch and returns {error}).
+ */
+export async function requireOpsAccess(
+  clubId: string,
+  permission: OpsPermission,
+): Promise<OpsSession> {
+  const owner = await getOwnerFromCookie();
+  if (owner && owner.club_id === clubId) {
+    const memberId = await getOrCreateOwnerProxyMember(owner.owner_id, clubId);
+    return {
+      kind: "owner",
+      member_id: memberId,
+      owner_id: owner.owner_id,
+      club_id: clubId,
+    };
+  }
+  const staff = await requireStaffPermission(clubId, permission);
+  return {
+    kind: "staff",
+    member_id: staff.member_id,
+    owner_id: null,
+    club_id: staff.club_id,
+  };
+}
+
+/**
+ * Read-only variant: admin OR any active staff for this club, no
+ * permission flag check. Use for lookup/search endpoints that both
+ * roles are allowed to hit.
+ */
+export async function requireOpsRead(
+  clubId: string,
+): Promise<OpsSession> {
+  const owner = await getOwnerFromCookie();
+  if (owner && owner.club_id === clubId) {
+    const memberId = await getOrCreateOwnerProxyMember(owner.owner_id, clubId);
+    return {
+      kind: "owner",
+      member_id: memberId,
+      owner_id: owner.owner_id,
+      club_id: clubId,
+    };
+  }
+  const staff = await requireStaffForClub(clubId);
+  return {
+    kind: "staff",
+    member_id: staff.member_id,
+    owner_id: null,
+    club_id: staff.club_id,
+  };
 }

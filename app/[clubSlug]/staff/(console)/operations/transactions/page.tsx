@@ -3,9 +3,9 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { t, getDateLocale } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
-import { requireStaffPermission } from "@/lib/auth";
+import { requireOpsAccess } from "@/lib/auth";
 import { NoAccessCard } from "@/components/club/no-access-card";
-import { VoidButton } from "./void-button";
+import { VoidSaleButton } from "./void-sale-button";
 import { ExportCsvButton } from "./export-button";
 
 export const dynamic = "force-dynamic";
@@ -35,7 +35,7 @@ export default async function StaffOperationsTransactionsPage({
   if (!club) notFound();
 
   try {
-    await requireStaffPermission(club.id, "transactions");
+    await requireOpsAccess(club.id, "transactions");
   } catch {
     return <NoAccessCard permission="transactions" clubSlug={clubSlug} locale={locale} />;
   }
@@ -44,30 +44,33 @@ export default async function StaffOperationsTransactionsPage({
   const to = from + PAGE_SIZE - 1;
   const dayStart = new Date(new Date().toDateString()).toISOString();
 
+  // Sales are the source of truth post-PR-#79 backfill: every legacy
+  // product_transactions row got wrapped in a synthetic 'cash' sale, so a
+  // single sales-first query renders both legacy and new entries uniformly.
   const [
-    { data: txs, count },
+    { data: sales, count },
     { data: totals },
     { data: voidedToday },
-    { data: todayRows },
+    { data: todayLines },
   ] = await Promise.all([
     supabase
-      .from("product_transactions")
+      .from("sales")
       .select(
-        "id, quantity, unit_price_at_sale, total_price, weight_source, scale_raw_reading, created_at, voided_at, void_reason, members(member_code, full_name), products(name, unit), staff:fulfilled_by(member_code, full_name)",
+        "id, total, discount, paid_with, comment, created_at, voided_at, void_reason, members(member_code, full_name), staff:fulfilled_by(member_code, full_name), lines:product_transactions(id, quantity, unit_price_at_sale, total_price, weight_source, products(name, unit))",
         { count: "exact" },
       )
       .eq("club_id", club.id)
       .order("created_at", { ascending: false })
       .range(from, to),
     supabase
-      .from("product_transactions")
-      .select("total_price")
+      .from("sales")
+      .select("total")
       .eq("club_id", club.id)
       .is("voided_at", null)
       .gte("created_at", dayStart),
     supabase
-      .from("product_transactions")
-      .select("total_price")
+      .from("sales")
+      .select("total")
       .eq("club_id", club.id)
       .not("voided_at", "is", null)
       .gte("voided_at", dayStart),
@@ -82,21 +85,20 @@ export default async function StaffOperationsTransactionsPage({
   ]);
 
   const todayTotal = (totals ?? []).reduce(
-    (s, r) => s + Number(r.total_price),
+    (s, r) => s + Number(r.total),
     0,
   );
   const voidedTotal = (voidedToday ?? []).reduce(
-    (s, r) => s + Number(r.total_price),
+    (s, r) => s + Number(r.total),
     0,
   );
   const voidedCount = voidedToday?.length ?? 0;
 
-  // Group today's sales by product for the per-product summary block.
   const productSummary = new Map<
     string,
     { qty: number; revenue: number; unit: "gram" | "piece" }
   >();
-  for (const row of todayRows ?? []) {
+  for (const row of todayLines ?? []) {
     const prod = Array.isArray(row.products) ? row.products[0] : row.products;
     if (!prod) continue;
     const key = prod.name;
@@ -183,61 +185,104 @@ export default async function StaffOperationsTransactionsPage({
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
-            {(txs ?? []).map((tx) => {
-              const member = Array.isArray(tx.members)
-                ? tx.members[0]
-                : tx.members;
-              const product = Array.isArray(tx.products)
-                ? tx.products[0]
-                : tx.products;
-              const staffRef = Array.isArray(tx.staff)
-                ? tx.staff[0]
-                : tx.staff;
-              const when = new Date(tx.created_at).toLocaleString(
+            {(sales ?? []).map((sale) => {
+              const member = Array.isArray(sale.members)
+                ? sale.members[0]
+                : sale.members;
+              const staffRef = Array.isArray(sale.staff)
+                ? sale.staff[0]
+                : sale.staff;
+              const when = new Date(sale.created_at).toLocaleString(
                 getDateLocale(locale),
                 { dateStyle: "short", timeStyle: "short" },
               );
-              const voided = !!tx.voided_at;
+              const voided = !!sale.voided_at;
+              const lines = (sale.lines ?? []) as Array<{
+                id: string;
+                quantity: number;
+                unit_price_at_sale: number;
+                total_price: number;
+                weight_source: "manual" | "scale";
+                products:
+                  | { name: string; unit: "gram" | "piece" }
+                  | { name: string; unit: "gram" | "piece" }[]
+                  | null;
+              }>;
+              const discount = Number(sale.discount);
               return (
                 <div
-                  key={tx.id}
-                  className={`px-5 py-3 flex items-center gap-3 ${
-                    voided ? "opacity-60 line-through" : ""
-                  }`}
+                  key={sale.id}
+                  className={`px-5 py-3 ${voided ? "opacity-60" : ""}`}
                 >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">
-                      {product?.name ?? "—"}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {Number(tx.quantity).toFixed(
-                        product?.unit === "gram" ? 1 : 0,
+                  <div className="flex items-start gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-semibold text-gray-900 ${voided ? "line-through" : ""}`}>
+                        {member?.member_code ?? "?"}
+                        {member?.full_name ? ` · ${member.full_name}` : ""}
+                      </p>
+                      <p className="text-[11px] text-gray-400">
+                        {when}
+                        {staffRef?.member_code
+                          ? ` · ${t(locale, "ops.tx.staffColumn", { code: staffRef.member_code })}`
+                          : ""}
+                        {voided && sale.void_reason
+                          ? ` · ${t(locale, "ops.tx.voidedBy", { reason: sale.void_reason })}`
+                          : ""}
+                      </p>
+                      {sale.comment && (
+                        <p className="text-[11px] text-gray-500 mt-0.5 italic">
+                          {sale.comment}
+                        </p>
                       )}
-                      {product?.unit === "gram" ? "g" : ""} ·{" "}
-                      {member?.member_code ?? "?"}
-                      {tx.weight_source === "scale" ? ` · ${t(locale, "ops.tx.scale")}` : ""}
-                    </p>
-                    <p className="text-[11px] text-gray-400">
-                      {when}
-                      {staffRef?.member_code
-                        ? ` · ${t(locale, "ops.tx.staffColumn", { code: staffRef.member_code })}`
-                        : ""}
-                      {voided && tx.void_reason
-                        ? ` · ${t(locale, "ops.tx.voidedBy", { reason: tx.void_reason })}`
-                        : ""}
-                    </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className={`text-sm font-semibold text-gray-900 tabular-nums ${voided ? "line-through" : ""}`}>
+                        {Number(sale.total).toFixed(2)} €
+                      </p>
+                      <p className="text-[10px] uppercase text-gray-400 mt-0.5">
+                        {sale.paid_with}
+                      </p>
+                      {!voided && (
+                        <div className="mt-1">
+                          <VoidSaleButton saleId={sale.id} clubSlug={clubSlug} />
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-sm font-semibold text-gray-900">
-                      {Number(tx.total_price).toFixed(2)} €
-                    </p>
-                    {!voided && (
-                      <VoidButton
-                        transactionId={tx.id}
-                        clubSlug={clubSlug}
-                      />
-                    )}
-                  </div>
+                  {lines.length > 0 && (
+                    <div className="mt-2 pl-3 border-l-2 border-gray-100 space-y-0.5">
+                      {lines.map((l) => {
+                        const prod = Array.isArray(l.products) ? l.products[0] : l.products;
+                        return (
+                          <div
+                            key={l.id}
+                            className={`flex items-center justify-between gap-2 text-[11px] tabular-nums ${voided ? "line-through" : ""}`}
+                          >
+                            <span className="text-gray-700 truncate flex-1">
+                              {Number(l.quantity).toFixed(prod?.unit === "gram" ? 1 : 0)}
+                              {prod?.unit === "gram" ? "g" : "×"} {prod?.name ?? "—"}
+                              {l.weight_source === "scale"
+                                ? ` · ${t(locale, "ops.tx.scale")}`
+                                : ""}
+                            </span>
+                            <span className="text-gray-500 shrink-0">
+                              {Number(l.unit_price_at_sale).toFixed(2)} €/
+                              {prod?.unit === "gram" ? "g" : "ea"}
+                            </span>
+                            <span className="text-gray-900 font-semibold shrink-0 w-14 text-right">
+                              {Number(l.total_price).toFixed(2)} €
+                            </span>
+                          </div>
+                        );
+                      })}
+                      {discount > 0 && (
+                        <div className={`flex items-center justify-between gap-2 text-[11px] tabular-nums text-amber-700 ${voided ? "line-through" : ""}`}>
+                          <span>{t(locale, "ops.sell.discount").replace(" (€)", "")}</span>
+                          <span>−{discount.toFixed(2)} €</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}

@@ -45,7 +45,7 @@ export function FinanceRangePicker({
             key={p}
             type="button"
             onClick={() => setRange(p)}
-            className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+            className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
               current === p
                 ? "bg-gray-900 text-white"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -61,14 +61,14 @@ export function FinanceRangePicker({
             type="date"
             value={from}
             onChange={(e) => setCustom("from", e.target.value)}
-            className="flex-1 rounded-lg border border-gray-300 px-2 py-1 text-xs"
+            className="flex-1 rounded-lg border border-gray-300 px-2 py-1 text-sm text-gray-900"
           />
-          <span className="text-xs text-gray-400">→</span>
+          <span className="text-sm text-gray-400">→</span>
           <input
             type="date"
             value={to}
             onChange={(e) => setCustom("to", e.target.value)}
-            className="flex-1 rounded-lg border border-gray-300 px-2 py-1 text-xs"
+            className="flex-1 rounded-lg border border-gray-300 px-2 py-1 text-sm text-gray-900"
           />
         </div>
       )}

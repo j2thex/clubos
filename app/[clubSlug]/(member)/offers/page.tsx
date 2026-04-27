@@ -20,10 +20,12 @@ export default async function OffersPage({
   const supabase = createAdminClient();
   const locale = await getServerLocale();
 
-  // Get club's enabled offers with catalog info
+  // Get club's enabled offers with catalog info + linked product (if any)
   const { data: offers } = await supabase
     .from("club_offers")
-    .select("id, offer_id, orderable, price, display_order, description, description_es, image_url, icon, link, offer_catalog(id, name, name_es, subtype, icon)")
+    .select(
+      "id, offer_id, orderable, price, display_order, description, description_es, image_url, icon, link, product_id, product_quantity, offer_catalog(id, name, name_es, subtype, icon), products(id, unit, unit_price, stock_on_hand, active, archived)",
+    )
     .eq("club_id", session.club_id)
     .eq("archived", false)
     .order("display_order", { ascending: true });
@@ -37,6 +39,19 @@ export default async function OffersPage({
 
   const offerList = (offers ?? []).map((a) => {
     const catalog = Array.isArray(a.offer_catalog) ? a.offer_catalog[0] : a.offer_catalog;
+    const product = Array.isArray(a.products) ? a.products[0] : a.products;
+    const quantity = a.product_quantity != null ? Number(a.product_quantity) : null;
+
+    // Derive price from product when linked; otherwise use offer's own price.
+    const derivedPrice =
+      product && quantity != null
+        ? Math.round(Number(product.unit_price) * quantity * 100) / 100
+        : null;
+
+    const unavailable =
+      !!product &&
+      (product.archived || !product.active || Number(product.stock_on_hand) < (quantity ?? 0));
+
     return {
       id: a.id,
       name: catalog?.name ?? "",
@@ -49,7 +64,8 @@ export default async function OffersPage({
       image_url: a.image_url ?? null,
       link: a.link ?? null,
       orderable: a.orderable ?? false,
-      price: a.price != null ? Number(a.price) : null,
+      price: derivedPrice != null ? derivedPrice : (a.price != null ? Number(a.price) : null),
+      unavailable,
       order: (orders ?? []).find((o) => o.club_offer_id === a.id) ?? null,
     };
   });

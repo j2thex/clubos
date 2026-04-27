@@ -3,7 +3,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { logActivity } from "@/lib/activity-log";
-import { requireActiveStaff } from "@/lib/auth";
+import { requireOpsAccess } from "@/lib/auth";
 
 export async function lookupMemberQuests(
   memberCode: string,
@@ -83,7 +83,6 @@ export async function completeQuest(
   staffMemberId: string,
   referralMemberCode?: string,
 ): Promise<{ error: string } | { ok: true; newBalance: number }> {
-  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
   if (staffMemberId === memberId) return { error: "Cannot validate your own quest" };
   const supabase = createAdminClient();
   const { data: quest } = await supabase
@@ -93,6 +92,9 @@ export async function completeQuest(
     .single();
 
   if (!quest) return { error: "Quest not found" };
+  try { await requireOpsAccess(quest.club_id, "qebo"); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
 
   // For single-use quests, check if already completed
   if (!quest.multi_use) {
@@ -175,7 +177,6 @@ export async function approveQuest(
   clubSlug?: string,
   referralMemberCode?: string,
 ): Promise<{ error: string } | { ok: true; rewardSpins: number }> {
-  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
   const supabase = createAdminClient();
 
   // Get the pending quest
@@ -197,6 +198,9 @@ export async function approveQuest(
     .single();
 
   if (!quest) return { error: "Quest not found" };
+  try { await requireOpsAccess(quest.club_id, "qebo"); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
 
   // Mark as verified
   const updateData: Record<string, unknown> = { status: "verified", verified_by: staffMemberId };
@@ -251,7 +255,7 @@ export async function approveQuest(
 
   if (clubSlug) {
     revalidatePath(`/${clubSlug}`);
-    revalidatePath(`/${clubSlug}/staff`);
+    revalidatePath(`/${clubSlug}/staff`, "layout");
   }
 
   return { ok: true, rewardSpins: quest.reward_spins };
@@ -262,7 +266,6 @@ export async function declineQuest(
   staffMemberId: string,
   clubSlug?: string,
 ): Promise<{ error: string } | { ok: true }> {
-  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
   const supabase = createAdminClient();
 
   const { data: mq } = await supabase
@@ -280,6 +283,12 @@ export async function declineQuest(
     .select("title, club_id")
     .eq("id", mq.quest_id)
     .single();
+
+  if (quest?.club_id) {
+    try { await requireOpsAccess(quest.club_id, "qebo"); } catch (err) {
+      return { error: err instanceof Error ? err.message : "Unauthorized" };
+    }
+  }
 
   // Delete the record so member can re-submit
   const { error: deleteError } = await supabase
@@ -305,7 +314,7 @@ export async function declineQuest(
 
   if (clubSlug) {
     revalidatePath(`/${clubSlug}`);
-    revalidatePath(`/${clubSlug}/staff`);
+    revalidatePath(`/${clubSlug}/staff`, "layout");
   }
 
   return { ok: true };

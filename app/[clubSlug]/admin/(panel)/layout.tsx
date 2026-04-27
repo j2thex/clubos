@@ -69,7 +69,7 @@ export default async function AdminPanelLayout({
         {coverUrl && (
           <div className="absolute inset-0 bg-black/60" />
         )}
-        <div className="relative flex items-start justify-between max-w-2xl mx-auto">
+        <div className="relative flex items-start justify-between max-w-5xl mx-auto">
           <div className="min-w-0 flex items-center gap-3">
             <PanicIconButton
               clubId={club.id}
@@ -86,7 +86,7 @@ export default async function AdminPanelLayout({
             <LogoutButton clubSlug={clubSlug} />
           </div>
         </div>
-        <div className="relative flex flex-wrap gap-2 mt-5 max-w-2xl mx-auto">
+        <div className="relative flex flex-wrap gap-2 mt-5 max-w-5xl mx-auto">
           <a
             href={`/${clubSlug}/staff`}
             target="_blank"
@@ -107,7 +107,7 @@ export default async function AdminPanelLayout({
       </div>
 
       <div className={`relative z-10 ${coverUrl ? "mt-4" : "-mt-12 bg-gray-50 rounded-t-3xl pt-6"}`}>
-        <div className="px-4 pb-10 max-w-2xl mx-auto space-y-6">
+        <div className="px-4 pb-10 max-w-5xl mx-auto space-y-6">
           {children}
         </div>
       </div>

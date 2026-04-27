@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { StaffNav } from "@/components/club/staff-nav";
 import { PendingApproval } from "@/components/pending-approval";
+import { getStaffFromCookie } from "@/lib/auth";
 
 export async function generateMetadata({
   params,
@@ -57,13 +58,13 @@ export default async function StaffLayout({
           .eq("status", "pending"),
         supabase
           .from("offer_orders")
-          .select("id", { count: "exact", head: true })
-          .eq("club_id", club.id)
+          .select("id, club_offers!inner(club_id)", { count: "exact", head: true })
+          .eq("club_offers.club_id", club.id)
           .eq("status", "pending"),
         supabase
           .from("member_quests")
-          .select("id", { count: "exact", head: true })
-          .eq("club_id", club.id)
+          .select("id, quests!inner(club_id)", { count: "exact", head: true })
+          .eq("quests.club_id", club.id)
           .eq("status", "pending"),
       ]);
     pendingBadges = {
@@ -73,6 +74,20 @@ export default async function StaffLayout({
     };
   }
 
+  // QEBO nav visibility: always read the current staff's flag.
+  // Middleware guarantees a staff cookie on /staff, so an owner-cookie
+  // present in the same browser must not override the staff's perms.
+  let qeboEnabled = true;
+  const staffSession = await getStaffFromCookie();
+  if (staffSession?.member_id) {
+    const { data: staffRow } = await supabase
+      .from("members")
+      .select("can_do_qebo")
+      .eq("id", staffSession.member_id)
+      .single();
+    qeboEnabled = staffRow?.can_do_qebo ?? true;
+  }
+
   return (
     <div className="pb-20">
       {children}
@@ -80,6 +95,7 @@ export default async function StaffLayout({
         clubSlug={clubSlug}
         spinEnabled={club?.spin_enabled ?? false}
         operationsEnabled={club?.operations_module_enabled ?? false}
+        qeboEnabled={qeboEnabled}
         badges={pendingBadges}
       />
     </div>

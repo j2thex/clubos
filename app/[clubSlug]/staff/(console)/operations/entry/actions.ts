@@ -1,7 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireStaffForClub, requireStaffPermission } from "@/lib/auth";
+import { requireOpsAccess, requireOpsRead } from "@/lib/auth";
 import { logActivity } from "@/lib/activity-log";
 import { getMemberIdPhotoSignedUrl } from "@/lib/supabase/storage";
 import { revalidatePath } from "next/cache";
@@ -52,7 +52,7 @@ export async function lookupMemberForEntry(
   clubId: string,
   rawCode: string,
 ): Promise<LookupResult> {
-  try { await requireStaffForClub(clubId); } catch (err) {
+  try { await requireOpsRead(clubId); } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
 
@@ -113,8 +113,8 @@ export async function admitMember(
   clubSlug: string,
   memberId: string,
 ): Promise<CheckinResult> {
-  let staff: { member_id: string; club_id: string };
-  try { staff = await requireStaffPermission(clubId, "entry"); } catch (err) {
+  let actor: Awaited<ReturnType<typeof requireOpsAccess>>;
+  try { actor = await requireOpsAccess(clubId, "entry"); } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
   const supabase = createAdminClient();
@@ -133,7 +133,8 @@ export async function admitMember(
   if (member.valid_till && member.valid_till < today) {
     await logActivity({
       clubId,
-      staffMemberId: staff.member_id,
+      staffMemberId: actor.member_id,
+      actorOwnerId: actor.owner_id,
       action: "entry_blocked_expired",
       targetMemberCode: member.member_code,
       details: `valid till ${member.valid_till}`,
@@ -145,7 +146,8 @@ export async function admitMember(
   if (age === null) {
     await logActivity({
       clubId,
-      staffMemberId: staff.member_id,
+      staffMemberId: actor.member_id,
+      actorOwnerId: actor.owner_id,
       action: "entry_blocked_no_dob",
       targetMemberCode: member.member_code,
     });
@@ -154,7 +156,8 @@ export async function admitMember(
   if (age < 21) {
     await logActivity({
       clubId,
-      staffMemberId: staff.member_id,
+      staffMemberId: actor.member_id,
+      actorOwnerId: actor.owner_id,
       action: "entry_blocked_underage",
       targetMemberCode: member.member_code,
       details: `age ${age}`,
@@ -167,7 +170,7 @@ export async function admitMember(
     .insert({
       club_id: clubId,
       member_id: member.id,
-      checked_in_by: staff.member_id,
+      checked_in_by: actor.member_id,
     })
     .select("id")
     .single();
@@ -177,7 +180,8 @@ export async function admitMember(
     if (error.code === "23505") {
       await logActivity({
         clubId,
-        staffMemberId: staff.member_id,
+        staffMemberId: actor.member_id,
+        actorOwnerId: actor.owner_id,
         action: "entry_blocked_duplicate",
         targetMemberCode: member.member_code,
       });
@@ -188,7 +192,8 @@ export async function admitMember(
 
   await logActivity({
     clubId,
-    staffMemberId: staff.member_id,
+    staffMemberId: actor.member_id,
+    actorOwnerId: actor.owner_id,
     action: "entry_checkin",
     targetMemberCode: member.member_code,
     details: `age ${age}`,
@@ -196,6 +201,8 @@ export async function admitMember(
 
   revalidatePath(`/${clubSlug}/staff/operations/capacity`);
   revalidatePath(`/${clubSlug}/staff/operations/entry`);
+  revalidatePath(`/${clubSlug}/admin/operations/capacity`);
+  revalidatePath(`/${clubSlug}/admin/operations/entry`);
   return { ok: true, entryId: entry.id };
 }
 
@@ -203,8 +210,8 @@ export async function checkoutAllOpen(
   clubId: string,
   clubSlug: string,
 ): Promise<{ error: string } | { ok: true; count: number }> {
-  let staff: { member_id: string; club_id: string };
-  try { staff = await requireStaffPermission(clubId, "entry"); } catch (err) {
+  let actor: Awaited<ReturnType<typeof requireOpsAccess>>;
+  try { actor = await requireOpsAccess(clubId, "entry"); } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
 
@@ -213,7 +220,7 @@ export async function checkoutAllOpen(
 
   const { data, error } = await supabase
     .from("club_entries")
-    .update({ checked_out_at: nowIso, checked_out_by: staff.member_id })
+    .update({ checked_out_at: nowIso, checked_out_by: actor.member_id })
     .eq("club_id", clubId)
     .is("checked_out_at", null)
     .select("id");
@@ -224,7 +231,8 @@ export async function checkoutAllOpen(
   if (count > 0) {
     await logActivity({
       clubId,
-      staffMemberId: staff.member_id,
+      staffMemberId: actor.member_id,
+      actorOwnerId: actor.owner_id,
       action: "entry_bulk_checkout",
       details: `${count} sessions closed`,
     });
@@ -232,6 +240,8 @@ export async function checkoutAllOpen(
 
   revalidatePath(`/${clubSlug}/staff/operations/capacity`);
   revalidatePath(`/${clubSlug}/staff/operations/entry`);
+  revalidatePath(`/${clubSlug}/admin/operations/capacity`);
+  revalidatePath(`/${clubSlug}/admin/operations/entry`);
   return { ok: true, count };
 }
 
@@ -246,7 +256,7 @@ export async function searchMembersByName(
   clubId: string,
   query: string,
 ): Promise<{ error: string } | { ok: true; matches: MemberSearchResult[] }> {
-  try { await requireStaffForClub(clubId); } catch (err) {
+  try { await requireOpsRead(clubId); } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
 
@@ -259,6 +269,7 @@ export async function searchMembersByName(
     .select("member_code, full_name, date_of_birth, id_verified_at")
     .eq("club_id", clubId)
     .eq("status", "active")
+    .eq("is_system_member", false)
     .or(`full_name.ilike.%${trimmed}%,member_code.ilike.%${trimmed}%`)
     .order("full_name", { ascending: true })
     .limit(10);
@@ -289,15 +300,15 @@ export async function checkoutEntry(
   if (!current) return { error: "Entry not found" };
   if (current.checked_out_at) return { error: "Already checked out" };
 
-  let staff: { member_id: string; club_id: string };
-  try { staff = await requireStaffPermission(current.club_id, "entry"); } catch (err) {
+  let actor: Awaited<ReturnType<typeof requireOpsAccess>>;
+  try { actor = await requireOpsAccess(current.club_id, "entry"); } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
 
   const now = new Date().toISOString();
   const { error } = await supabase
     .from("club_entries")
-    .update({ checked_out_at: now, checked_out_by: staff.member_id })
+    .update({ checked_out_at: now, checked_out_by: actor.member_id })
     .eq("id", entryId);
 
   if (error) return { error: "Failed to check out" };
@@ -312,7 +323,8 @@ export async function checkoutEntry(
 
   await logActivity({
     clubId: current.club_id,
-    staffMemberId: staff.member_id,
+    staffMemberId: actor.member_id,
+    actorOwnerId: actor.owner_id,
     action: "entry_checkout",
     targetMemberCode: memberRef?.member_code ?? null,
     details: `duration ${durationMin} min`,
@@ -320,5 +332,7 @@ export async function checkoutEntry(
 
   revalidatePath(`/${clubSlug}/staff/operations/capacity`);
   revalidatePath(`/${clubSlug}/staff/operations/entry`);
+  revalidatePath(`/${clubSlug}/admin/operations/capacity`);
+  revalidatePath(`/${clubSlug}/admin/operations/entry`);
   return { ok: true };
 }

@@ -1,16 +1,21 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { MemberAvatar } from "@/components/club/member-avatar";
 import { updateMemberRole, setManualValidTill } from "./actions";
 
 interface MemberInfo {
   id: string;
   memberCode: string;
   fullName: string | null;
+  firstName: string | null;
+  lastName: string | null;
   spinBalance: number;
   roleId: string | null;
   roleName: string | null;
   validTill: string | null;
+  photoSignedUrl: string | null;
+  idPhotoSignedUrl: string | null;
 }
 
 interface Role {
@@ -39,7 +44,15 @@ export function StaffMemberRow({
   }
 
   return (
-    <div className="px-5 py-4 flex items-center gap-4">
+    <div className="px-5 py-4 flex items-center gap-3">
+      <MemberAvatar
+        photoSignedUrl={member.photoSignedUrl}
+        idPhotoSignedUrl={member.idPhotoSignedUrl}
+        firstName={member.firstName}
+        lastName={member.lastName}
+        fullName={member.fullName}
+        memberCode={member.memberCode}
+      />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <p className="font-mono font-semibold text-gray-900 text-sm tracking-wide">
@@ -80,7 +93,7 @@ export function StaffMemberRow({
                     defaultValue={member.validTill}
                     onChange={(e) => setManualDate(e.target.value)}
                     disabled={isPending}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 bg-white transition disabled:opacity-50"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white transition disabled:opacity-50"
                   />
                   <div className="flex gap-2">
                     <button

@@ -2,7 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
-import { requireStaffPermission } from "@/lib/auth";
+import { requireOpsAccess } from "@/lib/auth";
 import { NoAccessCard } from "@/components/club/no-access-card";
 import { EntryClient } from "./entry-client";
 
@@ -28,7 +28,7 @@ export default async function StaffOperationsEntryPage({
   const locale = await getServerLocale();
 
   try {
-    await requireStaffPermission(club.id, "entry");
+    await requireOpsAccess(club.id, "entry");
   } catch {
     return <NoAccessCard permission="entry" clubSlug={clubSlug} locale={locale} />;
   }

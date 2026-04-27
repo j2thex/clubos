@@ -53,10 +53,17 @@ export function EntryClient({
   clubId,
   clubSlug,
   initialMemberCode,
+  membersHrefBase,
 }: {
   clubId: string;
   clubSlug: string;
   initialMemberCode?: string | null;
+  /**
+   * Base path for the "fix in members" link shown when a member is blocked
+   * (missing DOB, expired membership). Defaults to the staff members list;
+   * admin can pass its own people/members route.
+   */
+  membersHrefBase?: string;
 }) {
   const { t } = useLanguage();
   const [mode, setMode] = useState<Mode>("idle");
@@ -211,7 +218,7 @@ export function EntryClient({
               onChange={(e) => runSearch(e.target.value)}
               placeholder={t("ops.entry.searchPlaceholder")}
               autoFocus
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
             />
             {searchLoading ? (
               <p className="text-xs text-gray-400 text-center">…</p>
@@ -325,6 +332,7 @@ export function EntryClient({
           onAdmit={handleAdmit}
           onCheckout={handleCheckout}
           onClose={reset}
+          membersHrefBase={membersHrefBase}
         />
       )}
     </div>
@@ -338,6 +346,7 @@ function EntryDialog({
   onAdmit,
   onCheckout,
   onClose,
+  membersHrefBase,
 }: {
   member: LookedUpMember;
   clubSlug: string;
@@ -345,6 +354,7 @@ function EntryDialog({
   onAdmit: () => void;
   onCheckout: () => void;
   onClose: () => void;
+  membersHrefBase?: string;
 }) {
   const { t } = useLanguage();
   const alreadyInside = !!member.openEntryId;
@@ -430,7 +440,7 @@ function EntryDialog({
             <p className="font-semibold">{t(blockedReason.key, blockedReason.params)}</p>
             {blockedReason.fixable && (
               <Link
-                href={`/${clubSlug}/staff/members?q=${member.memberCode}`}
+                href={`${membersHrefBase ?? `/${clubSlug}/staff/members`}?q=${member.memberCode}`}
                 className="inline-block text-xs text-red-800 underline hover:text-red-900"
               >
                 {t("ops.entry.fixInMembers")}

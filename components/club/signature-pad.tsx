@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLanguage } from "@/lib/i18n/provider";
 
 export function SignaturePad({
@@ -19,6 +19,7 @@ export function SignaturePad({
   const drawingRef = useRef(false);
   const hasStrokesRef = useRef(false);
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+  const [active, setActive] = useState(false);
 
   // Derive preview URL from file via useMemo (avoids set-state-in-effect).
   const previewUrl = useMemo(() => (value ? URL.createObjectURL(value) : null), [value]);
@@ -48,12 +49,12 @@ export function SignaturePad({
   }, []);
 
   useEffect(() => {
-    if (value) return; // no canvas when showing preview
+    if (value || !active) return; // canvas only mounts while actively capturing
     resizeCanvas();
     const onResize = () => resizeCanvas();
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, [value, resizeCanvas]);
+  }, [value, active, resizeCanvas]);
 
   function pointerPosition(e: React.PointerEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current!;
@@ -112,15 +113,21 @@ export function SignaturePad({
           type: "image/png",
         });
         onChange(file);
+        setActive(false);
       },
       "image/png",
     );
   }
 
+  function cancel() {
+    hasStrokesRef.current = false;
+    setActive(false);
+  }
+
   function redo() {
     onChange(null);
     hasStrokesRef.current = false;
-    // resize happens after render via effect
+    setActive(false);
   }
 
   const hasFile = Boolean(value && previewUrl);
@@ -150,8 +157,11 @@ export function SignaturePad({
           alt=""
           className="w-full rounded-lg border border-gray-200 bg-white aspect-[5/2] object-contain"
         />
-      ) : (
+      ) : active ? (
         <div className="space-y-2">
+          <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-center text-xs font-semibold text-amber-900">
+            {t("ops.memberForm.signature.memberPrompt")}
+          </div>
           <canvas
             ref={canvasRef}
             onPointerDown={onPointerDown}
@@ -175,10 +185,27 @@ export function SignaturePad({
             >
               {t("ops.memberForm.signature.clear")}
             </button>
+            <button
+              type="button"
+              onClick={cancel}
+              className="rounded-lg border border-gray-300 text-xs font-semibold text-gray-600 px-4 py-2"
+            >
+              {t("ops.memberForm.signature.cancel")}
+            </button>
           </div>
-          <p className="text-[11px] text-gray-400">
-            {t("ops.memberForm.signature.hint")}
-          </p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={() => setActive(true)}
+            className="w-full rounded-lg bg-gray-800 text-white text-sm font-semibold py-4 hover:bg-gray-700 transition flex flex-col items-center gap-0.5"
+          >
+            <span>{t("ops.memberForm.signature.activate")}</span>
+            <span className="text-[11px] font-normal text-gray-300">
+              {t("ops.memberForm.signature.activateHint")}
+            </span>
+          </button>
         </div>
       )}
     </div>

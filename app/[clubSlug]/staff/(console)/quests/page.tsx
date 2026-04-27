@@ -1,7 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getStaffFromCookie } from "@/lib/auth";
+import { getStaffFromCookie, requireOpsAccess } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { StaffQuestClient } from "../../quest/staff-quest-client";
+import { NoAccessCard } from "@/components/club/no-access-card";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 
@@ -22,6 +23,14 @@ export default async function StaffQuestsPage({
     .single();
 
   if (!club) notFound();
+
+  const locale = await getServerLocale();
+
+  try {
+    await requireOpsAccess(club.id, "qebo");
+  } catch {
+    return <NoAccessCard permission="qebo" clubSlug={clubSlug} locale={locale} />;
+  }
 
   const [{ data: quests }, { data: pendingRaw }, { data: approvedByMe }] = await Promise.all([
     supabase
@@ -66,8 +75,6 @@ export default async function StaffQuestsPage({
       proof_url: (p.proof_url as string) ?? null,
     };
   });
-
-  const locale = await getServerLocale();
 
   const hasQuests = (quests?.length ?? 0) > 0;
   const hasPending = pendingQuests.length > 0;

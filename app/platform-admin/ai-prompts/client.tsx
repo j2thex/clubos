@@ -25,9 +25,9 @@ const LABELS: Record<ContentType, string> = {
 };
 
 const PLACEHOLDER_HINTS: Record<ContentType, string> = {
-  quest: "{{club_name}}, {{club_description}}, {{primary_color}}, {{user_prompt}}",
+  quest: "{{club_name}}, {{club_description}}, {{primary_color}}, {{user_prompt}}, {{social_instagram}}, {{social_whatsapp}}, {{social_telegram}}, {{social_google_maps}}, {{social_website}}",
   event: "{{club_name}}, {{club_description}}, {{user_prompt}}",
-  setup_agent: "{{club_name}}, {{club_description}}, {{primary_color}}, {{user_prompt}}, {{current_date}}",
+  setup_agent: "{{club_name}}, {{club_description}}, {{primary_color}}, {{user_prompt}}, {{current_date}}, {{social_instagram}}, {{social_whatsapp}}, {{social_telegram}}, {{social_google_maps}}, {{social_website}}",
   quest_image: "{{title}}, {{description}}, {{primary_color}}, {{style_hint}}",
   event_image: "{{title}}, {{description}}, {{primary_color}}, {{style_hint}}",
 };
