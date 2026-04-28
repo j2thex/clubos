@@ -6,12 +6,10 @@ Multi-tenant club operating system (SaaS) branded as **osocios.club**. White-lab
 
 ## Architecture Reference
 
-**`architecture-work-done.md`** (project root) is the single source of truth for:
-- Complete feature inventory (100+ features across 5 portals)
-- Implementation details (how each feature was built, key files, migrations)
-- Website content plan (gaps, recommendations, presentation comparison)
-
-**Read this file first** when studying the codebase or planning new work. It's maintained by the `/document` skill and updated after each development session.
+- **`architecture-work-done.md`** (project root) — engineering reference: feature inventory across all portals + thin implementation pointers (key files, migrations). Maintained by the `/document` skill. **Read first** when studying the codebase or planning new work.
+- **`UBIQUITOUS_LANGUAGE.md`** (project root) — canonical domain glossary (DDD). **Read before planning, naming, or writing prose about features.** Use these terms verbatim in code, comments, PRDs, and conversations. If a concept is missing, add it here first, then use it. Update as the domain evolves.
+- **`docs/website.md`** — marketing/site/strategy plan (presentation gaps, content matrix, tutorials roadmap).
+- **`README.md`** — terse public-facing intro.
 
 ## Tech Stack
 
@@ -129,3 +127,42 @@ pnpm lint         # ESLint
 
 - **Jeff**: sole developer, all code and deployments
 - **Mikita**: tester, tests on staging.osocios.club (no git access)
+
+## Workflow
+
+Canonical loop for any work in this repo. Slash commands live in `.claude/commands/`; skills are bundled (superpowers, vercel, supabase plugins).
+
+```
+Trello card  →  /work | /fix-bug | /clarify | /feedback-work
+              ↓
+              brainstorming (non-trivial features)
+              ↓
+              plan mode  →  implementation  →  pnpm build
+              ↓
+              git push develop  →  trello move qa  →  @mikitatrayan
+              ↓
+              /document  (if architectural)
+              ↓
+              weekly: /weekly-review (Mondays, auto-scheduled)
+```
+
+### Phase → skills
+
+| Phase | Trigger | Skills to invoke |
+|---|---|---|
+| Intake | Jeff or new card | `/work`, `/fix-bug`, `/clarify`, `/feedback-work` |
+| Design | Non-trivial feature | `superpowers:brainstorming`, `superpowers:writing-plans`, `grill-me` |
+| Build | Implementation | `superpowers:test-driven-development`, `superpowers:executing-plans`, `tdd` |
+| Verify | Pre-handoff | `superpowers:verification-before-completion`, `vercel:verification`, `pnpm build` |
+| Document | Post-merge | `/document`, `improve-codebase-architecture`, `ubiquitous-language` |
+| Ship | Always | staging-first via `develop`; PR `develop → main` after Mikita signoff |
+| Retro | Weekly | `/weekly-review` — wins, friction, proposals |
+
+### Hard rules (encoded in memory + skills)
+
+- Trello: local `trello` CLI, never `mcp__trello__*` tools
+- Handoff tag: `@mikitatrayan` (full handle)
+- Deploys: staging-first, no direct-to-main
+- Git: stage files explicitly, never `git add -A`
+- Server Actions, not API routes (except notification webhooks)
+- Use `UBIQUITOUS_LANGUAGE.md` terms verbatim
