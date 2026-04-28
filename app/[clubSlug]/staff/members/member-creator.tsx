@@ -10,7 +10,7 @@ import {
 } from "./actions";
 import { CollapsibleSection } from "@/components/collapsible-section";
 import { PhotoCapture } from "@/components/club/photo-capture";
-import { SignaturePad } from "@/components/club/signature-pad";
+import { SignaturePanel } from "@/components/club/signature-panel";
 import { RfidCapture } from "@/components/club/rfid-capture";
 
 export function StaffMemberCreator({
@@ -386,7 +386,7 @@ export function StaffMemberCreator({
                         onChange={setIdPhotoFile}
                       />
                     </div>
-                    <SignaturePad
+                    <SignaturePanel
                       label={t("ops.memberForm.signatureLabel")}
                       value={signatureFile}
                       onChange={setSignatureFile}
