@@ -9,6 +9,7 @@ import { HomepageMap } from "./_landing/homepage-client";
 import { MembershipExplorer } from "./_landing/membership-explorer";
 import { ClubDirectory } from "./_landing/club-directory";
 import { LandingFooter } from "./_landing/landing-footer";
+import { ScrollReveal } from "./_landing/scroll-reveal";
 import type { DiscoverClub, DiscoverEvent, DiscoverOffer, DiscoverQuest } from "./discover/lib/types";
 import { localized } from "@/lib/i18n";
 import { DynamicIcon } from "@/components/dynamic-icon";
@@ -417,21 +418,37 @@ export default async function Home() {
       )}
 
       {/* How to get membership */}
-      <section className="px-6 py-14 border-t border-landing-border-subtle">
+      <section className="px-6 py-20 sm:py-28 border-t border-landing-border-subtle">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-lg font-bold text-landing-text mb-1">
-            {localized("How to get a club membership", "Cómo obtener una membresía de club", locale)}
-          </h2>
-          <p className="text-xs text-landing-text-tertiary mb-8">
-            {localized(
-              "Three simple steps to join a club on osocios.club",
-              "Tres pasos simples para unirte a un club en osocios.club",
-              locale,
-            )}
-          </p>
-          <ol className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <ScrollReveal>
+            <p className="text-center text-[11px] font-semibold uppercase tracking-[0.25em] text-gradient mb-4">
+              {localized("Get started", "Empezar", locale)}
+            </p>
+            <h2 className="text-center text-3xl sm:text-4xl lg:text-5xl font-extralight tracking-tight text-landing-text">
+              {locale === "es" ? (
+                <>
+                  Cómo obtener una <span className="text-gradient font-medium">membresía</span>
+                </>
+              ) : (
+                <>
+                  How to get a club <span className="text-gradient font-medium">membership</span>
+                </>
+              )}
+            </h2>
+            <p className="mx-auto mt-4 max-w-xl text-center text-sm text-landing-text-secondary">
+              {localized(
+                "Three simple steps to join a club on osocios.club.",
+                "Tres pasos simples para unirte a un club en osocios.club.",
+                locale,
+              )}
+            </p>
+          </ScrollReveal>
+
+          <ol className="mt-14 grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
               {
+                icon: "map-pin",
+                gradient: "bg-gradient-to-br from-emerald-400 to-teal-500",
                 title: localized("Find a club near you", "Encuentra un club cerca de ti", locale),
                 body: localized(
                   "Use the map above or browse the club directory to find one that fits your interests.",
@@ -440,6 +457,8 @@ export default async function Home() {
                 ),
               },
               {
+                icon: "message-circle",
+                gradient: "bg-gradient-to-br from-sky-400 to-indigo-500",
                 title: localized("Visit or contact the club", "Visita o contacta al club", locale),
                 body: localized(
                   "Open the club's public page to see its location, events, and contact details. Drop by or message them directly.",
@@ -448,6 +467,8 @@ export default async function Home() {
                 ),
               },
               {
+                icon: "key-round",
+                gradient: "bg-gradient-to-br from-amber-400 to-orange-500",
                 title: localized("Get your member code", "Obtén tu código de miembro", locale),
                 body: localized(
                   "The club will give you a personal member code. Use it on their portal to unlock events, offers, and rewards.",
@@ -456,18 +477,43 @@ export default async function Home() {
                 ),
               },
             ].map((step, i) => (
-              <li
-                key={i}
-                className="bg-landing-surface rounded-xl p-5 flex flex-col gap-2"
-              >
-                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-landing-surface-hover text-xs font-bold text-landing-text">
-                  {i + 1}
-                </span>
-                <p className="text-sm font-semibold text-landing-text">{step.title}</p>
-                <p className="text-xs text-landing-text-tertiary leading-relaxed">{step.body}</p>
-              </li>
+              <ScrollReveal key={i} delay={i * 80} className="h-full">
+                <li className="group relative h-full rounded-2xl bg-landing-surface border border-landing-border-subtle p-6 flex flex-col gap-4 hover:bg-landing-surface-hover transition-colors duration-300">
+                  <div
+                    className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg ${step.gradient} group-hover:scale-105 transition-transform duration-300`}
+                  >
+                    <DynamicIcon name={step.icon} className="w-6 h-6" />
+                  </div>
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-landing-text-tertiary">
+                    {localized("Step", "Paso", locale)} {i + 1}
+                  </span>
+                  <p className="text-base font-semibold text-landing-text leading-snug">{step.title}</p>
+                  <p className="text-sm text-landing-text-secondary leading-relaxed">{step.body}</p>
+                </li>
+              </ScrollReveal>
             ))}
           </ol>
+
+          <ScrollReveal delay={280}>
+            <div className="mt-12 flex justify-center">
+              <Link
+                href="/discover"
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-medium uppercase tracking-widest text-primary-foreground transition-all hover:brightness-110 hover:scale-[1.02]"
+              >
+                {localized("Browse clubs", "Explorar clubes", locale)}
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  aria-hidden="true"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </Link>
+            </div>
+          </ScrollReveal>
         </div>
       </section>
 
