@@ -14,7 +14,10 @@ export async function updateClubBranding(formData: FormData) {
   const socialWhatsapp = (formData.get("socialWhatsapp") as string)?.trim() || null;
   const socialTelegram = (formData.get("socialTelegram") as string)?.trim() || null;
   const socialGoogleMaps = (formData.get("socialGoogleMaps") as string)?.trim() || null;
-  const socialWebsite = (formData.get("socialWebsite") as string)?.trim() || null;
+  const socialWebsiteRaw = (formData.get("socialWebsite") as string)?.trim() || null;
+  const socialWebsite = socialWebsiteRaw && !/^https?:\/\//i.test(socialWebsiteRaw)
+    ? `https://${socialWebsiteRaw}`
+    : socialWebsiteRaw;
   const googlePlaceId = (formData.get("googlePlaceId") as string)?.trim() || null;
   const logo = formData.get("logo") as File | null;
   const cover = formData.get("cover") as File | null;
