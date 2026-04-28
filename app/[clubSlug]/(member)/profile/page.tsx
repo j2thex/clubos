@@ -96,11 +96,12 @@ export default async function ProfilePage({
       .eq("member_id", session.member_id),
     supabase
       .from("clubs")
-      .select("operations_module_enabled")
+      .select("operations_module_enabled, spin_enabled")
       .eq("id", session.club_id)
       .single(),
   ]);
   const opsEnabled = clubOps?.operations_module_enabled ?? false;
+  const spinEnabled = clubOps?.spin_enabled ?? true;
   const idVerified = opsEnabled && !!member?.id_verified_at;
 
   const { data: referrals } = member?.member_code
@@ -229,11 +230,13 @@ export default async function ProfilePage({
         </section>
 
         {/* Bento stat strip */}
-        <div className="grid grid-cols-3 gap-3">
-          <BentoStatTile
-            caption={t(locale, "dashboard.spinsLabel").toUpperCase()}
-            value={<span className="text-2xl font-bold tabular-nums">{totalSpinsCount ?? 0}</span>}
-          />
+        <div className={`grid gap-3 ${spinEnabled ? "grid-cols-3" : "grid-cols-2"}`}>
+          {spinEnabled && (
+            <BentoStatTile
+              caption={t(locale, "dashboard.spinsLabel").toUpperCase()}
+              value={<span className="text-2xl font-bold tabular-nums">{totalSpinsCount ?? 0}</span>}
+            />
+          )}
           <BentoStatTile
             caption={t(locale, "events.title").toUpperCase()}
             value={<span className="text-2xl font-bold tabular-nums">{eventCheckinsCount ?? 0}</span>}
