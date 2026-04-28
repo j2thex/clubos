@@ -412,6 +412,8 @@
   "ops.memberForm.phonePlaceholder": "+34 600 000 000",
   "ops.memberForm.emailLabel": "Email (optional)",
   "ops.memberForm.emailPlaceholder": "member@example.com",
+  "ops.memberForm.phoneInvalid": "Phone number format looks wrong — please check.",
+  "ops.memberForm.emailInvalid": "Email format looks wrong — please check.",
   "ops.memberForm.under18Error": "This club requires members to be 18 or older. The account was not created.",
   "ops.memberForm.portraitLabel": "Member photo",
   "ops.memberForm.idPhotoRequiredLabel": "ID document photo",
