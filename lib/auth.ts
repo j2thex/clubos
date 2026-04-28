@@ -257,6 +257,48 @@ export async function requireOwnerForClub(
   return { owner_id: session.owner_id, club_id: session.club_id };
 }
 
+/**
+ * Verify the Operations Module is enabled for the given club.
+ *
+ * The single source of truth for "is this ops surface allowed?" — used
+ * by ops staff helpers, ops Owner helpers, and any direct check. Throws
+ * if the flag is off so a malicious actor calling an ops server action
+ * directly (bypassing the layout's notFound() gate) is still rejected.
+ *
+ * Does NOT check authentication — pair with requireStaffForClub /
+ * requireOwnerForClub or use the composite helpers below.
+ */
+export async function requireOpsForClub(clubId: string): Promise<void> {
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const supabase = createAdminClient();
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("operations_module_enabled")
+    .eq("id", clubId)
+    .single();
+  if (!club?.operations_module_enabled) {
+    throw new Error("Operations Module is not enabled for this club");
+  }
+}
+
+/**
+ * Verify the current owner session belongs to the given club AND the
+ * Operations Module is enabled. Use from every ops-domain Owner action
+ * (products, finance, etc.) — anything that should disappear when the
+ * flag is off.
+ *
+ * The bare requireOwnerForClub stays for non-ops Owner actions (the
+ * module toggle itself, settings, branding, etc.) — those must work
+ * regardless of the flag.
+ */
+export async function requireOwnerForOpsClub(
+  clubId: string,
+): Promise<{ owner_id: string; club_id: string }> {
+  const session = await requireOwnerForClub(clubId);
+  await requireOpsForClub(clubId);
+  return session;
+}
+
 // --- Shared ops access (staff OR admin/owner) ---
 
 /**
@@ -339,6 +381,7 @@ export async function requireOpsAccess(
   clubId: string,
   permission: OpsPermission,
 ): Promise<OpsSession> {
+  await requireOpsForClub(clubId);
   const owner = await getOwnerFromCookie();
   if (owner && owner.club_id === clubId) {
     const memberId = await getOrCreateOwnerProxyMember(owner.owner_id, clubId);
@@ -366,6 +409,7 @@ export async function requireOpsAccess(
 export async function requireOpsRead(
   clubId: string,
 ): Promise<OpsSession> {
+  await requireOpsForClub(clubId);
   const owner = await getOwnerFromCookie();
   if (owner && owner.club_id === clubId) {
     const memberId = await getOrCreateOwnerProxyMember(owner.owner_id, clubId);
