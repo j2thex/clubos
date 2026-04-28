@@ -223,6 +223,17 @@ Tile-grid view on member + public pages (2/3-col responsive). Admin manager uses
 - `supabase/migrations/20260321200000_add_offer_archived.sql`
 - `app/[clubSlug]/admin/offer-manager.tsx`
 
+### Working Hours
+
+Per-day open/close stored as JSONB on `clubs.working_hours` keyed by `mon..sun`, with timezone read from `clubs.timezone` (IANA). Pure logic lives in `lib/working-hours.ts` and supports overnight windows (e.g., 22:00→02:00 spans midnight via "yesterday tail" lookup), DST transitions (uses `Intl.DateTimeFormat`), and locale-aware time formatting (12h EN, 24h ES). The admin form pre-fills 12:00→00:00 when a day is toggled open. Discover map popups and the clubs results-grid card show a one-line `<WorkingHoursBadge />`; the public club page uses the expandable `<WorkingHoursDisplay />`. Both render nothing when hours are unset, so clubs without configured hours stay clean.
+
+- `lib/working-hours.ts` — pure types + `timeToMinutes`, `formatTime`, `getDayKeyInTimezone`, `getMinutesInTimezone`, `isOpenAt`, `getStatus`
+- `tests/working-hours.test.ts` — 43 vitest cases covering regular hours, overnight, DST, multi-timezone, noon-to-midnight default
+- `components/club/working-hours-display.tsx` — full expandable widget on `/[clubSlug]/public`
+- `components/club/working-hours-badge.tsx` — compact badge for `/discover` map popup + clubs list card
+- `app/[clubSlug]/admin/working-hours-manager.tsx` — admin form (default 12:00→00:00)
+- i18n keys live under `workingHours.*` in `lib/i18n/dictionaries/{en,es}.json`
+
 ## Internationalization
 
 ### Custom i18n System

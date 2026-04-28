@@ -42,7 +42,7 @@ export function WorkingHoursManager({
   function toggleDay(day: string) {
     setHours((prev) => ({
       ...prev,
-      [day]: prev[day] ? null : { open: "09:00", close: "18:00" },
+      [day]: prev[day] ? null : { open: "12:00", close: "00:00" },
     }));
   }
 
