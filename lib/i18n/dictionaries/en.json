@@ -1305,5 +1305,26 @@
 
   "sales.useCasesBrowseAll": "Browse all verticals",
 
-  "onboarding.completeCtaHint": "We've prepped a 5-step setup checklist inside your admin panel. Jump in and you'll be live in minutes."
+  "onboarding.completeCtaHint": "We've prepped a 5-step setup checklist inside your admin panel. Jump in and you'll be live in minutes.",
+
+  "workingHours.day.mon": "Mon",
+  "workingHours.day.tue": "Tue",
+  "workingHours.day.wed": "Wed",
+  "workingHours.day.thu": "Thu",
+  "workingHours.day.fri": "Fri",
+  "workingHours.day.sat": "Sat",
+  "workingHours.day.sun": "Sun",
+  "workingHours.day.monLong": "Monday",
+  "workingHours.day.tueLong": "Tuesday",
+  "workingHours.day.wedLong": "Wednesday",
+  "workingHours.day.thuLong": "Thursday",
+  "workingHours.day.friLong": "Friday",
+  "workingHours.day.satLong": "Saturday",
+  "workingHours.day.sunLong": "Sunday",
+  "workingHours.openClosesAt": "Open · Closes {time}",
+  "workingHours.closedOpensAt": "Closed · Opens {time}",
+  "workingHours.closedOpensOn": "Closed · Opens {day} {time}",
+  "workingHours.closed": "Closed",
+  "workingHours.today": "Today",
+  "workingHours.noHours": "No hours"
 }

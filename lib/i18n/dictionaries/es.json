@@ -1305,5 +1305,26 @@
 
   "sales.useCasesBrowseAll": "Ver todos los verticales",
 
-  "onboarding.completeCtaHint": "Hemos preparado una lista de 5 pasos dentro del panel admin. Entra y estarás listo en minutos."
+  "onboarding.completeCtaHint": "Hemos preparado una lista de 5 pasos dentro del panel admin. Entra y estarás listo en minutos.",
+
+  "workingHours.day.mon": "Lun",
+  "workingHours.day.tue": "Mar",
+  "workingHours.day.wed": "Mié",
+  "workingHours.day.thu": "Jue",
+  "workingHours.day.fri": "Vie",
+  "workingHours.day.sat": "Sáb",
+  "workingHours.day.sun": "Dom",
+  "workingHours.day.monLong": "Lunes",
+  "workingHours.day.tueLong": "Martes",
+  "workingHours.day.wedLong": "Miércoles",
+  "workingHours.day.thuLong": "Jueves",
+  "workingHours.day.friLong": "Viernes",
+  "workingHours.day.satLong": "Sábado",
+  "workingHours.day.sunLong": "Domingo",
+  "workingHours.openClosesAt": "Abierto · Cierra {time}",
+  "workingHours.closedOpensAt": "Cerrado · Abre {time}",
+  "workingHours.closedOpensOn": "Cerrado · Abre {day} {time}",
+  "workingHours.closed": "Cerrado",
+  "workingHours.today": "Hoy",
+  "workingHours.noHours": "Sin horario"
 }
