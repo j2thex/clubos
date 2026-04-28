@@ -66,12 +66,44 @@ Rules:
   }
 }
 
+async function generateFeedbackTitle(
+  text: string,
+  category: "bug" | "idea" | "question",
+  locale: "en" | "es",
+): Promise<string | null> {
+  if (!process.env.ANTHROPIC_API_KEY) return null;
+
+  const categoryLabel = category === "bug" ? "bug report" : category === "idea" ? "feature idea" : "question";
+  const language = locale === "es" ? "Spanish" : "English";
+  const system = `Summarize a ${categoryLabel} into at most 6 words in ${language}. No emoji, no quotes, no trailing punctuation. Keep the user's intent. Output only the title — no preamble, no explanation.`;
+
+  try {
+    const result = await Promise.race([
+      generateText({
+        model: anthropic("claude-haiku-4-5-20251001"),
+        system,
+        messages: [{ role: "user", content: text }],
+      }),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("title-timeout")), 3000),
+      ),
+    ]);
+    let title = result.text.trim().replace(/^["'`“”‘’]+|["'`“”‘’]+$/g, "").replace(/[.!?,;:]+$/g, "").trim();
+    title = title.split(/\s+/).slice(0, 6).join(" ");
+    return title.length > 0 ? title : null;
+  } catch (err) {
+    console.error("generateFeedbackTitle error:", err);
+    return null;
+  }
+}
+
 export async function submitFeedback(
   formData: FormData,
 ): Promise<{ error: string } | { ok: true }> {
   const text = (formData.get("text") as string)?.trim();
   const category = (formData.get("category") as string) || "idea";
   const pageUrl = (formData.get("pageUrl") as string) || "";
+  const locale = (formData.get("locale") as string) === "es" ? "es" : "en";
   const screenshot = formData.get("screenshot") as File | null;
 
   if (!text || text.length < 3) {
@@ -122,7 +154,9 @@ export async function submitFeedback(
     }
 
     const categoryEmoji = category === "bug" ? "🐛" : category === "idea" ? "💡" : "❓";
-    const cardTitle = `${categoryEmoji} ${text.slice(0, 200)}`;
+    const aiTitle = await generateFeedbackTitle(text, category as "bug" | "idea" | "question", locale);
+    const titleBody = aiTitle ?? text.slice(0, 60);
+    const cardTitle = `${categoryEmoji} ${titleBody}`;
     const cardDesc = [
       text,
       "",

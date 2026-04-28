@@ -106,6 +106,7 @@ export function FeedbackWidget() {
       formData.set("text", text);
       formData.set("category", category);
       formData.set("pageUrl", window.location.href);
+      formData.set("locale", locale);
       if (screenshot) formData.set("screenshot", screenshot);
 
       const result = await submitFeedback(formData);

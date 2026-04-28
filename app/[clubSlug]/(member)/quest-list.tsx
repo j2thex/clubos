@@ -482,9 +482,9 @@ export function QuestList({
             <div className="flex items-center gap-4">
               {renderIcon(q, done, isPendingQuest)}
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-gray-900 text-sm flex items-center gap-1.5 flex-wrap">{localized(q.title, q.title_es, locale)} {deadlineBadge(q.deadline, locale)}</p>
+                <p className="font-semibold text-gray-900 text-sm flex items-center gap-1.5 flex-wrap break-words">{localized(q.title, q.title_es, locale)} {deadlineBadge(q.deadline, locale)}</p>
                 {q.description && (
-                  <p className="text-xs text-gray-400">{localized(q.description, q.description_es, locale)}</p>
+                  <p className="text-xs text-gray-400 break-words">{localized(q.description, q.description_es, locale)}</p>
                 )}
                 {q.link && (() => {
                   const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(q.link!);

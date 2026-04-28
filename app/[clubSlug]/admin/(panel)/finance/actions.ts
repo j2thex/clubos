@@ -1,6 +1,6 @@
 "use server";
 
-import { requireOwnerForClub } from "@/lib/auth";
+import { requireOwnerForOpsClub } from "@/lib/auth";
 import { getFinanceRows } from "@/lib/finance/queries";
 
 export async function exportFinanceRangeCsv(
@@ -9,7 +9,7 @@ export async function exportFinanceRangeCsv(
   toIso: string,
 ): Promise<{ error: string } | { ok: true; csv: string; filename: string }> {
   try {
-    await requireOwnerForClub(clubId);
+    await requireOwnerForOpsClub(clubId);
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }

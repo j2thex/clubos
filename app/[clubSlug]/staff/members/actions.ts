@@ -1,7 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { hashPin, getStaffFromCookie, requireActiveStaff, requireStaffForClub } from "@/lib/auth";
+import { hashPin, getStaffFromCookie, requireStaffForClub } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { logActivity } from "@/lib/activity-log";
 import {
@@ -14,9 +14,10 @@ import {
 } from "@/lib/supabase/storage";
 
 export async function updateMemberRole(memberId: string, roleId: string | null, clubSlug: string) {
-  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
-  const supabase = createAdminClient();
+  const auth = await authorizeMemberStaff(memberId);
+  if ("error" in auth) return auth;
 
+  const supabase = createAdminClient();
   const { error } = await supabase
     .from("members")
     .update({ role_id: roleId || null })
@@ -26,20 +27,15 @@ export async function updateMemberRole(memberId: string, roleId: string | null, 
     return { error: "Failed to update role" };
   }
 
-  // Log role assignment
-  const [{ data: memberForLog }, roleData] = await Promise.all([
-    supabase.from("members").select("member_code, club_id").eq("id", memberId).single(),
-    roleId
-      ? supabase.from("member_roles").select("name").eq("id", roleId).single()
-      : Promise.resolve({ data: null }),
-  ]);
+  const roleData = roleId
+    ? await supabase.from("member_roles").select("name").eq("id", roleId).single()
+    : null;
 
-  const staff = await getStaffFromCookie();
   await logActivity({
-    clubId: memberForLog?.club_id ?? "",
-    staffMemberId: staff?.member_id,
+    clubId: auth.clubId,
+    staffMemberId: auth.staffMemberId,
     action: "role_assigned",
-    targetMemberCode: memberForLog?.member_code,
+    targetMemberCode: auth.memberCode,
     details: roleData?.data?.name ?? "No role",
   });
 
@@ -430,7 +426,9 @@ export async function assignMembershipPeriod(
   periodId: string | null,
   clubSlug: string,
 ) {
-  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
+  const auth = await authorizeMemberStaff(memberId);
+  if ("error" in auth) return auth;
+
   const supabase = createAdminClient();
 
   if (!periodId) {
@@ -462,19 +460,11 @@ export async function assignMembershipPeriod(
 
   if (error) return { error: "Failed to assign period" };
 
-  // Get member code for logging
-  const { data: memberForLog } = await supabase
-    .from("members")
-    .select("member_code, club_id")
-    .eq("id", memberId)
-    .single();
-
-  const staff = await getStaffFromCookie();
   await logActivity({
-    clubId: memberForLog?.club_id ?? "",
-    staffMemberId: staff?.member_id,
+    clubId: auth.clubId,
+    staffMemberId: auth.staffMemberId,
     action: "membership_assigned",
-    targetMemberCode: memberForLog?.member_code,
+    targetMemberCode: auth.memberCode,
     details: `${period.duration_months}mo period, valid till ${validTill}`,
   });
 
@@ -487,14 +477,14 @@ export async function setManualValidTill(
   validTill: string,
   clubSlug: string,
 ) {
-  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
-
   if (!/^\d{4}-\d{2}-\d{2}$/.test(validTill)) {
     return { error: "Invalid date format" };
   }
 
-  const supabase = createAdminClient();
+  const auth = await authorizeMemberStaff(memberId);
+  if ("error" in auth) return auth;
 
+  const supabase = createAdminClient();
   const { error } = await supabase
     .from("members")
     .update({ valid_till: validTill, membership_period_id: null })
@@ -502,18 +492,11 @@ export async function setManualValidTill(
 
   if (error) return { error: "Failed to set validity date" };
 
-  const { data: memberForLog } = await supabase
-    .from("members")
-    .select("member_code, club_id")
-    .eq("id", memberId)
-    .single();
-
-  const staff = await getStaffFromCookie();
   await logActivity({
-    clubId: memberForLog?.club_id ?? "",
-    staffMemberId: staff?.member_id,
+    clubId: auth.clubId,
+    staffMemberId: auth.staffMemberId,
     action: "validity_updated",
-    targetMemberCode: memberForLog?.member_code,
+    targetMemberCode: auth.memberCode,
     details: `Valid till ${validTill}`,
   });
 
@@ -660,7 +643,9 @@ export async function createStaffMember(
   pin: string,
   clubSlug: string,
 ) {
-  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
+  try { await requireStaffForClub(clubId); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
   const code = memberCode.trim().toUpperCase();
   const trimmedPin = pin.trim();
 

@@ -241,11 +241,11 @@ export function BrandingManager({
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-400 w-20 shrink-0">Website</span>
                 <input
-                  type="url"
+                  type="text"
                   name="socialWebsite"
                   value={socialWebsite}
                   onChange={(e) => setSocialWebsite(e.target.value)}
-                  placeholder="https://yourclub.com"
+                  placeholder="yourclub.com"
                   className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
                 />
               </div>

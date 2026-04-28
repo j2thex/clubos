@@ -236,7 +236,17 @@ export default async function PublicProfilePage({
             </svg>
             Discover
           </Link>
-          <LanguageSwitcher variant="light" />
+          <div className="flex items-center gap-2">
+            {!(club.invite_only && club.hide_member_login) && (
+              <a
+                href="#member-login"
+                className="inline-flex min-h-[40px] items-center gap-1 rounded-[var(--m-radius-sm)] bg-white/95 px-3 py-2 text-xs font-semibold text-gray-900 backdrop-blur-sm transition-colors hover:bg-white"
+              >
+                {localized("Member Login", "Acceso Socios", locale)}
+              </a>
+            )}
+            <LanguageSwitcher variant="light" />
+          </div>
         </div>
 
         {/* Bottom — logo + caption + display title + tags + social */}
@@ -328,7 +338,7 @@ export default async function PublicProfilePage({
 
         {/* Member Login — inline form */}
         {!(club.invite_only && club.hide_member_login) && (
-          <div className="m-card p-5">
+          <div id="member-login" className="m-card p-5 scroll-mt-20">
             <p className="m-caption mb-1 text-center">
               {localized("Have a member code?", "¿Tienes un código de socio?", locale)}
             </p>

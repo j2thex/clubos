@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { useLanguage } from "@/lib/i18n/provider";
 import { PhotoCapture } from "@/components/club/photo-capture";
-import { SignaturePad } from "@/components/club/signature-pad";
+import { SignaturePanel } from "@/components/club/signature-panel";
 import { RfidCapture } from "@/components/club/rfid-capture";
 
 export type MemberDetailRecord = {
@@ -468,7 +468,7 @@ export function MemberDetail({
 
         {replaceTarget === "signature" && (
           <div className="rounded-lg border border-gray-200 bg-white p-3 space-y-2">
-            <SignaturePad
+            <SignaturePanel
               label={t("ops.memberForm.signatureLabel")}
               value={signatureFile}
               onChange={setSignatureFile}

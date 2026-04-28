@@ -55,10 +55,10 @@ export function BentoStatTile({
           />
         </div>
       ) : null}
-      <div className="relative flex h-full flex-col justify-between gap-2">
-        <span className="m-caption">{caption}</span>
+      <div className="relative flex h-full min-w-0 flex-col justify-between gap-2">
+        <span className="m-caption break-words">{caption}</span>
         <div
-          className={`font-semibold leading-tight text-[color:var(--m-ink)] ${valueClassName || "text-lg"}`}
+          className={`min-w-0 font-semibold leading-tight text-[color:var(--m-ink)] break-words ${valueClassName || "text-lg"}`}
         >
           {value}
         </div>

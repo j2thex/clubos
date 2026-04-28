@@ -3,14 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logActivity } from "@/lib/activity-log";
-import { requireActiveStaff } from "@/lib/auth";
+import { requireStaffForClub } from "@/lib/auth";
 
 export async function confirmPreregistration(
   preregId: string,
   staffMemberId: string,
   clubSlug: string,
 ): Promise<{ error: string } | { ok: true }> {
-  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
   const supabase = createAdminClient();
 
   const { data: prereg } = await supabase
@@ -20,6 +19,11 @@ export async function confirmPreregistration(
     .single();
 
   if (!prereg) return { error: "Pre-registration not found" };
+
+  try { await requireStaffForClub(prereg.club_id); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+
   if (prereg.status !== "pending") return { error: "Already reviewed" };
 
   const { error } = await supabase
@@ -68,7 +72,6 @@ export async function denyPreregistration(
   staffMemberId: string,
   clubSlug: string,
 ): Promise<{ error: string } | { ok: true }> {
-  try { await requireActiveStaff(); } catch { return { error: "Account is inactive" }; }
   const supabase = createAdminClient();
 
   const { data: prereg } = await supabase
@@ -78,6 +81,11 @@ export async function denyPreregistration(
     .single();
 
   if (!prereg) return { error: "Pre-registration not found" };
+
+  try { await requireStaffForClub(prereg.club_id); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+
   if (prereg.status !== "pending") return { error: "Already reviewed" };
 
   const { error } = await supabase

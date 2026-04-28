@@ -5,11 +5,13 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 export function CollapsibleSection({
   id,
   title,
+  caption,
   defaultOpen = false,
   children,
 }: {
   id?: string;
   title: string;
+  caption?: string;
   defaultOpen?: boolean;
   children: ReactNode;
 }) {
@@ -30,13 +32,20 @@ export function CollapsibleSection({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-1 py-1 group"
+        className="w-full flex items-start justify-between gap-3 px-1 py-1 group text-left"
       >
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
-          {title}
-        </h2>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+            {title}
+          </h2>
+          {caption && (
+            <p className="mt-0.5 text-xs text-gray-400 normal-case font-normal">
+              {caption}
+            </p>
+          )}
+        </div>
         <svg
-          className={`w-4 h-4 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
+          className={`w-4 h-4 text-gray-400 transition-transform shrink-0 mt-1 ${open ? "rotate-180" : ""}`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"

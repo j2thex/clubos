@@ -1,113 +1,53 @@
-# ClubOS v2
+# ClubOS
 
-Multi-tenant Club Operating System — a white-label SaaS platform that powers membership portals for independent clubs from one codebase.
+Multi-tenant club operating system, branded as **osocios.club** — a white-label SaaS that powers membership portals for independent clubs from one codebase. Path-based multi-tenancy, RLS on every table, isolated by default, federated by configuration.
 
-**Principle:** Isolated by default. Connected by configuration.
+## Portals
 
-## Applications
+| Portal | Audience | Path |
+|---|---|---|
+| Member | Club members | `/[clubSlug]/...` (branded, bottom nav) |
+| Staff | Front-desk staff | `/[clubSlug]/staff/...` (gray theme) |
+| Admin | Club owners | `/[clubSlug]/admin/...` (owner-auth required) |
+| Platform | Operator | `/platform-admin` (cross-club) |
 
-| App | Users | Purpose |
-|-----|-------|---------|
-| **Member Portal** | Club members | Login, dashboard, spin wheel, history, profile, QR card |
-| **Staff Console** | Front desk staff | Search members, award/deduct spins, verify quests |
-| **Admin Dashboard** | Club owners/managers | Club settings, staff mgmt, quest builder, rewards config, analytics |
-| **Platform Control** | Platform operator | Create clubs, assign domains, manage tenants, billing |
+Plus a public profile per club at `/[clubSlug]/public` and discovery surfaces at `/`, `/discover`, `/examples`.
 
 ## Tech Stack
 
-| Concern | Decision |
-|---------|----------|
-| Framework | Next.js 15, App Router, React 19 |
-| Language | TypeScript |
+| Concern | Choice |
+|---|---|
+| Framework | Next.js 16 (App Router), React 19, TypeScript |
 | Styling | Tailwind CSS + shadcn/ui |
-| DB / Storage | Supabase (Postgres + Storage) |
-| Multi-tenancy | Path-based (`[clubSlug]`), RLS on all tables |
-| Member auth | Custom JWT (jose), HTTP-only cookie |
-| PIN storage | bcrypt hash (bcryptjs) |
+| Database | Supabase (Postgres + Storage + RLS) |
+| Auth | Custom JWT (jose), bcrypt PINs — no Supabase Auth |
 | Mutations | Server Actions |
+| Email | Resend |
+| Hosting | Vercel |
 | Package manager | pnpm |
-| Deployment | Vercel |
-| Monitoring | Sentry |
-| CI | GitHub Actions |
+| CI | GitHub Actions (auto-migrate Supabase on `supabase/migrations/**`) |
 
-## Project Structure
-
-```
-app/
-  layout.tsx                          root layout
-  page.tsx                            landing page
-  (platform)/
-    onboarding/
-      page.tsx                        step 1: create org + club
-      branding/page.tsx               step 2: logo, colors, theme
-      complete/page.tsx               step 3: summary + test member
-  [clubSlug]/
-    layout.tsx                        tenant layout (club branding)
-    (member)/
-      login/page.tsx                  member code + PIN login
-      page.tsx                        member dashboard
-      spin/page.tsx                   spin the wheel
-      history/page.tsx                spin history
-      profile/page.tsx                member profile
-      layout.tsx                      member auth guard
-components/
-  ui/                                 shadcn/ui components
-  club/                               club-specific components (wheel, nav)
-lib/
-  supabase/
-    client.ts                         browser client
-    server.ts                         server client
-    admin.ts                          service role client
-  auth.ts                             JWT + PIN utilities
-  types/                              TypeScript types (generated + convenience)
-  utils.ts                            slug, member code, PIN generation
-supabase/
-  migrations/                         SQL migrations
-middleware.ts                         club slug resolution + auth guard
-```
-
-## Database Schema
-
-Core tables (all RLS-enabled, scoped by `club_id`):
-
-- **organizations** — top-level entity (standalone / group / federation mode)
-- **clubs** — belongs to org, has slug, timezone, currency
-- **club_branding** — logo, colors, theme per club
-- **members** — member_code + pin_hash, spin_balance, scoped to club
-- **spins** — spin outcome log per member
-- **wheel_configs** — wheel segments with label, reward_type, probability, color
-
-## Authentication
-
-- **Members:** member_code + PIN login, scoped to club. Server-side bcrypt verify, JWT cookie (7-day expiry). No Supabase Auth.
-- **Staff/Admin (future):** email + password via Supabase Auth, role-based access.
-
-## Development
+## Run Locally
 
 ```bash
-# Install dependencies
 pnpm install
-
-# Start local Supabase
 pnpm supabase start
-
-# Copy env template and fill in values from supabase start output
-cp .env.local.example .env.local
-
-# Run migrations
+cp .env.local.example .env.local   # fill in from `supabase start` output
 pnpm supabase db reset
-
-# Start dev server
 pnpm dev
 ```
 
-## Current Phase
+## Documentation
 
-**Phase 1** — Club onboarding + member portal with spin-the-wheel.
+- [`CLAUDE.md`](./CLAUDE.md) — project conventions, architecture rules, auth model, design tokens.
+- [`architecture-work-done.md`](./architecture-work-done.md) — feature inventory across all portals + thin implementation pointers. Maintained by the `/document` skill.
+- [`docs/website.md`](./docs/website.md) — marketing/site/strategy plan.
+- [`docs/hardware/signotec-setup.md`](./docs/hardware/signotec-setup.md) — Signotec signature pad setup notes.
 
-See `docs/plans/2026-03-06-phase1-design.md` for the design spec and `docs/plans/2026-03-06-phase1-implementation.md` for the task-by-task implementation plan (20 tasks).
+## Deployment
 
-## Operating Modes
+```
+feature → develop (staging.osocios.club) → main (osocios.club)
+```
 
-1. **Standalone** (default) — fully isolated clubs with separate members, rewards, quests, staff, branding
-2. **Federation** (opt-in) — shared member passport, cross-club perks, network quests, event campaigns
+`develop` is unprotected; `main` requires PR. Vercel auto-deploys; GitHub Actions auto-migrate Supabase per branch.
