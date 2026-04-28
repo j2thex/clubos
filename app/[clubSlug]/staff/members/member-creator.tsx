@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useLanguage } from "@/lib/i18n/provider";
 import {
   createMember,
@@ -68,6 +68,8 @@ export function StaffMemberCreator({
   const [success, setSuccess] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<string[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [sectionOpen, setSectionOpen] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
   // Cache of already-uploaded storage paths, keyed by the File reference that
   // produced them. If the user retries (e.g. server returns ops_required_missing
   // after first attempt), we skip re-upload and reuse the path — preventing
@@ -89,6 +91,30 @@ export function StaffMemberCreator({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [confirmOpen, isPending]);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== "N") return;
+      if (!e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
+      const target = e.target as HTMLElement | null;
+      if (target) {
+        const tag = target.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+        if (target.isContentEditable) return;
+      }
+      e.preventDefault();
+      setSectionOpen(true);
+      requestAnimationFrame(() => {
+        formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        const firstInput = formRef.current?.querySelector<HTMLInputElement>(
+          'input:not([type="hidden"])'
+        );
+        firstInput?.focus();
+      });
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const missingRequired = useMemo<string[]>(() => {
     if (!opsEnabled) return [];
@@ -261,9 +287,18 @@ export function StaffMemberCreator({
   }
 
   return (
-    <CollapsibleSection title={t("ops.memberForm.sectionTitle")} defaultOpen={false}>
+    <CollapsibleSection
+      title={t("ops.memberForm.sectionTitle")}
+      open={sectionOpen}
+      onOpenChange={setSectionOpen}
+      titleAdornment={
+        <span className="hidden md:inline ml-2 text-[11px] font-normal normal-case text-gray-400 tracking-normal">
+          (Shift + N)
+        </span>
+      }
+    >
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-        <form onSubmit={handleSubmit} className="p-5 space-y-3">
+        <form ref={formRef} onSubmit={handleSubmit} className="p-5 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <label className="block">
               <span className="text-xs font-medium text-gray-500">

@@ -1,9 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { OfferManager } from "../../offer-manager";
-import { t } from "@/lib/i18n";
-import { getServerLocale } from "@/lib/i18n/server";
+import { OfferManager } from "../../../offer-manager";
 
 export default async function OffersPage({
   params,
@@ -21,7 +18,6 @@ export default async function OffersPage({
     .single();
 
   if (!club) notFound();
-  const locale = await getServerLocale();
   const opsEnabled = !!club.operations_module_enabled;
 
   const [{ data: catalog }, { data: clubOffers }, { data: products }] = await Promise.all([
@@ -54,17 +50,7 @@ export default async function OffersPage({
   ]);
 
   return (
-    <div className="space-y-4">
-      <Link
-        href={`/${clubSlug}/admin/content`}
-        className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 transition-colors"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-        </svg>
-        {t(locale, "admin.backToContent")}
-      </Link>
-      <OfferManager
+    <OfferManager
         catalog={(catalog ?? []).map((a) => ({
           id: a.id,
           name: a.name,
@@ -96,9 +82,8 @@ export default async function OffersPage({
           unit_price: Number(p.unit_price),
           stock_on_hand: Number(p.stock_on_hand),
         }))}
-        clubId={club.id}
-        clubSlug={clubSlug}
-      />
-    </div>
+      clubId={club.id}
+      clubSlug={clubSlug}
+    />
   );
 }
