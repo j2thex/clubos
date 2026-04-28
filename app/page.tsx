@@ -205,14 +205,19 @@ export default async function Home() {
 
   // Curated data for sections
   const upcomingEvents = events.slice(0, 8);
-  const DIRECTORY_LIMIT = 24;
-  const clubsForDirectory = clubs.slice(0, DIRECTORY_LIMIT).map((c) => ({
-    name: c.name,
-    slug: c.slug,
-    logo_url: c.logo_url,
-    cover_url: c.cover_url,
-    primary_color: c.primary_color,
-  }));
+  const DIRECTORY_LIMIT = 16;
+  // Only show clubs with a cover image on the landing — keeps the grid visually consistent.
+  // The full list (including no-cover clubs) is reachable via "Show All" → /discover#clubs.
+  const clubsForDirectory = clubs
+    .filter((c) => !!c.cover_url)
+    .slice(0, DIRECTORY_LIMIT)
+    .map((c) => ({
+      name: c.name,
+      slug: c.slug,
+      logo_url: c.logo_url,
+      cover_url: c.cover_url,
+      primary_color: c.primary_color,
+    }));
 
   // Group offers by name, count clubs per offer
   const offerGroups = new Map<string, { name: string; name_es: string | null; count: number; icon: string | null }>();
