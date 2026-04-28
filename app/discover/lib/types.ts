@@ -10,6 +10,8 @@ export interface DiscoverClub {
   tags: string[] | null;
   logo_url: string | null;
   primary_color: string | null;
+  working_hours: import("@/lib/working-hours").WorkingHours | null;
+  timezone: string | null;
 }
 
 export interface DiscoverEvent {

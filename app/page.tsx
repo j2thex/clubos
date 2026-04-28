@@ -31,7 +31,9 @@ async function getClubs(): Promise<(DiscoverClub & { cover_url: string | null })
     const supabase = createAdminClient();
     const { data } = await supabase
       .from("clubs")
-      .select("id, name, slug, latitude, longitude, address, city, country, tags, club_branding(logo_url, cover_url, primary_color)")
+      .select(
+        "id, name, slug, latitude, longitude, address, city, country, tags, working_hours, timezone, club_branding(logo_url, cover_url, primary_color)",
+      )
       .eq("active", true).eq("approved", true).eq("visibility", "public")
       .order("created_at", { ascending: false });
 
@@ -50,6 +52,8 @@ async function getClubs(): Promise<(DiscoverClub & { cover_url: string | null })
         logo_url: branding?.logo_url ?? null,
         cover_url: branding?.cover_url ?? null,
         primary_color: branding?.primary_color ?? null,
+        working_hours: (c.working_hours ?? null) as DiscoverClub["working_hours"],
+        timezone: c.timezone ?? null,
       };
     });
   } catch {

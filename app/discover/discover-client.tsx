@@ -133,6 +133,7 @@ export function DiscoverClient({
             id: c.id, type: "club" as const, name: c.name, slug: c.slug,
             logo_url: c.logo_url, primary_color: c.primary_color ?? "#16a34a",
             city: c.city, tags: c.tags,
+            working_hours: c.working_hours, timezone: c.timezone,
           },
           geometry: { type: "Point" as const, coordinates: [c.longitude!, c.latitude!] },
         }));
@@ -195,6 +196,7 @@ export function DiscoverClient({
         tags: c.tags?.map((tag) => getTagLabel(tag, locale)) ?? [],
         slug: c.slug, logo_url: c.logo_url, primary_color: c.primary_color ?? "#16a34a",
         hasLocation: c.latitude != null, latitude: c.latitude, longitude: c.longitude,
+        working_hours: c.working_hours, timezone: c.timezone,
       }));
     }
     if (activeTab === "events") {
