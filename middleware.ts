@@ -92,7 +92,8 @@ export async function middleware(request: NextRequest) {
     clubSlug.startsWith("api") ||
     clubSlug === "favicon.ico" ||
     clubSlug === "a2hs" ||
-    clubSlug === "sw.js"
+    clubSlug === "sw.js" ||
+    clubSlug === "vendor"
   ) {
     return applyLocale(request, NextResponse.next());
   }
