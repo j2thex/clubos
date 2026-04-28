@@ -1,7 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireOwnerForClub } from "@/lib/auth";
+import { requireOwnerForOpsClub } from "@/lib/auth";
 import { logActivity } from "@/lib/activity-log";
 import { uploadClubImage, deleteClubImage } from "@/lib/supabase/storage";
 import { revalidatePath } from "next/cache";
@@ -14,7 +14,7 @@ export async function addProductCategory(
   name: string,
   nameEs?: string | null,
 ): Promise<{ error: string } | { ok: true }> {
-  try { await requireOwnerForClub(clubId); } catch (err) {
+  try { await requireOwnerForOpsClub(clubId); } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
 
@@ -70,7 +70,7 @@ export async function updateProductCategory(
 
   if (!current) return { error: "Category not found" };
 
-  try { await requireOwnerForClub(current.club_id); } catch (err) {
+  try { await requireOwnerForOpsClub(current.club_id); } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
 
@@ -107,7 +107,7 @@ export async function reorderProductCategory(
 
   if (!current) return { error: "Category not found" };
 
-  try { await requireOwnerForClub(current.club_id); } catch (err) {
+  try { await requireOwnerForOpsClub(current.club_id); } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
 
@@ -164,7 +164,7 @@ export async function archiveProductCategory(
 
   if (!current) return { error: "Category not found" };
 
-  try { await requireOwnerForClub(current.club_id); } catch (err) {
+  try { await requireOwnerForOpsClub(current.club_id); } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
 
@@ -194,7 +194,7 @@ export async function uploadProductImageAction(
   const clubId = formData.get("clubId");
   if (typeof clubId !== "string" || !clubId) return { error: "Missing club" };
 
-  try { await requireOwnerForClub(clubId); } catch (err) {
+  try { await requireOwnerForOpsClub(clubId); } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
 
@@ -238,7 +238,7 @@ export async function addProduct(
   clubSlug: string,
   input: ProductInput,
 ): Promise<{ error: string } | { ok: true }> {
-  try { await requireOwnerForClub(clubId); } catch (err) {
+  try { await requireOwnerForOpsClub(clubId); } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
 
@@ -301,7 +301,7 @@ export async function updateProduct(
 
   if (!current) return { error: "Product not found" };
 
-  try { await requireOwnerForClub(current.club_id); } catch (err) {
+  try { await requireOwnerForOpsClub(current.club_id); } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
 
@@ -356,7 +356,7 @@ export async function adjustProductStock(
 
   if (!current) return { error: "Product not found" };
 
-  try { await requireOwnerForClub(current.club_id); } catch (err) {
+  try { await requireOwnerForOpsClub(current.club_id); } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
 
@@ -388,7 +388,7 @@ export async function bulkSetProductsUnit(
   clubSlug: string,
   unit: "gram" | "piece",
 ): Promise<{ error: string } | { ok: true; updated: number }> {
-  try { await requireOwnerForClub(clubId); } catch (err) {
+  try { await requireOwnerForOpsClub(clubId); } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
 
@@ -433,7 +433,7 @@ export async function archiveProduct(
 
   if (!current) return { error: "Product not found" };
 
-  try { await requireOwnerForClub(current.club_id); } catch (err) {
+  try { await requireOwnerForOpsClub(current.club_id); } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
 
