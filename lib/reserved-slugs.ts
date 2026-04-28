@@ -25,4 +25,5 @@ export const RESERVED_SLUGS = new Set<string>([
   "staff",
   "support",
   "terms",
+  "vendor",
 ]);
