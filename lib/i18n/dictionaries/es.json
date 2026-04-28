@@ -412,6 +412,8 @@
   "ops.memberForm.phonePlaceholder": "+34 600 000 000",
   "ops.memberForm.emailLabel": "Email (opcional)",
   "ops.memberForm.emailPlaceholder": "socio@ejemplo.com",
+  "ops.memberForm.phoneInvalid": "El formato del teléfono no parece válido — revísalo.",
+  "ops.memberForm.emailInvalid": "El formato del correo no parece válido — revísalo.",
   "ops.memberForm.under18Error": "Este club requiere que los socios tengan 18 años o más. La cuenta no se ha creado.",
   "ops.memberForm.portraitLabel": "Foto del socio",
   "ops.memberForm.idPhotoRequiredLabel": "Foto del documento de identidad",

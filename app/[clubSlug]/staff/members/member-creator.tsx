@@ -56,6 +56,18 @@ export function StaffMemberCreator({
     setError(null);
     setSuccess(null);
 
+    const trimmedPhone = phone.trim();
+    if (trimmedPhone && !/^\+?[\d\s().-]{6,}$/.test(trimmedPhone)) {
+      setError(t("ops.memberForm.phoneInvalid"));
+      return;
+    }
+
+    const trimmedEmail = email.trim();
+    if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setError(t("ops.memberForm.emailInvalid"));
+      return;
+    }
+
     startTransition(async () => {
       let idPhotoPath: string | null = null;
       let photoPath: string | null = null;
