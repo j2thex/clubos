@@ -101,8 +101,11 @@ osocios.club is a white-label SaaS membership portal for independent clubs: memb
 
 | Term | Definition | Aliases to avoid |
 | --- | --- | --- |
-| **Email Campaign** | A bulk message to a filtered Member segment, with body_markdown and recipient_count. | Newsletter, Blast |
-| **Telegram Bot** | The keyword-triggered Telegram integration configured per Club. | Chatbot |
+| **Notification Channel** | An outbound delivery medium that carries a message to Members: `email`, `push`, `telegram`. Future: `whatsapp`. | Channel (bare), Medium, Transport |
+| **Notification Broadcast** | A bulk message to a filtered Member segment sent across one or more Notification Channels in a single Owner action. Stored in `notification_broadcasts` with per-channel recipient/sent/failed counts. | Blast, Announcement |
+| **Email Campaign** | The legacy single-channel email broadcast (`email_campaigns` table). Subsumed by Notification Broadcast for new code; the table remains for historical records of email-only sends. | Newsletter |
+| **Telegram Bot** | The Club's Telegram bot identity (`bot_token` + `bot_username`). One bot per Club, used both for Staff alerts (existing) and Member subscriptions (Telegram Subscriptions). | Chatbot |
+| **Telegram Subscription** | A Member's opt-in record linking their Telegram chat to a Club's Telegram Bot. Required to receive Telegram-channel broadcasts. Stored in `telegram_subscriptions`; created when the Member runs `/start <member_code>` against the bot, deleted on `/stop` or stale-cleanup. | Subscriber, Telegram link |
 
 ## Media
 
@@ -172,5 +175,7 @@ osocios.club is a white-label SaaS membership portal for independent clubs: memb
 - **"Reward Spins"** — appears on Quests, Events, and Offer Orders. Always means *Spins added to the Member's Spin Balance on completion* — not Saldo, not Badges.
 - **"Product" vs "Offer/Club Offer"** — distinct concepts. **Product** = inventory SKU sold at point of sale. **Offer** = catalog of bookable activities/experiences/services. Some Offer Orders link to a Product (consumable fulfillment) — that link is the bridge, not a synonym.
 - **"Migration"** — overloaded between two unrelated concepts. **Schema migration** = a SQL file in `supabase/migrations/` that evolves the database. **Content migration** = the operational act of moving a Club's content from one platform (e.g. Tilda) to osocios. Always qualify; never use bare "migration".
+- **"Email Campaign" vs "Notification Broadcast"** — Email Campaign is the legacy single-channel concept (`email_campaigns` table, written by `sendCampaign` when channels include email). Notification Broadcast is the multi-channel umbrella (`notification_broadcasts` table) introduced when Telegram was added. Prefer **Notification Broadcast** in new code and prose; keep **Email Campaign** only when narrowly discussing the legacy email-only history.
+- **"Telegram Bot" vs "Telegram Subscription"** — the **Telegram Bot** is the Club-side identity (token + username). A **Telegram Subscription** is a Member-side opt-in that points at that bot's chats. The bot has zero, one, or many subscriptions; a Member has at most one Subscription per Club.
 - **"Void" vs "Cancel" vs "Refund"** — **Void** is the canonical term for reversing a Sale (atomic stock restore + audit). "Cancel" applies to Event RSVPs and Offer Orders before fulfillment; "refund" is not an osocios primitive — refund logic happens via Saldo Transaction `topup` with a reason or via cash outside the system.
 - **SaaS billing layer is not yet formalized.** The relationship between an Organization and osocios — Subscription, Plan, Pricing, Onboarding Contract — exists in operations (Mikita maintains contracts and pricing per Club) but has no domain entities or columns. Treat this as an open subdomain. Add terms here once the launch surfaces concrete needs.

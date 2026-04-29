@@ -90,6 +90,7 @@
 | 23 | Unsubscribe Management | JWT-signed links, per-member opt-out |
 | 24 | Telegram Bot Integration | External bot config, referral name, price |
 | 25 | Web Push (Members v1) | VAPID, send-to-club test from `/admin/push` |
+| 25b | Telegram Member Subs | Per-club bot, /start opt-in, multi-channel broadcasts via Email Campaigns |
 | 26 | Operations Module Toggle | Per-club flag to enable ops surfaces |
 | 27 | Products Manager | Categories + products, bilingual, stock, archive |
 | 28 | Finance Dashboard | Revenue chart, category breakdown, date range, CSV |
@@ -305,7 +306,27 @@ VAPID keys (`VAPID_*` env). Service worker `public/sw.js` handles `push` and `no
 - `app/[clubSlug]/(member)/push-actions.ts` — `savePushSubscription`
 - `app/[clubSlug]/admin/(panel)/push/{page,push-form,actions}.{tsx,ts}`
 
-**Out of scope:** staff push, transactional triggers, segmentation/scheduling. Telegram is still the staff signal.
+**Out of scope:** staff push, transactional triggers, scheduled reminders.
+
+### Telegram Member Subscriptions (v1)
+
+Per-Club bot with member opt-in via deep-link. Owner creates a Telegram bot through @BotFather, pastes the token in admin settings, clicks **Verify & enable** — server calls `getMe` (captures `bot_username`), generates a `webhook_secret`, calls `setWebhook` pointing to `/api/telegram/webhook/<slug>`. Members open `/profile`, click **Connect Telegram** → deep-link `https://t.me/<bot>?start=<member_code>` → bot stores their `chat_id` in `telegram_subscriptions`.
+
+The same bot also serves the existing staff alerts (`lib/staff-notify.ts` → `clubs.telegram_chat_id`); the two purposes are decoupled. Member subscriptions are gated by `clubs.telegram_member_subs_enabled` so the webhook 200s silently when disabled.
+
+Broadcasts are unified into the existing email composer: `EmailCampaignManager` now exposes a Channel multi-select (Email · Telegram · Push). `sendCampaign` resolves the segment once, fans out per channel, and writes one row to `notification_broadcasts` (multi-channel audit). `email_campaigns` is still written when email is selected, for backwards compat with the existing history view.
+
+- `supabase/migrations/20260429130000_add_telegram_member_subscriptions.sql` — adds `telegram_subscriptions`, `notification_broadcasts`, plus `clubs.{telegram_bot_username,telegram_webhook_secret,telegram_member_subs_enabled}`
+- `lib/telegram/index.ts` — legacy `sendTelegramMessage` (used by staff-notify)
+- `lib/telegram/send.ts` — `sendTelegramToClub`, `sendTelegramToMember`, `sendTelegramToSubscriptions`; stale-cleanup on 403/404
+- `lib/telegram/webhook.ts` — `getMe`, `setWebhook`, `deleteWebhook`, `replyInWebhook`, `generateWebhookSecret`
+- `app/api/telegram/webhook/[clubSlug]/route.ts` — handles `/start <member_code>`, `/stop`, `/help`; validates `X-Telegram-Bot-Api-Secret-Token`
+- `app/[clubSlug]/admin/telegram-subscribers-manager.tsx` + `telegram-subscriptions-actions.ts` — token paste, verify+register, disable, send test
+- `app/[clubSlug]/(member)/notification-actions.ts` — `disconnectTelegramSubscription`
+- `components/club/notification-channels.tsx` — Push/Telegram/WhatsApp rows on profile (WhatsApp = "Coming soon")
+- `app/[clubSlug]/admin/email-actions.ts` — `sendCampaign(channels[])`, `BroadcastChannel` type, `countSegment`
+
+**Out of scope:** WhatsApp, auto-triggers, scheduled reminders, per-category preferences. WhatsApp left as a stub row in the profile UI.
 
 ## Environment & Deployment
 

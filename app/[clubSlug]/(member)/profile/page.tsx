@@ -7,6 +7,7 @@ import { MemberIdCard } from "@/components/club/member-id-card";
 import { EmailField } from "./email-field";
 import { BentoStatTile } from "@/components/club/bento-stat-tile";
 import { BadgeCollection } from "../badge-collection";
+import { NotificationChannels } from "@/components/club/notification-channels";
 import { t, getDateLocale } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 import type { Locale } from "@/lib/i18n";
@@ -63,6 +64,8 @@ export default async function ProfilePage({
     { data: clubBadges },
     { data: memberBadges },
     { data: clubOps },
+    { data: telegramSub },
+    { count: pushDeviceCount },
   ] = await Promise.all([
     supabase
       .from("members")
@@ -96,13 +99,26 @@ export default async function ProfilePage({
       .eq("member_id", session.member_id),
     supabase
       .from("clubs")
-      .select("operations_module_enabled, spin_enabled")
+      .select("operations_module_enabled, spin_enabled, telegram_bot_username, telegram_member_subs_enabled")
       .eq("id", session.club_id)
       .single(),
+    supabase
+      .from("telegram_subscriptions")
+      .select("id")
+      .eq("member_id", session.member_id)
+      .maybeSingle(),
+    supabase
+      .from("push_subscriptions")
+      .select("id", { count: "exact", head: true })
+      .eq("member_id", session.member_id),
   ]);
   const opsEnabled = clubOps?.operations_module_enabled ?? false;
   const spinEnabled = clubOps?.spin_enabled ?? true;
   const idVerified = opsEnabled && !!member?.id_verified_at;
+  const telegramEnabled = clubOps?.telegram_member_subs_enabled ?? false;
+  const telegramBotUsername = clubOps?.telegram_bot_username ?? null;
+  const telegramConnected = !!telegramSub;
+  const pushSubscribed = (pushDeviceCount ?? 0) > 0;
 
   const { data: referrals } = member?.member_code
     ? await supabase
@@ -361,6 +377,24 @@ export default async function ProfilePage({
             </div>
           </section>
         )}
+
+        {/* Notification channels */}
+        <section className="space-y-3">
+          <h2 className="m-caption px-1">{t(locale, "profile.notifications")}</h2>
+          <NotificationChannels
+            clubSlug={clubSlug}
+            memberCode={memberCode}
+            telegram={{
+              enabled: telegramEnabled,
+              botUsername: telegramBotUsername,
+              connected: telegramConnected,
+            }}
+            push={{
+              supported: true,
+              subscribed: pushSubscribed,
+            }}
+          />
+        </section>
 
         {/* Account */}
         <section className="space-y-3">

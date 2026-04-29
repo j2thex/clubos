@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useTransition, useEffect, useCallback } from "react";
-import { countRecipients, sendCampaign, getCampaignHistory } from "./email-actions";
+import {
+  countRecipients,
+  sendCampaign,
+  getCampaignHistory,
+  type BroadcastChannel,
+} from "./email-actions";
 import { useLanguage } from "@/lib/i18n/provider";
 
 interface Role {
@@ -47,6 +52,8 @@ export function EmailCampaignManager({
   clubId,
   clubSlug,
   emailCount,
+  telegramSubscriberCount,
+  pushSubscriberCount,
   roles,
   quests,
   events,
@@ -57,6 +64,8 @@ export function EmailCampaignManager({
   clubId: string;
   clubSlug: string;
   emailCount: number;
+  telegramSubscriberCount: number;
+  pushSubscriberCount: number;
   roles: Role[];
   quests: QuestOption[];
   events: EventOption[];
@@ -71,6 +80,13 @@ export function EmailCampaignManager({
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [showPreview, setShowPreview] = useState(false);
+  const [channels, setChannels] = useState<BroadcastChannel[]>(["email"]);
+
+  function toggleChannel(ch: BroadcastChannel) {
+    setChannels((prev) =>
+      prev.includes(ch) ? prev.filter((c) => c !== ch) : [...prev, ch],
+    );
+  }
 
   // Segment state
   const [filters, setFilters] = useState<SegmentFilters>({});
@@ -113,19 +129,30 @@ export function EmailCampaignManager({
     setError(null);
     setSuccess(null);
     startTransition(async () => {
-      const result = await sendCampaign(clubId, clubSlug, subject, body, filters, ownerId);
+      const result = await sendCampaign(
+        clubId,
+        clubSlug,
+        subject,
+        body,
+        filters,
+        ownerId,
+        channels,
+      );
       if ("error" in result) {
         setError(result.error);
       } else {
-        if (result.failed > 0) {
-          setSuccess(t("admin.emailSentFailed", { sent: result.sent, failed: result.failed }));
-        } else {
-          setSuccess(t("admin.emailSent", { count: result.sent }));
+        const parts: string[] = [];
+        let totalFailed = 0;
+        for (const ch of channels) {
+          const c = result.counts[ch];
+          parts.push(`${ch}: ${c.sent}/${c.recipients}`);
+          totalFailed += c.failed;
         }
+        const summary = `Sent — ${parts.join(" · ")}${totalFailed > 0 ? ` (${totalFailed} failed)` : ""}`;
+        setSuccess(summary);
         setSubject("");
         setBody("");
         setConfirmSend(false);
-        // Refresh history
         getCampaignHistory(clubId).then(setCampaigns);
       }
       setTimeout(() => { setSuccess(null); setError(null); }, 8000);
@@ -145,10 +172,13 @@ export function EmailCampaignManager({
 
   return (
     <div className="space-y-4">
-      {/* Email count banner */}
-      <div className="px-1">
+      {/* Channel reach banner */}
+      <div className="px-1 space-y-0.5">
         <p className="text-xs text-gray-500">
           {t("admin.emailMembersWithEmail", { count: emailCount })}
+        </p>
+        <p className="text-xs text-gray-500">
+          {telegramSubscriberCount} Telegram subscriber{telegramSubscriberCount === 1 ? "" : "s"} · {pushSubscriberCount} push device{pushSubscriberCount === 1 ? "" : "s"}
         </p>
       </div>
 
@@ -174,9 +204,41 @@ export function EmailCampaignManager({
         </div>
 
         <div className="px-5 py-4 space-y-4">
+          {/* Channels */}
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Channels</label>
+            <div className="flex flex-wrap gap-2">
+              {(
+                [
+                  { id: "email", label: "Email", count: emailCount },
+                  { id: "telegram", label: "Telegram", count: telegramSubscriberCount },
+                  { id: "push", label: "Push", count: pushSubscriberCount },
+                ] as { id: BroadcastChannel; label: string; count: number }[]
+              ).map(({ id, label, count }) => {
+                const active = channels.includes(id);
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => toggleChannel(id)}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      active
+                        ? "border-gray-800 bg-gray-800 text-white"
+                        : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    {label} <span className="opacity-70">· {count}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Subject */}
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">{t("admin.emailSubject")}</label>
+            <label className="block text-xs font-medium text-gray-500 mb-1">
+              {channels.includes("email") ? t("admin.emailSubject") : "Title"}
+            </label>
             <input
               type="text"
               value={subject}
@@ -339,7 +401,13 @@ export function EmailCampaignManager({
             <button
               type="button"
               onClick={() => setConfirmSend(true)}
-              disabled={isPending || !subject.trim() || !body.trim() || recipientCount === 0}
+              disabled={
+                isPending ||
+                !subject.trim() ||
+                !body.trim() ||
+                recipientCount === 0 ||
+                channels.length === 0
+              }
               className="w-full rounded-lg bg-gray-800 text-white py-2.5 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {t("admin.emailSend")}
