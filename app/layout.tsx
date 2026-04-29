@@ -22,7 +22,6 @@ const geistMono = Geist_Mono({
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
 };
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://osocios.club";

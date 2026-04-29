@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ScrollReveal } from "./scroll-reveal";
 
@@ -44,22 +45,35 @@ export function ClubDirectory({
                 href={`/${club.slug}/public`}
                 className="group block rounded-2xl bg-landing-surface border border-landing-border-subtle overflow-hidden hover:bg-landing-surface-hover transition-colors duration-300 h-full"
               >
-                <div
-                  className="h-20 bg-cover bg-center relative"
-                  style={
-                    club.cover_url
-                      ? { backgroundImage: `url(${club.cover_url})` }
-                      : { background: `linear-gradient(135deg, ${club.primary_color || "#16a34a"}40, ${club.primary_color || "#16a34a"}10)` }
-                  }
-                >
-                  {club.cover_url && (
-                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
+                <div className="h-20 relative overflow-hidden">
+                  {club.cover_url ? (
+                    <>
+                      <Image
+                        src={club.cover_url}
+                        alt=""
+                        fill
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 280px"
+                        className="object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
+                    </>
+                  ) : (
+                    <div
+                      className="absolute inset-0"
+                      style={{ background: `linear-gradient(135deg, ${club.primary_color || "#16a34a"}40, ${club.primary_color || "#16a34a"}10)` }}
+                    />
                   )}
                 </div>
 
                 <div className="p-4 flex items-center gap-3">
                   {club.logo_url ? (
-                    <img src={club.logo_url} alt={club.name} className="w-9 h-9 rounded-lg object-cover shrink-0 -mt-7 ring-2 ring-background" />
+                    <Image
+                      src={club.logo_url}
+                      alt={club.name}
+                      width={36}
+                      height={36}
+                      className="w-9 h-9 rounded-lg object-cover shrink-0 -mt-7 ring-2 ring-background"
+                    />
                   ) : (
                     <div
                       className="w-9 h-9 rounded-lg shrink-0 -mt-7 ring-2 ring-background flex items-center justify-center text-white font-medium text-xs"
