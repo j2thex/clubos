@@ -6,7 +6,7 @@ import type { ClubVisibility } from "../../actions";
 import { RoleManager } from "../../role-manager";
 import { MembershipPeriodManager } from "../../membership-period-manager";
 import { BrandingManager } from "../../branding-manager";
-import { GalleryManager } from "../../gallery-manager";
+import { MediaManager } from "../../media-manager";
 import { TelegramConfigManager } from "../../telegram-config-manager";
 import { TelegramBotManager } from "../../telegram-bot-manager";
 import { WheelManager } from "../../wheel-manager";
@@ -54,7 +54,7 @@ export default async function SettingsPage({
 
   if (!club) notFound();
 
-  const [{ data: branding }, { data: segments }, { data: roles }, { data: membershipPeriods }, { data: galleryImages }, { data: inviteButtons }, { data: emailQuests }, { data: emailEvents }, { data: emailOffers }] = await Promise.all([
+  const [{ data: branding }, { data: segments }, { data: roles }, { data: membershipPeriods }, { data: galleryItems }, { data: inviteButtons }, { data: emailQuests }, { data: emailEvents }, { data: emailOffers }] = await Promise.all([
     supabase
       .from("club_branding")
       .select("logo_url, cover_url, primary_color, secondary_color, hero_content, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website, google_place_id")
@@ -81,7 +81,7 @@ export default async function SettingsPage({
       .order("display_order", { ascending: true }),
     supabase
       .from("club_gallery")
-      .select("id, image_url, caption")
+      .select("id, media_url, media_type, mime_type, caption")
       .eq("club_id", club.id)
       .order("display_order", { ascending: true }),
     supabase
@@ -141,12 +141,14 @@ export default async function SettingsPage({
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection title="Gallery" caption="Photos shown on your public page">
+      <CollapsibleSection title="Gallery" caption="Photos, videos, and audio shown on your public page">
         <div className={STRIP_LEGACY_H2}>
-          <GalleryManager
-            images={(galleryImages ?? []).map((g) => ({
+          <MediaManager
+            items={(galleryItems ?? []).map((g) => ({
               id: g.id,
-              image_url: g.image_url,
+              media_url: g.media_url,
+              media_type: g.media_type,
+              mime_type: g.mime_type ?? null,
               caption: g.caption ?? null,
             }))}
             clubId={club.id}

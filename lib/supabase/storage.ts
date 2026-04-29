@@ -26,6 +26,21 @@ export async function deleteClubImage(imageUrl: string): Promise<void> {
   return deleteFromBucket("club-images", imageUrl);
 }
 
+// --- Club gallery media: images, videos, audio (bucket: club-media) ---
+
+export async function uploadClubMedia(
+  clubId: string,
+  file: File,
+): Promise<{ url: string } | { error: string }> {
+  return uploadToBucket("club-media", clubId, file);
+}
+
+// Handles legacy gallery rows whose URLs still point at the club-images bucket.
+export async function deleteClubMedia(mediaUrl: string): Promise<void> {
+  const bucket = mediaUrl.includes("/club-media/") ? "club-media" : "club-images";
+  return deleteFromBucket(bucket, mediaUrl);
+}
+
 // --- Quest proof screenshots (bucket: quest-proofs) ---
 
 export async function uploadQuestProof(

@@ -138,7 +138,9 @@
   "dashboard.today": "HOY",
   "dashboard.yourQuests": "TUS MISIONES",
   "dashboard.questProgress": "{done} DE {total} COMPLETAS",
-  "dashboard.gallery": "Galería",
+  "dashboard.photos": "Fotos",
+  "dashboard.videos": "Videos",
+  "dashboard.audio": "Audio",
 
   "quest.done": "Hecho",
   "quest.doneCount": "Hecho {count}x",
@@ -818,9 +820,9 @@
   "admin.addNewBadge": "Añadir nueva insignia",
   "admin.earned": "{count} obtenidas",
 
-  "admin.photoGallery": "Galería de fotos",
-  "admin.noPhotos": "Aún no hay fotos",
-  "admin.uploadPhotos": "Subir fotos",
+  "admin.gallery": "Galería",
+  "admin.noMedia": "Aún no hay contenido",
+  "admin.uploadMedia": "Subir fotos, videos o audio",
   "admin.uploading": "Subiendo...",
 
   "admin.clubTags": "Tipo de Club",

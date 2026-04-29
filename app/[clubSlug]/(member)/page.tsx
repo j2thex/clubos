@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getMemberFromCookie } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { QuestList } from "./quest-list";
-import { PhotoGallery } from "@/components/club/photo-gallery";
+import { MediaGallery } from "@/components/club/media-gallery";
 import { MemberHero } from "@/components/club/member-hero";
 import { BentoStatTile } from "@/components/club/bento-stat-tile";
 import { AddToHomescreen } from "@/components/club/add-to-homescreen";
@@ -108,7 +108,7 @@ export default async function QuestsLanding({
       .eq("member_id", session.member_id),
     supabase
       .from("club_gallery")
-      .select("id, image_url, caption")
+      .select("id, media_url, media_type, mime_type, caption")
       .eq("club_id", session.club_id)
       .order("display_order", { ascending: true }),
     supabase
@@ -248,19 +248,37 @@ export default async function QuestsLanding({
           </div>
         )}
 
-        {/* Gallery */}
-        {galleryImages && galleryImages.length > 0 && (
-          <div className="mt-8 pb-12">
-            <h2 className="m-caption mb-3 px-1">{t(locale, "dashboard.gallery")}</h2>
-            <PhotoGallery
-              images={galleryImages.map((g) => ({
-                id: g.id,
-                image_url: g.image_url,
-                caption: g.caption,
-              }))}
-            />
-          </div>
-        )}
+        {/* Gallery — split by media type */}
+        {galleryImages && galleryImages.length > 0 && (() => {
+          const photos = galleryImages.filter((g) => g.media_type === "image");
+          const videos = galleryImages.filter((g) => g.media_type === "video");
+          const audios = galleryImages.filter((g) => g.media_type === "audio");
+          const sections: Array<{ key: string; label: string; items: typeof galleryImages }> = [
+            { key: "photos", label: t(locale, "dashboard.photos"), items: photos },
+            { key: "videos", label: t(locale, "dashboard.videos"), items: videos },
+            { key: "audio", label: t(locale, "dashboard.audio"), items: audios },
+          ];
+          return (
+            <div className="mt-8 pb-12 space-y-6">
+              {sections
+                .filter((s) => s.items.length > 0)
+                .map((s) => (
+                  <div key={s.key}>
+                    <h2 className="m-caption mb-3 px-1">{s.label}</h2>
+                    <MediaGallery
+                      items={s.items.map((g) => ({
+                        id: g.id,
+                        media_url: g.media_url,
+                        media_type: g.media_type,
+                        mime_type: g.mime_type ?? null,
+                        caption: g.caption,
+                      }))}
+                    />
+                  </div>
+                ))}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

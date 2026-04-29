@@ -104,6 +104,14 @@ osocios.club is a white-label SaaS membership portal for independent clubs: memb
 | **Email Campaign** | A bulk message to a filtered Member segment, with body_markdown and recipient_count. | Newsletter, Blast |
 | **Telegram Bot** | The keyword-triggered Telegram integration configured per Club. | Chatbot |
 
+## Media
+
+| Term | Definition | Aliases to avoid |
+| --- | --- | --- |
+| **Gallery** | The per-Club collection of Media Items shown on the Member Portal dashboard and the public Club profile. | Photos, Album |
+| **Gallery Item** | One row in `club_gallery`: a `media_url` + a `media_type` + optional `caption`. The renderer is chosen from Media Type. | Photo, Image, Asset |
+| **Media Type** | One of `image`, `video`, `audio`. Determines which player/element renders the Gallery Item. | Kind, Format |
+
 ## Surfaces (Portals)
 
 | Term | Definition | Aliases to avoid |

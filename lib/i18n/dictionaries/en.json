@@ -116,7 +116,9 @@
   "dashboard.completed": "Completed",
   "dashboard.level": "Level",
   "dashboard.quests": "Quests",
-  "dashboard.gallery": "Gallery",
+  "dashboard.photos": "Photos",
+  "dashboard.videos": "Videos",
+  "dashboard.audio": "Audio",
   "dashboard.greetingMorning": "Good morning, {name}",
   "dashboard.greetingAfternoon": "Good afternoon, {name}",
   "dashboard.greetingEvening": "Good evening, {name}",
@@ -818,9 +820,9 @@
   "admin.addNewBadge": "Add New Badge",
   "admin.earned": "{count} earned",
 
-  "admin.photoGallery": "Photo Gallery",
-  "admin.noPhotos": "No photos yet",
-  "admin.uploadPhotos": "Upload photos",
+  "admin.gallery": "Gallery",
+  "admin.noMedia": "No media yet",
+  "admin.uploadMedia": "Upload photos, videos, or audio",
   "admin.uploading": "Uploading...",
 
   "admin.clubTags": "Club Type",

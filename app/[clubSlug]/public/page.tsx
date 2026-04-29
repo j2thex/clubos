@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { SocialLinks } from "@/components/club/social-links";
-import { PhotoGallery } from "@/components/club/photo-gallery";
+import { MediaGallery } from "@/components/club/media-gallery";
 import { InviteForm } from "./invite-form";
 import { PreregistrationForm } from "./preregistration-form";
 import { InviteSocialButtons } from "./invite-social-buttons";
@@ -125,7 +125,7 @@ export default async function PublicProfilePage({
         .order("created_at", { ascending: true }),
       supabase
         .from("club_gallery")
-        .select("id, image_url, caption")
+        .select("id, media_url, media_type, mime_type, caption")
         .eq("club_id", club.id)
         .order("display_order", { ascending: true }),
       supabase
@@ -303,16 +303,37 @@ export default async function PublicProfilePage({
       </section>
 
       <div className="relative z-10 mx-auto max-w-lg space-y-6 px-5 pb-12 pt-6">
-        {/* Gallery */}
-        {galleryImages && galleryImages.length > 0 && (
-          <PhotoGallery
-            images={galleryImages.map((g) => ({
-              id: g.id,
-              image_url: g.image_url,
-              caption: g.caption,
-            }))}
-          />
-        )}
+        {/* Gallery — split by media type */}
+        {galleryImages && galleryImages.length > 0 && (() => {
+          const photos = galleryImages.filter((g) => g.media_type === "image");
+          const videos = galleryImages.filter((g) => g.media_type === "video");
+          const audios = galleryImages.filter((g) => g.media_type === "audio");
+          const sections: Array<{ key: string; label: string; items: typeof galleryImages }> = [
+            { key: "photos", label: localized("Photos", "Fotos", locale), items: photos },
+            { key: "videos", label: localized("Videos", "Videos", locale), items: videos },
+            { key: "audio", label: localized("Audio", "Audio", locale), items: audios },
+          ];
+          return (
+            <div className="space-y-6">
+              {sections
+                .filter((s) => s.items.length > 0)
+                .map((s) => (
+                  <div key={s.key}>
+                    <h2 className="m-caption mb-3 px-1">{s.label}</h2>
+                    <MediaGallery
+                      items={s.items.map((g) => ({
+                        id: g.id,
+                        media_url: g.media_url,
+                        media_type: g.media_type,
+                        mime_type: g.mime_type ?? null,
+                        caption: g.caption,
+                      }))}
+                    />
+                  </div>
+                ))}
+            </div>
+          );
+        })()}
 
         {/* Working Hours */}
         {club.working_hours && (

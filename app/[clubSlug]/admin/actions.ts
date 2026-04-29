@@ -1522,16 +1522,36 @@ export async function setDefaultMembershipPeriod(
 
 // --- Gallery actions ---
 
-export async function addGalleryImage(
+const ALLOWED_MEDIA_MIME_TYPES = new Set([
+  "image/jpeg", "image/png", "image/webp", "image/gif",
+  "video/mp4", "video/quicktime", "video/webm",
+  "audio/mpeg", "audio/mp4", "audio/wav", "audio/ogg", "audio/webm",
+]);
+
+function mediaTypeFromMime(mime: string): "image" | "video" | "audio" | null {
+  if (mime.startsWith("image/")) return "image";
+  if (mime.startsWith("video/")) return "video";
+  if (mime.startsWith("audio/")) return "audio";
+  return null;
+}
+
+export async function addGalleryItem(
   clubId: string,
   formData: FormData,
   clubSlug: string,
 ): Promise<{ error: string } | { ok: true }> {
-  const imageFile = formData.get("image") as File | null;
-  if (!imageFile || imageFile.size === 0) return { error: "No image provided" };
+  const file = formData.get("media") as File | null;
+  if (!file || file.size === 0) return { error: "No file provided" };
 
-  const { uploadClubImage } = await import("@/lib/supabase/storage");
-  const result = await uploadClubImage(clubId, imageFile);
+  if (!ALLOWED_MEDIA_MIME_TYPES.has(file.type)) {
+    return { error: `Unsupported file type: ${file.type || "unknown"}` };
+  }
+
+  const mediaType = mediaTypeFromMime(file.type);
+  if (!mediaType) return { error: "Unsupported file type" };
+
+  const { uploadClubMedia } = await import("@/lib/supabase/storage");
+  const result = await uploadClubMedia(clubId, file);
   if ("error" in result) return { error: result.error };
 
   const supabase = createAdminClient();
@@ -1547,39 +1567,41 @@ export async function addGalleryImage(
 
   const { error } = await supabase.from("club_gallery").insert({
     club_id: clubId,
-    image_url: result.url,
+    media_url: result.url,
+    media_type: mediaType,
+    mime_type: file.type,
     display_order: nextOrder,
   });
 
-  if (error) return { error: "Failed to add image" };
+  if (error) return { error: "Failed to add media" };
 
   revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
 }
 
-export async function deleteGalleryImage(
-  imageId: string,
+export async function deleteGalleryItem(
+  itemId: string,
   clubSlug: string,
 ): Promise<{ error: string } | { ok: true }> {
   const supabase = createAdminClient();
 
-  const { data: image } = await supabase
+  const { data: item } = await supabase
     .from("club_gallery")
-    .select("image_url")
-    .eq("id", imageId)
+    .select("media_url")
+    .eq("id", itemId)
     .single();
 
-  if (image?.image_url) {
-    const { deleteClubImage } = await import("@/lib/supabase/storage");
-    await deleteClubImage(image.image_url);
+  if (item?.media_url) {
+    const { deleteClubMedia } = await import("@/lib/supabase/storage");
+    await deleteClubMedia(item.media_url);
   }
 
   const { error } = await supabase
     .from("club_gallery")
     .delete()
-    .eq("id", imageId);
+    .eq("id", itemId);
 
-  if (error) return { error: "Failed to delete image" };
+  if (error) return { error: "Failed to delete media" };
 
   revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
