@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 import { LandingFooter } from "../_landing/landing-footer";
@@ -9,7 +8,7 @@ import { TopNav } from "../_landing/top-nav";
 export const metadata: Metadata = {
   title: "Contact — osocios.club",
   description:
-    "Talk to the team behind osocios.club. WhatsApp or email, answered personally from Barcelona.",
+    "Talk to the team behind osocios.club. Answered personally from Barcelona.",
   alternates: { canonical: "/contact" },
 };
 
@@ -18,8 +17,11 @@ export default async function ContactPage() {
   const tr = (key: string, params?: Record<string, string | number>) =>
     t(locale, key, params);
 
-  const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "34607349242";
-  const whatsappHref = `https://wa.me/${whatsapp}?text=${encodeURIComponent("Hola osocios.club!")}`;
+  // WhatsApp section temporarily hidden — keep imports/markup ready to restore.
+  // To re-enable: uncomment the import { Link } above, the whatsapp/whatsappHref consts,
+  // the <div> block below, and add WhatsApp back to the metadata description.
+  // const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "34607349242";
+  // const whatsappHref = `https://wa.me/${whatsapp}?text=${encodeURIComponent("Hola osocios.club!")}`;
 
   return (
     <div className="min-h-screen landing-dark">
@@ -30,6 +32,7 @@ export default async function ContactPage() {
         </h1>
         <p className="mt-4 opacity-70 max-w-lg">{tr("contact.subtitle")}</p>
 
+        {/* WhatsApp section — hidden 2026-04-29; restore by uncommenting.
         <div className="mt-10 rounded-2xl bg-landing-surface border border-landing-border-subtle p-6">
           <h2 className="text-lg font-medium">{tr("contact.whatsappTitle")}</h2>
           <p className="mt-1 text-sm opacity-60">{tr("contact.whatsappDesc")}</p>
@@ -42,8 +45,9 @@ export default async function ContactPage() {
             {tr("contact.whatsappCta")} →
           </Link>
         </div>
+        */}
 
-        <div className="mt-6 rounded-2xl bg-landing-surface border border-landing-border-subtle p-6">
+        <div className="mt-10 rounded-2xl bg-landing-surface border border-landing-border-subtle p-6">
           <h2 className="text-lg font-medium">{tr("contact.emailTitle")}</h2>
           <p className="mt-1 text-sm opacity-60">{tr("contact.emailDesc")}</p>
           <div className="mt-6">
