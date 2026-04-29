@@ -44,11 +44,20 @@ export function DiscoverClient({
   const [dateFilter, setDateFilter] = useState<"all" | "today" | "week" | "month">("all");
   const [showSearch, setShowSearch] = useState(false);
   const mapSectionRef = useRef<HTMLDivElement>(null);
+  const listSectionRef = useRef<HTMLDivElement>(null);
+  const skipNextHashWriteRef = useRef(false);
 
-  // Sync tab with URL hash for deep linking (e.g., /discover#events or /discover#offers:Wi-Fi)
+  // Sync tab with URL hash for deep linking (e.g., /discover#events, /discover#offers:Wi-Fi, /discover#map, /discover#list)
   useEffect(() => {
     const hash = window.location.hash.replace("#", "");
-    if (hash.startsWith("offers:")) {
+    if (hash === "map" || hash === "list") {
+      skipNextHashWriteRef.current = true;
+      setActiveTab("clubs");
+      requestAnimationFrame(() => {
+        const target = hash === "map" ? mapSectionRef.current : listSectionRef.current;
+        target?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    } else if (hash.startsWith("offers:")) {
       setActiveTab("offers");
       setSelectedOfferNames([decodeURIComponent(hash.slice(7))]);
     } else if (hash === "clubs" || hash === "events" || hash === "offers" || hash === "quests") {
@@ -57,6 +66,10 @@ export function DiscoverClient({
   }, []);
 
   useEffect(() => {
+    if (skipNextHashWriteRef.current) {
+      skipNextHashWriteRef.current = false;
+      return;
+    }
     window.history.replaceState(null, "", `#${activeTab}`);
   }, [activeTab]);
 
@@ -363,7 +376,7 @@ export function DiscoverClient({
       )}
 
       {/* Section 2: Results */}
-      <section className="landing-dark border-t border-landing-border">
+      <section ref={listSectionRef} className="landing-dark border-t border-landing-border">
 
         {/* Results grid */}
         <ResultsGrid
