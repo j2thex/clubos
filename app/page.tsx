@@ -463,7 +463,7 @@ export default async function Home() {
               "¡Hola! Me gustaría unirme a un club cannábico en España — ¿me pueden ayudar a encontrar uno?",
               locale,
             );
-            const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "34607804509";
+            const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "34607349242";
             const whatsappHref = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(findRequest)}`;
             const telegramHref = `https://t.me/osociosbot?start=findclub`;
 
