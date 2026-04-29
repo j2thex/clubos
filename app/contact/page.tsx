@@ -18,7 +18,7 @@ export default async function ContactPage() {
   const tr = (key: string, params?: Record<string, string | number>) =>
     t(locale, key, params);
 
-  const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "34607804509";
+  const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "34607349242";
   const whatsappHref = `https://wa.me/${whatsapp}?text=${encodeURIComponent("Hola osocios.club!")}`;
 
   return (
