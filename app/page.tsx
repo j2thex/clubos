@@ -448,8 +448,23 @@ export default async function Home() {
             </p>
           </ScrollReveal>
 
-          <ol className="mt-14 grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[
+          {(() => {
+            const findRequest = localized(
+              "Hi! I'd like to join a cannabis club in Spain — can you help me find one near me?",
+              "¡Hola! Me gustaría unirme a un club cannábico en España — ¿me pueden ayudar a encontrar uno?",
+              locale,
+            );
+            const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "34607804509";
+            const whatsappHref = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(findRequest)}`;
+            const telegramHref = `https://t.me/osociosbot?start=findclub`;
+
+            const steps: {
+              icon: string;
+              gradient: string;
+              title: string;
+              body: string;
+              actions: { href: string; label: string; variant: "outline" | "whatsapp"; external?: boolean }[];
+            }[] = [
               {
                 icon: "map-pin",
                 gradient: "bg-gradient-to-br from-emerald-400 to-teal-500",
@@ -459,6 +474,10 @@ export default async function Home() {
                   "Usa el mapa de arriba o explora el directorio para encontrar un club que se ajuste a tus intereses.",
                   locale,
                 ),
+                actions: [
+                  { href: "/discover#map", label: localized("See the map", "Ver el mapa", locale), variant: "outline" },
+                  { href: "/discover#list", label: localized("Browse all clubs", "Ver todos los clubes", locale), variant: "outline" },
+                ],
               },
               {
                 icon: "message-circle",
@@ -469,6 +488,10 @@ export default async function Home() {
                   "Abre la página pública del club para ver su ubicación, eventos y contacto. Pásate o escríbeles directamente.",
                   locale,
                 ),
+                actions: [
+                  { href: telegramHref, label: "Telegram", variant: "outline", external: true },
+                  { href: whatsappHref, label: "WhatsApp", variant: "whatsapp", external: true },
+                ],
               },
               {
                 icon: "key-round",
@@ -479,45 +502,60 @@ export default async function Home() {
                   "El club te dará un código de miembro personal. Úsalo en su portal para desbloquear eventos, ofertas y recompensas.",
                   locale,
                 ),
+                actions: [],
               },
-            ].map((step, i) => (
-              <ScrollReveal key={i} delay={i * 80} className="h-full">
-                <li className="group relative h-full rounded-2xl bg-landing-surface border border-landing-border-subtle p-6 flex flex-col gap-4 hover:bg-landing-surface-hover transition-colors duration-300">
-                  <div
-                    className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg ${step.gradient} group-hover:scale-105 transition-transform duration-300`}
-                  >
-                    <DynamicIcon name={step.icon} className="w-6 h-6" />
-                  </div>
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-landing-text-tertiary">
-                    {localized("Step", "Paso", locale)} {i + 1}
-                  </span>
-                  <p className="text-base font-semibold text-landing-text leading-snug">{step.title}</p>
-                  <p className="text-sm text-landing-text-secondary leading-relaxed">{step.body}</p>
-                </li>
-              </ScrollReveal>
-            ))}
-          </ol>
+            ];
 
-          <ScrollReveal delay={280}>
-            <div className="mt-12 flex justify-center">
-              <Link
-                href="/discover"
-                className="inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-medium uppercase tracking-widest text-primary-foreground transition-all hover:brightness-110 hover:scale-[1.02]"
-              >
-                {localized("Browse clubs", "Explorar clubes", locale)}
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  aria-hidden="true"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </Link>
-            </div>
-          </ScrollReveal>
+            return (
+              <ol className="mt-14 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {steps.map((step, i) => (
+                  <ScrollReveal key={i} delay={i * 80} className="h-full">
+                    <li className="group relative h-full rounded-2xl bg-landing-surface border border-landing-border-subtle p-6 flex flex-col gap-4 hover:bg-landing-surface-hover transition-colors duration-300">
+                      <div
+                        className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg ${step.gradient} group-hover:scale-105 transition-transform duration-300`}
+                      >
+                        <DynamicIcon name={step.icon} className="w-6 h-6" />
+                      </div>
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-landing-text-tertiary">
+                        {localized("Step", "Paso", locale)} {i + 1}
+                      </span>
+                      <p className="text-base font-semibold text-landing-text leading-snug">{step.title}</p>
+                      <p className="text-sm text-landing-text-secondary leading-relaxed">{step.body}</p>
+                      {step.actions.length > 0 && (
+                        <div className="mt-auto flex flex-wrap gap-2 pt-2">
+                          {step.actions.map((action) =>
+                            action.external ? (
+                              <a
+                                key={action.label}
+                                href={action.href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={
+                                  action.variant === "whatsapp"
+                                    ? "inline-flex items-center gap-1.5 rounded-full bg-green-600 px-4 py-2 text-xs font-medium text-white hover:bg-green-500 transition-colors"
+                                    : "inline-flex items-center gap-1.5 rounded-full border border-landing-border-subtle px-4 py-2 text-xs font-medium hover:bg-landing-surface-hover transition-colors"
+                                }
+                              >
+                                {action.label}
+                              </a>
+                            ) : (
+                              <Link
+                                key={action.label}
+                                href={action.href}
+                                className="inline-flex items-center gap-1.5 rounded-full border border-landing-border-subtle px-4 py-2 text-xs font-medium hover:bg-landing-surface-hover transition-colors"
+                              >
+                                {action.label}
+                              </Link>
+                            ),
+                          )}
+                        </div>
+                      )}
+                    </li>
+                  </ScrollReveal>
+                ))}
+              </ol>
+            );
+          })()}
         </div>
       </section>
 
