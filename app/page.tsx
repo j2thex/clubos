@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
@@ -315,7 +316,15 @@ export default async function Home() {
                     className="flex-shrink-0 w-56 snap-start bg-landing-surface rounded-xl overflow-hidden hover:bg-landing-surface-hover transition-colors group"
                   >
                     {ev.image_url ? (
-                      <img src={ev.image_url} alt="" className="w-full h-28 object-cover" />
+                      <div className="w-full h-28 relative overflow-hidden">
+                        <Image
+                          src={ev.image_url}
+                          alt=""
+                          fill
+                          sizes="224px"
+                          className="object-cover"
+                        />
+                      </div>
                     ) : (
                       <div className="w-full h-28 flex items-center justify-center bg-landing-surface">
                         <span className="text-2xl opacity-30">📅</span>
@@ -509,8 +518,8 @@ export default async function Home() {
             return (
               <ol className="mt-14 grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {steps.map((step, i) => (
-                  <ScrollReveal key={i} delay={i * 80} className="h-full">
-                    <li className="group relative h-full rounded-2xl bg-landing-surface border border-landing-border-subtle p-6 flex flex-col gap-4 hover:bg-landing-surface-hover transition-colors duration-300">
+                  <li key={i} className="h-full">
+                    <ScrollReveal delay={i * 80} className="group relative h-full rounded-2xl bg-landing-surface border border-landing-border-subtle p-6 flex flex-col gap-4 hover:bg-landing-surface-hover transition-colors duration-300">
                       <div
                         className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg ${step.gradient} group-hover:scale-105 transition-transform duration-300`}
                       >
@@ -550,8 +559,8 @@ export default async function Home() {
                           )}
                         </div>
                       )}
-                    </li>
-                  </ScrollReveal>
+                    </ScrollReveal>
+                  </li>
                 ))}
               </ol>
             );
