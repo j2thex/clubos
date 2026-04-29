@@ -9,6 +9,7 @@ import { HomepageMap } from "./_landing/homepage-client";
 import { MembershipExplorer } from "./_landing/membership-explorer";
 import { ClubDirectory } from "./_landing/club-directory";
 import { LandingFooter } from "./_landing/landing-footer";
+import { ScrollReveal } from "./_landing/scroll-reveal";
 import type { DiscoverClub, DiscoverEvent, DiscoverOffer, DiscoverQuest } from "./discover/lib/types";
 import { localized } from "@/lib/i18n";
 import { DynamicIcon } from "@/components/dynamic-icon";
@@ -30,7 +31,9 @@ async function getClubs(): Promise<(DiscoverClub & { cover_url: string | null })
     const supabase = createAdminClient();
     const { data } = await supabase
       .from("clubs")
-      .select("id, name, slug, latitude, longitude, address, city, country, tags, club_branding(logo_url, cover_url, primary_color)")
+      .select(
+        "id, name, slug, latitude, longitude, address, city, country, tags, working_hours, timezone, club_branding(logo_url, cover_url, primary_color)",
+      )
       .eq("active", true).eq("approved", true).eq("visibility", "public")
       .order("created_at", { ascending: false });
 
@@ -49,6 +52,8 @@ async function getClubs(): Promise<(DiscoverClub & { cover_url: string | null })
         logo_url: branding?.logo_url ?? null,
         cover_url: branding?.cover_url ?? null,
         primary_color: branding?.primary_color ?? null,
+        working_hours: (c.working_hours ?? null) as DiscoverClub["working_hours"],
+        timezone: c.timezone ?? null,
       };
     });
   } catch {
@@ -417,57 +422,140 @@ export default async function Home() {
       )}
 
       {/* How to get membership */}
-      <section className="px-6 py-14 border-t border-landing-border-subtle">
+      <section className="px-6 py-20 sm:py-28 border-t border-landing-border-subtle">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-lg font-bold text-landing-text mb-1">
-            {localized("How to get a club membership", "Cómo obtener una membresía de club", locale)}
-          </h2>
-          <p className="text-xs text-landing-text-tertiary mb-8">
-            {localized(
-              "Three simple steps to join a club on osocios.club",
-              "Tres pasos simples para unirte a un club en osocios.club",
+          <ScrollReveal>
+            <p className="text-center text-[11px] font-semibold uppercase tracking-[0.25em] text-gradient mb-4">
+              {localized("Get started", "Empezar", locale)}
+            </p>
+            <h2 className="text-center text-3xl sm:text-4xl lg:text-5xl font-extralight tracking-tight text-landing-text">
+              {locale === "es" ? (
+                <>
+                  Cómo obtener una <span className="text-gradient font-medium">membresía</span>
+                </>
+              ) : (
+                <>
+                  How to get a club <span className="text-gradient font-medium">membership</span>
+                </>
+              )}
+            </h2>
+            <p className="mx-auto mt-4 max-w-xl text-center text-sm text-landing-text-secondary">
+              {localized(
+                "Three simple steps to join a club on osocios.club.",
+                "Tres pasos simples para unirte a un club en osocios.club.",
+                locale,
+              )}
+            </p>
+          </ScrollReveal>
+
+          {(() => {
+            const findRequest = localized(
+              "Hi! I'd like to join a cannabis club in Spain — can you help me find one near me?",
+              "¡Hola! Me gustaría unirme a un club cannábico en España — ¿me pueden ayudar a encontrar uno?",
               locale,
-            )}
-          </p>
-          <ol className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[
+            );
+            const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "34607804509";
+            const whatsappHref = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(findRequest)}`;
+            const telegramHref = `https://t.me/osociosbot?start=findclub`;
+
+            const steps: {
+              icon: string;
+              gradient: string;
+              title: string;
+              body: string;
+              actions: { href: string; label: string; variant: "outline" | "whatsapp"; external?: boolean }[];
+            }[] = [
               {
+                icon: "map-pin",
+                gradient: "bg-gradient-to-br from-emerald-400 to-teal-500",
                 title: localized("Find a club near you", "Encuentra un club cerca de ti", locale),
                 body: localized(
                   "Use the map above or browse the club directory to find one that fits your interests.",
                   "Usa el mapa de arriba o explora el directorio para encontrar un club que se ajuste a tus intereses.",
                   locale,
                 ),
+                actions: [
+                  { href: "/discover#map", label: localized("See the map", "Ver el mapa", locale), variant: "outline" },
+                  { href: "/discover#list", label: localized("Browse all clubs", "Ver todos los clubes", locale), variant: "outline" },
+                ],
               },
               {
+                icon: "message-circle",
+                gradient: "bg-gradient-to-br from-sky-400 to-indigo-500",
                 title: localized("Visit or contact the club", "Visita o contacta al club", locale),
                 body: localized(
                   "Open the club's public page to see its location, events, and contact details. Drop by or message them directly.",
                   "Abre la página pública del club para ver su ubicación, eventos y contacto. Pásate o escríbeles directamente.",
                   locale,
                 ),
+                actions: [
+                  { href: telegramHref, label: "Telegram", variant: "outline", external: true },
+                  { href: whatsappHref, label: "WhatsApp", variant: "whatsapp", external: true },
+                ],
               },
               {
+                icon: "key-round",
+                gradient: "bg-gradient-to-br from-amber-400 to-orange-500",
                 title: localized("Get your member code", "Obtén tu código de miembro", locale),
                 body: localized(
                   "The club will give you a personal member code. Use it on their portal to unlock events, offers, and rewards.",
                   "El club te dará un código de miembro personal. Úsalo en su portal para desbloquear eventos, ofertas y recompensas.",
                   locale,
                 ),
+                actions: [],
               },
-            ].map((step, i) => (
-              <li
-                key={i}
-                className="bg-landing-surface rounded-xl p-5 flex flex-col gap-2"
-              >
-                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-landing-surface-hover text-xs font-bold text-landing-text">
-                  {i + 1}
-                </span>
-                <p className="text-sm font-semibold text-landing-text">{step.title}</p>
-                <p className="text-xs text-landing-text-tertiary leading-relaxed">{step.body}</p>
-              </li>
-            ))}
-          </ol>
+            ];
+
+            return (
+              <ol className="mt-14 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {steps.map((step, i) => (
+                  <ScrollReveal key={i} delay={i * 80} className="h-full">
+                    <li className="group relative h-full rounded-2xl bg-landing-surface border border-landing-border-subtle p-6 flex flex-col gap-4 hover:bg-landing-surface-hover transition-colors duration-300">
+                      <div
+                        className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg ${step.gradient} group-hover:scale-105 transition-transform duration-300`}
+                      >
+                        <DynamicIcon name={step.icon} className="w-6 h-6" />
+                      </div>
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-landing-text-tertiary">
+                        {localized("Step", "Paso", locale)} {i + 1}
+                      </span>
+                      <p className="text-base font-semibold text-landing-text leading-snug">{step.title}</p>
+                      <p className="text-sm text-landing-text-secondary leading-relaxed">{step.body}</p>
+                      {step.actions.length > 0 && (
+                        <div className="mt-auto flex flex-wrap gap-2 pt-2">
+                          {step.actions.map((action) =>
+                            action.external ? (
+                              <a
+                                key={action.label}
+                                href={action.href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={
+                                  action.variant === "whatsapp"
+                                    ? "inline-flex items-center gap-1.5 rounded-full bg-green-600 px-4 py-2 text-xs font-medium text-white hover:bg-green-500 transition-colors"
+                                    : "inline-flex items-center gap-1.5 rounded-full border border-landing-border-subtle px-4 py-2 text-xs font-medium hover:bg-landing-surface-hover transition-colors"
+                                }
+                              >
+                                {action.label}
+                              </a>
+                            ) : (
+                              <Link
+                                key={action.label}
+                                href={action.href}
+                                className="inline-flex items-center gap-1.5 rounded-full border border-landing-border-subtle px-4 py-2 text-xs font-medium hover:bg-landing-surface-hover transition-colors"
+                              >
+                                {action.label}
+                              </Link>
+                            ),
+                          )}
+                        </div>
+                      )}
+                    </li>
+                  </ScrollReveal>
+                ))}
+              </ol>
+            );
+          })()}
         </div>
       </section>
 

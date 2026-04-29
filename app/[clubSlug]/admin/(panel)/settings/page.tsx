@@ -6,9 +6,10 @@ import type { ClubVisibility } from "../../actions";
 import { RoleManager } from "../../role-manager";
 import { MembershipPeriodManager } from "../../membership-period-manager";
 import { BrandingManager } from "../../branding-manager";
-import { GalleryManager } from "../../gallery-manager";
+import { MediaManager } from "../../media-manager";
 import { TelegramConfigManager } from "../../telegram-config-manager";
 import { TelegramBotManager } from "../../telegram-bot-manager";
+import { TelegramSubscribersManager } from "../../telegram-subscribers-manager";
 import { WheelManager } from "../../wheel-manager";
 import { NotificationLightManager } from "../../notification-light-manager";
 import { TagManager } from "../../tag-manager";
@@ -47,14 +48,14 @@ export default async function SettingsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, login_mode, invite_only, invite_mode, hide_member_login, preregistration_enabled, auto_registration, tags, visibility, requested_visibility, telegram_bot_token, telegram_chat_id, notification_secret, latitude, longitude, address, city, country, spin_enabled, working_hours, spin_display_decimals, spin_cost, telegram_bot_enabled, telegram_bot_referral_name, telegram_bot_registration_price, telegram_bot_welcome_message, telegram_bot_keywords, telegram_bot_age_restricted, operations_module_enabled, currency_mode, monthly_consumption_limit_grams")
+    .select("id, login_mode, invite_only, invite_mode, hide_member_login, preregistration_enabled, auto_registration, tags, visibility, requested_visibility, telegram_bot_token, telegram_chat_id, telegram_bot_username, telegram_member_subs_enabled, notification_secret, latitude, longitude, address, city, country, spin_enabled, working_hours, spin_display_decimals, spin_cost, telegram_bot_enabled, telegram_bot_referral_name, telegram_bot_registration_price, telegram_bot_welcome_message, telegram_bot_keywords, telegram_bot_age_restricted, operations_module_enabled, currency_mode, monthly_consumption_limit_grams")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
 
   if (!club) notFound();
 
-  const [{ data: branding }, { data: segments }, { data: roles }, { data: membershipPeriods }, { data: galleryImages }, { data: inviteButtons }, { data: emailQuests }, { data: emailEvents }, { data: emailOffers }] = await Promise.all([
+  const [{ data: branding }, { data: segments }, { data: roles }, { data: membershipPeriods }, { data: galleryItems }, { data: inviteButtons }, { data: emailQuests }, { data: emailEvents }, { data: emailOffers }] = await Promise.all([
     supabase
       .from("club_branding")
       .select("logo_url, cover_url, primary_color, secondary_color, hero_content, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website, google_place_id")
@@ -81,7 +82,7 @@ export default async function SettingsPage({
       .order("display_order", { ascending: true }),
     supabase
       .from("club_gallery")
-      .select("id, image_url, caption")
+      .select("id, media_url, media_type, mime_type, caption")
       .eq("club_id", club.id)
       .order("display_order", { ascending: true }),
     supabase
@@ -108,12 +109,23 @@ export default async function SettingsPage({
       .eq("club_id", club.id),
   ]);
 
-  // Fetch email-specific data
-  const [emailCount, campaigns, ownerSession] = await Promise.all([
-    getEmailStats(club.id),
-    getCampaignHistory(club.id),
-    getOwnerFromCookie(),
-  ]);
+  // Fetch email-specific data + per-channel subscriber counts
+  const [emailCount, campaigns, ownerSession, telegramSubscriberCount, pushSubscriberCount] =
+    await Promise.all([
+      getEmailStats(club.id),
+      getCampaignHistory(club.id),
+      getOwnerFromCookie(),
+      supabase
+        .from("telegram_subscriptions")
+        .select("id", { count: "exact", head: true })
+        .eq("club_id", club.id)
+        .then((r) => r.count ?? 0),
+      supabase
+        .from("push_subscriptions")
+        .select("id", { count: "exact", head: true })
+        .eq("club_id", club.id)
+        .then((r) => r.count ?? 0),
+    ]);
 
   return (
     <div className="space-y-2">
@@ -141,12 +153,14 @@ export default async function SettingsPage({
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection title="Gallery" caption="Photos shown on your public page">
+      <CollapsibleSection title="Gallery" caption="Photos, videos, and audio shown on your public page">
         <div className={STRIP_LEGACY_H2}>
-          <GalleryManager
-            images={(galleryImages ?? []).map((g) => ({
+          <MediaManager
+            items={(galleryItems ?? []).map((g) => ({
               id: g.id,
-              image_url: g.image_url,
+              media_url: g.media_url,
+              media_type: g.media_type,
+              mime_type: g.mime_type ?? null,
               caption: g.caption ?? null,
             }))}
             clubId={club.id}
@@ -300,6 +314,19 @@ export default async function SettingsPage({
         />
       </CollapsibleSection>
 
+      <CollapsibleSection
+        title="Telegram Subscribers"
+        caption="Members opt in via /start; you broadcast from Email Campaigns"
+      >
+        <TelegramSubscribersManager
+          clubSlug={clubSlug}
+          initialToken={club.telegram_bot_token ?? null}
+          initialUsername={club.telegram_bot_username ?? null}
+          initialEnabled={club.telegram_member_subs_enabled ?? false}
+          subscriberCount={telegramSubscriberCount}
+        />
+      </CollapsibleSection>
+
       <CollapsibleSection title="Notification Light" caption="ESP32 hardware webhook (optional)">
         <NotificationLightManager
           clubId={club.id}
@@ -320,11 +347,13 @@ export default async function SettingsPage({
         </Link>
       </CollapsibleSection>
 
-      <CollapsibleSection title="Email Campaigns" caption="Bulk emails to filtered member segments">
+      <CollapsibleSection title="Email Campaigns" caption="Bulk messages to filtered member segments — email, Telegram, push">
         <EmailCampaignManager
           clubId={club.id}
           clubSlug={clubSlug}
           emailCount={emailCount}
+          telegramSubscriberCount={telegramSubscriberCount}
+          pushSubscriberCount={pushSubscriberCount}
           roles={(roles ?? []).map((r) => ({ id: r.id, name: r.name }))}
           quests={(emailQuests ?? []).map((q) => ({ id: q.id, title: q.title }))}
           events={(emailEvents ?? []).map((e) => ({ id: e.id, title: e.title }))}

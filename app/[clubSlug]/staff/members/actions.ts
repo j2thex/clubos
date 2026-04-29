@@ -59,6 +59,7 @@ export type CreateMemberInput = {
   photoPath?: string | null;
   signaturePath?: string | null;
   rfidUid?: string | null;
+  /** @deprecated Advisory only. Server re-reads `clubs.operations_module_enabled` and ignores this field — never trust the client flag. */
   opsEnabled?: boolean;
 };
 
@@ -114,6 +115,38 @@ export async function createMember(
       ? input.residencyStatus
       : null;
 
+  const supabase = createAdminClient();
+
+  // Re-read the ops flag from the DB; never trust the client-supplied
+  // input.opsEnabled. When ops is on, identity capture is mandatory and the
+  // contract is enforced server-side regardless of what the form sent.
+  // Race window: if an admin toggles the flag between this read and the insert
+  // below, we honor the value read here. Acceptable for a manually-toggled
+  // setting; revisit if scripted.
+  const { data: clubRow } = await supabase
+    .from("clubs")
+    .select("operations_module_enabled")
+    .eq("id", clubId)
+    .single();
+  const opsOn = !!clubRow?.operations_module_enabled;
+
+  if (opsOn) {
+    const missing: string[] = [];
+    if (!firstName) missing.push("firstName");
+    if (!lastName) missing.push("lastName");
+    if (!dateOfBirth) missing.push("dateOfBirth");
+    if (!residencyStatus) missing.push("residencyStatus");
+    if (!idNumber) missing.push("idNumber");
+    if (!phone) missing.push("phone");
+    if (!input.idPhotoPath) missing.push("idPhotoPath");
+    if (!input.photoPath) missing.push("photoPath");
+    if (!input.signaturePath) missing.push("signaturePath");
+    if (missing.length) {
+      await cleanupOrphanedUploads(input);
+      return { error: `ops_required_missing:${missing.join(",")}` };
+    }
+  }
+
   if (dateOfBirth) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)) {
       await cleanupOrphanedUploads(input);
@@ -127,8 +160,6 @@ export async function createMember(
       };
     }
   }
-
-  const supabase = createAdminClient();
 
   // Validate referral code if provided
   let referredByCode: string | null = null;

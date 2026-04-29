@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
-import { ProductsManager, type Category, type Product } from "../../products-manager";
+import { ProductsManager, type Category, type Product } from "../../../products-manager";
 
 export const dynamic = "force-dynamic";
 

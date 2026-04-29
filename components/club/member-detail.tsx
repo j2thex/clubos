@@ -379,7 +379,7 @@ export function MemberDetail({
         <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
           {t("admin.memberDetail.mediaSection")}
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
           <ThumbnailCard
             label={t("ops.memberForm.portraitLabel")}
             url={member.photo_url}
@@ -400,7 +400,7 @@ export function MemberDetail({
             onReplace={() => setReplaceTarget("signature")}
             replaceLabel={t("admin.memberDetail.replace")}
             t={t}
-            aspectClass="aspect-[5/2]"
+            aspectClass="aspect-[4/3]"
           />
         </div>
 

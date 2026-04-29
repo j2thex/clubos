@@ -6,17 +6,30 @@ export function CollapsibleSection({
   id,
   title,
   caption,
+  titleAdornment,
   defaultOpen = false,
+  open: openProp,
+  onOpenChange,
   children,
 }: {
   id?: string;
   title: string;
   caption?: string;
+  titleAdornment?: ReactNode;
   defaultOpen?: boolean;
+  open?: boolean;
+  onOpenChange?: (next: boolean) => void;
   children: ReactNode;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
+  const [internalOpen, setInternalOpen] = useState(defaultOpen);
+  const isControlled = openProp !== undefined;
+  const open = isControlled ? openProp : internalOpen;
   const ref = useRef<HTMLDivElement>(null);
+
+  function setOpen(next: boolean) {
+    if (!isControlled) setInternalOpen(next);
+    onOpenChange?.(next);
+  }
 
   useEffect(() => {
     if (!id) return;
@@ -25,6 +38,7 @@ export function CollapsibleSection({
       setOpen(true);
       ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   return (
@@ -37,6 +51,7 @@ export function CollapsibleSection({
         <div className="min-w-0 flex-1">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
             {title}
+            {titleAdornment}
           </h2>
           {caption && (
             <p className="mt-0.5 text-xs text-gray-400 normal-case font-normal">

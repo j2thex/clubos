@@ -10,6 +10,7 @@ import type { ActiveTab, MapViewport } from "../lib/types";
 import { t } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import Link from "next/link";
+import { WorkingHoursBadge } from "@/components/club/working-hours-badge";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 interface FeatureProperties {
@@ -27,6 +28,8 @@ interface FeatureProperties {
   price?: number | null;
   offer_count?: number;
   reward_spins?: number;
+  working_hours?: import("@/lib/working-hours").WorkingHours | null;
+  timezone?: string | null;
 }
 
 type GeoFeature = GeoJSON.Feature<GeoJSON.Point, FeatureProperties>;
@@ -155,6 +158,17 @@ function MarkerPopup({ feature, onClose, locale = "en" }: { feature: GeoFeature;
             {p.tags.slice(0, 3).map((tag) => (
               <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">{tag}</span>
             ))}
+          </div>
+        )}
+
+        {p.type === "club" && p.working_hours && p.timezone && (
+          <div className="mb-2">
+            <WorkingHoursBadge
+              workingHours={p.working_hours}
+              timezone={p.timezone}
+              locale={locale}
+              className="text-gray-600"
+            />
           </div>
         )}
 

@@ -1,9 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { QuestManager } from "../../quest-manager";
-import { t } from "@/lib/i18n";
-import { getServerLocale } from "@/lib/i18n/server";
+import { QuestManager } from "../../../quest-manager";
 import { getReviewUrl } from "@/lib/google-maps";
 
 export default async function QuestsPage({
@@ -22,7 +19,6 @@ export default async function QuestsPage({
     .single();
 
   if (!club) notFound();
-  const locale = await getServerLocale();
 
   const [{ data: quests }, { data: questCompletions }, { data: branding }] = await Promise.all([
     supabase
@@ -79,25 +75,14 @@ export default async function QuestsPage({
   const googleReviewUrl = branding?.google_place_id ? getReviewUrl(branding.google_place_id) : null;
 
   return (
-    <div className="space-y-4">
-      <Link
-        href={`/${clubSlug}/admin/content`}
-        className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 transition-colors"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-        </svg>
-        {t(locale, "admin.backToContent")}
-      </Link>
-      <QuestManager
-        quests={questList}
-        clubId={club.id}
-        clubSlug={clubSlug}
-        googleReviewUrl={googleReviewUrl}
-        instagramUrl={branding?.social_instagram ?? null}
-        websiteUrl={branding?.social_website ?? null}
-        spinDisplayDecimals={club.spin_display_decimals ?? 0}
-      />
-    </div>
+    <QuestManager
+      quests={questList}
+      clubId={club.id}
+      clubSlug={clubSlug}
+      googleReviewUrl={googleReviewUrl}
+      instagramUrl={branding?.social_instagram ?? null}
+      websiteUrl={branding?.social_website ?? null}
+      spinDisplayDecimals={club.spin_display_decimals ?? 0}
+    />
   );
 }

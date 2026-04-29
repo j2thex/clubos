@@ -4,6 +4,7 @@ import Link from "next/link";
 import { t } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import type { ActiveTab } from "../lib/types";
+import { WorkingHoursBadge } from "@/components/club/working-hours-badge";
 
 interface ListItem {
   id: string;
@@ -24,6 +25,8 @@ interface ListItem {
   latitude?: number | null;
   longitude?: number | null;
   image_url?: string | null;
+  working_hours?: import("@/lib/working-hours").WorkingHours | null;
+  timezone?: string | null;
 }
 
 function formatDate(d: string) {
@@ -89,6 +92,17 @@ function ResultCard({
             <div className="shrink-0 w-2 h-2 rounded-full bg-primary/80 mt-2" title="On map" />
           )}
         </div>
+
+        {item.type === "club" && item.working_hours && item.timezone && (
+          <div className="mt-3">
+            <WorkingHoursBadge
+              workingHours={item.working_hours}
+              timezone={item.timezone}
+              locale={locale}
+              className="text-landing-text-secondary"
+            />
+          </div>
+        )}
 
         {/* Event date/time */}
         {item.type === "event" && item.date && (

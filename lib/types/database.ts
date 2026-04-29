@@ -911,7 +911,9 @@ export type Database = {
         Row: {
           id: string;
           club_id: string;
-          image_url: string;
+          media_url: string;
+          media_type: "image" | "video" | "audio";
+          mime_type: string | null;
           caption: string | null;
           display_order: number;
           created_at: string;
@@ -919,7 +921,9 @@ export type Database = {
         Insert: {
           id?: string;
           club_id: string;
-          image_url: string;
+          media_url: string;
+          media_type?: "image" | "video" | "audio";
+          mime_type?: string | null;
           caption?: string | null;
           display_order?: number;
           created_at?: string;
@@ -927,7 +931,9 @@ export type Database = {
         Update: {
           id?: string;
           club_id?: string;
-          image_url?: string;
+          media_url?: string;
+          media_type?: "image" | "video" | "audio";
+          mime_type?: string | null;
           caption?: string | null;
           display_order?: number;
           created_at?: string;
