@@ -337,6 +337,8 @@
   "ops.drinksAccessoriesCardBody": "{count} artículos en el catálogo.",
   "ops.staffCatalogCardTitle": "Catálogo de productos",
   "ops.staffCatalogCardBody": "{count} productos disponibles.",
+  "ops.promotionsCardTitle": "Promociones y ofertas",
+  "ops.promotionsCardBody": "{count} oferta(s) activa(s).",
   "ops.productsTitle": "Catálogo de productos",
   "ops.productsEmpty": "Sin productos aún. El administrador puede añadirlos en Contenido → Productos.",
   "ops.inStock": "en stock",

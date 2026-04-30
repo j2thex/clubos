@@ -31,6 +31,7 @@ export default async function AdminOperationsPage({
     { count: geneticsCount },
     { count: drinksAccessoriesCount },
     { count: todayTxCount },
+    { count: offersCount },
   ] = await Promise.all([
     supabase
       .from("club_entries")
@@ -57,6 +58,11 @@ export default async function AdminOperationsPage({
       .eq("club_id", club.id)
       .is("voided_at", null)
       .gte("created_at", todayStart),
+    supabase
+      .from("club_offers")
+      .select("*", { count: "exact", head: true })
+      .eq("club_id", club.id)
+      .eq("archived", false),
   ]);
 
   const cards = [
@@ -91,6 +97,11 @@ export default async function AdminOperationsPage({
       body: t(locale, "ops.drinksAccessoriesCardBody", {
         count: drinksAccessoriesCount ?? 0,
       }),
+    },
+    {
+      href: `/${clubSlug}/admin/offers`,
+      title: t(locale, "ops.promotionsCardTitle"),
+      body: t(locale, "ops.promotionsCardBody", { count: offersCount ?? 0 }),
     },
     {
       href: `/${clubSlug}/admin/finance`,
