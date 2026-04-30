@@ -106,7 +106,7 @@ async function seedDefaultProductCategoriesIfEmpty(
 
   const { data: templates, error: tplErr } = await supabase
     .from("product_categories")
-    .select("name, name_es, display_order")
+    .select("name, name_es, kind, display_order")
     .eq("club_id", templateClub.id)
     .eq("archived", false)
     .order("display_order", { ascending: true });
@@ -120,6 +120,7 @@ async function seedDefaultProductCategoriesIfEmpty(
     club_id: clubId,
     name: t.name,
     name_es: t.name_es,
+    kind: t.kind ?? "genetics",
     display_order: t.display_order ?? i,
   }));
   const { error: insertErr } = await supabase.from("product_categories").insert(rows);

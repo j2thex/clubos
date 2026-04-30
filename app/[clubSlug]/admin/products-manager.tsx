@@ -19,10 +19,13 @@ import {
   uploadProductImageAction,
 } from "./products-actions";
 
+export type CategoryKind = "genetics" | "drinks_accessories";
+
 export type Category = {
   id: string;
   name: string;
   nameEs: string | null;
+  kind: CategoryKind;
   archived: boolean;
   displayOrder: number;
 };
@@ -48,11 +51,13 @@ export function ProductsManager({
   clubSlug,
   categories,
   products,
+  kind = "genetics",
 }: {
   clubId: string;
   clubSlug: string;
   categories: Category[];
   products: Product[];
+  kind?: CategoryKind;
 }) {
   const { t, locale } = useLanguage();
   const [view, setView] = useState<"active" | "archived">("active");
@@ -175,6 +180,7 @@ export function ProductsManager({
             <CategoryNewForm
               clubId={clubId}
               clubSlug={clubSlug}
+              kind={kind}
               onAdded={() => setNewCategoryOpen(false)}
             />
           )}
@@ -231,7 +237,7 @@ export function ProductsManager({
             />
           ))}
           {view === "active" && (
-            <CategoryNewForm clubId={clubId} clubSlug={clubSlug} />
+            <CategoryNewForm clubId={clubId} clubSlug={clubSlug} kind={kind} />
           )}
           {visibleCategories.length === 0 && view === "archived" && (
             <div className="p-6 text-center text-gray-400 text-sm">
@@ -332,11 +338,12 @@ function CategoryRow({
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(category.name);
   const [nameEs, setNameEs] = useState(category.nameEs ?? "");
+  const [kind, setKind] = useState<CategoryKind>(category.kind);
   const [isPending, startTransition] = useTransition();
 
   function handleSave() {
     startTransition(async () => {
-      const r = await updateProductCategory(category.id, clubSlug, name, nameEs);
+      const r = await updateProductCategory(category.id, clubSlug, name, nameEs, kind);
       if ("error" in r) toast.error(r.error);
       else {
         toast.success("Category updated");
@@ -381,6 +388,14 @@ function CategoryRow({
           placeholder="Nombre (ES)"
           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
         />
+        <select
+          value={kind}
+          onChange={(e) => setKind(e.target.value as CategoryKind)}
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white"
+        >
+          <option value="genetics">Genetics</option>
+          <option value="drinks_accessories">Drinks & accessories</option>
+        </select>
         <div className="flex gap-2">
           <button
             type="button"
@@ -396,6 +411,7 @@ function CategoryRow({
               setEditing(false);
               setName(category.name);
               setNameEs(category.nameEs ?? "");
+              setKind(category.kind);
             }}
             className="rounded-lg border border-gray-300 text-xs font-semibold text-gray-600 px-4 py-2"
           >
@@ -458,10 +474,12 @@ function CategoryRow({
 function CategoryNewForm({
   clubId,
   clubSlug,
+  kind = "genetics",
   onAdded,
 }: {
   clubId: string;
   clubSlug: string;
+  kind?: CategoryKind;
   onAdded?: () => void;
 }) {
   const [name, setName] = useState("");
@@ -472,7 +490,7 @@ function CategoryNewForm({
     e.preventDefault();
     if (!name.trim()) return;
     startTransition(async () => {
-      const r = await addProductCategory(clubId, clubSlug, name, nameEs);
+      const r = await addProductCategory(clubId, clubSlug, name, nameEs, kind);
       if ("error" in r) toast.error(r.error);
       else {
         toast.success("Category added");

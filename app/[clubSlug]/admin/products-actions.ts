@@ -8,11 +8,14 @@ import { revalidatePath } from "next/cache";
 
 // ---------------------------- Categories ----------------------------
 
+export type CategoryKind = "genetics" | "drinks_accessories";
+
 export async function addProductCategory(
   clubId: string,
   clubSlug: string,
   name: string,
   nameEs?: string | null,
+  kind: CategoryKind = "genetics",
 ): Promise<{ error: string } | { ok: true }> {
   try { await requireOwnerForOpsClub(clubId); } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
@@ -35,6 +38,7 @@ export async function addProductCategory(
     club_id: clubId,
     name: trimmed,
     name_es: nameEs?.trim() || null,
+    kind,
     display_order: (last?.display_order ?? -1) + 1,
   });
 
@@ -56,6 +60,7 @@ export async function updateProductCategory(
   clubSlug: string,
   name: string,
   nameEs?: string | null,
+  kind?: CategoryKind,
 ): Promise<{ error: string } | { ok: true }> {
   const trimmed = name.trim();
   if (!trimmed) return { error: "Name is required" };
@@ -74,9 +79,14 @@ export async function updateProductCategory(
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
 
+  const update: { name: string; name_es: string | null; kind?: CategoryKind } = {
+    name: trimmed,
+    name_es: nameEs?.trim() || null,
+  };
+  if (kind) update.kind = kind;
   const { error } = await supabase
     .from("product_categories")
-    .update({ name: trimmed, name_es: nameEs?.trim() || null })
+    .update(update)
     .eq("id", categoryId);
 
   if (error) return { error: "Failed to update category" };

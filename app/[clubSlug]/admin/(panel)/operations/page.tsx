@@ -25,9 +25,11 @@ export default async function AdminOperationsPage({
 
   const locale = await getServerLocale();
 
+  const todayStart = new Date(new Date().toDateString()).toISOString();
   const [
     { count: insideCount },
-    { count: productCount },
+    { count: geneticsCount },
+    { count: drinksAccessoriesCount },
     { count: todayTxCount },
   ] = await Promise.all([
     supabase
@@ -37,16 +39,24 @@ export default async function AdminOperationsPage({
       .is("checked_out_at", null),
     supabase
       .from("products")
-      .select("*", { count: "exact", head: true })
+      .select("*, product_categories!left(kind)", { count: "exact", head: true })
       .eq("club_id", club.id)
       .eq("archived", false)
-      .eq("active", true),
+      .eq("active", true)
+      .or("product_categories.kind.eq.genetics,category_id.is.null"),
+    supabase
+      .from("products")
+      .select("*, product_categories!inner(kind)", { count: "exact", head: true })
+      .eq("club_id", club.id)
+      .eq("archived", false)
+      .eq("active", true)
+      .eq("product_categories.kind", "drinks_accessories"),
     supabase
       .from("product_transactions")
       .select("*", { count: "exact", head: true })
       .eq("club_id", club.id)
       .is("voided_at", null)
-      .gte("created_at", new Date(new Date().toDateString()).toISOString()),
+      .gte("created_at", todayStart),
   ]);
 
   const cards = [
@@ -73,7 +83,14 @@ export default async function AdminOperationsPage({
     {
       href: `/${clubSlug}/admin/products`,
       title: t(locale, "ops.productsCardTitle"),
-      body: t(locale, "ops.productsCardBody", { count: productCount ?? 0 }),
+      body: t(locale, "ops.productsCardBody", { count: geneticsCount ?? 0 }),
+    },
+    {
+      href: `/${clubSlug}/admin/products?kind=drinks_accessories`,
+      title: t(locale, "ops.drinksAccessoriesCardTitle"),
+      body: t(locale, "ops.drinksAccessoriesCardBody", {
+        count: drinksAccessoriesCount ?? 0,
+      }),
     },
     {
       href: `/${clubSlug}/admin/finance`,
