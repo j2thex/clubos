@@ -26,6 +26,10 @@ export function FinanceRangePicker({
     if (next !== "custom") {
       params.delete("from");
       params.delete("to");
+    } else {
+      // Seed with currently-displayed range so resolveRange doesn't fall back to month.
+      if (!params.get("from")) params.set("from", from);
+      if (!params.get("to")) params.set("to", to);
     }
     router.replace(`${pathname}?${params.toString()}`);
   }
