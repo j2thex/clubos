@@ -1,5 +1,8 @@
 import { getServerLocale } from "@/lib/i18n/server";
 import type { Metadata } from "next";
+import { getBreadcrumbListJsonLd } from "@/lib/structured-data";
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://osocios.club";
 
 export const metadata: Metadata = {
   title: "Terms of Use",
@@ -14,10 +17,20 @@ export const metadata: Metadata = {
 export default async function TermsOfUsePage() {
   const locale = await getServerLocale();
 
-  if (locale === "es") {
-    return <TermsES />;
-  }
-  return <TermsEN />;
+  const breadcrumbJsonLd = getBreadcrumbListJsonLd([
+    { name: "Home", url: `${SITE_URL}/` },
+    { name: "Terms", url: `${SITE_URL}/terms` },
+  ]);
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      {locale === "es" ? <TermsES /> : <TermsEN />}
+    </>
+  );
 }
 
 function TermsEN() {

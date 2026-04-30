@@ -1,6 +1,9 @@
 import { VERTICALS } from "./verticals";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { getBreadcrumbListJsonLd } from "@/lib/structured-data";
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://osocios.club";
 
 export const metadata: Metadata = {
   title: "Examples",
@@ -17,8 +20,17 @@ export const metadata: Metadata = {
 };
 
 export default function ExamplesPage() {
+  const breadcrumbJsonLd = getBreadcrumbListJsonLd([
+    { name: "Home", url: `${SITE_URL}/` },
+    { name: "Examples", url: `${SITE_URL}/examples` },
+  ]);
+
   return (
     <div className="min-h-screen landing-dark">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       {/* Nav */}
       <div className="flex items-center justify-between px-6 sm:px-10 pt-6">
         <Link href="/" className="text-xs font-mono tracking-widest uppercase opacity-60 hover:opacity-100 transition-opacity">
