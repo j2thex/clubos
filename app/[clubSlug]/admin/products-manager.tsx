@@ -17,6 +17,8 @@ import {
   archiveProduct,
   bulkSetProductsUnit,
   uploadProductImageAction,
+  getProductActivity,
+  type ProductActivityEntry,
 } from "./products-actions";
 
 export type CategoryKind = "genetics" | "drinks_accessories";
@@ -842,6 +844,8 @@ function ProductEditForm({
         </div>
       </div>
 
+      <ProductActivityPanel productId={product.id} />
+
       <div className="flex gap-2 pt-2">
         <button
           type="button"
@@ -869,6 +873,102 @@ function ProductEditForm({
       </div>
     </div>
   );
+}
+
+function ProductActivityPanel({ productId }: { productId: string }) {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [entries, setEntries] = useState<ProductActivityEntry[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  function handleToggle() {
+    if (open) {
+      setOpen(false);
+      return;
+    }
+    setOpen(true);
+    if (entries !== null) return;
+    setLoading(true);
+    setError(null);
+    getProductActivity(productId).then((res) => {
+      setLoading(false);
+      if ("error" in res) setError(res.error);
+      else setEntries(res.entries);
+    });
+  }
+
+  return (
+    <div className="rounded-lg bg-white border border-gray-200">
+      <button
+        type="button"
+        onClick={handleToggle}
+        className="w-full px-3 py-2 flex items-center justify-between text-[11px] font-semibold text-gray-500 uppercase tracking-wide"
+        aria-expanded={open}
+      >
+        <span>Activity history</span>
+        <span className="text-gray-400">{open ? "▾" : "▸"}</span>
+      </button>
+      {open && (
+        <div className="px-3 pb-3 space-y-1">
+          {loading && (
+            <p className="text-xs text-gray-400">Loading…</p>
+          )}
+          {error && (
+            <p className="text-xs text-red-600">{error}</p>
+          )}
+          {!loading && !error && entries !== null && entries.length === 0 && (
+            <p className="text-xs text-gray-400">No activity yet.</p>
+          )}
+          {!loading && !error && entries !== null && entries.length > 0 && (
+            <ul className="divide-y divide-gray-100">
+              {entries.map((entry) => (
+                <li key={entry.id} className="py-1.5 text-xs">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className={`font-semibold ${entry.voided ? "line-through text-gray-400" : "text-gray-700"}`}>
+                      {labelForAction(entry.action)}
+                      {entry.memberCode ? ` · ${entry.memberCode}` : ""}
+                    </span>
+                    <span className="text-[10px] text-gray-400 shrink-0 tabular-nums">
+                      {new Date(entry.at).toLocaleString(undefined, {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                      })}
+                    </span>
+                  </div>
+                  {entry.details && (
+                    <p className={`text-gray-500 ${entry.voided ? "line-through" : ""}`}>
+                      {entry.details}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function labelForAction(action: string): string {
+  switch (action) {
+    case "sale":
+      return "Sold";
+    case "sale_voided":
+      return "Sale voided";
+    case "product_created":
+      return "Created";
+    case "product_updated":
+      return "Updated";
+    case "product_stock_adjusted":
+      return "Stock adjusted";
+    case "product_archived":
+      return "Archived";
+    case "product_restored":
+      return "Restored";
+    default:
+      return action.replace(/_/g, " ");
+  }
 }
 
 function ProductImageField({

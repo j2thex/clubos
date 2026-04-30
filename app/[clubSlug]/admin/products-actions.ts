@@ -265,26 +265,31 @@ export async function addProduct(
     .limit(1)
     .maybeSingle();
 
-  const { error } = await supabase.from("products").insert({
-    club_id: clubId,
-    category_id: input.categoryId,
-    name: input.name.trim(),
-    name_es: input.nameEs?.trim() || null,
-    description: input.description?.trim() || null,
-    description_es: input.descriptionEs?.trim() || null,
-    image_url: input.imageUrl || null,
-    unit: input.unit,
-    unit_price: input.unitPrice,
-    cost_price: input.costPrice ?? 0,
-    stock_on_hand: input.stockOnHand,
-    display_order: (last?.display_order ?? -1) + 1,
-  });
+  const { data: inserted, error } = await supabase
+    .from("products")
+    .insert({
+      club_id: clubId,
+      category_id: input.categoryId,
+      name: input.name.trim(),
+      name_es: input.nameEs?.trim() || null,
+      description: input.description?.trim() || null,
+      description_es: input.descriptionEs?.trim() || null,
+      image_url: input.imageUrl || null,
+      unit: input.unit,
+      unit_price: input.unitPrice,
+      cost_price: input.costPrice ?? 0,
+      stock_on_hand: input.stockOnHand,
+      display_order: (last?.display_order ?? -1) + 1,
+    })
+    .select("id")
+    .single();
 
-  if (error) return { error: "Failed to add product" };
+  if (error || !inserted) return { error: "Failed to add product" };
 
   await logActivity({
     clubId,
     action: "product_created",
+    targetProductId: inserted.id,
     details: `${input.name} @ ${input.unitPrice}/${input.unit}, stock ${input.stockOnHand}`,
   });
 
@@ -341,6 +346,7 @@ export async function updateProduct(
   await logActivity({
     clubId: current.club_id,
     action: "product_updated",
+    targetProductId: productId,
     details: `${input.name} @ ${input.unitPrice}/${input.unit}, stock ${input.stockOnHand}`,
   });
 
@@ -383,6 +389,7 @@ export async function adjustProductStock(
   await logActivity({
     clubId: current.club_id,
     action: "product_stock_adjusted",
+    targetProductId: productId,
     details: `${current.name}: ${before} → ${after} (Δ${delta > 0 ? "+" : ""}${delta})${
       reason ? ` — ${reason}` : ""
     }`,
@@ -428,6 +435,87 @@ export async function bulkSetProductsUnit(
   return { ok: true, updated };
 }
 
+export type ProductActivityEntry = {
+  id: string;
+  at: string;
+  kind: "sale" | "log";
+  action: string;
+  details: string;
+  memberCode: string | null;
+  voided: boolean;
+};
+
+export async function getProductActivity(
+  productId: string,
+): Promise<{ error: string } | { ok: true; entries: ProductActivityEntry[] }> {
+  const supabase = createAdminClient();
+
+  const { data: product } = await supabase
+    .from("products")
+    .select("club_id")
+    .eq("id", productId)
+    .single();
+
+  if (!product) return { error: "Product not found" };
+
+  try { await requireOwnerForOpsClub(product.club_id); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+
+  const [{ data: txRows }, { data: logRows }] = await Promise.all([
+    supabase
+      .from("product_transactions")
+      .select(
+        "id, quantity, unit_price_at_sale, total_price, created_at, voided_at, sale:sales(id, total, voided_at, members(member_code))",
+      )
+      .eq("product_id", productId)
+      .order("created_at", { ascending: false })
+      .limit(50),
+    supabase
+      .from("activity_log")
+      .select("id, action, details, created_at")
+      .eq("target_product_id", productId)
+      .order("created_at", { ascending: false })
+      .limit(50),
+  ]);
+
+  const sales: ProductActivityEntry[] = (txRows ?? []).map((row) => {
+    const sale = Array.isArray(row.sale) ? row.sale[0] : row.sale;
+    const memberRaw = sale?.members;
+    const member = Array.isArray(memberRaw) ? memberRaw[0] : memberRaw;
+    const memberCode: string | null = member?.member_code ?? null;
+    const voided = !!(row.voided_at || sale?.voided_at);
+    const qty = Number(row.quantity);
+    const unitPrice = Number(row.unit_price_at_sale);
+    const total = Number(row.total_price);
+    return {
+      id: `sale:${row.id}`,
+      at: row.created_at,
+      kind: "sale" as const,
+      action: voided ? "sale_voided" : "sale",
+      details: `${qty} × ${unitPrice.toFixed(2)} € = ${total.toFixed(2)} €`,
+      memberCode,
+      voided,
+    };
+  });
+
+  const logs: ProductActivityEntry[] = (logRows ?? []).map((row) => ({
+    id: `log:${row.id}`,
+    at: row.created_at,
+    kind: "log" as const,
+    action: row.action,
+    details: row.details ?? "",
+    memberCode: null,
+    voided: false,
+  }));
+
+  const entries = [...sales, ...logs].sort((a, b) =>
+    a.at < b.at ? 1 : a.at > b.at ? -1 : 0,
+  );
+
+  return { ok: true, entries };
+}
+
 export async function archiveProduct(
   productId: string,
   clubSlug: string,
@@ -457,6 +545,7 @@ export async function archiveProduct(
   await logActivity({
     clubId: current.club_id,
     action: archived ? "product_archived" : "product_restored",
+    targetProductId: productId,
     details: current.name,
   });
 
