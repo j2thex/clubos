@@ -68,8 +68,8 @@ export default async function StaffOperationsPage({
     },
     {
       href: `/${clubSlug}/staff/operations/products`,
-      title: t(locale, "ops.productsCardTitle"),
-      body: t(locale, "ops.productsCardBody", { count: productCount ?? 0 }),
+      title: t(locale, "ops.staffCatalogCardTitle"),
+      body: t(locale, "ops.staffCatalogCardBody", { count: productCount ?? 0 }),
     },
   ];
 

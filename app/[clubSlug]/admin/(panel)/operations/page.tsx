@@ -25,10 +25,13 @@ export default async function AdminOperationsPage({
 
   const locale = await getServerLocale();
 
+  const todayStart = new Date(new Date().toDateString()).toISOString();
   const [
     { count: insideCount },
-    { count: productCount },
+    { count: totalActiveCount },
+    { count: drinksAccessoriesCount },
     { count: todayTxCount },
+    { count: offersCount },
   ] = await Promise.all([
     supabase
       .from("club_entries")
@@ -42,12 +45,29 @@ export default async function AdminOperationsPage({
       .eq("archived", false)
       .eq("active", true),
     supabase
+      .from("products")
+      .select("*, product_categories!inner(kind)", { count: "exact", head: true })
+      .eq("club_id", club.id)
+      .eq("archived", false)
+      .eq("active", true)
+      .eq("product_categories.kind", "drinks_accessories"),
+    supabase
       .from("product_transactions")
       .select("*", { count: "exact", head: true })
       .eq("club_id", club.id)
       .is("voided_at", null)
-      .gte("created_at", new Date(new Date().toDateString()).toISOString()),
+      .gte("created_at", todayStart),
+    supabase
+      .from("club_offers")
+      .select("*", { count: "exact", head: true })
+      .eq("club_id", club.id)
+      .eq("archived", false),
   ]);
+
+  const geneticsCount = Math.max(
+    0,
+    (totalActiveCount ?? 0) - (drinksAccessoriesCount ?? 0),
+  );
 
   const cards = [
     {
@@ -73,7 +93,19 @@ export default async function AdminOperationsPage({
     {
       href: `/${clubSlug}/admin/products`,
       title: t(locale, "ops.productsCardTitle"),
-      body: t(locale, "ops.productsCardBody", { count: productCount ?? 0 }),
+      body: t(locale, "ops.productsCardBody", { count: geneticsCount ?? 0 }),
+    },
+    {
+      href: `/${clubSlug}/admin/products?kind=drinks_accessories`,
+      title: t(locale, "ops.drinksAccessoriesCardTitle"),
+      body: t(locale, "ops.drinksAccessoriesCardBody", {
+        count: drinksAccessoriesCount ?? 0,
+      }),
+    },
+    {
+      href: `/${clubSlug}/admin/offers`,
+      title: t(locale, "ops.promotionsCardTitle"),
+      body: t(locale, "ops.promotionsCardBody", { count: offersCount ?? 0 }),
     },
     {
       href: `/${clubSlug}/admin/finance`,

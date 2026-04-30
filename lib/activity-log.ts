@@ -6,6 +6,7 @@ export async function logActivity(params: {
   actorOwnerId?: string | null;
   action: string;
   targetMemberCode?: string | null;
+  targetProductId?: string | null;
   details?: string | null;
 }) {
   const supabase = createAdminClient();
@@ -15,6 +16,7 @@ export async function logActivity(params: {
     actor_owner_id: params.actorOwnerId ?? null,
     action: params.action,
     target_member_code: params.targetMemberCode ?? null,
+    target_product_id: params.targetProductId ?? null,
     details: params.details ?? null,
   });
 }

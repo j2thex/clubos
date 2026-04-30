@@ -17,12 +17,17 @@ import {
   archiveProduct,
   bulkSetProductsUnit,
   uploadProductImageAction,
+  getProductActivity,
+  type ProductActivityEntry,
 } from "./products-actions";
+
+export type CategoryKind = "genetics" | "drinks_accessories";
 
 export type Category = {
   id: string;
   name: string;
   nameEs: string | null;
+  kind: CategoryKind;
   archived: boolean;
   displayOrder: number;
 };
@@ -48,17 +53,20 @@ export function ProductsManager({
   clubSlug,
   categories,
   products,
+  kind = "genetics",
 }: {
   clubId: string;
   clubSlug: string;
   categories: Category[];
   products: Product[];
+  kind?: CategoryKind;
 }) {
   const { t, locale } = useLanguage();
   const [view, setView] = useState<"active" | "archived">("active");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const [newProductOpen, setNewProductOpen] = useState(false);
+  const [newCategoryOpen, setNewCategoryOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   const trimmedQuery = searchQuery.trim().toLowerCase();
@@ -129,13 +137,28 @@ export function ProductsManager({
               />
             </div>
             {view === "active" && (
-              <button
-                type="button"
-                onClick={() => setNewProductOpen((o) => !o)}
-                className="whitespace-nowrap rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-4 py-2 transition-colors"
-              >
-                {t("admin.products.addProduct")}
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewCategoryOpen((o) => !o);
+                    if (!newCategoryOpen) setNewProductOpen(false);
+                  }}
+                  className="whitespace-nowrap rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold px-3 py-2 transition-colors"
+                >
+                  {t("admin.products.addCategory")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewProductOpen((o) => !o);
+                    if (!newProductOpen) setNewCategoryOpen(false);
+                  }}
+                  className="whitespace-nowrap rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-4 py-2 transition-colors"
+                >
+                  {t("admin.products.addProduct")}
+                </button>
+              </>
             )}
           </div>
           {view === "active" && !isSearching && tabCategories.length > 0 && (
@@ -154,6 +177,14 @@ export function ProductsManager({
                 />
               ))}
             </div>
+          )}
+          {view === "active" && newCategoryOpen && (
+            <CategoryNewForm
+              clubId={clubId}
+              clubSlug={clubSlug}
+              kind={kind}
+              onAdded={() => setNewCategoryOpen(false)}
+            />
           )}
           {view === "active" && (
             <ProductNewForm
@@ -208,7 +239,7 @@ export function ProductsManager({
             />
           ))}
           {view === "active" && (
-            <CategoryNewForm clubId={clubId} clubSlug={clubSlug} />
+            <CategoryNewForm clubId={clubId} clubSlug={clubSlug} kind={kind} />
           )}
           {visibleCategories.length === 0 && view === "archived" && (
             <div className="p-6 text-center text-gray-400 text-sm">
@@ -309,11 +340,12 @@ function CategoryRow({
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(category.name);
   const [nameEs, setNameEs] = useState(category.nameEs ?? "");
+  const [kind, setKind] = useState<CategoryKind>(category.kind);
   const [isPending, startTransition] = useTransition();
 
   function handleSave() {
     startTransition(async () => {
-      const r = await updateProductCategory(category.id, clubSlug, name, nameEs);
+      const r = await updateProductCategory(category.id, clubSlug, name, nameEs, kind);
       if ("error" in r) toast.error(r.error);
       else {
         toast.success("Category updated");
@@ -358,6 +390,14 @@ function CategoryRow({
           placeholder="Nombre (ES)"
           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400"
         />
+        <select
+          value={kind}
+          onChange={(e) => setKind(e.target.value as CategoryKind)}
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white"
+        >
+          <option value="genetics">Genetics</option>
+          <option value="drinks_accessories">Drinks & accessories</option>
+        </select>
         <div className="flex gap-2">
           <button
             type="button"
@@ -373,6 +413,7 @@ function CategoryRow({
               setEditing(false);
               setName(category.name);
               setNameEs(category.nameEs ?? "");
+              setKind(category.kind);
             }}
             className="rounded-lg border border-gray-300 text-xs font-semibold text-gray-600 px-4 py-2"
           >
@@ -435,9 +476,13 @@ function CategoryRow({
 function CategoryNewForm({
   clubId,
   clubSlug,
+  kind = "genetics",
+  onAdded,
 }: {
   clubId: string;
   clubSlug: string;
+  kind?: CategoryKind;
+  onAdded?: () => void;
 }) {
   const [name, setName] = useState("");
   const [nameEs, setNameEs] = useState("");
@@ -447,12 +492,13 @@ function CategoryNewForm({
     e.preventDefault();
     if (!name.trim()) return;
     startTransition(async () => {
-      const r = await addProductCategory(clubId, clubSlug, name, nameEs);
+      const r = await addProductCategory(clubId, clubSlug, name, nameEs, kind);
       if ("error" in r) toast.error(r.error);
       else {
         toast.success("Category added");
         setName("");
         setNameEs("");
+        onAdded?.();
       }
     });
   }
@@ -798,6 +844,8 @@ function ProductEditForm({
         </div>
       </div>
 
+      <ProductActivityPanel productId={product.id} />
+
       <div className="flex gap-2 pt-2">
         <button
           type="button"
@@ -825,6 +873,102 @@ function ProductEditForm({
       </div>
     </div>
   );
+}
+
+function ProductActivityPanel({ productId }: { productId: string }) {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [entries, setEntries] = useState<ProductActivityEntry[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  function handleToggle() {
+    if (open) {
+      setOpen(false);
+      return;
+    }
+    setOpen(true);
+    if (entries !== null) return;
+    setLoading(true);
+    setError(null);
+    getProductActivity(productId).then((res) => {
+      setLoading(false);
+      if ("error" in res) setError(res.error);
+      else setEntries(res.entries);
+    });
+  }
+
+  return (
+    <div className="rounded-lg bg-white border border-gray-200">
+      <button
+        type="button"
+        onClick={handleToggle}
+        className="w-full px-3 py-2 flex items-center justify-between text-[11px] font-semibold text-gray-500 uppercase tracking-wide"
+        aria-expanded={open}
+      >
+        <span>Activity history</span>
+        <span className="text-gray-400">{open ? "▾" : "▸"}</span>
+      </button>
+      {open && (
+        <div className="px-3 pb-3 space-y-1">
+          {loading && (
+            <p className="text-xs text-gray-400">Loading…</p>
+          )}
+          {error && (
+            <p className="text-xs text-red-600">{error}</p>
+          )}
+          {!loading && !error && entries !== null && entries.length === 0 && (
+            <p className="text-xs text-gray-400">No activity yet.</p>
+          )}
+          {!loading && !error && entries !== null && entries.length > 0 && (
+            <ul className="divide-y divide-gray-100">
+              {entries.map((entry) => (
+                <li key={entry.id} className="py-1.5 text-xs">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className={`font-semibold ${entry.voided ? "line-through text-gray-400" : "text-gray-700"}`}>
+                      {labelForAction(entry.action)}
+                      {entry.memberCode ? ` · ${entry.memberCode}` : ""}
+                    </span>
+                    <span className="text-[10px] text-gray-400 shrink-0 tabular-nums">
+                      {new Date(entry.at).toLocaleString(undefined, {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                      })}
+                    </span>
+                  </div>
+                  {entry.details && (
+                    <p className={`text-gray-500 ${entry.voided ? "line-through" : ""}`}>
+                      {entry.details}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function labelForAction(action: string): string {
+  switch (action) {
+    case "sale":
+      return "Sold";
+    case "sale_voided":
+      return "Sale voided";
+    case "product_created":
+      return "Created";
+    case "product_updated":
+      return "Updated";
+    case "product_stock_adjusted":
+      return "Stock adjusted";
+    case "product_archived":
+      return "Archived";
+    case "product_restored":
+      return "Restored";
+    default:
+      return action.replace(/_/g, " ");
+  }
 }
 
 function ProductImageField({
