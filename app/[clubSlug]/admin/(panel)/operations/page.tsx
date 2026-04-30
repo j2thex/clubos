@@ -28,7 +28,7 @@ export default async function AdminOperationsPage({
   const todayStart = new Date(new Date().toDateString()).toISOString();
   const [
     { count: insideCount },
-    { count: geneticsCount },
+    { count: totalActiveCount },
     { count: drinksAccessoriesCount },
     { count: todayTxCount },
     { count: offersCount },
@@ -40,11 +40,10 @@ export default async function AdminOperationsPage({
       .is("checked_out_at", null),
     supabase
       .from("products")
-      .select("*, product_categories!left(kind)", { count: "exact", head: true })
+      .select("*", { count: "exact", head: true })
       .eq("club_id", club.id)
       .eq("archived", false)
-      .eq("active", true)
-      .or("product_categories.kind.eq.genetics,category_id.is.null"),
+      .eq("active", true),
     supabase
       .from("products")
       .select("*, product_categories!inner(kind)", { count: "exact", head: true })
@@ -64,6 +63,11 @@ export default async function AdminOperationsPage({
       .eq("club_id", club.id)
       .eq("archived", false),
   ]);
+
+  const geneticsCount = Math.max(
+    0,
+    (totalActiveCount ?? 0) - (drinksAccessoriesCount ?? 0),
+  );
 
   const cards = [
     {

@@ -142,9 +142,38 @@ export default async function AdminOperationsTransactionsPage({
       groups.push(group);
     }
     group.sales.push(sale);
-    if (!sale.voided_at) {
-      group.total += Number(sale.total);
-      group.count += 1;
+  }
+
+  // Per-day totals must reflect the WHOLE day, not just the rows on this page.
+  // Re-query non-voided sales for the full date range covering the visible days
+  // and aggregate by day-key.
+  if (groups.length > 0) {
+    const newestKey = groups[0].key;
+    const oldestKey = groups[groups.length - 1].key;
+    const oldestStart = new Date(`${oldestKey}T00:00:00`).toISOString();
+    const newestEnd = new Date(`${newestKey}T00:00:00`);
+    newestEnd.setDate(newestEnd.getDate() + 1);
+    const { data: dayRows } = await supabase
+      .from("sales")
+      .select("created_at, total")
+      .eq("club_id", club.id)
+      .is("voided_at", null)
+      .gte("created_at", oldestStart)
+      .lt("created_at", newestEnd.toISOString());
+    const totalsByKey = new Map<string, { total: number; count: number }>();
+    for (const row of dayRows ?? []) {
+      const key = toDayKey(new Date(row.created_at));
+      const existing = totalsByKey.get(key) ?? { total: 0, count: 0 };
+      existing.total += Number(row.total);
+      existing.count += 1;
+      totalsByKey.set(key, existing);
+    }
+    for (const group of groups) {
+      const t = totalsByKey.get(group.key);
+      if (t) {
+        group.total = t.total;
+        group.count = t.count;
+      }
     }
   }
 
