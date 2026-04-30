@@ -14,7 +14,12 @@ import { getServerLocale } from "@/lib/i18n/server";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { LanguageSwitcher } from "@/lib/i18n/switcher";
 import { PublicEventsClient } from "./public-events-client";
-import { getClubJsonLd } from "@/lib/structured-data";
+import {
+  getClubJsonLd,
+  getEventJsonLd,
+  getOfferCatalogJsonLd,
+  getBreadcrumbListJsonLd,
+} from "@/lib/structured-data";
 import { MembersOnlyTeaser } from "@/components/club/members-only-teaser";
 import { WorkingHoursDisplay } from "@/components/club/working-hours-display";
 import { PublicQuestCard } from "./public-quest-card";
@@ -29,7 +34,7 @@ export async function generateMetadata({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("name, tags, club_branding(logo_url)")
+    .select("name, tags, city, country, club_branding(logo_url)")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -40,9 +45,11 @@ export async function generateMetadata({
     ? club.club_branding[0]
     : club.club_branding;
   const tags = (club.tags as string[] | null) ?? [];
-  const description = tags.length > 0
-    ? `${club.name} on osocios.club — ${tags.join(", ")}`
-    : `${club.name} — Member portal on osocios.club`;
+  const cityCountry = [club.city, club.country].filter(Boolean).join(", ");
+  const tagPart = tags.length > 0 ? ` ${tags.join(", ")}.` : "";
+  const description = cityCountry
+    ? `${club.name} — private club in ${cityCountry}.${tagPart} Member portal on osocios.club.`
+    : `${club.name} — member portal on osocios.club.${tagPart}`;
 
   return {
     title: club.name,
@@ -51,6 +58,8 @@ export async function generateMetadata({
     openGraph: {
       title: club.name,
       description,
+      locale: "en_US",
+      alternateLocale: ["es_ES"],
       ...(branding?.logo_url && { images: [branding.logo_url] }),
     },
     alternates: {
@@ -80,7 +89,7 @@ export default async function PublicProfilePage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name, approved, visibility, invite_only, invite_mode, login_mode, hide_member_login, preregistration_enabled, tags, working_hours, timezone, club_branding(logo_url, cover_url, primary_color, secondary_color, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website)")
+    .select("id, name, approved, visibility, invite_only, invite_mode, login_mode, hide_member_login, preregistration_enabled, tags, working_hours, timezone, address, city, country, latitude, longitude, club_branding(logo_url, cover_url, primary_color, secondary_color, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website)")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -186,7 +195,62 @@ export default async function PublicProfilePage({
     slug: clubSlug,
     logo_url: branding?.logo_url,
     tags: club.tags as string[] | null,
+    address: club.address,
+    city: club.city,
+    country: club.country,
+    latitude: club.latitude,
+    longitude: club.longitude,
+    working_hours: club.working_hours as Parameters<typeof getClubJsonLd>[0]["working_hours"],
+    social_instagram: branding?.social_instagram,
+    social_telegram: branding?.social_telegram,
+    social_google_maps: branding?.social_google_maps,
+    social_website: branding?.social_website,
   });
+
+  const eventClubContext = {
+    name: club.name,
+    slug: clubSlug,
+    timezone: club.timezone,
+    address: club.address,
+    city: club.city,
+    country: club.country,
+  };
+
+  const eventJsonLdItems = (events ?? []).map((ev) =>
+    getEventJsonLd(
+      {
+        id: ev.id,
+        title: ev.title,
+        description: ev.description,
+        date: ev.date,
+        time: ev.time,
+        price: ev.price != null ? Number(ev.price) : null,
+        image_url: ev.image_url,
+        link: ev.link,
+      },
+      eventClubContext,
+    ),
+  );
+
+  const offerCatalogJsonLd = hasOffers
+    ? getOfferCatalogJsonLd(
+        { name: club.name, slug: clubSlug },
+        Object.values(offersBySubtype)
+          .flat()
+          .map((o) => ({
+            id: o.id,
+            name: o.name,
+            description: o.description,
+            image_url: o.image_url,
+          })),
+      )
+    : null;
+
+  const breadcrumbJsonLd = getBreadcrumbListJsonLd([
+    { name: "Home", url: "https://osocios.club/" },
+    { name: "Discover", url: "https://osocios.club/discover" },
+    { name: club.name, url: `https://osocios.club/${clubSlug}/public` },
+  ]);
 
   return (
     <div className="clubos-ui min-h-screen" style={{ background: "var(--m-surface-sunken)" }}>
@@ -194,6 +258,23 @@ export default async function PublicProfilePage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(clubJsonLd) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      {eventJsonLdItems.map((ev, i) => (
+        <script
+          key={`event-jsonld-${i}`}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(ev) }}
+        />
+      ))}
+      {offerCatalogJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(offerCatalogJsonLd) }}
+        />
+      )}
       {/* Editorial hero — photo-forward with gradient fallback for clubs without a cover */}
       <section
         className="relative h-[300px] w-full overflow-hidden bg-cover bg-center"

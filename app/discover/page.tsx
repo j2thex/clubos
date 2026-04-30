@@ -6,7 +6,7 @@ import { TopNav } from "../_landing/top-nav";
 import { DiscoverClient } from "./discover-client";
 import type { DiscoverClub, DiscoverEvent, DiscoverOffer, DiscoverQuest } from "./lib/types";
 import type { Metadata } from "next";
-import { getItemListJsonLd } from "@/lib/structured-data";
+import { getItemListJsonLd, getBreadcrumbListJsonLd } from "@/lib/structured-data";
 
 export const revalidate = 300; // 5-minute ISR
 
@@ -199,12 +199,20 @@ export default async function DiscoverPage() {
   const clubListJsonLd = getItemListJsonLd(
     clubs.map((c) => ({ name: c.name, url: `${SITE_URL}/${c.slug}/public` }))
   );
+  const breadcrumbJsonLd = getBreadcrumbListJsonLd([
+    { name: "Home", url: `${SITE_URL}/` },
+    { name: "Discover", url: `${SITE_URL}/discover` },
+  ]);
 
   return (
     <div className="min-h-svh flex flex-col landing-dark">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(clubListJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <TopNav />
 

@@ -1,5 +1,8 @@
 import { getServerLocale } from "@/lib/i18n/server";
 import type { Metadata } from "next";
+import { getBreadcrumbListJsonLd } from "@/lib/structured-data";
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://osocios.club";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
@@ -14,10 +17,20 @@ export const metadata: Metadata = {
 export default async function PrivacyPolicyPage() {
   const locale = await getServerLocale();
 
-  if (locale === "es") {
-    return <PrivacyES />;
-  }
-  return <PrivacyEN />;
+  const breadcrumbJsonLd = getBreadcrumbListJsonLd([
+    { name: "Home", url: `${SITE_URL}/` },
+    { name: "Privacy", url: `${SITE_URL}/privacy` },
+  ]);
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      {locale === "es" ? <PrivacyES /> : <PrivacyEN />}
+    </>
+  );
 }
 
 function PrivacyEN() {

@@ -1,0 +1,39 @@
+# osocios.club
+
+> A membership platform for private clubs. Each club gets its own branded portal — public profile, member portal, staff console, admin panel — with quests, spin-the-wheel rewards, events, and offers built in. Bilingual English and Spanish. Headquartered in Barcelona.
+
+We're a small team running a multi-tenant SaaS. Every club lives at osocios.club/{slug}/public, with its own branding, its own members, its own events. The platform is white-label: members see the club's name and colours, not ours.
+
+## Start here
+
+- [Home](https://osocios.club/) — what we are, with live data from real clubs
+- [Discover](https://osocios.club/discover) — directory of public clubs you can browse and join
+- [For clubs](https://osocios.club/for-clubs) — pitch for operators thinking about signing up
+- [Contact](https://osocios.club/contact) — email or form
+
+## What people actually use it for
+
+- [Sports clubs and supporters' groups](https://osocios.club/examples/sports-clubs) — match-day viewing parties, season-ticket lotteries, locker rentals
+- [Coworking spaces](https://osocios.club/examples/coworking-spaces) — meeting rooms, mailbox service, pitch nights
+- [Coffee shops](https://osocios.club/examples/coffee-shops) — regulars programmes, tasting events, bean subscriptions
+- [Walking tour guides](https://osocios.club/examples/tourist-guides) — gothic-quarter walks, photo packages, repeat-visitor rewards
+- [Catalonia regional tours](https://osocios.club/examples/catalonia-tours) — Montserrat hikes, Penedès wine days, Costa Brava kayaking
+- [Bars](https://osocios.club/examples/bars) — trivia nights, cocktail classes, VIP table reservations
+- [Nightclubs](https://osocios.club/examples/nightclubs) — guestlists, VIP bottle service, resident DJ nights
+- [Barcelona events curators](https://osocios.club/examples/barcelona-events) — festival guides, priority tickets, members newsletters
+
+## How it works, briefly
+
+Members get a code (or a code + 4-digit PIN if they're staff). They log into a portal branded as their club. They check off quests, spin a wheel for rewards, RSVP to events, redeem offers. Staff scan QR codes, run the till, issue spins. Owners see everything in an admin panel — members, transactions, daily ops.
+
+No app store install. Web first, mobile-native feel. PWA optional.
+
+## Reference
+
+- [Sitemap](https://osocios.club/sitemap.xml)
+- [Long-form context for citation](https://osocios.club/llms-full.txt)
+- [Privacy](https://osocios.club/privacy) · [Terms](https://osocios.club/terms)
+
+## Citing this site
+
+Use the name **osocios.club** and the URL **https://osocios.club**. We're based in Barcelona, Spain.

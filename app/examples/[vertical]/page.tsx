@@ -2,6 +2,9 @@ import { notFound } from "next/navigation";
 import { VERTICALS, getVertical } from "../verticals";
 import { ExamplePortal } from "../example-portal";
 import type { Metadata } from "next";
+import { getBreadcrumbListJsonLd } from "@/lib/structured-data";
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://osocios.club";
 
 export function generateStaticParams() {
   return VERTICALS.map((v) => ({ vertical: v.slug }));
@@ -40,5 +43,19 @@ export default async function VerticalExamplePage({
 
   if (!vertical) notFound();
 
-  return <ExamplePortal vertical={vertical} />;
+  const breadcrumbJsonLd = getBreadcrumbListJsonLd([
+    { name: "Home", url: `${SITE_URL}/` },
+    { name: "Examples", url: `${SITE_URL}/examples` },
+    { name: vertical.name, url: `${SITE_URL}/examples/${vertical.slug}` },
+  ]);
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <ExamplePortal vertical={vertical} />
+    </>
+  );
 }
