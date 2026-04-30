@@ -340,6 +340,7 @@
   "admin.contentProducts": "Productos",
   "admin.products.heading": "Productos",
   "admin.products.addProduct": "+ Nuevo producto",
+  "admin.products.addCategory": "+ Nueva categoría",
   "admin.products.searchPlaceholder": "Buscar productos…",
   "admin.products.searchNoResults": "Ningún producto coincide con \"{query}\".",
   "admin.products.tabs.all": "Todos",

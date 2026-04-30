@@ -59,6 +59,7 @@ export function ProductsManager({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const [newProductOpen, setNewProductOpen] = useState(false);
+  const [newCategoryOpen, setNewCategoryOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   const trimmedQuery = searchQuery.trim().toLowerCase();
@@ -129,13 +130,28 @@ export function ProductsManager({
               />
             </div>
             {view === "active" && (
-              <button
-                type="button"
-                onClick={() => setNewProductOpen((o) => !o)}
-                className="whitespace-nowrap rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-4 py-2 transition-colors"
-              >
-                {t("admin.products.addProduct")}
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewCategoryOpen((o) => !o);
+                    if (!newCategoryOpen) setNewProductOpen(false);
+                  }}
+                  className="whitespace-nowrap rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold px-3 py-2 transition-colors"
+                >
+                  {t("admin.products.addCategory")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewProductOpen((o) => !o);
+                    if (!newProductOpen) setNewCategoryOpen(false);
+                  }}
+                  className="whitespace-nowrap rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-4 py-2 transition-colors"
+                >
+                  {t("admin.products.addProduct")}
+                </button>
+              </>
             )}
           </div>
           {view === "active" && !isSearching && tabCategories.length > 0 && (
@@ -154,6 +170,13 @@ export function ProductsManager({
                 />
               ))}
             </div>
+          )}
+          {view === "active" && newCategoryOpen && (
+            <CategoryNewForm
+              clubId={clubId}
+              clubSlug={clubSlug}
+              onAdded={() => setNewCategoryOpen(false)}
+            />
           )}
           {view === "active" && (
             <ProductNewForm
@@ -435,9 +458,11 @@ function CategoryRow({
 function CategoryNewForm({
   clubId,
   clubSlug,
+  onAdded,
 }: {
   clubId: string;
   clubSlug: string;
+  onAdded?: () => void;
 }) {
   const [name, setName] = useState("");
   const [nameEs, setNameEs] = useState("");
@@ -453,6 +478,7 @@ function CategoryNewForm({
         toast.success("Category added");
         setName("");
         setNameEs("");
+        onAdded?.();
       }
     });
   }
