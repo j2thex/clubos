@@ -34,7 +34,7 @@ export async function generateMetadata({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("name, tags, club_branding(logo_url)")
+    .select("name, tags, city, country, club_branding(logo_url)")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -45,9 +45,11 @@ export async function generateMetadata({
     ? club.club_branding[0]
     : club.club_branding;
   const tags = (club.tags as string[] | null) ?? [];
-  const description = tags.length > 0
-    ? `${club.name} on osocios.club — ${tags.join(", ")}`
-    : `${club.name} — Member portal on osocios.club`;
+  const cityCountry = [club.city, club.country].filter(Boolean).join(", ");
+  const tagPart = tags.length > 0 ? ` ${tags.join(", ")}.` : "";
+  const description = cityCountry
+    ? `${club.name} — private club in ${cityCountry}.${tagPart} Member portal on osocios.club.`
+    : `${club.name} — member portal on osocios.club.${tagPart}`;
 
   return {
     title: club.name,
@@ -56,6 +58,8 @@ export async function generateMetadata({
     openGraph: {
       title: club.name,
       description,
+      locale: "en_US",
+      alternateLocale: ["es_ES"],
       ...(branding?.logo_url && { images: [branding.logo_url] }),
     },
     alternates: {
