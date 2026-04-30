@@ -11,6 +11,13 @@ export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 50;
 
+function toDayKey(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 export default async function AdminOperationsTransactionsPage({
   params,
   searchParams,
@@ -109,6 +116,38 @@ export default async function AdminOperationsTransactionsPage({
 
   const totalCount = count ?? 0;
 
+  // Group sales by local-day so the list shows day headers with per-day totals.
+  const dayLocale = getDateLocale(locale);
+  const todayKey = toDayKey(new Date());
+  const yesterdayKey = toDayKey(new Date(Date.now() - 86400000));
+  function dayLabel(key: string, sample: Date): string {
+    if (key === todayKey) return t(locale, "ops.tx.dayToday");
+    if (key === yesterdayKey) return t(locale, "ops.tx.dayYesterday");
+    return sample.toLocaleDateString(dayLocale, {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    });
+  }
+  type SaleRow = NonNullable<typeof sales>[number];
+  const groups: Array<{ key: string; label: string; total: number; count: number; sales: SaleRow[] }> = [];
+  for (const sale of sales ?? []) {
+    const created = new Date(sale.created_at);
+    const key = toDayKey(created);
+    let group = groups.length > 0 && groups[groups.length - 1].key === key
+      ? groups[groups.length - 1]
+      : null;
+    if (!group) {
+      group = { key, label: dayLabel(key, created), total: 0, count: 0, sales: [] };
+      groups.push(group);
+    }
+    group.sales.push(sale);
+    if (!sale.voided_at) {
+      group.total += Number(sale.total);
+      group.count += 1;
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between px-1">
@@ -170,15 +209,31 @@ export default async function AdminOperationsTransactionsPage({
         </div>
       )}
 
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-        {totalCount === 0 ? (
-          <div className="p-8 text-center text-gray-400 text-sm">
-            {t(locale, "ops.tx.empty")}
-          </div>
-        ) : (
-          <div className="divide-y divide-gray-100">
-            {(sales ?? []).map((sale) => {
-              const member = Array.isArray(sale.members)
+      {totalCount === 0 ? (
+        <div className="bg-white rounded-2xl shadow-lg p-8 text-center text-gray-400 text-sm">
+          {t(locale, "ops.tx.empty")}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {groups.map((group) => (
+            <div
+              key={group.key}
+              className="bg-white rounded-2xl shadow-lg overflow-hidden"
+            >
+              <div className="px-5 py-2 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+                <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                  {group.label}
+                </p>
+                <p className="text-[11px] text-gray-500 tabular-nums">
+                  {t(locale, "ops.tx.dayRevenue", {
+                    total: group.total.toFixed(2),
+                    count: group.count,
+                  })}
+                </p>
+              </div>
+              <div className="divide-y divide-gray-100">
+                {group.sales.map((sale) => {
+                  const member = Array.isArray(sale.members)
                 ? sale.members[0]
                 : sale.members;
               const staffRef = Array.isArray(sale.staff)
@@ -278,9 +333,11 @@ export default async function AdminOperationsTransactionsPage({
                 </div>
               );
             })}
-          </div>
-        )}
-      </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {totalCount > PAGE_SIZE && (
         <div className="flex gap-2 justify-center">
