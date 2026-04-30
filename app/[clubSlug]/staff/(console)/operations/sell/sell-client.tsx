@@ -99,7 +99,12 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     case "SET_DISCOUNT":
       return { ...state, discount: action.value };
     case "SET_DISCOUNT_MODE":
-      return { ...state, discountMode: action.mode };
+      // Clear the value too — "10" means 10€ in amount mode but 10% in
+      // percent mode, so reusing the prior value across a switch silently
+      // changes the effective discount. Forcing a re-entry is predictable.
+      return state.discountMode === action.mode
+        ? state
+        : { ...state, discountMode: action.mode, discount: "" };
     case "SET_COMMENT":
       return { ...state, comment: action.value };
     case "RESET":
