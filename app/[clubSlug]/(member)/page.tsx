@@ -182,10 +182,9 @@ export default async function QuestsLanding({
         <div className="mb-4">
           <AddToHomescreen clubSlug={clubSlug} />
         </div>
-        {/* Bento stat strip — one row, next event double-wide + membership single-wide */}
-        <div className="grid grid-cols-3 gap-3">
+        {/* Bento stat strip — two equal tiles to keep captions on one line */}
+        <div className="grid grid-cols-2 gap-3">
           <BentoStatTile
-            span={2}
             caption={t(locale, "dashboard.nextEvent")}
             value={
               nextEvent ? (
