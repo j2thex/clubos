@@ -37,9 +37,12 @@ type CartLine = {
   scaleRawReading: string | null;
 };
 
+type DiscountMode = "amount" | "percent";
+
 type CartState = {
   lines: CartLine[];
   discount: string;
+  discountMode: DiscountMode;
   comment: string;
 };
 
@@ -49,6 +52,7 @@ type CartAction =
   | { type: "DEC"; productId: string }
   | { type: "REMOVE"; productId: string }
   | { type: "SET_DISCOUNT"; value: string }
+  | { type: "SET_DISCOUNT_MODE"; mode: DiscountMode }
   | { type: "SET_COMMENT"; value: string }
   | { type: "RESET" };
 
@@ -94,10 +98,12 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       return { ...state, lines: state.lines.filter((l) => l.productId !== action.productId) };
     case "SET_DISCOUNT":
       return { ...state, discount: action.value };
+    case "SET_DISCOUNT_MODE":
+      return { ...state, discountMode: action.mode };
     case "SET_COMMENT":
       return { ...state, comment: action.value };
     case "RESET":
-      return { lines: [], discount: "", comment: "" };
+      return { lines: [], discount: "", discountMode: "amount", comment: "" };
   }
 }
 
@@ -127,7 +133,12 @@ export function SellClient({
   const [pickerMode, setPickerMode] = useState<PickerMode>("idle");
   const [manualCode, setManualCode] = useState("");
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
-  const [cart, dispatchCart] = useReducer(cartReducer, { lines: [], discount: "", comment: "" });
+  const [cart, dispatchCart] = useReducer(cartReducer, {
+    lines: [],
+    discount: "",
+    discountMode: "amount",
+    comment: "",
+  });
   const [quantityProduct, setQuantityProduct] = useState<SellProduct | null>(null);
   const [topupOpen, setTopupOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -201,9 +212,24 @@ export function SellClient({
     [cart.lines],
   );
   const discountNum = Number(cart.discount);
-  const discountValid = cart.discount === "" || (Number.isFinite(discountNum) && discountNum >= 0);
-  const discountApplied = discountValid && cart.discount !== "" ? discountNum : 0;
-  const discountTooLarge = discountApplied > subtotal && subtotal > 0;
+  const discountIsPercent = cart.discountMode === "percent";
+  const discountPercentInvalid =
+    discountIsPercent &&
+    cart.discount !== "" &&
+    Number.isFinite(discountNum) &&
+    (discountNum < 0 || discountNum > 100);
+  const discountValid =
+    cart.discount === "" ||
+    (Number.isFinite(discountNum) && discountNum >= 0 && !discountPercentInvalid);
+  const rawDiscount =
+    discountValid && cart.discount !== ""
+      ? discountIsPercent
+        ? Math.round(((subtotal * discountNum) / 100) * 100) / 100
+        : discountNum
+      : 0;
+  const discountApplied = Math.min(rawDiscount, subtotal);
+  const discountTooLarge =
+    !discountIsPercent && rawDiscount > subtotal && subtotal > 0;
   const total = Math.max(0, Math.round((subtotal - discountApplied) * 100) / 100);
   const balanceAfter = memberData
     ? Math.round((memberData.saldoBalance - total) * 100) / 100
@@ -374,7 +400,9 @@ export function SellClient({
           dispatch={dispatchCart}
           subtotal={subtotal}
           total={total}
+          discountApplied={discountApplied}
           discountTooLarge={discountTooLarge}
+          discountPercentInvalid={discountPercentInvalid}
           currencyMode={currencyMode}
           memberBalance={memberData.saldoBalance}
           balanceAfter={balanceAfter}
@@ -671,7 +699,9 @@ function CartPanel({
   dispatch,
   subtotal,
   total,
+  discountApplied,
   discountTooLarge,
+  discountPercentInvalid,
   currencyMode,
   memberBalance,
   balanceAfter,
@@ -688,7 +718,9 @@ function CartPanel({
   dispatch: React.Dispatch<CartAction>;
   subtotal: number;
   total: number;
+  discountApplied: number;
   discountTooLarge: boolean;
+  discountPercentInvalid: boolean;
   currencyMode: "saldo" | "cash";
   memberBalance: number;
   balanceAfter: number | null;
@@ -729,20 +761,49 @@ function CartPanel({
       )}
       <div className="px-4 py-3 border-t border-gray-100 space-y-2">
         <SummaryRow label={t("ops.sell.subtotal")} value={`${subtotal.toFixed(2)} €`} />
-        <label className="block">
-          <span className="text-xs text-gray-700">{t("ops.sell.discount")}</span>
+        <div className="block">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-700">{t("ops.sell.discount")}</span>
+            <div className="inline-flex rounded-md border border-gray-300 overflow-hidden text-[11px] font-semibold">
+              <button
+                type="button"
+                onClick={() => dispatch({ type: "SET_DISCOUNT_MODE", mode: "amount" })}
+                className={`px-2 py-0.5 ${cart.discountMode === "amount" ? "bg-gray-800 text-white" : "bg-white text-gray-600"}`}
+                aria-pressed={cart.discountMode === "amount"}
+              >
+                {t("ops.sell.discountModeAmount")}
+              </button>
+              <button
+                type="button"
+                onClick={() => dispatch({ type: "SET_DISCOUNT_MODE", mode: "percent" })}
+                className={`px-2 py-0.5 border-l border-gray-300 ${cart.discountMode === "percent" ? "bg-gray-800 text-white" : "bg-white text-gray-600"}`}
+                aria-pressed={cart.discountMode === "percent"}
+              >
+                {t("ops.sell.discountModePercent")}
+              </button>
+            </div>
+          </div>
           <input
             type="number"
-            step="0.01"
+            step={cart.discountMode === "percent" ? "0.1" : "0.01"}
             min="0"
+            max={cart.discountMode === "percent" ? "100" : undefined}
             value={cart.discount}
             onChange={(e) => dispatch({ type: "SET_DISCOUNT", value: e.target.value })}
             className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm tabular-nums text-right text-gray-900 placeholder:text-gray-400"
           />
+          {cart.discountMode === "percent" && cart.discount !== "" && !discountPercentInvalid && discountApplied > 0 && (
+            <p className="text-[11px] text-gray-500 mt-1 text-right">
+              {t("ops.sell.discountPercentEquivalent", { amount: discountApplied.toFixed(2) })}
+            </p>
+          )}
           {discountTooLarge && (
             <p className="text-[11px] text-red-600 mt-1">{t("ops.sell.discountTooLarge")}</p>
           )}
-        </label>
+          {discountPercentInvalid && (
+            <p className="text-[11px] text-red-600 mt-1">{t("ops.sell.discountPercentInvalid")}</p>
+          )}
+        </div>
         <label className="block">
           <span className="text-xs text-gray-700">{t("ops.sell.comment")}</span>
           <textarea
