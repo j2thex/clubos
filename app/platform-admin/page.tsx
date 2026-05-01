@@ -48,6 +48,7 @@ export default async function PlatformAdminPage({
     { data: questsByClub },
     { data: eventsByClub },
     { data: offersByClub },
+    { data: platformPartnersData },
   ] = await Promise.all([
     supabase.from("clubs").select("*", { count: "exact", head: true }),
     supabase.from("members").select("*", { count: "exact", head: true }),
@@ -96,6 +97,12 @@ export default async function PlatformAdminPage({
     supabase.from("member_quests").select("quests(club_id)"),
     supabase.from("events").select("club_id").eq("active", true),
     supabase.from("club_offers").select("club_id"),
+    // Platform partners (cross-club, surfaced on osocios.club landing)
+    supabase
+      .from("platform_partners")
+      .select("id, name, logo_url, website_url, display_order, active")
+      .order("display_order", { ascending: true })
+      .order("created_at", { ascending: true }),
   ]);
 
   // Build per-club metrics
@@ -181,6 +188,15 @@ export default async function PlatformAdminPage({
     createdAt: r.created_at,
   }));
 
+  const partners = (platformPartnersData ?? []).map((p) => ({
+    id: p.id as string,
+    name: p.name as string,
+    logoUrl: p.logo_url as string,
+    websiteUrl: p.website_url as string,
+    displayOrder: p.display_order as number,
+    active: p.active as boolean,
+  }));
+
   return (
     <PlatformAdminClient
       secret={secret}
@@ -217,6 +233,7 @@ export default async function PlatformAdminPage({
         clubName: clubNameMap.get(o.created_by_club_id ?? "") ?? "Unknown",
         createdAt: o.created_at,
       }))}
+      partners={partners}
     />
   );
 }
