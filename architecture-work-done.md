@@ -463,7 +463,7 @@ One-shot AI generation for quest/setup prompts. Admin's club social links (IG, W
 
 Cross-club partner logos (e.g. media partners, integrations, sponsors of the platform itself — distinct from per-club partners). Managed entirely from the Tower (`/platform-admin`) and rendered on the osocios.club marketing landing in a logo strip between "How to get a club membership" and the clubs directory. Hidden when no active partners.
 
-Logos render monochrome-tinted (`brightness-0 invert opacity-70`) on the dark landing surface and reveal full brand colors on hover. Each logo links to the partner's website in a new tab (`rel="noopener noreferrer"`). Tower CRUD supports add/edit/delete/active-toggle/reorder (↑↓ neighbor swap, no DnD).
+Logos render in their original colors on white tiles (`bg-white shadow-sm ring-1 ring-black/5`) — a sponsor-strip aesthetic that works with any partner-supplied PNG/SVG regardless of background transparency. Tiles are `w-40 h-24` on mobile, `w-48 h-28` desktop, centered (`justify-center` with `flex-wrap`), and lift on hover (`hover:shadow-lg hover:-translate-y-0.5`). Each logo links to the partner's website in a new tab (`rel="noopener noreferrer"`). Tower CRUD supports add/edit/delete/active-toggle/reorder (↑↓ neighbor swap, no DnD).
 
 Public read-only RLS on `platform_partners` (`active = true`); writes go through Server Actions gated by `PLATFORM_ADMIN_SECRET`. Logos uploaded to a new public `platform-assets` bucket under `partners/{uuid}.{ext}`.
 
