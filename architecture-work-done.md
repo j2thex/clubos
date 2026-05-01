@@ -1,6 +1,6 @@
 # ClubOS — Architecture & Feature Reference
 
-> Last updated: 2026-04-25
+> Last updated: 2026-05-01
 > Engineering reference: feature inventory + thin implementation pointers. Marketing/strategy lives in `docs/website.md`. Maintained by the `/document` skill.
 
 ---
@@ -116,12 +116,13 @@
 | 10 | Bulk Quest Import | CSV paste → preview → import w/ badges |
 | 11 | Telegram Bot API | Bearer-auth endpoint for external bot |
 | 12 | AI Prompts Editor | Edit one-shot system prompts at platform level |
+| 13 | Platform Partners | CRUD partner logos (cross-club) shown on osocios.club homepage |
 
 ### E. PUBLIC & DISCOVERY
 
 | # | Feature | Description |
 |---|---------|-------------|
-| 1 | Homepage | Map hero + curated tabs (events, offers, quests, clubs) |
+| 1 | Homepage | Map hero + curated tabs (events, offers, quests, clubs, partners) |
 | 2 | Discover Page | Full map + tabs + filters + near-me |
 | 3 | Deep-Link Offers | Tile → `/discover#offers:Name` with filter |
 | 4 | Public Club Page | Gallery, public content, login, invite, hours, social |
@@ -455,6 +456,24 @@ One-shot AI generation for quest/setup prompts. Admin's club social links (IG, W
 - `app/[clubSlug]/admin/ai-actions.ts`, `ai-constants.ts`
 - `app/platform-admin/ai-prompts/`
 - Migration: `20260424120000_ai_prompts_use_social_links.sql`
+
+## Platform Marketing Landing
+
+### Platform Partners
+
+Cross-club partner logos (e.g. media partners, integrations, sponsors of the platform itself — distinct from per-club partners). Managed entirely from the Tower (`/platform-admin`) and rendered on the osocios.club marketing landing in a logo strip between "How to get a club membership" and the clubs directory. Hidden when no active partners.
+
+Logos render monochrome-tinted (`brightness-0 invert opacity-70`) on the dark landing surface and reveal full brand colors on hover. Each logo links to the partner's website in a new tab (`rel="noopener noreferrer"`). Tower CRUD supports add/edit/delete/active-toggle/reorder (↑↓ neighbor swap, no DnD).
+
+Public read-only RLS on `platform_partners` (`active = true`); writes go through Server Actions gated by `PLATFORM_ADMIN_SECRET`. Logos uploaded to a new public `platform-assets` bucket under `partners/{uuid}.{ext}`.
+
+- Migration: `supabase/migrations/20260501120000_add_platform_partners.sql` — table + RLS + bucket + storage policies
+- `lib/supabase/storage.ts` — `uploadPlatformPartnerLogo` / `deletePlatformPartnerLogo`
+- `app/platform-admin/actions.ts` — `addPartner`, `updatePartner`, `deletePartner`, `togglePartnerActive`, `reorderPartner`
+- `app/platform-admin/partners-manager.tsx` — Tower section UI (form + list with reorder/edit/active/delete)
+- `app/platform-admin/page.tsx`, `client.tsx` — load + render between "Custom Offers Awaiting Approval" and "Recent Activity"
+- `app/_landing/partners-strip.tsx` — landing render (server component, `next/image fill`, monochrome→color hover)
+- `app/page.tsx` — `getPartners()` helper + `<PartnersStrip>` between "How to get membership" and `<ClubDirectory>`
 
 ## Minor UX Fixes
 
