@@ -397,10 +397,10 @@ Identity capture for compliance. All required when ops is on; RFID is optional.
 
 ### Door Flow
 
-QR scan / manual / search-by-name picker. `EntryDialog` shows photo, age chip, verified chip, expiry chip, "already inside" chip. Distinct audit codes per blocked path (`entry_blocked_expired/_no_dob/_underage/_duplicate`). Capacity page lists open entries with durations and "Check out all" bulk close.
+RFID tap / QR scan / manual / search-by-name picker. RFID mode autoFocuses an input that captures the Sycreader's keyboard-wedge UID + Enter, then looks the chip up against `members.rfid_uid`. All four modes route into the same `EntryDialog`, which shows photo, age chip, verified chip, expiry chip, "already inside" chip. Distinct audit codes per blocked path (`entry_blocked_expired/_no_dob/_underage/_duplicate`). Capacity page lists open entries with durations and "Check out all" bulk close.
 
 - `supabase/migrations/20260416180000_create_club_entries.sql` — partial unique index `WHERE checked_out_at IS NULL` enforces one open session per member
-- `app/[clubSlug]/staff/(console)/operations/entry/{actions,entry-client,page}.tsx` — `lookupMemberForEntry`, `admitMember`, `checkoutEntry`, `searchMembersByName`
+- `app/[clubSlug]/staff/(console)/operations/entry/{actions,entry-client,page}.tsx` — `lookupMemberForEntry`, `lookupMemberByRfidUid`, `admitMember`, `checkoutEntry`, `searchMembersByName`
 - `app/[clubSlug]/staff/(console)/operations/capacity/page.tsx` + `checkout-{button,all-button}.tsx`
 - `@yudiel/react-qr-scanner` (lazy via `next/dynamic`)
 

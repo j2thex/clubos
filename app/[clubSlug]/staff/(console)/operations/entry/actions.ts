@@ -48,6 +48,53 @@ function sanitizeCode(raw: string): string {
   return maybeUrl ? maybeUrl[0] : trimmed;
 }
 
+type MemberRow = {
+  id: string;
+  member_code: string;
+  full_name: string | null;
+  status: string;
+  date_of_birth: string | null;
+  id_verified_at: string | null;
+  id_photo_path: string | null;
+  valid_till: string | null;
+};
+
+async function buildLookedUpMember(
+  supabase: ReturnType<typeof createAdminClient>,
+  member: MemberRow,
+): Promise<LookedUpMember> {
+  const age = computeAge(member.date_of_birth ?? null);
+  const today = new Date().toISOString().split("T")[0];
+  const validExpired = !!(member.valid_till && member.valid_till < today);
+
+  const { data: openEntry } = await supabase
+    .from("club_entries")
+    .select("id, checked_in_at")
+    .eq("member_id", member.id)
+    .is("checked_out_at", null)
+    .order("checked_in_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const signed = member.id_photo_path
+    ? await getMemberIdPhotoSignedUrl(member.id_photo_path, 1800)
+    : null;
+
+  return {
+    id: member.id,
+    memberCode: member.member_code,
+    fullName: member.full_name ?? null,
+    dateOfBirth: member.date_of_birth ?? null,
+    age,
+    idVerifiedAt: member.id_verified_at ?? null,
+    idPhotoSignedUrl: signed,
+    validTill: member.valid_till ?? null,
+    validExpired,
+    openEntryId: openEntry?.id ?? null,
+    openEntrySince: openEntry?.checked_in_at ?? null,
+  };
+}
+
 export async function lookupMemberForEntry(
   clubId: string,
   rawCode: string,
@@ -67,45 +114,42 @@ export async function lookupMemberForEntry(
     )
     .eq("club_id", clubId)
     .eq("member_code", code)
-    .single();
+    .maybeSingle();
 
   if (!member) return { error: `Member ${code} not found` };
   if (member.status !== "active") return { error: "Member is inactive" };
 
-  const age = computeAge(member.date_of_birth ?? null);
-  const today = new Date().toISOString().split("T")[0];
-  const validExpired = !!(member.valid_till && member.valid_till < today);
+  return { ok: true, member: await buildLookedUpMember(supabase, member) };
+}
 
-  const { data: openEntry } = await supabase
-    .from("club_entries")
-    .select("id, checked_in_at")
-    .eq("member_id", member.id)
-    .is("checked_out_at", null)
-    .order("checked_in_at", { ascending: false })
-    .limit(1)
+export async function lookupMemberByRfidUid(
+  clubId: string,
+  rawUid: string,
+): Promise<LookupResult> {
+  try { await requireOpsRead(clubId); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+
+  // Match how the chip is stored in member-creator: trim only, no case fold.
+  // The unique index is case-sensitive; readers always emit the same UID
+  // for a given chip, so trim is enough.
+  const uid = rawUid.trim();
+  if (!uid) return { error: "Empty chip" };
+
+  const supabase = createAdminClient();
+  const { data: member } = await supabase
+    .from("members")
+    .select(
+      "id, member_code, full_name, status, date_of_birth, id_verified_at, id_photo_path, valid_till",
+    )
+    .eq("club_id", clubId)
+    .eq("rfid_uid", uid)
     .maybeSingle();
 
-  const signed =
-    member.id_photo_path
-      ? await getMemberIdPhotoSignedUrl(member.id_photo_path, 1800)
-      : null;
+  if (!member) return { error: "Chip not registered to any member" };
+  if (member.status !== "active") return { error: "Member is inactive" };
 
-  return {
-    ok: true,
-    member: {
-      id: member.id,
-      memberCode: member.member_code,
-      fullName: member.full_name ?? null,
-      dateOfBirth: member.date_of_birth ?? null,
-      age,
-      idVerifiedAt: member.id_verified_at ?? null,
-      idPhotoSignedUrl: signed,
-      validTill: member.valid_till ?? null,
-      validExpired,
-      openEntryId: openEntry?.id ?? null,
-      openEntrySince: openEntry?.checked_in_at ?? null,
-    },
-  };
+  return { ok: true, member: await buildLookedUpMember(supabase, member) };
 }
 
 export async function admitMember(
