@@ -52,10 +52,8 @@ interface PromptRow {
 }
 
 export function AiPromptsClient({
-  secret,
   rows,
 }: {
-  secret: string;
   rows: PromptRow[];
 }) {
   const router = useRouter();
@@ -115,7 +113,7 @@ export function AiPromptsClient({
       fd.set("system_prompt", current.system);
       fd.set("user_template", current.user);
       fd.set("model", current.model);
-      const r = await savePromptVersion(secret, fd);
+      const r = await savePromptVersion(fd);
       if ("error" in r) {
         setMsg({ kind: "err", text: r.error });
       } else {
@@ -130,7 +128,7 @@ export function AiPromptsClient({
     if (!confirm("Restore this version as active?")) return;
     setMsg(null);
     startTransition(async () => {
-      const r = await restorePromptVersion(secret, id);
+      const r = await restorePromptVersion(id);
       if ("error" in r) {
         setMsg({ kind: "err", text: r.error });
       } else {
@@ -159,7 +157,7 @@ export function AiPromptsClient({
             </p>
           </div>
           <a
-            href={`/platform-admin?secret=${encodeURIComponent(secret)}`}
+            href="/platform-admin"
             className="text-xs text-zinc-400 hover:text-zinc-200"
           >
             ← Back to platform admin
