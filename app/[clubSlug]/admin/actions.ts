@@ -191,6 +191,40 @@ export async function setCurrencyMode(
   return { ok: true };
 }
 
+export type NavPosition = "bottom" | "top";
+
+export async function setNavPosition(
+  clubId: string,
+  position: NavPosition,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  if (position !== "bottom" && position !== "top") {
+    return { error: "Invalid nav position" };
+  }
+
+  try { await requireOwnerForClub(clubId); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ nav_position: position })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to update nav position" };
+
+  await logActivity({
+    clubId,
+    action: "nav_position_set",
+    details: position,
+  });
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/staff`, "layout");
+  return { ok: true };
+}
+
 export async function setMonthlyConsumptionLimit(
   clubId: string,
   grams: number | null,

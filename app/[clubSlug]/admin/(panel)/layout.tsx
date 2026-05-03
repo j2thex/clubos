@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { LogoutButton } from "../logout-button";
 import { AdminNav } from "@/components/club/admin-nav";
+import { AdminTopBar } from "@/components/club/admin-top-bar";
 import { PanicIconButton } from "@/components/club/panic-icon-button";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
@@ -42,13 +43,14 @@ export default async function AdminPanelLayout({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name, operations_module_enabled")
+    .select("id, name, operations_module_enabled, nav_position")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
 
   if (!club) notFound();
   const opsEnabled = club.operations_module_enabled ?? false;
+  const navPosition: "bottom" | "top" = club.nav_position === "top" ? "top" : "bottom";
 
   const { data: branding } = await supabase
     .from("club_branding")
@@ -58,6 +60,23 @@ export default async function AdminPanelLayout({
 
   const coverUrl = branding?.cover_url ?? null;
   const locale = await getServerLocale();
+
+  if (navPosition === "top") {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <AdminTopBar
+          clubId={club.id}
+          clubName={club.name}
+          clubSlug={clubSlug}
+          coverUrl={coverUrl}
+          opsEnabled={opsEnabled}
+        />
+        <div className="px-4 pt-6 pb-10 max-w-5xl mx-auto space-y-6">
+          {children}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">

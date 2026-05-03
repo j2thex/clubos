@@ -37,7 +37,7 @@ export default async function StaffLayout({
   const supabase = createAdminClient();
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name, approved, spin_enabled, operations_module_enabled")
+    .select("id, name, approved, spin_enabled, operations_module_enabled, nav_position")
     .eq("slug", clubSlug)
     .single();
 
@@ -45,10 +45,13 @@ export default async function StaffLayout({
     return <PendingApproval clubName={club.name} clubSlug={clubSlug} />;
   }
 
+  const navPosition: "bottom" | "top" = club?.nav_position === "top" ? "top" : "bottom";
+
   // Pending counts feed the red badge bubbles on the staff bottom nav.
   // Fail-soft: any query error just yields 0, the nav still renders.
+  // Skipped when nav_position === 'top'; the (console) layout queries badges itself.
   let pendingBadges: Record<string, number> = {};
-  if (club?.id) {
+  if (club?.id && navPosition === "bottom") {
     const [{ count: preregCount }, { count: offerCount }, { count: questCount }] =
       await Promise.all([
         supabase
@@ -78,14 +81,20 @@ export default async function StaffLayout({
   // Middleware guarantees a staff cookie on /staff, so an owner-cookie
   // present in the same browser must not override the staff's perms.
   let qeboEnabled = true;
-  const staffSession = await getStaffFromCookie();
-  if (staffSession?.member_id) {
-    const { data: staffRow } = await supabase
-      .from("members")
-      .select("can_do_qebo")
-      .eq("id", staffSession.member_id)
-      .single();
-    qeboEnabled = staffRow?.can_do_qebo ?? true;
+  if (navPosition === "bottom") {
+    const staffSession = await getStaffFromCookie();
+    if (staffSession?.member_id) {
+      const { data: staffRow } = await supabase
+        .from("members")
+        .select("can_do_qebo")
+        .eq("id", staffSession.member_id)
+        .single();
+      qeboEnabled = staffRow?.can_do_qebo ?? true;
+    }
+  }
+
+  if (navPosition === "top") {
+    return <>{children}</>;
   }
 
   return (
