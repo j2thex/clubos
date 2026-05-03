@@ -71,6 +71,7 @@ export async function generateMetadata({
       },
     },
     icons: {
+      icon: [{ url: `/${clubSlug}/icon.png`, type: "image/png" }],
       apple: [{ url: `/${clubSlug}/icon.png`, sizes: "180x180" }],
     },
   };
