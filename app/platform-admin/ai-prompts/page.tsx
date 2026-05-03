@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
+import { getPlatformAdminFromCookie } from "@/lib/auth";
 import { AiPromptsClient } from "./client";
 
 export const dynamic = "force-dynamic";
@@ -16,16 +17,9 @@ interface PromptRow {
   updated_at: string;
 }
 
-export default async function AiPromptsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ secret?: string }>;
-}) {
-  const { secret } = await searchParams;
-
-  if (!secret || secret !== process.env.PLATFORM_ADMIN_SECRET) {
-    redirect("/");
-  }
+export default async function AiPromptsPage() {
+  const session = await getPlatformAdminFromCookie();
+  if (!session) redirect("/platform-admin/login");
 
   const supabase = createAdminClient();
   const { data: rows } = await supabase
@@ -36,5 +30,5 @@ export default async function AiPromptsPage({
 
   const allRows = (rows ?? []) as PromptRow[];
 
-  return <AiPromptsClient secret={secret} rows={allRows} />;
+  return <AiPromptsClient rows={allRows} />;
 }

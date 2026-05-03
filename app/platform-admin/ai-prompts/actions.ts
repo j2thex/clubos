@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { invalidatePromptCache } from "@/lib/ai/prompts";
+import { requirePlatformAdmin } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
 const CONTENT_TYPES = [
@@ -24,12 +25,9 @@ function isImageType(v: ContentType): boolean {
 }
 
 export async function savePromptVersion(
-  secret: string,
   formData: FormData,
 ): Promise<{ error: string } | { ok: true; version: number }> {
-  if (secret !== process.env.PLATFORM_ADMIN_SECRET) {
-    return { error: "Unauthorized" };
-  }
+  try { await requirePlatformAdmin(); } catch { return { error: "Unauthorized" }; }
 
   const contentType = String(formData.get("content_type") ?? "");
   const systemPrompt = String(formData.get("system_prompt") ?? "").trim();
@@ -96,12 +94,9 @@ export async function savePromptVersion(
 }
 
 export async function restorePromptVersion(
-  secret: string,
   rowId: string,
 ): Promise<{ error: string } | { ok: true }> {
-  if (secret !== process.env.PLATFORM_ADMIN_SECRET) {
-    return { error: "Unauthorized" };
-  }
+  try { await requirePlatformAdmin(); } catch { return { error: "Unauthorized" }; }
 
   const supabase = createAdminClient();
 

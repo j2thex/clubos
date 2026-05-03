@@ -20,10 +20,9 @@ interface Partner {
 
 interface Props {
   partners: Partner[];
-  secret: string;
 }
 
-export function PartnersManager({ partners, secret }: Props) {
+export function PartnersManager({ partners }: Props) {
   const [isPending, startTransition] = useTransition();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +30,7 @@ export function PartnersManager({ partners, secret }: Props) {
   function handleAdd(formData: FormData) {
     setError(null);
     startTransition(async () => {
-      const res = await addPartner(formData, secret);
+      const res = await addPartner(formData);
       if ("error" in res) setError(res.error);
       else {
         const form = document.getElementById("add-partner-form") as HTMLFormElement | null;
@@ -43,7 +42,7 @@ export function PartnersManager({ partners, secret }: Props) {
   function handleUpdate(id: string, formData: FormData) {
     setError(null);
     startTransition(async () => {
-      const res = await updatePartner(id, formData, secret);
+      const res = await updatePartner(id, formData);
       if ("error" in res) setError(res.error);
       else setEditingId(null);
     });
@@ -53,7 +52,7 @@ export function PartnersManager({ partners, secret }: Props) {
     if (!confirm("Delete this partner? This cannot be undone.")) return;
     setError(null);
     startTransition(async () => {
-      const res = await deletePartner(id, secret);
+      const res = await deletePartner(id);
       if ("error" in res) setError(res.error);
     });
   }
@@ -61,7 +60,7 @@ export function PartnersManager({ partners, secret }: Props) {
   function handleToggle(id: string, active: boolean) {
     setError(null);
     startTransition(async () => {
-      const res = await togglePartnerActive(id, active, secret);
+      const res = await togglePartnerActive(id, active);
       if ("error" in res) setError(res.error);
     });
   }
@@ -69,7 +68,7 @@ export function PartnersManager({ partners, secret }: Props) {
   function handleReorder(id: string, direction: "up" | "down") {
     setError(null);
     startTransition(async () => {
-      const res = await reorderPartner(id, direction, secret);
+      const res = await reorderPartner(id, direction);
       if ("error" in res) setError(res.error);
     });
   }

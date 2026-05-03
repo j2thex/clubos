@@ -299,6 +299,68 @@ export async function requireOwnerForOpsClub(
   return session;
 }
 
+// --- Platform-admin auth (single password → JWT cookie) ---
+//
+// The platform-admin surface (cross-tenant: create owners, lock/unlock any
+// club, manage AI prompts, etc.) used to take its secret as a URL query
+// param `?secret=...`. URL params leak into Vercel logs, browser history,
+// Referer headers, screenshots, and copy-pasted links — one leaked URL =
+// total platform compromise. We now issue an HTTPOnly + Secure +
+// SameSite=strict cookie via /platform-admin/login. SameSite is stricter
+// than the other three cookies (lax) because nothing on this surface needs
+// cross-site nav and we want maximum CSRF resistance.
+
+const PLATFORM_ADMIN_COOKIE = "clubos-platform-admin-token";
+
+export async function createPlatformAdminToken(): Promise<string> {
+  return new SignJWT({ kind: "platform_admin" })
+    .setProtectedHeader({ alg: "HS256" })
+    .setExpirationTime("12h")
+    .sign(secret);
+}
+
+export async function verifyPlatformAdminToken(token: string) {
+  try {
+    const { payload } = await jwtVerify(token, secret);
+    if (payload.kind !== "platform_admin") return null;
+    return payload as { kind: "platform_admin" };
+  } catch {
+    return null;
+  }
+}
+
+export async function setPlatformAdminCookie(token: string) {
+  const cookieStore = await cookies();
+  cookieStore.set(PLATFORM_ADMIN_COOKIE, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 60 * 60 * 12,
+    path: "/",
+  });
+}
+
+export async function getPlatformAdminFromCookie() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(PLATFORM_ADMIN_COOKIE)?.value;
+  if (!token) return null;
+  return verifyPlatformAdminToken(token);
+}
+
+export async function clearPlatformAdminCookie() {
+  const cookieStore = await cookies();
+  cookieStore.delete(PLATFORM_ADMIN_COOKIE);
+}
+
+/**
+ * Throws if the caller does not have a valid platform-admin cookie.
+ * Wrap every platform-admin server action's first line with this.
+ */
+export async function requirePlatformAdmin(): Promise<void> {
+  const session = await getPlatformAdminFromCookie();
+  if (!session) throw new Error("Unauthorized");
+}
+
 // --- Shared ops access (staff OR admin/owner) ---
 
 /**
