@@ -248,10 +248,11 @@ export function QuestList({
     return aRank - bRank;
   });
 
-  const hasCompletedQuests = activeQuests.some((q) => {
+  const completedCount = activeQuests.filter((q) => {
     const count = completionCounts[q.id] ?? 0;
     return count > 0 && !q.multi_use;
-  });
+  }).length;
+  const hasCompletedQuests = completedCount > 0;
 
   const filteredQuests = hideCompleted
     ? sortedQuests.filter((q) => {
@@ -441,7 +442,7 @@ export function QuestList({
       {hasCompletedQuests && (
         <button
           onClick={() => setHideCompleted((h) => !h)}
-          className="flex items-center gap-1.5 text-xs font-medium text-white/60 hover:text-white/80 transition-colors ml-1"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-white/80 hover:text-white bg-white/10 hover:bg-white/15 border border-white/15 rounded-full px-3 py-1.5 transition-colors ml-1"
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
             {hideCompleted ? (
@@ -450,7 +451,7 @@ export function QuestList({
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L6.59 6.59m7.532 7.532l3.29 3.29M3 3l18 18" />
             )}
           </svg>
-          {hideCompleted ? t("quests.showCompleted") : t("quests.hideCompleted")}
+          {hideCompleted ? t("quests.showCompleted") : t("quests.hideCompleted")} ({completedCount})
         </button>
       )}
       {(() => {

@@ -22,6 +22,8 @@
   "finance.title": "Finanzas",
   "finance.subtitle": "Panel de ingresos, libro mayor y analíticas.",
   "ops.financeCardBody": "Panel de ingresos, libro mayor y analíticas.",
+  "ops.logsCardTitle": "Registro de actividad",
+  "ops.logsCardBody": "Operaciones y acciones de admin recientes.",
   "finance.range.today": "Hoy",
   "finance.range.week": "7d",
   "finance.range.month": "30d",

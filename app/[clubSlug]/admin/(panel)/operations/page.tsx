@@ -112,6 +112,11 @@ export default async function AdminOperationsPage({
       title: t(locale, "finance.title"),
       body: t(locale, "finance.subtitle"),
     },
+    {
+      href: `/${clubSlug}/admin/logs`,
+      title: t(locale, "ops.logsCardTitle"),
+      body: t(locale, "ops.logsCardBody"),
+    },
   ];
 
   return (

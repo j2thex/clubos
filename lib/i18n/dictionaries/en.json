@@ -22,6 +22,8 @@
   "finance.title": "Finance",
   "finance.subtitle": "Revenue dashboard, ledger, and analytics.",
   "ops.financeCardBody": "Revenue dashboard, ledger, and analytics.",
+  "ops.logsCardTitle": "Activity log",
+  "ops.logsCardBody": "Recent operations and admin actions.",
   "finance.range.today": "Today",
   "finance.range.week": "7d",
   "finance.range.month": "30d",

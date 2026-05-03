@@ -65,8 +65,14 @@ export function DiscoverClient({
     } else if (hash.startsWith("offers:")) {
       setActiveTab("offers");
       setSelectedOfferNames([decodeURIComponent(hash.slice(7))]);
+      requestAnimationFrame(() => {
+        listSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
     } else if (hash === "clubs" || hash === "events" || hash === "offers" || hash === "quests") {
       setActiveTab(hash);
+      requestAnimationFrame(() => {
+        listSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
     }
   }, []);
 
