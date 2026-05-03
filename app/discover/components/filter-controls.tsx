@@ -23,6 +23,10 @@ export function FilterControls({
   onOfferSearchChange,
   dateFilter,
   onDateFilterChange,
+  openFilter,
+  onOpenFilterChange,
+  openAtTime,
+  onOpenAtTimeChange,
   locale,
 }: {
   activeTab: ActiveTab;
@@ -35,10 +39,52 @@ export function FilterControls({
   onOfferSearchChange: (q: string) => void;
   dateFilter: "all" | "today" | "week" | "month";
   onDateFilterChange: (f: "all" | "today" | "week" | "month") => void;
+  openFilter: "any" | "now" | "at";
+  onOpenFilterChange: (f: "any" | "now" | "at") => void;
+  openAtTime: string;
+  onOpenAtTimeChange: (t: string) => void;
   locale: Locale;
 }) {
   if (activeTab === "clubs") {
-    return null;
+    const pillBase = "px-2.5 py-1 rounded-full text-xs font-medium transition-all";
+    const pillActive = "bg-landing-surface-hover text-landing-text";
+    const pillIdle = "bg-landing-surface text-landing-text-secondary hover:text-landing-text hover:bg-landing-surface-hover";
+    return (
+      <div className="px-4 py-2 border-b border-landing-border">
+        <p className="text-[10px] uppercase tracking-wider text-landing-text-tertiary font-medium mb-1.5">
+          {t(locale, "discover.filterByOpenStatus")}
+        </p>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <button
+            onClick={() => onOpenFilterChange("any")}
+            className={`${pillBase} ${openFilter === "any" ? pillActive : pillIdle}`}
+          >
+            {t(locale, "discover.anyTime")}
+          </button>
+          <button
+            onClick={() => onOpenFilterChange("now")}
+            className={`${pillBase} ${openFilter === "now" ? pillActive : pillIdle}`}
+          >
+            {t(locale, "discover.openNow")}
+          </button>
+          <button
+            onClick={() => onOpenFilterChange("at")}
+            className={`${pillBase} ${openFilter === "at" ? pillActive : pillIdle}`}
+          >
+            {t(locale, "discover.openAt")}
+          </button>
+          {openFilter === "at" && (
+            <input
+              type="time"
+              value={openAtTime}
+              onChange={(e) => onOpenAtTimeChange(e.target.value)}
+              aria-label={t(locale, "discover.openAt")}
+              className="ml-1 px-2 py-1 rounded-full text-xs bg-landing-surface-hover border border-landing-border text-landing-text focus:outline-none"
+            />
+          )}
+        </div>
+      </div>
+    );
   }
 
   if (activeTab === "events") {

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useLanguage } from "@/lib/i18n/provider";
 import {
   lookupMemberForEntry,
+  lookupMemberByRfidUid,
   admitMember,
   checkoutEntry,
   searchMembersByName,
@@ -28,7 +29,7 @@ function ScannerPlaceholder() {
   );
 }
 
-type Mode = "idle" | "scanning" | "manual" | "search";
+type Mode = "idle" | "scanning" | "manual" | "search" | "rfid";
 
 type BlockedReason = {
   key: string;
@@ -68,6 +69,7 @@ export function EntryClient({
   const { t } = useLanguage();
   const [mode, setMode] = useState<Mode>("idle");
   const [manualCode, setManualCode] = useState("");
+  const [rfidDraft, setRfidDraft] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<MemberSearchResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -93,6 +95,7 @@ export function EntryClient({
     setFound(null);
     setMessage(null);
     setManualCode("");
+    setRfidDraft("");
   }
 
   function handleCode(code: string) {
@@ -100,6 +103,22 @@ export function EntryClient({
     setMessage(null);
     startTransition(async () => {
       const res = await lookupMemberForEntry(clubId, code);
+      if ("error" in res) {
+        setMessage(res.error);
+        setFound(null);
+      } else {
+        setFound(res.member);
+      }
+    });
+  }
+
+  function handleRfidUid(uid: string) {
+    if (!uid.trim()) return;
+    setMode("idle");
+    setMessage(null);
+    setRfidDraft("");
+    startTransition(async () => {
+      const res = await lookupMemberByRfidUid(clubId, uid);
       if ("error" in res) {
         setMessage(res.error);
         setFound(null);
@@ -210,6 +229,40 @@ export function EntryClient({
               </button>
             </div>
           </form>
+        ) : mode === "rfid" ? (
+          <div className="p-5 space-y-3">
+            <label className="block text-xs font-medium text-gray-500">
+              {t("ops.entry.rfidLabel")}
+            </label>
+            <input
+              type="text"
+              value={rfidDraft}
+              onChange={(e) => setRfidDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleRfidUid(rfidDraft);
+                }
+              }}
+              placeholder={t("ops.entry.rfidPrompt")}
+              autoComplete="off"
+              autoFocus
+              className="w-full rounded-lg border-2 border-dashed border-blue-300 bg-blue-50 px-3 py-3 text-sm font-mono tracking-wide text-gray-900 placeholder:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
+            />
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-gray-400">{t("ops.entry.rfidHint")}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("idle");
+                  setRfidDraft("");
+                }}
+                className="text-blue-600 hover:underline"
+              >
+                {t("ops.entry.cancel")}
+              </button>
+            </div>
+          </div>
         ) : mode === "search" ? (
           <div className="p-4 space-y-3">
             <input
@@ -268,6 +321,30 @@ export function EntryClient({
           </div>
         ) : (
           <div className="p-5 space-y-3">
+            <button
+              type="button"
+              onClick={() => {
+                reset();
+                setMode("rfid");
+              }}
+              className="w-full rounded-lg bg-blue-600 text-white text-sm font-semibold py-3 hover:bg-blue-700 flex items-center justify-center gap-2"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                className="w-5 h-5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 12a7 7 0 0114 0M8.5 12a3.5 3.5 0 017 0M12 12h.01"
+                />
+              </svg>
+              {t("ops.entry.tapChip")}
+            </button>
             <button
               type="button"
               onClick={() => {

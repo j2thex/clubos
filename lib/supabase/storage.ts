@@ -179,6 +179,35 @@ export async function uploadFeedbackImage(
   return { url: data.publicUrl };
 }
 
+// --- Platform partner logos (bucket: platform-assets, path: partners/) ---
+
+export async function uploadPlatformPartnerLogo(
+  file: File,
+): Promise<{ url: string } | { error: string }> {
+  const supabase = createAdminClient();
+
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "png";
+  const filename = `partners/${crypto.randomUUID()}.${ext}`;
+
+  const { error } = await supabase.storage
+    .from("platform-assets")
+    .upload(filename, file, { contentType: file.type, upsert: false });
+
+  if (error) return { error: "Failed to upload logo" };
+
+  const { data } = supabase.storage.from("platform-assets").getPublicUrl(filename);
+  return { url: data.publicUrl };
+}
+
+export async function deletePlatformPartnerLogo(logoUrl: string): Promise<void> {
+  const supabase = createAdminClient();
+
+  // Public URL shape: .../storage/v1/object/public/platform-assets/partners/<uuid>.<ext>
+  const match = logoUrl.match(/\/platform-assets\/(.+)$/);
+  if (!match) return;
+  await supabase.storage.from("platform-assets").remove([match[1]]);
+}
+
 // --- Shared helpers ---
 
 async function uploadToBucket(

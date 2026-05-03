@@ -12,6 +12,9 @@ import { NearMeButton } from "./components/near-me-button";
 import { AgeGate } from "./components/age-gate";
 import { useLanguage } from "@/lib/i18n/provider";
 import { getTagLabel } from "@/lib/tags";
+import { isOpenAt } from "@/lib/working-hours";
+
+type OpenFilter = "any" | "now" | "at";
 
 const DiscoverMap = dynamic(() => import("./components/discover-map"), {
   ssr: false,
@@ -42,6 +45,8 @@ export function DiscoverClient({
   const [selectedOfferNames, setSelectedOfferNames] = useState<string[]>([]);
   const [offerSearch, setOfferSearch] = useState("");
   const [dateFilter, setDateFilter] = useState<"all" | "today" | "week" | "month">("all");
+  const [openFilter, setOpenFilter] = useState<OpenFilter>("any");
+  const [openAtTime, setOpenAtTime] = useState<string>("21:00");
   const [showSearch, setShowSearch] = useState(false);
   const mapSectionRef = useRef<HTMLDivElement>(null);
   const listSectionRef = useRef<HTMLDivElement>(null);
@@ -73,11 +78,28 @@ export function DiscoverClient({
     window.history.replaceState(null, "", `#${activeTab}`);
   }, [activeTab]);
 
-  // Filter clubs by tags
+  // Filter clubs by tags + open status
   const filteredClubs = useMemo(() => {
-    if (selectedTagFilters.length === 0) return clubs;
-    return clubs.filter((c) => c.tags?.some((tag) => selectedTagFilters.includes(tag)));
-  }, [clubs, selectedTagFilters]);
+    let list = clubs;
+    if (selectedTagFilters.length > 0) {
+      list = list.filter((c) => c.tags?.some((tag) => selectedTagFilters.includes(tag)));
+    }
+    if (openFilter === "now") {
+      const now = new Date();
+      list = list.filter(
+        (c) => c.working_hours && c.timezone && isOpenAt(c.working_hours, c.timezone, now),
+      );
+    } else if (openFilter === "at") {
+      // "Today at HH:MM" in the visitor's local timezone → an instant.
+      const [h, m] = openAtTime.split(":").map((n) => parseInt(n, 10));
+      const target = new Date();
+      target.setHours(Number.isFinite(h) ? h : 0, Number.isFinite(m) ? m : 0, 0, 0);
+      list = list.filter(
+        (c) => c.working_hours && c.timezone && isOpenAt(c.working_hours, c.timezone, target),
+      );
+    }
+    return list;
+  }, [clubs, selectedTagFilters, openFilter, openAtTime]);
 
   // Filter events by date
   const filteredEvents = useMemo(() => {
@@ -308,6 +330,10 @@ export function DiscoverClient({
             onOfferSearchChange={setOfferSearch}
             dateFilter={dateFilter}
             onDateFilterChange={setDateFilter}
+            openFilter={openFilter}
+            onOpenFilterChange={setOpenFilter}
+            openAtTime={openAtTime}
+            onOpenAtTimeChange={setOpenAtTime}
             locale={locale}
           />
         )}
@@ -371,6 +397,10 @@ export function DiscoverClient({
           onOfferSearchChange={setOfferSearch}
           dateFilter={dateFilter}
           onDateFilterChange={setDateFilter}
+          openFilter={openFilter}
+          onOpenFilterChange={setOpenFilter}
+          openAtTime={openAtTime}
+          onOpenAtTimeChange={setOpenAtTime}
           locale={locale}
         />
       )}

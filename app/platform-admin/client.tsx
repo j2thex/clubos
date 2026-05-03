@@ -2,8 +2,18 @@
 
 import { useState, useTransition } from "react";
 import { createUnclaimedClub, createClubFromGoogleMaps, approveCustomOffer, approveClub, rejectClub, setClubVisibility, loginAsClubAdmin, setupStandardContent, bulkImportQuests, unlockClubFromPlatform } from "./actions";
+import { PartnersManager } from "./partners-manager";
 
 type ClubVisibility = "public" | "unlisted" | "private";
+
+interface Partner {
+  id: string;
+  name: string;
+  logoUrl: string;
+  websiteUrl: string;
+  displayOrder: number;
+  active: boolean;
+}
 
 interface ClubInfo {
   id: string;
@@ -207,6 +217,7 @@ export function PlatformAdminClient({
   activityFeed,
   inviteRequests,
   unapprovedOffers,
+  partners,
 }: {
   secret: string;
   stats: Stats;
@@ -215,6 +226,7 @@ export function PlatformAdminClient({
   activityFeed: ActivityEntry[];
   inviteRequests: InviteRequest[];
   unapprovedOffers: UnapprovedOffer[];
+  partners: Partner[];
 }) {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showGoogleForm, setShowGoogleForm] = useState(false);
@@ -597,6 +609,9 @@ export function PlatformAdminClient({
             </div>
           </div>
         )}
+
+        {/* Platform Partners */}
+        <PartnersManager partners={partners} secret={secret} />
 
         {/* Activity Feed */}
         {activityFeed.length > 0 && (

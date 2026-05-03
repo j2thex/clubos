@@ -536,3 +536,218 @@ export async function unlockClubFromPlatform(
   revalidatePath(`/${clubSlug}`, "layout");
   return { ok: true };
 }
+
+// ===== Platform Partners =====
+
+const HTTP_URL_RE = /^https?:\/\/[^\s]+$/i;
+
+export async function addPartner(
+  formData: FormData,
+  secret: string,
+): Promise<{ error: string } | { ok: true }> {
+  if (secret !== process.env.PLATFORM_ADMIN_SECRET) {
+    return { error: "Unauthorized" };
+  }
+
+  const name = (formData.get("name") as string)?.trim();
+  const websiteUrl = (formData.get("website_url") as string)?.trim();
+  const logo = formData.get("logo") as File | null;
+
+  if (!name) return { error: "Name is required" };
+  if (!websiteUrl || !HTTP_URL_RE.test(websiteUrl)) {
+    return { error: "Website URL must start with http:// or https://" };
+  }
+  if (!logo || logo.size === 0) return { error: "Logo is required" };
+  if (logo.size > 2 * 1024 * 1024) return { error: "Logo must be 2MB or smaller" };
+  if (!logo.type.startsWith("image/")) return { error: "Logo must be an image file" };
+
+  const { uploadPlatformPartnerLogo } = await import("@/lib/supabase/storage");
+  const upload = await uploadPlatformPartnerLogo(logo);
+  if ("error" in upload) return upload;
+
+  const supabase = createAdminClient();
+
+  // Place new partner at the end of the list.
+  const { data: maxRow } = await supabase
+    .from("platform_partners")
+    .select("display_order")
+    .order("display_order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const nextOrder = (maxRow?.display_order ?? -1) + 1;
+
+  const { error } = await supabase.from("platform_partners").insert({
+    name,
+    logo_url: upload.url,
+    website_url: websiteUrl,
+    display_order: nextOrder,
+    active: true,
+  });
+
+  if (error) {
+    // Roll back the orphaned upload.
+    const { deletePlatformPartnerLogo } = await import("@/lib/supabase/storage");
+    await deletePlatformPartnerLogo(upload.url);
+    return { error: "Failed to save partner" };
+  }
+
+  revalidatePath("/");
+  revalidatePath("/platform-admin");
+  return { ok: true };
+}
+
+export async function updatePartner(
+  id: string,
+  formData: FormData,
+  secret: string,
+): Promise<{ error: string } | { ok: true }> {
+  if (secret !== process.env.PLATFORM_ADMIN_SECRET) {
+    return { error: "Unauthorized" };
+  }
+
+  const name = (formData.get("name") as string)?.trim();
+  const websiteUrl = (formData.get("website_url") as string)?.trim();
+  const logo = formData.get("logo") as File | null;
+
+  if (!name) return { error: "Name is required" };
+  if (!websiteUrl || !HTTP_URL_RE.test(websiteUrl)) {
+    return { error: "Website URL must start with http:// or https://" };
+  }
+
+  const supabase = createAdminClient();
+
+  const updates: { name: string; website_url: string; logo_url?: string } = {
+    name,
+    website_url: websiteUrl,
+  };
+
+  let oldLogoUrl: string | null = null;
+
+  if (logo && logo.size > 0) {
+    if (logo.size > 2 * 1024 * 1024) return { error: "Logo must be 2MB or smaller" };
+    if (!logo.type.startsWith("image/")) return { error: "Logo must be an image file" };
+
+    // Capture the existing logo so we can clean it up after the update succeeds.
+    const { data: existing } = await supabase
+      .from("platform_partners")
+      .select("logo_url")
+      .eq("id", id)
+      .maybeSingle();
+    oldLogoUrl = existing?.logo_url ?? null;
+
+    const { uploadPlatformPartnerLogo } = await import("@/lib/supabase/storage");
+    const upload = await uploadPlatformPartnerLogo(logo);
+    if ("error" in upload) return upload;
+    updates.logo_url = upload.url;
+  }
+
+  const { error } = await supabase.from("platform_partners").update(updates).eq("id", id);
+  if (error) return { error: "Failed to update partner" };
+
+  if (oldLogoUrl && updates.logo_url) {
+    const { deletePlatformPartnerLogo } = await import("@/lib/supabase/storage");
+    await deletePlatformPartnerLogo(oldLogoUrl);
+  }
+
+  revalidatePath("/");
+  revalidatePath("/platform-admin");
+  return { ok: true };
+}
+
+export async function deletePartner(
+  id: string,
+  secret: string,
+): Promise<{ error: string } | { ok: true }> {
+  if (secret !== process.env.PLATFORM_ADMIN_SECRET) {
+    return { error: "Unauthorized" };
+  }
+
+  const supabase = createAdminClient();
+
+  const { data: existing } = await supabase
+    .from("platform_partners")
+    .select("logo_url")
+    .eq("id", id)
+    .maybeSingle();
+
+  const { error } = await supabase.from("platform_partners").delete().eq("id", id);
+  if (error) return { error: "Failed to delete partner" };
+
+  if (existing?.logo_url) {
+    const { deletePlatformPartnerLogo } = await import("@/lib/supabase/storage");
+    await deletePlatformPartnerLogo(existing.logo_url);
+  }
+
+  revalidatePath("/");
+  revalidatePath("/platform-admin");
+  return { ok: true };
+}
+
+export async function togglePartnerActive(
+  id: string,
+  active: boolean,
+  secret: string,
+): Promise<{ error: string } | { ok: true }> {
+  if (secret !== process.env.PLATFORM_ADMIN_SECRET) {
+    return { error: "Unauthorized" };
+  }
+
+  const supabase = createAdminClient();
+  const { error } = await supabase.from("platform_partners").update({ active }).eq("id", id);
+  if (error) return { error: "Failed to update partner" };
+
+  revalidatePath("/");
+  revalidatePath("/platform-admin");
+  return { ok: true };
+}
+
+export async function reorderPartner(
+  id: string,
+  direction: "up" | "down",
+  secret: string,
+): Promise<{ error: string } | { ok: true }> {
+  if (secret !== process.env.PLATFORM_ADMIN_SECRET) {
+    return { error: "Unauthorized" };
+  }
+
+  const supabase = createAdminClient();
+
+  const { data: current } = await supabase
+    .from("platform_partners")
+    .select("id, display_order")
+    .eq("id", id)
+    .maybeSingle();
+  if (!current) return { error: "Partner not found" };
+
+  const { data: neighbor } = direction === "up"
+    ? await supabase
+        .from("platform_partners")
+        .select("id, display_order")
+        .lt("display_order", current.display_order)
+        .order("display_order", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    : await supabase
+        .from("platform_partners")
+        .select("id, display_order")
+        .gt("display_order", current.display_order)
+        .order("display_order", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+  if (!neighbor) return { ok: true }; // already at the edge
+
+  // Swap display_order between the two rows.
+  await supabase
+    .from("platform_partners")
+    .update({ display_order: neighbor.display_order })
+    .eq("id", current.id);
+  await supabase
+    .from("platform_partners")
+    .update({ display_order: current.display_order })
+    .eq("id", neighbor.id);
+
+  revalidatePath("/");
+  revalidatePath("/platform-admin");
+  return { ok: true };
+}

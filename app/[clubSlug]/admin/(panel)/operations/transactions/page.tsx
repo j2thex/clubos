@@ -23,11 +23,12 @@ export default async function AdminOperationsTransactionsPage({
   searchParams,
 }: {
   params: Promise<{ clubSlug: string }>;
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; memberCode?: string }>;
 }) {
   const { clubSlug } = await params;
-  const { page: pageRaw } = await searchParams;
+  const { page: pageRaw, memberCode: memberCodeRaw } = await searchParams;
   const page = Math.max(0, Number(pageRaw ?? 0) || 0);
+  const memberCode = memberCodeRaw?.trim() || null;
   const supabase = createAdminClient();
   const locale = await getServerLocale();
 
@@ -42,9 +43,42 @@ export default async function AdminOperationsTransactionsPage({
 
   await requireOpsAccess(club.id, "transactions");
 
+  let filterMember: { member_code: string; full_name: string | null } | null =
+    null;
+  if (memberCode) {
+    const { data } = await supabase
+      .from("members")
+      .select("member_code, full_name")
+      .eq("club_id", club.id)
+      .eq("member_code", memberCode)
+      .maybeSingle();
+    filterMember = data ?? null;
+  }
+
   const from = page * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
   const dayStart = new Date(new Date().toDateString()).toISOString();
+
+  const salesQuery = memberCode
+    ? supabase
+        .from("sales")
+        .select(
+          "id, total, discount, paid_with, comment, created_at, voided_at, void_reason, members!inner(member_code, full_name), staff:fulfilled_by(member_code, full_name), lines:product_transactions(id, quantity, unit_price_at_sale, total_price, weight_source, products(name, unit))",
+          { count: "exact" },
+        )
+        .eq("club_id", club.id)
+        .eq("members.member_code", memberCode)
+        .order("created_at", { ascending: false })
+        .range(from, to)
+    : supabase
+        .from("sales")
+        .select(
+          "id, total, discount, paid_with, comment, created_at, voided_at, void_reason, members(member_code, full_name), staff:fulfilled_by(member_code, full_name), lines:product_transactions(id, quantity, unit_price_at_sale, total_price, weight_source, products(name, unit))",
+          { count: "exact" },
+        )
+        .eq("club_id", club.id)
+        .order("created_at", { ascending: false })
+        .range(from, to);
 
   const [
     { data: sales, count },
@@ -52,28 +86,24 @@ export default async function AdminOperationsTransactionsPage({
     { data: voidedToday },
     { data: todayLines },
   ] = await Promise.all([
-    supabase
-      .from("sales")
-      .select(
-        "id, total, discount, paid_with, comment, created_at, voided_at, void_reason, members(member_code, full_name), staff:fulfilled_by(member_code, full_name), lines:product_transactions(id, quantity, unit_price_at_sale, total_price, weight_source, products(name, unit))",
-        { count: "exact" },
-      )
-      .eq("club_id", club.id)
-      .order("created_at", { ascending: false })
-      .range(from, to),
-    supabase
-      .from("sales")
-      .select("total")
-      .eq("club_id", club.id)
-      .is("voided_at", null)
-      .gte("created_at", dayStart),
-    supabase
-      .from("sales")
-      .select("total")
-      .eq("club_id", club.id)
-      .not("voided_at", "is", null)
-      .gte("voided_at", dayStart),
-    page === 0
+    salesQuery,
+    memberCode
+      ? Promise.resolve({ data: null })
+      : supabase
+          .from("sales")
+          .select("total")
+          .eq("club_id", club.id)
+          .is("voided_at", null)
+          .gte("created_at", dayStart),
+    memberCode
+      ? Promise.resolve({ data: null })
+      : supabase
+          .from("sales")
+          .select("total")
+          .eq("club_id", club.id)
+          .not("voided_at", "is", null)
+          .gte("voided_at", dayStart),
+    !memberCode && page === 0
       ? supabase
           .from("product_transactions")
           .select("quantity, total_price, products(name, unit)")
@@ -153,13 +183,22 @@ export default async function AdminOperationsTransactionsPage({
     const oldestStart = new Date(`${oldestKey}T00:00:00`).toISOString();
     const newestEnd = new Date(`${newestKey}T00:00:00`);
     newestEnd.setDate(newestEnd.getDate() + 1);
-    const { data: dayRows } = await supabase
-      .from("sales")
-      .select("created_at, total")
-      .eq("club_id", club.id)
-      .is("voided_at", null)
-      .gte("created_at", oldestStart)
-      .lt("created_at", newestEnd.toISOString());
+    const { data: dayRows } = memberCode
+      ? await supabase
+          .from("sales")
+          .select("created_at, total, members!inner(member_code)")
+          .eq("club_id", club.id)
+          .eq("members.member_code", memberCode)
+          .is("voided_at", null)
+          .gte("created_at", oldestStart)
+          .lt("created_at", newestEnd.toISOString())
+      : await supabase
+          .from("sales")
+          .select("created_at, total")
+          .eq("club_id", club.id)
+          .is("voided_at", null)
+          .gte("created_at", oldestStart)
+          .lt("created_at", newestEnd.toISOString());
     const totalsByKey = new Map<string, { total: number; count: number }>();
     for (const row of dayRows ?? []) {
       const key = toDayKey(new Date(row.created_at));
@@ -194,24 +233,45 @@ export default async function AdminOperationsTransactionsPage({
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-lg p-5 text-center">
-        <p className="text-xs text-gray-500 uppercase tracking-wide">
-          {t(locale, "ops.tx.todayRevenue")}
-        </p>
-        <p className="text-3xl font-bold text-gray-900 mt-1">
-          {todayTotal.toFixed(2)} €
-        </p>
-        {voidedCount > 0 && (
-          <p className="text-[11px] text-gray-500 mt-2">
-            {t(locale, "ops.tx.voidedToday", {
-              count: voidedCount,
-              total: voidedTotal.toFixed(2),
-            })}
+      {memberCode ? (
+        <div className="bg-white rounded-2xl shadow-lg p-4 flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-gray-900 truncate">
+              {filterMember?.full_name
+                ? `${filterMember.member_code} · ${filterMember.full_name}`
+                : t(locale, "ops.tx.filteredBy", { code: memberCode })}
+            </p>
+            <p className="text-[11px] text-gray-500 mt-0.5 tabular-nums">
+              {t(locale, "ops.tx.salesCount", { count: totalCount })}
+            </p>
+          </div>
+          <Link
+            href={`/${clubSlug}/admin/operations/transactions`}
+            className="text-xs rounded-full px-3 py-1 bg-gray-100 text-gray-700 hover:bg-gray-200 shrink-0"
+          >
+            {t(locale, "ops.tx.clearFilter")}
+          </Link>
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl shadow-lg p-5 text-center">
+          <p className="text-xs text-gray-500 uppercase tracking-wide">
+            {t(locale, "ops.tx.todayRevenue")}
           </p>
-        )}
-      </div>
+          <p className="text-3xl font-bold text-gray-900 mt-1">
+            {todayTotal.toFixed(2)} €
+          </p>
+          {voidedCount > 0 && (
+            <p className="text-[11px] text-gray-500 mt-2">
+              {t(locale, "ops.tx.voidedToday", {
+                count: voidedCount,
+                total: voidedTotal.toFixed(2),
+              })}
+            </p>
+          )}
+        </div>
+      )}
 
-      {productSummaryRows.length > 0 && (
+      {!memberCode && productSummaryRows.length > 0 && (
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           <div className="px-5 py-3 border-b border-gray-100">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
@@ -293,8 +353,17 @@ export default async function AdminOperationsTransactionsPage({
                   <div className="flex items-start gap-3">
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm font-semibold text-gray-900 ${voided ? "line-through" : ""}`}>
-                        {member?.member_code ?? "?"}
-                        {member?.full_name ? ` · ${member.full_name}` : ""}
+                        {member?.member_code ? (
+                          <Link
+                            href={`/${clubSlug}/admin/operations/transactions?memberCode=${encodeURIComponent(member.member_code)}`}
+                            className="hover:underline"
+                          >
+                            {member.member_code}
+                            {member.full_name ? ` · ${member.full_name}` : ""}
+                          </Link>
+                        ) : (
+                          "?"
+                        )}
                       </p>
                       <p className="text-[11px] text-gray-400">
                         {when}
@@ -372,7 +441,10 @@ export default async function AdminOperationsTransactionsPage({
         <div className="flex gap-2 justify-center">
           {page > 0 && (
             <Link
-              href={`/${clubSlug}/admin/operations/transactions?page=${page - 1}`}
+              href={`/${clubSlug}/admin/operations/transactions?${new URLSearchParams({
+                ...(memberCode ? { memberCode } : {}),
+                page: String(page - 1),
+              }).toString()}`}
               className="text-xs rounded-full px-3 py-1 bg-gray-100 text-gray-700 hover:bg-gray-200"
             >
               {t(locale, "ops.tx.newer")}
@@ -380,7 +452,10 @@ export default async function AdminOperationsTransactionsPage({
           )}
           {from + PAGE_SIZE < totalCount && (
             <Link
-              href={`/${clubSlug}/admin/operations/transactions?page=${page + 1}`}
+              href={`/${clubSlug}/admin/operations/transactions?${new URLSearchParams({
+                ...(memberCode ? { memberCode } : {}),
+                page: String(page + 1),
+              }).toString()}`}
               className="text-xs rounded-full px-3 py-1 bg-gray-100 text-gray-700 hover:bg-gray-200"
             >
               {t(locale, "ops.tx.older")}

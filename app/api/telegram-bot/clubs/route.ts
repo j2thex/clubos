@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
+import { getStatus, type WorkingHours } from "@/lib/working-hours";
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
   const { data: clubs, error } = await supabase
     .from("clubs")
     .select(
-      "id, slug, name, currency, latitude, longitude, telegram_bot_referral_name, telegram_bot_registration_price, telegram_bot_welcome_message, telegram_bot_keywords, telegram_bot_age_restricted"
+      "id, slug, name, currency, latitude, longitude, telegram_bot_referral_name, telegram_bot_registration_price, telegram_bot_welcome_message, telegram_bot_keywords, telegram_bot_age_restricted, working_hours, timezone"
     )
     .eq("telegram_bot_enabled", true)
     .eq("active", true);
@@ -42,23 +43,41 @@ export async function GET(request: NextRequest) {
     periodsByClub.set(p.club_id, arr);
   }
 
-  const result = clubs.map((c) => ({
-    name: c.name,
-    keywords: c.telegram_bot_keywords ?? [],
-    inviter: c.telegram_bot_referral_name,
-    ageRestricted: c.telegram_bot_age_restricted ?? true,
-    lat: c.latitude ?? undefined,
-    lng: c.longitude ?? undefined,
-    slug: c.slug,
-    currency: c.currency,
-    registrationPrice: c.telegram_bot_registration_price,
-    welcomeMessage: c.telegram_bot_welcome_message,
-    membershipPeriods: (periodsByClub.get(c.id) ?? []).map((p) => ({
-      name: p.name,
-      duration_months: p.duration_months,
-      price: p.price,
-    })),
-  }));
+  const now = new Date();
+
+  const result = clubs.map((c) => {
+    const workingHours = (c.working_hours ?? null) as WorkingHours | null;
+    const timezone = (c.timezone ?? null) as string | null;
+    const status = workingHours && timezone ? getStatus(workingHours, timezone, now) : null;
+
+    return {
+      name: c.name,
+      keywords: c.telegram_bot_keywords ?? [],
+      inviter: c.telegram_bot_referral_name,
+      ageRestricted: c.telegram_bot_age_restricted ?? true,
+      lat: c.latitude ?? undefined,
+      lng: c.longitude ?? undefined,
+      slug: c.slug,
+      currency: c.currency,
+      registrationPrice: c.telegram_bot_registration_price,
+      welcomeMessage: c.telegram_bot_welcome_message,
+      membershipPeriods: (periodsByClub.get(c.id) ?? []).map((p) => ({
+        name: p.name,
+        duration_months: p.duration_months,
+        price: p.price,
+      })),
+      // Source-of-truth schedule for the bot to recompute live (cache-safe).
+      // null when the club hasn't configured hours/timezone — bot should treat as "always available".
+      workingHours,
+      timezone,
+      // Snapshot at fetch time. Bot SHOULD recompute from workingHours+timezone
+      // for each user message; this snapshot is a hint for non-cached calls.
+      isOpenNow: status?.open ?? null,
+      closesAt: status?.open ? status.closesAt : null,
+      nextOpenDay: status && !status.open ? status.nextOpenDay : null,
+      nextOpenTime: status && !status.open ? status.nextOpenTime : null,
+    };
+  });
 
   return NextResponse.json(
     { clubs: result },

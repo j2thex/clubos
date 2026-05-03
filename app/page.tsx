@@ -10,6 +10,7 @@ import { HomepageMap } from "./_landing/homepage-client";
 import { MembershipExplorer } from "./_landing/membership-explorer";
 import { ClubDirectory } from "./_landing/club-directory";
 import { LandingFooter } from "./_landing/landing-footer";
+import { PartnersStrip } from "./_landing/partners-strip";
 import { ScrollReveal } from "./_landing/scroll-reveal";
 import type { DiscoverClub, DiscoverEvent, DiscoverOffer, DiscoverQuest } from "./discover/lib/types";
 import { localized } from "@/lib/i18n";
@@ -195,15 +196,31 @@ async function getMembershipDeals() {
   }
 }
 
+async function getPartners() {
+  try {
+    const supabase = createAdminClient();
+    const { data } = await supabase
+      .from("platform_partners")
+      .select("id, name, logo_url, website_url")
+      .eq("active", true)
+      .order("display_order", { ascending: true })
+      .order("created_at", { ascending: true });
+    return (data ?? []) as { id: string; name: string; logo_url: string; website_url: string }[];
+  } catch {
+    return [];
+  }
+}
+
 export default async function Home() {
   const locale = await getServerLocale();
   const clubs = await getClubs();
   const activeClubIds = clubs.map((c) => c.id);
-  const [events, offers, quests, deals] = await Promise.all([
+  const [events, offers, quests, deals, partners] = await Promise.all([
     getEvents(activeClubIds),
     getOffers(activeClubIds),
     getQuests(activeClubIds),
     getMembershipDeals(),
+    getPartners(),
   ]);
 
   const tr = (key: string, params?: Record<string, string | number>) =>
@@ -567,6 +584,9 @@ export default async function Home() {
           })()}
         </div>
       </section>
+
+      {/* Partners */}
+      <PartnersStrip partners={partners} locale={locale} />
 
       {/* Clubs */}
       <ClubDirectory t={tr} clubs={clubsForDirectory} totalClubs={clubs.length} />

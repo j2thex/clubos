@@ -11,6 +11,7 @@ osocios.club is a white-label SaaS membership portal for independent clubs: memb
 | **Organization** | A top-level operator entity that owns one or more Clubs. | Company, Account |
 | **Club** | A single tenant; the unit of isolation. Identified by a unique slug used in URLs (`/[clubSlug]/...`). | Tenant, Site |
 | **Club Branding** | The per-Club presentation layer: colors, logo, hero content, social links. One-to-one with a Club. | Theme, Skin |
+| **Platform Partner** | A cross-Club brand or organization (no `club_id`) shown as a clickable logo on the osocios.club marketing landing. Managed from the Tower. Distinct from any per-Club partnership. | Sponsor, Affiliate |
 
 ## People & Roles
 
@@ -122,7 +123,8 @@ osocios.club is a white-label SaaS membership portal for independent clubs: memb
 | **Member Portal** | The branded Member-facing web app at `/[clubSlug]/...`. | Frontend, App |
 | **Staff Console** | The PIN-gated Staff app at `/[clubSlug]/staff/...` for entry, fulfillment, verification. | Backoffice, Staff app |
 | **Admin Panel** | The Owner-only Club admin at `/[clubSlug]/admin/...`. | Dashboard, CMS |
-| **Platform Admin** | The cross-Club operator console at `/platform-admin/...`. | Super admin |
+| **Platform Admin** | The cross-Club operator console at `/platform-admin/...`. Internally and in conversation called the **Tower** ("osocios tower"). | Super admin |
+| **Tower** | Conversational alias for the Platform Admin. "Manage from the Tower" / "add to the Tower" → CRUD lives in `/platform-admin`, not the per-Club Admin Panel. | platform admin (lowercase) |
 
 ## Relationships
 
