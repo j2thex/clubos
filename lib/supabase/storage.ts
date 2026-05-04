@@ -227,7 +227,16 @@ async function uploadToBucket(
       upsert: false,
     });
 
-  if (error) return { error: "Failed to upload image" };
+  if (error) {
+    console.warn(`[storage] ${bucket} upload failed`, {
+      bucket,
+      clubId,
+      contentType: file.type,
+      size: file.size,
+      message: error.message,
+    });
+    return { error: error.message || "Failed to upload image" };
+  }
 
   const { data } = supabase.storage
     .from(bucket)

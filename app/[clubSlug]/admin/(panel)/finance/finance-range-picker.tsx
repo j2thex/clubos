@@ -65,6 +65,7 @@ export function FinanceRangePicker({
             type="date"
             value={from}
             onChange={(e) => setCustom("from", e.target.value)}
+            style={{ colorScheme: "light" }}
             className="flex-1 rounded-lg border border-gray-300 px-2 py-1 text-sm text-gray-900"
           />
           <span className="text-sm text-gray-400">→</span>
@@ -72,6 +73,7 @@ export function FinanceRangePicker({
             type="date"
             value={to}
             onChange={(e) => setCustom("to", e.target.value)}
+            style={{ colorScheme: "light" }}
             className="flex-1 rounded-lg border border-gray-300 px-2 py-1 text-sm text-gray-900"
           />
         </div>
