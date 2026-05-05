@@ -8,6 +8,7 @@ export async function logActivity(params: {
   targetMemberCode?: string | null;
   targetProductId?: string | null;
   details?: string | null;
+  ipAddress?: string | null;
 }) {
   const supabase = createAdminClient();
   await supabase.from("activity_log").insert({
@@ -18,5 +19,6 @@ export async function logActivity(params: {
     target_member_code: params.targetMemberCode ?? null,
     target_product_id: params.targetProductId ?? null,
     details: params.details ?? null,
+    ip_address: params.ipAddress ?? null,
   });
 }

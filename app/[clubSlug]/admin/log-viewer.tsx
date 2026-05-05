@@ -10,6 +10,7 @@ interface LogEntry {
   created_at: string;
   staff_code: string | null;
   staff_name: string | null;
+  ip_address: string | null;
 }
 
 const ACTION_CONFIG: Record<string, { label: string; color: string }> = {
@@ -31,6 +32,7 @@ const ACTION_CONFIG: Record<string, { label: string; color: string }> = {
   offer_order_fulfilled: { label: "Fulfilled order", color: "bg-amber-100 text-amber-700" },
   offer_walkin_order: { label: "Walk-in order", color: "bg-amber-100 text-amber-700" },
   email_collected: { label: "Email collected", color: "bg-indigo-100 text-indigo-700" },
+  staff_login: { label: "Staff login", color: "bg-sky-100 text-sky-700" },
   // Operations module
   operations_module_toggled: { label: "Ops toggled", color: "bg-slate-100 text-slate-700" },
   id_verified: { label: "ID verified", color: "bg-teal-100 text-teal-700" },
@@ -86,6 +88,7 @@ const BASE_CATEGORIES: { key: string; label: string; actions: string[]; color: s
   { key: "quests", label: "Quests", actions: ["quest_validated", "quest_approved", "quest_declined"], color: "bg-green-100 text-green-700" },
   { key: "orders", label: "Orders", actions: ["offer_order_fulfilled", "offer_walkin_order", "order_fulfilled", "walkin_order"], color: "bg-amber-100 text-amber-700" },
   { key: "events", label: "Events", actions: ["checkin"], color: "bg-emerald-100 text-emerald-700" },
+  { key: "logins", label: "Logins", actions: ["staff_login"], color: "bg-sky-100 text-sky-700" },
 ];
 
 function timeAgo(iso: string): string {
@@ -205,8 +208,13 @@ export function LogViewer({ logs, opsEnabled = false }: { logs: LogEntry[]; opsE
                   {log.details && (
                     <p className="text-xs text-gray-500 mt-1 truncate">{log.details}</p>
                   )}
-                  <p className="text-[10px] text-gray-400 mt-1">
-                    {log.staff_name ?? log.staff_code ?? "System"}
+                  <p className="text-[10px] text-gray-400 mt-1 flex items-center gap-2">
+                    <span>{log.staff_name ?? log.staff_code ?? "System"}</span>
+                    {log.ip_address && (
+                      <span className="font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                        {log.ip_address}
+                      </span>
+                    )}
                   </p>
                 </div>
                 <span className="text-[10px] text-gray-400 whitespace-nowrap mt-0.5">

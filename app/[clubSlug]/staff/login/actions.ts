@@ -3,7 +3,10 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyPin, createStaffToken, setStaffCookie } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { t, type Locale } from "@/lib/i18n";
+import { getClientIp } from "@/lib/get-client-ip";
+import { logActivity } from "@/lib/activity-log";
 
 export async function loginStaff(clubSlug: string, locale: Locale, formData: FormData) {
   const staffCode = (formData.get("staffCode") as string).toUpperCase().trim();
@@ -48,6 +51,17 @@ export async function loginStaff(clubSlug: string, locale: Locale, formData: For
 
   const token = await createStaffToken(member.id, club.id, clubSlug);
   await setStaffCookie(token);
+
+  const ip = await getClientIp();
+  const userAgent = (await headers()).get("user-agent");
+  await logActivity({
+    clubId: club.id,
+    staffMemberId: member.id,
+    action: "staff_login",
+    targetMemberCode: staffCode,
+    ipAddress: ip,
+    details: userAgent ? `UA: ${userAgent}` : null,
+  });
 
   redirect(`/${clubSlug}/staff`);
 }

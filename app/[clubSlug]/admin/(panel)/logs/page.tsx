@@ -24,7 +24,7 @@ export default async function AdminLogsPage({
 
   const { data: logs } = await supabase
     .from("activity_log")
-    .select("id, action, target_member_code, details, created_at, staff_member_id")
+    .select("id, action, target_member_code, details, created_at, staff_member_id, ip_address")
     .eq("club_id", club.id)
     .order("created_at", { ascending: false })
     .limit(200);
@@ -50,6 +50,7 @@ export default async function AdminLogsPage({
       created_at: log.created_at,
       staff_code: staff?.code ?? null,
       staff_name: staff?.name ?? null,
+      ip_address: (log.ip_address as string | null) ?? null,
     };
   });
 
