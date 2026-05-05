@@ -197,7 +197,7 @@ export async function admitMember(
     });
     return { error: "No date of birth on file" };
   }
-  if (age < 21) {
+  if (age < 18) {
     await logActivity({
       clubId,
       staffMemberId: actor.member_id,
@@ -206,7 +206,7 @@ export async function admitMember(
       targetMemberCode: member.member_code,
       details: `age ${age}`,
     });
-    return { error: `Under 21 (age ${age})` };
+    return { error: `Under 18 (age ${age})` };
   }
 
   const { data: entry, error } = await supabase

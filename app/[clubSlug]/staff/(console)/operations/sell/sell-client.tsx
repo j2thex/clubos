@@ -472,7 +472,7 @@ function MemberHeaderBar({
           {m.age !== null && (
             <span
               className={`text-[10px] rounded-full px-2 py-0.5 ${
-                m.age < 21 ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-600"
+                m.age < 18 ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-600"
               }`}
             >
               {t("ops.entry.age", { age: m.age })}

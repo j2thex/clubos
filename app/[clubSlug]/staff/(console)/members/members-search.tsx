@@ -104,7 +104,7 @@ function VerifyRow({
       {dateOfBirth && (
         <span
           className={`text-xs rounded-full px-2 py-0.5 ${
-            age !== null && age < 21
+            age !== null && age < 18
               ? "bg-red-100 text-red-700 font-semibold"
               : "bg-gray-100 text-gray-600"
           }`}

@@ -41,7 +41,7 @@ function computeBlockedReason(member: LookedUpMember): BlockedReason | null {
   if (member.age === null) {
     return { key: "ops.entry.reasonNoDob", fixable: true };
   }
-  if (member.age < 21) {
+  if (member.age < 18) {
     return { key: "ops.entry.reasonUnderage", params: { age: member.age }, fixable: false };
   }
   if (member.validExpired && member.validTill) {
@@ -435,7 +435,7 @@ function EntryDialog({
 }) {
   const { t } = useLanguage();
   const alreadyInside = !!member.openEntryId;
-  const under21 = member.age !== null && member.age < 21;
+  const underage = member.age !== null && member.age < 18;
   const blockedReason = computeBlockedReason(member);
   const blocked = !!blockedReason;
 
@@ -466,7 +466,7 @@ function EntryDialog({
           {member.age !== null && (
             <span
               className={`text-xs rounded-full px-2.5 py-1 font-semibold ${
-                under21
+                underage
                   ? "bg-red-100 text-red-700"
                   : "bg-gray-100 text-gray-700"
               }`}
