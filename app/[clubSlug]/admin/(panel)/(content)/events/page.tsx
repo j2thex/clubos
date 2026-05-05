@@ -12,7 +12,7 @@ export default async function EventsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, spin_display_decimals")
+    .select("id, spin_display_decimals, address, latitude, longitude")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -75,6 +75,14 @@ export default async function EventsPage({
   }));
 
   return (
-    <EventManager events={eventList} clubId={club.id} clubSlug={clubSlug} spinDisplayDecimals={club.spin_display_decimals ?? 0} />
+    <EventManager
+      events={eventList}
+      clubId={club.id}
+      clubSlug={clubSlug}
+      spinDisplayDecimals={club.spin_display_decimals ?? 0}
+      clubAddress={club.address ?? null}
+      clubLatitude={club.latitude != null ? Number(club.latitude) : null}
+      clubLongitude={club.longitude != null ? Number(club.longitude) : null}
+    />
   );
 }

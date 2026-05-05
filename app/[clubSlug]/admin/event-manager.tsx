@@ -47,11 +47,17 @@ export function EventManager({
   clubId,
   clubSlug,
   spinDisplayDecimals,
+  clubAddress,
+  clubLatitude,
+  clubLongitude,
 }: {
   events: Event[];
   clubId: string;
   clubSlug: string;
   spinDisplayDecimals: number;
+  clubAddress: string | null;
+  clubLatitude: number | null;
+  clubLongitude: number | null;
 }) {
   const spinStep = spinDisplayDecimals === 0 ? 1 : 0.1;
   const { t } = useLanguage();
@@ -92,9 +98,9 @@ export function EventManager({
   const [newDescEs, setNewDescEs] = useState("");
   const [newRecurrence, setNewRecurrence] = useState<string>("");
   const [newRecurrenceEnd, setNewRecurrenceEnd] = useState<string>("");
-  const [newLocationName, setNewLocationName] = useState("");
-  const [newLat, setNewLat] = useState<number | null>(null);
-  const [newLng, setNewLng] = useState<number | null>(null);
+  const [newLocationName, setNewLocationName] = useState(clubAddress ?? "");
+  const [newLat, setNewLat] = useState<number | null>(clubAddress ? clubLatitude : null);
+  const [newLng, setNewLng] = useState<number | null>(clubAddress ? clubLongitude : null);
 
   const [scopePrompt, setScopePrompt] = useState<{ type: "edit" | "delete"; eventId: string } | null>(null);
   const [editScope, setEditScope] = useState<string>("single");
@@ -327,9 +333,9 @@ export function EventManager({
         setNewLang("en");
         setNewRecurrence("");
         setNewRecurrenceEnd("");
-        setNewLocationName("");
-        setNewLat(null);
-        setNewLng(null);
+        setNewLocationName(clubAddress ?? "");
+        setNewLat(clubAddress ? clubLatitude : null);
+        setNewLng(clubAddress ? clubLongitude : null);
         const msg = createdCount && createdCount > 1
           ? t("events.occurrencesCreated", { count: String(createdCount) })
           : `"${createdTitle}" created successfully`;
