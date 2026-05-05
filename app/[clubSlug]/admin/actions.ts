@@ -3,6 +3,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hashPin, clearOwnerCookie, requireOwnerForClub } from "@/lib/auth";
 import { logActivity } from "@/lib/activity-log";
+import { STAFF_START_PAGES } from "@/lib/staff-start-pages";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
@@ -1959,6 +1960,24 @@ export async function updateWorkingHours(
   if (error) return { error: "Failed to update working hours" };
   revalidatePath(`/${clubSlug}/admin`, "layout");
   revalidatePath(`/${clubSlug}/public`);
+  return { ok: true };
+}
+
+export async function setStaffStartingPage(
+  clubId: string,
+  value: string | null,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  if (value !== null && !STAFF_START_PAGES.some((p) => p.value === value)) {
+    return { error: "Invalid starting page" };
+  }
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("clubs")
+    .update({ staff_starting_page: value })
+    .eq("id", clubId);
+  if (error) return { error: "Failed to update staff starting page" };
+  revalidatePath(`/${clubSlug}/admin`, "layout");
   return { ok: true };
 }
 

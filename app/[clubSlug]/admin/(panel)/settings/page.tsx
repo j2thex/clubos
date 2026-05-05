@@ -24,6 +24,7 @@ import { QrCodesManager } from "../../qr-codes-manager";
 import { OperationsModuleManager } from "../../operations-module-manager";
 import { NavPositionManager } from "../../nav-position-manager";
 import type { NavPosition } from "../../actions";
+import { StaffStartPageManager } from "../../staff-start-page-manager";
 
 // Hides the manager's own legacy h2 heading (each manager renders its own
 // uppercase title at the top, which would duplicate the CollapsibleSection
@@ -50,7 +51,7 @@ export default async function SettingsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, login_mode, invite_only, invite_mode, hide_member_login, preregistration_enabled, auto_registration, tags, visibility, requested_visibility, telegram_bot_token, telegram_chat_id, telegram_bot_username, telegram_member_subs_enabled, notification_secret, latitude, longitude, address, city, country, spin_enabled, working_hours, spin_display_decimals, spin_cost, telegram_bot_enabled, telegram_bot_referral_name, telegram_bot_registration_price, telegram_bot_welcome_message, telegram_bot_keywords, telegram_bot_age_restricted, operations_module_enabled, currency_mode, monthly_consumption_limit_grams, nav_position")
+    .select("id, login_mode, invite_only, invite_mode, hide_member_login, preregistration_enabled, auto_registration, tags, visibility, requested_visibility, telegram_bot_token, telegram_chat_id, telegram_bot_username, telegram_member_subs_enabled, notification_secret, latitude, longitude, address, city, country, spin_enabled, working_hours, spin_display_decimals, spin_cost, telegram_bot_enabled, telegram_bot_referral_name, telegram_bot_registration_price, telegram_bot_welcome_message, telegram_bot_keywords, telegram_bot_age_restricted, operations_module_enabled, currency_mode, monthly_consumption_limit_grams, nav_position, staff_starting_page, require_referral_code")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -210,6 +211,15 @@ export default async function SettingsPage({
           clubId={club.id}
           clubSlug={clubSlug}
           initialPosition={(club.nav_position as NavPosition | null) ?? "bottom"}
+        />
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Staff starting page" caption="Where staff land after logging in">
+        <StaffStartPageManager
+          clubId={club.id}
+          clubSlug={clubSlug}
+          initialValue={(club.staff_starting_page as string | null) ?? null}
+          opsEnabled={club.operations_module_enabled ?? false}
         />
       </CollapsibleSection>
 
