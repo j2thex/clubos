@@ -197,7 +197,7 @@ export default async function SettingsPage({
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection title="Working Hours" caption="Open / close times shown to members">
+      <CollapsibleSection title="Opening hours" caption="Open / close times shown to members">
         <WorkingHoursManager
           clubId={club.id}
           clubSlug={clubSlug}
