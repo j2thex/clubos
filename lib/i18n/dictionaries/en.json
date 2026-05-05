@@ -365,7 +365,6 @@
   "ops.transactionsLink": "Transactions",
   "ops.transactionsEmpty": "No sales recorded yet.",
   "ops.todayRevenue": "Today's revenue",
-  "profile.recentPurchases": "Recent Purchases",
   "ops.admin.enableLabel": "Enable operations module",
   "ops.admin.enableDesc": "Adds staff pages for door control (QR check-in/out, capacity, age verification) and dispensary (product catalog, weighed sales, transactions).",
   "ops.admin.warning": "Staff console now shows additional \"Operations\" pages. Member portal is unaffected. Disable this toggle at any time to hide the module — no data is lost.",

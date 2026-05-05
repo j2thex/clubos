@@ -365,7 +365,6 @@
   "ops.transactionsLink": "Transacciones",
   "ops.transactionsEmpty": "Aún no hay ventas registradas.",
   "ops.todayRevenue": "Ingresos de hoy",
-  "profile.recentPurchases": "Compras recientes",
   "ops.admin.enableLabel": "Activar módulo de operaciones",
   "ops.admin.enableDesc": "Añade páginas de control de acceso (QR entrada/salida, aforo, verificación de edad) y dispensario (catálogo, ventas pesadas, transacciones).",
   "ops.admin.warning": "La consola de staff muestra páginas de \"Operaciones\" adicionales. El portal del socio no cambia. Desactiva este interruptor en cualquier momento — no se pierde información.",
