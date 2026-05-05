@@ -35,6 +35,8 @@ type CartLine = {
   quantity: number;
   weightSource: "manual" | "scale";
   scaleRawReading: string | null;
+  weightRequested: number | null;
+  priceInput: number | null;
 };
 
 type DiscountMode = "amount" | "percent";
@@ -186,6 +188,8 @@ export function SellClient({
         quantity: 1,
         weightSource: "manual",
         scaleRawReading: null,
+        weightRequested: null,
+        priceInput: null,
       },
     });
   }
@@ -203,6 +207,8 @@ export function SellClient({
         quantity: payload.quantity,
         weightSource: payload.weightSource,
         scaleRawReading: payload.scaleRawReading,
+        weightRequested: payload.weightRequested,
+        priceInput: payload.priceInput,
       },
     });
     setQuantityProduct(null);
@@ -277,6 +283,8 @@ export function SellClient({
       quantity: l.quantity,
       weightSource: l.weightSource,
       scaleRawReading: l.scaleRawReading,
+      weightRequested: l.weightRequested,
+      priceInput: l.priceInput,
     }));
     startTransition(async () => {
       const r = await recordSale(clubSlug, {
@@ -428,6 +436,7 @@ export function SellClient({
         open={!!quantityProduct}
         productName={quantityProduct?.name ?? ""}
         unit={quantityProduct?.unit ?? "piece"}
+        unitPrice={quantityProduct?.unitPrice ?? 0}
         stockOnHand={quantityProduct?.stockOnHand ?? 0}
         onClose={() => setQuantityProduct(null)}
         onAdd={handleQuantityDialogAdd}

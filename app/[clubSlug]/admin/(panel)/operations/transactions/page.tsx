@@ -1,7 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { t, getDateLocale } from "@/lib/i18n";
+import { t, getDateLocale, type Locale } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 import { requireOpsAccess } from "@/lib/auth";
 import { clubDayStartIso } from "@/lib/club-time";
@@ -19,17 +19,31 @@ function toDayKey(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+type ScaleFilter = "all" | "scale" | "noscale";
+
+function parseScaleFilter(raw: string | undefined): ScaleFilter {
+  if (raw === "scale" || raw === "noscale") return raw;
+  return "all";
+}
+
 export default async function AdminOperationsTransactionsPage({
   params,
   searchParams,
 }: {
   params: Promise<{ clubSlug: string }>;
-  searchParams: Promise<{ page?: string; memberCode?: string }>;
+  searchParams: Promise<{ page?: string; memberCode?: string; scale?: string }>;
 }) {
   const { clubSlug } = await params;
-  const { page: pageRaw, memberCode: memberCodeRaw } = await searchParams;
+  const {
+    page: pageRaw,
+    memberCode: memberCodeRaw,
+    scale: scaleRaw,
+  } = await searchParams;
   const page = Math.max(0, Number(pageRaw ?? 0) || 0);
   const memberCode = memberCodeRaw?.trim() || null;
+  const scaleFilter = parseScaleFilter(scaleRaw);
+  const scaleEq =
+    scaleFilter === "scale" ? true : scaleFilter === "noscale" ? false : null;
   const supabase = createAdminClient();
   const locale = await getServerLocale();
 
@@ -60,7 +74,7 @@ export default async function AdminOperationsTransactionsPage({
   const to = from + PAGE_SIZE - 1;
   const dayStart = clubDayStartIso(new Date(), club.timezone ?? "Europe/Madrid");
 
-  const salesQuery = memberCode
+  const salesQueryBase = memberCode
     ? supabase
         .from("sales")
         .select(
@@ -69,17 +83,18 @@ export default async function AdminOperationsTransactionsPage({
         )
         .eq("club_id", club.id)
         .eq("members.member_code", memberCode)
-        .order("created_at", { ascending: false })
-        .range(from, to)
     : supabase
         .from("sales")
         .select(
           "id, total, discount, paid_with, comment, created_at, voided_at, void_reason, members(member_code, full_name), staff:fulfilled_by(member_code, full_name), lines:product_transactions(id, quantity, unit_price_at_sale, total_price, weight_source, products(name, unit))",
           { count: "exact" },
         )
-        .eq("club_id", club.id)
-        .order("created_at", { ascending: false })
-        .range(from, to);
+        .eq("club_id", club.id);
+  const salesQuery = (
+    scaleEq === null ? salesQueryBase : salesQueryBase.eq("scale_used", scaleEq)
+  )
+    .order("created_at", { ascending: false })
+    .range(from, to);
 
   const [
     { data: sales, count },
@@ -184,8 +199,8 @@ export default async function AdminOperationsTransactionsPage({
     const oldestStart = new Date(`${oldestKey}T00:00:00`).toISOString();
     const newestEnd = new Date(`${newestKey}T00:00:00`);
     newestEnd.setDate(newestEnd.getDate() + 1);
-    const { data: dayRows } = memberCode
-      ? await supabase
+    const dayRowsBase = memberCode
+      ? supabase
           .from("sales")
           .select("created_at, total, members!inner(member_code)")
           .eq("club_id", club.id)
@@ -193,13 +208,16 @@ export default async function AdminOperationsTransactionsPage({
           .is("voided_at", null)
           .gte("created_at", oldestStart)
           .lt("created_at", newestEnd.toISOString())
-      : await supabase
+      : supabase
           .from("sales")
           .select("created_at, total")
           .eq("club_id", club.id)
           .is("voided_at", null)
           .gte("created_at", oldestStart)
           .lt("created_at", newestEnd.toISOString());
+    const { data: dayRows } = await (
+      scaleEq === null ? dayRowsBase : dayRowsBase.eq("scale_used", scaleEq)
+    );
     const totalsByKey = new Map<string, { total: number; count: number }>();
     for (const row of dayRows ?? []) {
       const key = toDayKey(new Date(row.created_at));
@@ -234,6 +252,13 @@ export default async function AdminOperationsTransactionsPage({
         </div>
       </div>
 
+      <ScaleFilterChips
+        clubSlug={clubSlug}
+        active={scaleFilter}
+        memberCode={memberCode}
+        locale={locale}
+      />
+
       {memberCode ? (
         <div className="bg-white rounded-2xl shadow-lg p-4 flex items-center justify-between gap-3">
           <div className="min-w-0">
@@ -247,7 +272,9 @@ export default async function AdminOperationsTransactionsPage({
             </p>
           </div>
           <Link
-            href={`/${clubSlug}/admin/operations/transactions`}
+            href={`/${clubSlug}/admin/operations/transactions${
+              scaleFilter === "all" ? "" : `?scale=${scaleFilter}`
+            }`}
             className="text-xs rounded-full px-3 py-1 bg-gray-100 text-gray-700 hover:bg-gray-200 shrink-0"
           >
             {t(locale, "ops.tx.clearFilter")}
@@ -356,7 +383,14 @@ export default async function AdminOperationsTransactionsPage({
                       <p className={`text-sm font-semibold text-gray-900 ${voided ? "line-through" : ""}`}>
                         {member?.member_code ? (
                           <Link
-                            href={`/${clubSlug}/admin/operations/transactions?memberCode=${encodeURIComponent(member.member_code)}`}
+                            href={`/${clubSlug}/admin/operations/transactions?${new URLSearchParams(
+                              {
+                                memberCode: member.member_code,
+                                ...(scaleFilter === "all"
+                                  ? {}
+                                  : { scale: scaleFilter }),
+                              },
+                            ).toString()}`}
                             className="hover:underline"
                           >
                             {member.member_code}
@@ -444,6 +478,7 @@ export default async function AdminOperationsTransactionsPage({
             <Link
               href={`/${clubSlug}/admin/operations/transactions?${new URLSearchParams({
                 ...(memberCode ? { memberCode } : {}),
+                ...(scaleFilter === "all" ? {} : { scale: scaleFilter }),
                 page: String(page - 1),
               }).toString()}`}
               className="text-xs rounded-full px-3 py-1 bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -455,6 +490,7 @@ export default async function AdminOperationsTransactionsPage({
             <Link
               href={`/${clubSlug}/admin/operations/transactions?${new URLSearchParams({
                 ...(memberCode ? { memberCode } : {}),
+                ...(scaleFilter === "all" ? {} : { scale: scaleFilter }),
                 page: String(page + 1),
               }).toString()}`}
               className="text-xs rounded-full px-3 py-1 bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -464,6 +500,50 @@ export default async function AdminOperationsTransactionsPage({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function ScaleFilterChips({
+  clubSlug,
+  active,
+  memberCode,
+  locale,
+}: {
+  clubSlug: string;
+  active: ScaleFilter;
+  memberCode: string | null;
+  locale: Locale;
+}) {
+  const options: Array<{ value: ScaleFilter; label: string }> = [
+    { value: "all", label: t(locale, "ops.tx.filterAll") },
+    { value: "scale", label: t(locale, "ops.tx.filterScale") },
+    { value: "noscale", label: t(locale, "ops.tx.filterNoScale") },
+  ];
+  return (
+    <div className="flex gap-1.5 px-1">
+      {options.map((opt) => {
+        const params = new URLSearchParams();
+        if (memberCode) params.set("memberCode", memberCode);
+        if (opt.value !== "all") params.set("scale", opt.value);
+        const href = `/${clubSlug}/admin/operations/transactions${
+          params.toString() ? `?${params.toString()}` : ""
+        }`;
+        const isActive = active === opt.value;
+        return (
+          <Link
+            key={opt.value}
+            href={href}
+            className={`text-[11px] rounded-full px-3 py-1 font-semibold ${
+              isActive
+                ? "bg-gray-900 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            {opt.label}
+          </Link>
+        );
+      })}
     </div>
   );
 }
