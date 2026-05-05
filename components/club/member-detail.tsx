@@ -24,6 +24,7 @@ export type MemberDetailRecord = {
   id_photo_url: string | null;
   photo_url: string | null;
   signature_url: string | null;
+  staff_note: string | null;
 };
 
 export type UpdateMemberIdentityInput = {
@@ -35,6 +36,7 @@ export type UpdateMemberIdentityInput = {
   phone: string | null;
   email: string | null;
   marketingChannel?: string | null;
+  staffNote?: string | null;
 };
 
 export type MemberDetailActions = {
@@ -102,6 +104,7 @@ export function MemberDetail({
   const [phone, setPhone] = useState(member.phone ?? "");
   const [email, setEmail] = useState(member.email ?? "");
   const [marketingChannel, setMarketingChannel] = useState(member.marketing_channel ?? "");
+  const [staffNote, setStaffNote] = useState(member.staff_note ?? "");
 
   const [replaceTarget, setReplaceTarget] = useState<
     null | "portrait" | "idphoto" | "signature"
@@ -127,6 +130,7 @@ export function MemberDetail({
         idNumber: idNumber || null,
         phone: phone || null,
         email: email || null,
+        staffNote: staffNote.trim() || null,
         ...(allowMarketingChannel
           ? { marketingChannel: marketingChannel || null }
           : {}),
@@ -363,6 +367,19 @@ export function MemberDetail({
             </p>
           </label>
         )}
+
+        <label className="block">
+          <span className="text-xs font-medium text-gray-500">
+            Staff note
+          </span>
+          <textarea
+            value={staffNote}
+            onChange={(e) => setStaffNote(e.target.value)}
+            rows={2}
+            placeholder="Visible to staff during door check-in and sales"
+            className="mt-1 w-full rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-300 transition"
+          />
+        </label>
 
         <button
           type="button"

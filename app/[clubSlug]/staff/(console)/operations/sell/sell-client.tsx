@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useLanguage } from "@/lib/i18n/provider";
 import { lookupMemberForSell, recordSale, type MemberForSell, type RecentSale } from "./actions";
+import { MemberStaffNote } from "@/components/staff/member-staff-note";
 import { TopupDialog } from "./topup-dialog";
 import { QuantityDialog, type QuantityDialogPayload } from "./quantity-dialog";
 
@@ -381,6 +382,8 @@ export function SellClient({
         }}
         onOpenTopup={() => setTopupOpen(true)}
       />
+
+      <MemberStaffNote note={memberData.member.staffNote} />
 
       {!memberData.member.idVerifiedAt && (
         <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">

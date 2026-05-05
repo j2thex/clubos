@@ -49,7 +49,7 @@ export default async function PeoplePage({
     supabase
       .from("members")
       .select(
-        "id, member_code, full_name, first_name, last_name, date_of_birth, residency_status, id_number, phone, email, marketing_channel, spin_balance, is_staff, status, rfid_uid, id_verified_at, id_photo_path, photo_path, signature_path, member_roles(name)"
+        "id, member_code, full_name, first_name, last_name, date_of_birth, residency_status, id_number, phone, email, marketing_channel, spin_balance, is_staff, status, rfid_uid, id_verified_at, id_photo_path, photo_path, signature_path, staff_note, member_roles(name)"
       )
       .eq("club_id", club.id)
       .eq("is_staff", false)
@@ -138,6 +138,7 @@ export default async function PeoplePage({
         id_photo_url: idPhotoUrl,
         photo_url: photoUrl,
         signature_url: signatureUrl,
+        staff_note: m.staff_note ?? null,
       };
     }),
   );

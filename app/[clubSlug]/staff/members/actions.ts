@@ -798,18 +798,22 @@ export async function staffUpdateMemberIdentity(
   }
 
   const supabase = createAdminClient();
+  const updatePayload: Record<string, unknown> = {
+    first_name: firstName,
+    last_name: lastName,
+    full_name: `${firstName} ${lastName}`,
+    date_of_birth: input.dateOfBirth || null,
+    residency_status: input.residencyStatus,
+    id_number: input.idNumber?.trim() || null,
+    phone: input.phone?.trim() || null,
+    email: input.email?.trim() || null,
+  };
+  if (input.staffNote !== undefined) {
+    updatePayload.staff_note = input.staffNote?.trim() || null;
+  }
   const { error } = await supabase
     .from("members")
-    .update({
-      first_name: firstName,
-      last_name: lastName,
-      full_name: `${firstName} ${lastName}`,
-      date_of_birth: input.dateOfBirth || null,
-      residency_status: input.residencyStatus,
-      id_number: input.idNumber?.trim() || null,
-      phone: input.phone?.trim() || null,
-      email: input.email?.trim() || null,
-    })
+    .update(updatePayload)
     .eq("id", memberId);
 
   if (error) return { error: "Failed to update member" };

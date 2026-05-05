@@ -14,6 +14,7 @@ import {
   type LookedUpMember,
   type MemberSearchResult,
 } from "./actions";
+import { MemberStaffNote } from "@/components/staff/member-staff-note";
 
 // Camera scanner is client-only and heavy — lazy-load it.
 const Scanner = dynamic(
@@ -462,6 +463,7 @@ function EntryDialog({
             {member.fullName ?? "—"}
           </p>
         </div>
+        <MemberStaffNote note={member.staffNote} />
         <div className="flex flex-wrap gap-2">
           {member.age !== null && (
             <span

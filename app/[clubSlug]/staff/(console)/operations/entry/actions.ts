@@ -22,6 +22,7 @@ export type LookedUpMember = {
   validExpired: boolean;
   openEntryId: string | null;
   openEntrySince: string | null;
+  staffNote: string | null;
 };
 
 export type CheckinResult =
@@ -57,6 +58,7 @@ type MemberRow = {
   id_verified_at: string | null;
   id_photo_path: string | null;
   valid_till: string | null;
+  staff_note: string | null;
 };
 
 async function buildLookedUpMember(
@@ -92,6 +94,7 @@ async function buildLookedUpMember(
     validExpired,
     openEntryId: openEntry?.id ?? null,
     openEntrySince: openEntry?.checked_in_at ?? null,
+    staffNote: member.staff_note ?? null,
   };
 }
 
@@ -110,7 +113,7 @@ export async function lookupMemberForEntry(
   const { data: member } = await supabase
     .from("members")
     .select(
-      "id, member_code, full_name, status, date_of_birth, id_verified_at, id_photo_path, valid_till",
+      "id, member_code, full_name, status, date_of_birth, id_verified_at, id_photo_path, valid_till, staff_note",
     )
     .eq("club_id", clubId)
     .eq("member_code", code)
@@ -141,7 +144,7 @@ export async function lookupMemberByRfidUid(
   const { data: member } = await supabase
     .from("members")
     .select(
-      "id, member_code, full_name, status, date_of_birth, id_verified_at, id_photo_path, valid_till",
+      "id, member_code, full_name, status, date_of_birth, id_verified_at, id_photo_path, valid_till, staff_note",
     )
     .eq("club_id", clubId)
     .eq("rfid_uid", uid)

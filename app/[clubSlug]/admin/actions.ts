@@ -2076,6 +2076,7 @@ export type UpdateMemberIdentityInput = {
   phone: string | null;
   email: string | null;
   marketingChannel?: string | null;
+  staffNote?: string | null;
 };
 
 async function authorizeMemberOwner(
@@ -2166,6 +2167,9 @@ export async function updateMemberIdentity(
   if (input.marketingChannel !== undefined) {
     const channel = input.marketingChannel?.trim().toLowerCase() || null;
     updatePayload.marketing_channel = channel;
+  }
+  if (input.staffNote !== undefined) {
+    updatePayload.staff_note = input.staffNote?.trim() || null;
   }
 
   const { error } = await supabase
