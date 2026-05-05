@@ -66,6 +66,7 @@ export default async function StaffMembersPage({
         "id, member_code, full_name, first_name, last_name, spin_balance, status, role_id, membership_period_id, valid_till, date_of_birth, residency_status, id_number, phone, email, marketing_channel, id_verified_at, id_photo_path, photo_path, signature_path, rfid_uid, created_at, member_roles(id, name)",
       )
       .eq("club_id", club.id)
+      .eq("is_system_member", false)
       .order("created_at", { ascending: false }),
     supabase
       .from("member_roles")

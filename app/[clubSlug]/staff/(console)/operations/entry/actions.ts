@@ -114,6 +114,7 @@ export async function lookupMemberForEntry(
     )
     .eq("club_id", clubId)
     .eq("member_code", code)
+    .eq("is_system_member", false)
     .maybeSingle();
 
   if (!member) return { error: `Member ${code} not found` };
@@ -144,6 +145,7 @@ export async function lookupMemberByRfidUid(
     )
     .eq("club_id", clubId)
     .eq("rfid_uid", uid)
+    .eq("is_system_member", false)
     .maybeSingle();
 
   if (!member) return { error: "Chip not registered to any member" };
@@ -168,6 +170,7 @@ export async function admitMember(
     .select("id, member_code, status, date_of_birth, valid_till")
     .eq("id", memberId)
     .eq("club_id", clubId)
+    .eq("is_system_member", false)
     .single();
 
   if (!member) return { error: "Member not found" };
