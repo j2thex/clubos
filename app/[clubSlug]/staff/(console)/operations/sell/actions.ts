@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireOpsAccess } from "@/lib/auth";
+import { clubDayStartIso } from "@/lib/club-time";
 import { revalidatePath } from "next/cache";
 import { lookupMemberForEntry, type LookedUpMember } from "../entry/actions";
 
@@ -387,7 +388,16 @@ export async function exportTodayTransactionsCsv(
   }
 
   const supabase = createAdminClient();
-  const dayStart = new Date(new Date().toDateString()).toISOString();
+
+  const { data: clubRow } = await supabase
+    .from("clubs")
+    .select("timezone")
+    .eq("id", clubId)
+    .single();
+  const dayStart = clubDayStartIso(
+    new Date(),
+    clubRow?.timezone ?? "Europe/Madrid",
+  );
 
   const { data } = await supabase
     .from("product_transactions")

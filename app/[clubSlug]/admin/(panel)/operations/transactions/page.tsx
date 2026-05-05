@@ -4,6 +4,7 @@ import Link from "next/link";
 import { t, getDateLocale } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 import { requireOpsAccess } from "@/lib/auth";
+import { clubDayStartIso } from "@/lib/club-time";
 import { VoidSaleButton } from "@/app/[clubSlug]/staff/(console)/operations/transactions/void-sale-button";
 import { ExportCsvButton } from "@/app/[clubSlug]/staff/(console)/operations/transactions/export-button";
 
@@ -34,7 +35,7 @@ export default async function AdminOperationsTransactionsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id")
+    .select("id, timezone")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -57,7 +58,7 @@ export default async function AdminOperationsTransactionsPage({
 
   const from = page * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
-  const dayStart = new Date(new Date().toDateString()).toISOString();
+  const dayStart = clubDayStartIso(new Date(), club.timezone ?? "Europe/Madrid");
 
   const salesQuery = memberCode
     ? supabase

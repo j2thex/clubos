@@ -8,26 +8,7 @@ import { BentoStatTile } from "@/components/club/bento-stat-tile";
 import { AddToHomescreen } from "@/components/club/add-to-homescreen";
 import { t, type Locale } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
-
-function clubHourOf(now: Date, timezone: string): number {
-  return Number(
-    new Intl.DateTimeFormat("en-US", { hour: "numeric", hour12: false, timeZone: timezone })
-      .format(now),
-  );
-}
-
-function clubTodayYmd(now: Date, timezone: string): string {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    timeZone: timezone,
-  }).formatToParts(now);
-  const y = parts.find((p) => p.type === "year")?.value ?? "1970";
-  const m = parts.find((p) => p.type === "month")?.value ?? "01";
-  const d = parts.find((p) => p.type === "day")?.value ?? "01";
-  return `${y}-${m}-${d}`;
-}
+import { clubHourOf, clubTodayYmd } from "@/lib/club-time";
 
 function pickGreeting(locale: Locale, hasName: boolean, timezone: string): string {
   const hour = clubHourOf(new Date(), timezone);
