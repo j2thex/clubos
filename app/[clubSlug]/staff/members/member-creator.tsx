@@ -435,7 +435,7 @@ export function StaffMemberCreator({
                       {opsEnabled && <span className="text-red-600 ml-0.5">*</span>}
                     </span>
                     <div className={`flex gap-2 ${fieldErrors.includes("residencyStatus") ? "rounded-lg ring-1 ring-red-400" : ""}`}>
-                      <label className="flex-1 flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 cursor-pointer text-sm has-[:checked]:bg-gray-800 has-[:checked]:text-white has-[:checked]:border-gray-800 transition">
+                      <label className="flex-1 flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 cursor-pointer text-sm has-[:checked]:bg-gray-800 has-[:checked]:text-white has-[:checked]:border-gray-800 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-gray-400 has-[:focus-visible]:ring-offset-1 transition">
                         <input
                           type="radio"
                           name="residency"
@@ -446,7 +446,7 @@ export function StaffMemberCreator({
                         />
                         {t("ops.memberForm.residencyLocal")}
                       </label>
-                      <label className="flex-1 flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 cursor-pointer text-sm has-[:checked]:bg-gray-800 has-[:checked]:text-white has-[:checked]:border-gray-800 transition">
+                      <label className="flex-1 flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 cursor-pointer text-sm has-[:checked]:bg-gray-800 has-[:checked]:text-white has-[:checked]:border-gray-800 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-gray-400 has-[:focus-visible]:ring-offset-1 transition">
                         <input
                           type="radio"
                           name="residency"
