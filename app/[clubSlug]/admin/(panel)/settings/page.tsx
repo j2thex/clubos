@@ -25,6 +25,7 @@ import { OperationsModuleManager } from "../../operations-module-manager";
 import { NavPositionManager } from "../../nav-position-manager";
 import type { NavPosition } from "../../actions";
 import { StaffStartPageManager } from "../../staff-start-page-manager";
+import { RequireReferralManager } from "../../require-referral-manager";
 
 // Hides the manager's own legacy h2 heading (each manager renders its own
 // uppercase title at the top, which would duplicate the CollapsibleSection
@@ -257,6 +258,14 @@ export default async function SettingsPage({
             clubSlug={clubSlug}
           />
         </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Referral required" caption="Force staff to enter a referral when creating a member">
+        <RequireReferralManager
+          clubId={club.id}
+          clubSlug={clubSlug}
+          initialValue={club.require_referral_code ?? false}
+        />
       </CollapsibleSection>
 
       <CollapsibleSection title="Roles" caption="Custom labels staff assign to members (e.g. Founder, VIP)">

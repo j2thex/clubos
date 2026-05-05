@@ -25,7 +25,7 @@ export default async function StaffMembersPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name, operations_module_enabled, currency_mode")
+    .select("id, name, operations_module_enabled, currency_mode, require_referral_code")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -156,6 +156,7 @@ export default async function StaffMembersPage({
         periods={periods ?? []}
         roles={roles ?? []}
         opsEnabled={opsEnabled}
+        requireReferralCode={club.require_referral_code ?? false}
       />
 
       <div className="space-y-2">

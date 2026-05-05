@@ -125,10 +125,11 @@ export async function createMember(
   // setting; revisit if scripted.
   const { data: clubRow } = await supabase
     .from("clubs")
-    .select("operations_module_enabled")
+    .select("operations_module_enabled, require_referral_code")
     .eq("id", clubId)
     .single();
   const opsOn = !!clubRow?.operations_module_enabled;
+  const referralRequired = !!clubRow?.require_referral_code;
 
   if (opsOn) {
     const missing: string[] = [];
@@ -159,6 +160,11 @@ export async function createMember(
           "This club requires members to be 18 or older. The account was not created.",
       };
     }
+  }
+
+  if (referralRequired && !input.referredBy?.trim()) {
+    await cleanupOrphanedUploads(input);
+    return { error: "Referral code is required" };
   }
 
   // Validate referral code if provided

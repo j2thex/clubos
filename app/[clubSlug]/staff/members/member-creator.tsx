@@ -39,12 +39,14 @@ export function StaffMemberCreator({
   periods,
   roles = [],
   opsEnabled = false,
+  requireReferralCode = false,
 }: {
   clubId: string;
   clubSlug: string;
   periods: { id: string; name: string; duration_months: number; is_default: boolean }[];
   roles?: { id: string; name: string }[];
   opsEnabled?: boolean;
+  requireReferralCode?: boolean;
 }) {
   const { t } = useLanguage();
   const [memberCode, setMemberCode] = useState("");
@@ -152,6 +154,12 @@ export function StaffMemberCreator({
     if (opsEnabled && missingRequired.length > 0) {
       setFieldErrors(missingRequired);
       setError(t("ops.memberForm.missingSummary"));
+      return;
+    }
+
+    if (requireReferralCode && !referredBy.trim()) {
+      setFieldErrors(["referredBy"]);
+      setError("Referral code is required");
       return;
     }
 
@@ -318,6 +326,7 @@ export function StaffMemberCreator({
             <label className="block">
               <span className="text-xs font-medium text-gray-500">
                 {t("ops.memberForm.referredByLabel")}
+                {requireReferralCode && <span className="text-red-600 ml-0.5">*</span>}
               </span>
               <input
                 type="text"
@@ -325,7 +334,10 @@ export function StaffMemberCreator({
                 onChange={(e) => setReferredBy(e.target.value.toUpperCase())}
                 placeholder={t("ops.memberForm.referredByPlaceholder")}
                 maxLength={8}
-                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono tracking-wide uppercase text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                required={requireReferralCode}
+                className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm font-mono tracking-wide uppercase text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition ${
+                  fieldErrors.includes("referredBy") ? "border-red-400" : "border-gray-300"
+                }`}
               />
             </label>
           </div>

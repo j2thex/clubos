@@ -1963,6 +1963,21 @@ export async function updateWorkingHours(
   return { ok: true };
 }
 
+export async function setRequireReferralCode(
+  clubId: string,
+  value: boolean,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("clubs")
+    .update({ require_referral_code: value })
+    .eq("id", clubId);
+  if (error) return { error: "Failed to update setting" };
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
 export async function setStaffStartingPage(
   clubId: string,
   value: string | null,
