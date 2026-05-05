@@ -226,7 +226,7 @@ export function QuestList({
   const { t } = useLanguage();
 
   const [copiedToast, setCopiedToast] = useState(false);
-  const [hideCompleted, setHideCompleted] = useState(true);
+  const [hideCompleted, setHideCompleted] = useState(false);
 
   // Filter out expired quests
   const now = new Date();
