@@ -11,6 +11,7 @@ import {
   filterAdminNavItems,
   isAdminItemActive,
 } from "./admin-nav-items";
+import { OperationsNavLink } from "./operations-nav-link";
 
 interface AdminTopBarProps {
   clubId: string;
@@ -57,19 +58,33 @@ export function AdminTopBar({
             {visibleItems.map((item) => {
               const href = `${basePath}${item.path}`;
               const isActive = isAdminItemActive(item, pathname, basePath);
+              const linkClass = `flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                isActive
+                  ? "bg-white text-gray-900"
+                  : "text-gray-300 hover:bg-white/10 hover:text-white"
+              }`;
+              const inner = (
+                <>
+                  <span className="h-4 w-4 [&_svg]:h-4 [&_svg]:w-4">{item.icon}</span>
+                  <span className="whitespace-nowrap">{t(item.labelKey)}</span>
+                </>
+              );
+
               return (
                 <li key={item.labelKey} className="shrink-0">
-                  <Link
-                    href={href}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      isActive
-                        ? "bg-white text-gray-900"
-                        : "text-gray-300 hover:bg-white/10 hover:text-white"
-                    }`}
-                  >
-                    <span className="h-4 w-4 [&_svg]:h-4 [&_svg]:w-4">{item.icon}</span>
-                    <span className="whitespace-nowrap">{t(item.labelKey)}</span>
-                  </Link>
+                  {item.path === "/operations" ? (
+                    <OperationsNavLink
+                      portal="admin"
+                      clubSlug={clubSlug}
+                      className={linkClass}
+                    >
+                      {inner}
+                    </OperationsNavLink>
+                  ) : (
+                    <Link href={href} className={linkClass}>
+                      {inner}
+                    </Link>
+                  )}
                 </li>
               );
             })}

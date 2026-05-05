@@ -1,12 +1,11 @@
 import { notFound } from "next/navigation";
-import { getClub } from "@/lib/data/club";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { clubDayStartIso } from "@/lib/club-time";
 import { OperationsTabs, type OperationsTab } from "@/components/club/operations-tabs";
 
 export const dynamic = "force-dynamic";
 
-export default async function StaffOperationsLayout({
+export default async function AdminOperationsLayout({
   children,
   params,
 }: {
@@ -14,13 +13,17 @@ export default async function StaffOperationsLayout({
   params: Promise<{ clubSlug: string }>;
 }) {
   const { clubSlug } = await params;
-  const club = await getClub(clubSlug);
-
-  if (!club || !club.operations_module_enabled) {
-    notFound();
-  }
-
   const supabase = createAdminClient();
+
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("id, timezone")
+    .eq("slug", clubSlug)
+    .eq("active", true)
+    .single();
+
+  if (!club) notFound();
+
   const dayStart = clubDayStartIso(new Date(), club.timezone ?? "Europe/Madrid");
 
   const [{ count: insideCount }, { count: todayTxCount }] = await Promise.all([
@@ -37,7 +40,7 @@ export default async function StaffOperationsLayout({
       .gte("created_at", dayStart),
   ]);
 
-  const basePath = `/${clubSlug}/staff/operations`;
+  const basePath = `/${clubSlug}/admin/operations`;
   const tabs: OperationsTab[] = [
     { key: "overview", labelKey: "ops.tabOverview", href: basePath },
     { key: "entry", labelKey: "ops.tabEntry", href: `${basePath}/entry` },
@@ -54,12 +57,11 @@ export default async function StaffOperationsLayout({
       href: `${basePath}/transactions`,
       badge: todayTxCount ?? 0,
     },
-    { key: "products", labelKey: "ops.tabProducts", href: `${basePath}/products` },
   ];
 
   return (
     <div className="space-y-4">
-      <OperationsTabs portal="staff" tabs={tabs} />
+      <OperationsTabs portal="admin" tabs={tabs} />
       {children}
     </div>
   );

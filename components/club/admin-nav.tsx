@@ -8,6 +8,7 @@ import {
   filterAdminNavItems,
   isAdminItemActive,
 } from "./admin-nav-items";
+import { OperationsNavLink } from "./operations-nav-link";
 
 interface AdminNavProps {
   clubSlug: string;
@@ -31,15 +32,26 @@ export function AdminNav({ clubSlug, opsEnabled = false }: AdminNavProps) {
         {visibleItems.map((item) => {
           const href = `${basePath}${item.path}`;
           const isActive = isAdminItemActive(item, pathname, basePath);
+          const linkClass = `flex flex-col items-center gap-0.5 px-1.5 py-1 text-xs transition-colors ${
+            isActive ? "text-gray-900 font-semibold" : "text-gray-400 hover:text-gray-600"
+          }`;
+
+          if (item.path === "/operations") {
+            return (
+              <OperationsNavLink
+                key={item.labelKey}
+                portal="admin"
+                clubSlug={clubSlug}
+                className={linkClass}
+              >
+                {item.icon}
+                <span>{t(item.labelKey)}</span>
+              </OperationsNavLink>
+            );
+          }
 
           return (
-            <Link
-              key={item.labelKey}
-              href={href}
-              className={`flex flex-col items-center gap-0.5 px-1.5 py-1 text-xs transition-colors ${
-                isActive ? "text-gray-900 font-semibold" : "text-gray-400 hover:text-gray-600"
-              }`}
-            >
+            <Link key={item.labelKey} href={href} className={linkClass}>
               {item.icon}
               <span>{t(item.labelKey)}</span>
             </Link>

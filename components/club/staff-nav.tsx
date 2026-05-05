@@ -8,6 +8,7 @@ import {
   filterStaffNavItems,
   isStaffItemActive,
 } from "./staff-nav-items";
+import { OperationsNavLink } from "./operations-nav-link";
 
 interface StaffNavProps {
   clubSlug: string;
@@ -47,14 +48,11 @@ export function StaffNav({
             const isActive = isStaffItemActive(item, pathname, basePath);
 
             const badge = badges?.[item.path] ?? 0;
-            return (
-              <Link
-                key={item.labelKey}
-                href={href}
-                className={`flex shrink-0 flex-col items-center gap-0.5 px-3 py-1 text-xs transition-colors ${
-                  isActive ? "text-gray-900 font-semibold" : "text-gray-400 hover:text-gray-600"
-                }`}
-              >
+            const linkClass = `flex shrink-0 flex-col items-center gap-0.5 px-3 py-1 text-xs transition-colors ${
+              isActive ? "text-gray-900 font-semibold" : "text-gray-400 hover:text-gray-600"
+            }`;
+            const inner = (
+              <>
                 <span className="relative inline-flex">
                   {item.icon}
                   {badge > 0 && (
@@ -64,6 +62,25 @@ export function StaffNav({
                   )}
                 </span>
                 <span>{t(item.labelKey)}</span>
+              </>
+            );
+
+            if (item.path === "/operations") {
+              return (
+                <OperationsNavLink
+                  key={item.labelKey}
+                  portal="staff"
+                  clubSlug={clubSlug}
+                  className={linkClass}
+                >
+                  {inner}
+                </OperationsNavLink>
+              );
+            }
+
+            return (
+              <Link key={item.labelKey} href={href} className={linkClass}>
+                {inner}
               </Link>
             );
           })}

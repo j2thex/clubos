@@ -11,6 +11,7 @@ import {
   filterStaffNavItems,
   isStaffItemActive,
 } from "./staff-nav-items";
+import { OperationsNavLink } from "./operations-nav-link";
 
 interface StaffTopBarProps {
   clubId: string;
@@ -68,26 +69,40 @@ export function StaffTopBar({
               const href = `${basePath}${item.path}`;
               const isActive = isStaffItemActive(item, pathname, basePath);
               const badge = badges?.[item.path] ?? 0;
+              const linkClass = `flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                isActive
+                  ? "bg-white text-gray-900"
+                  : "text-gray-300 hover:bg-white/10 hover:text-white"
+              }`;
+              const inner = (
+                <>
+                  <span className="relative inline-flex">
+                    <span className="h-4 w-4 [&_svg]:h-4 [&_svg]:w-4">{item.icon}</span>
+                    {badge > 0 && (
+                      <span className="absolute -top-1.5 -right-2 min-w-[14px] h-3.5 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold leading-none flex items-center justify-center">
+                        {badge > 99 ? "99+" : badge}
+                      </span>
+                    )}
+                  </span>
+                  <span className="whitespace-nowrap">{t(item.labelKey)}</span>
+                </>
+              );
+
               return (
                 <li key={item.labelKey} className="shrink-0">
-                  <Link
-                    href={href}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      isActive
-                        ? "bg-white text-gray-900"
-                        : "text-gray-300 hover:bg-white/10 hover:text-white"
-                    }`}
-                  >
-                    <span className="relative inline-flex">
-                      <span className="h-4 w-4 [&_svg]:h-4 [&_svg]:w-4">{item.icon}</span>
-                      {badge > 0 && (
-                        <span className="absolute -top-1.5 -right-2 min-w-[14px] h-3.5 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold leading-none flex items-center justify-center">
-                          {badge > 99 ? "99+" : badge}
-                        </span>
-                      )}
-                    </span>
-                    <span className="whitespace-nowrap">{t(item.labelKey)}</span>
-                  </Link>
+                  {item.path === "/operations" ? (
+                    <OperationsNavLink
+                      portal="staff"
+                      clubSlug={clubSlug}
+                      className={linkClass}
+                    >
+                      {inner}
+                    </OperationsNavLink>
+                  ) : (
+                    <Link href={href} className={linkClass}>
+                      {inner}
+                    </Link>
+                  )}
                 </li>
               );
             })}
