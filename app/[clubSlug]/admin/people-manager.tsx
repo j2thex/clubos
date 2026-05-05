@@ -445,6 +445,7 @@ export function PeopleManager({
                         <StaffPermissionRow
                           memberId={person.id}
                           clubSlug={clubSlug}
+                          currencyMode={currencyMode}
                           initialEntry={person.canDoEntry ?? true}
                           initialSell={person.canDoSell ?? true}
                           initialTopup={person.canDoTopup ?? true}
@@ -525,6 +526,7 @@ export function PeopleManager({
 function StaffPermissionRow({
   memberId,
   clubSlug,
+  currencyMode,
   initialEntry,
   initialSell,
   initialTopup,
@@ -533,6 +535,7 @@ function StaffPermissionRow({
 }: {
   memberId: string;
   clubSlug: string;
+  currencyMode: "saldo" | "cash";
   initialEntry: boolean;
   initialSell: boolean;
   initialTopup: boolean;
@@ -584,7 +587,9 @@ function StaffPermissionRow({
   }[] = [
     { key: "canDoEntry", label: t("admin.staff.permissions.door"), value: canDoEntry },
     { key: "canDoSell", label: t("admin.staff.permissions.sell"), value: canDoSell },
-    { key: "canDoTopup", label: t("admin.staff.permissions.topup"), value: canDoTopup },
+    ...(currencyMode === "saldo"
+      ? [{ key: "canDoTopup" as const, label: t("admin.staff.permissions.topup"), value: canDoTopup }]
+      : []),
     {
       key: "canDoTransactions",
       label: t("admin.staff.permissions.transactions"),
