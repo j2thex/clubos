@@ -17,12 +17,13 @@ export default async function AdminOperationsLayout({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, timezone")
+    .select("id, timezone, nav_position")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
 
   if (!club) notFound();
+  const navPosition: "bottom" | "top" = club.nav_position === "top" ? "top" : "bottom";
 
   const dayStart = clubDayStartIso(new Date(), club.timezone ?? "Europe/Madrid");
 
@@ -61,7 +62,7 @@ export default async function AdminOperationsLayout({
 
   return (
     <div className="space-y-4">
-      <OperationsTabs portal="admin" tabs={tabs} />
+      <OperationsTabs portal="admin" tabs={tabs} navPosition={navPosition} />
       {children}
     </div>
   );

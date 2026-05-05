@@ -20,6 +20,7 @@ export default async function StaffOperationsLayout({
     notFound();
   }
 
+  const navPosition: "bottom" | "top" = club.nav_position === "top" ? "top" : "bottom";
   const supabase = createAdminClient();
   const dayStart = clubDayStartIso(new Date(), club.timezone ?? "Europe/Madrid");
 
@@ -59,7 +60,7 @@ export default async function StaffOperationsLayout({
 
   return (
     <div className="space-y-4">
-      <OperationsTabs portal="staff" tabs={tabs} />
+      <OperationsTabs portal="staff" tabs={tabs} navPosition={navPosition} />
       {children}
     </div>
   );

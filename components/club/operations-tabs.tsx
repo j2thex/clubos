@@ -14,6 +14,7 @@ export interface OperationsTab {
 interface OperationsTabsProps {
   portal: "admin" | "staff";
   tabs: OperationsTab[];
+  navPosition?: "bottom" | "top";
 }
 
 const STORAGE_KEY_PREFIX = "clubos:lastOpsTab";
@@ -22,7 +23,11 @@ export function operationsTabsStorageKey(portal: "admin" | "staff") {
   return `${STORAGE_KEY_PREFIX}:${portal}`;
 }
 
-export function OperationsTabs({ portal, tabs }: OperationsTabsProps) {
+export function OperationsTabs({
+  portal,
+  tabs,
+  navPosition = "bottom",
+}: OperationsTabsProps) {
   const pathname = usePathname();
   const { t } = useLanguage();
 
@@ -35,8 +40,15 @@ export function OperationsTabs({ portal, tabs }: OperationsTabsProps) {
     }
   };
 
+  // In top-nav mode the AdminTopBar / StaffTopBar is sticky top-0 z-50.
+  // Sticking these tabs at top-0 hides them behind the top bar on scroll;
+  // offset by the top bar's height so they pin just below it instead.
+  const stickyOffsetClass = navPosition === "top" ? "top-14" : "top-0";
+
   return (
-    <nav className="sticky top-0 z-30 -mx-4 px-4 py-2 bg-gray-50/95 backdrop-blur border-b border-gray-200">
+    <nav
+      className={`sticky ${stickyOffsetClass} z-30 -mx-4 px-4 py-2 bg-white shadow-sm border-b border-gray-200`}
+    >
       <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
         {tabs.map((tab) => {
           const isActive =
@@ -49,7 +61,7 @@ export function OperationsTabs({ portal, tabs }: OperationsTabsProps) {
               className={`inline-flex items-center min-h-[40px] whitespace-nowrap px-4 rounded-full text-sm font-medium transition-colors ${
                 isActive
                   ? "bg-gray-900 text-white"
-                  : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-100"
+                  : "bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200"
               }`}
             >
               <span>{t(tab.labelKey)}</span>
