@@ -12,6 +12,7 @@ import { CollapsibleSection } from "@/components/collapsible-section";
 import { PhotoCapture } from "@/components/club/photo-capture";
 import { SignaturePanel } from "@/components/club/signature-panel";
 import { RfidCapture } from "@/components/club/rfid-capture";
+import { Plus } from "lucide-react";
 
 function ageFromDobIso(dob: string): number | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dob);
@@ -296,22 +297,41 @@ export function StaffMemberCreator({
 
   if (!sectionOpen) {
     return (
-      <button
-        type="button"
-        onClick={() => {
-          setSectionOpen(true);
-          requestAnimationFrame(() => {
-            formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-          });
-        }}
-        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-gray-800 text-white text-sm font-semibold px-4 py-2.5 hover:bg-gray-700 transition-colors shadow-sm"
-      >
-        <span aria-hidden className="text-base leading-none">＋</span>
-        {t("ops.memberForm.sectionTitle")}
-        <span className="hidden md:inline text-[10px] font-normal text-gray-300 ml-1">
-          (Shift+N)
-        </span>
-      </button>
+      <div className="flex justify-center py-2">
+        <button
+          type="button"
+          onClick={() => {
+            setSectionOpen(true);
+            requestAnimationFrame(() => {
+              formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+            });
+          }}
+          className="group relative inline-flex items-center justify-center gap-2.5 rounded-2xl px-7 py-3.5 text-base font-bold text-white tracking-wide
+            bg-gradient-to-b from-emerald-400 via-emerald-500 to-emerald-600
+            shadow-[0_10px_30px_-8px_rgba(16,185,129,0.7),0_4px_12px_-2px_rgba(16,185,129,0.4),inset_0_1px_0_0_rgba(255,255,255,0.45),inset_0_-2px_0_0_rgba(0,0,0,0.1)]
+            hover:from-emerald-300 hover:via-emerald-400 hover:to-emerald-500
+            hover:shadow-[0_14px_36px_-6px_rgba(16,185,129,0.85),0_6px_16px_-2px_rgba(16,185,129,0.5),inset_0_1px_0_0_rgba(255,255,255,0.55),inset_0_-2px_0_0_rgba(0,0,0,0.1)]
+            hover:-translate-y-0.5
+            active:translate-y-0 active:shadow-[0_6px_18px_-6px_rgba(16,185,129,0.6),inset_0_1px_0_0_rgba(255,255,255,0.4),inset_0_-2px_0_0_rgba(0,0,0,0.12)]
+            transition-all duration-200
+            focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300/60
+            overflow-hidden"
+        >
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 h-1/2 rounded-t-2xl bg-gradient-to-b from-white/35 to-transparent"
+          />
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent group-hover:translate-x-full transition-transform duration-700 ease-out"
+          />
+          <Plus className="w-5 h-5 relative drop-shadow-sm" strokeWidth={3} />
+          <span className="relative drop-shadow-sm">{t("ops.memberForm.sectionTitle")}</span>
+          <span className="hidden md:inline relative text-[10px] font-medium text-white/70 ml-1">
+            (Shift+N)
+          </span>
+        </button>
+      </div>
     );
   }
 

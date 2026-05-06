@@ -610,8 +610,8 @@ function StaffPermissionRow({
       value: canDoTransactions,
     },
     { key: "canDoQebo", label: t("admin.staff.permissions.qebo"), value: canDoQebo },
-    { key: "canManageProducts", label: "Manage products", value: canManageProducts },
-    { key: "canManageIdentity", label: "Manage identity", value: canManageIdentity },
+    { key: "canManageProducts", label: t("admin.staff.permissions.manageProducts"), value: canManageProducts },
+    { key: "canManageIdentity", label: t("admin.staff.permissions.manageIdentity"), value: canManageIdentity },
   ];
 
   return (

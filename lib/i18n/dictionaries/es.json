@@ -781,6 +781,8 @@
   "admin.staff.permissions.topup": "Recarga",
   "admin.staff.permissions.transactions": "Transacciones",
   "admin.staff.permissions.qebo": "QEBO",
+  "admin.staff.permissions.manageProducts": "Gestionar productos",
+  "admin.staff.permissions.manageIdentity": "Gestionar identidad",
   "admin.saldo.title": "Saldo del socio",
   "admin.saldo.adjust": "Ajustar",
   "admin.saldo.adjustTitle": "Ajustar saldo — {code}",

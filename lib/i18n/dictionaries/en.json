@@ -781,6 +781,8 @@
   "admin.staff.permissions.topup": "Top-up",
   "admin.staff.permissions.transactions": "Transactions",
   "admin.staff.permissions.qebo": "QEBO",
+  "admin.staff.permissions.manageProducts": "Manage products",
+  "admin.staff.permissions.manageIdentity": "Manage identity",
   "admin.saldo.title": "Saldo balance",
   "admin.saldo.adjust": "Adjust",
   "admin.saldo.adjustTitle": "Adjust saldo — {code}",
