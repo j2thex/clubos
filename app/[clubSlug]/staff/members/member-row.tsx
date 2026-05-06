@@ -28,10 +28,14 @@ export function StaffMemberRow({
   member,
   roles,
   clubSlug,
+  verifyChip,
+  age,
 }: {
   member: MemberInfo;
   roles: Role[];
   clubSlug: string;
+  verifyChip?: React.ReactNode;
+  age?: number | null;
 }) {
   const [isPending, startTransition] = useTransition();
   const [manualDate, setManualDate] = useState("");
@@ -106,12 +110,14 @@ export function StaffMemberRow({
               {validTillChip.label}
             </button>
           )}
+          {verifyChip}
         </div>
 
-        {/* Line 2: name · spins (single muted line) */}
+        {/* Line 2: name · spins · age (single muted line) */}
         <p className="text-xs text-gray-400 mt-0.5 truncate">
           {member.fullName ? <>{member.fullName} <span className="text-gray-300">·</span> </> : null}
           {member.spinBalance} {member.spinBalance === 1 ? "spin" : "spins"}
+          {typeof age === "number" ? <> <span className="text-gray-300">·</span> age {age}</> : null}
         </p>
 
         {/* Inline date editor (existing flow, just relocated below the meta lines) */}
