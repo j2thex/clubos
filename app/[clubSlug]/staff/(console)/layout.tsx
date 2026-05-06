@@ -38,8 +38,21 @@ export default async function StaffConsoleLayout({
   const coverUrl = branding?.cover_url ?? null;
   const navPosition: "bottom" | "top" = club.nav_position === "top" ? "top" : "bottom";
 
+  // QEBO perm is needed by both branches: top-nav uses it for the StaffTopBar
+  // primary nav, both branches use it to gate the App Drawer FAB tiles.
+  let qeboEnabled = true;
+  const staffSession = await getStaffFromCookie();
+  if (staffSession?.member_id) {
+    const { data: staffRow } = await supabase
+      .from("members")
+      .select("can_do_qebo")
+      .eq("id", staffSession.member_id)
+      .single();
+    qeboEnabled = staffRow?.can_do_qebo ?? true;
+  }
+
   if (navPosition === "top") {
-    // Pending counts + QEBO permission for the top-bar variant.
+    // Pending counts for the top-bar primary nav badges.
     // Same fail-soft semantics as the parent /staff/layout.tsx.
     let pendingBadges: Record<string, number> = {};
     const [{ count: preregCount }, { count: offerCount }, { count: questCount }] =
@@ -66,17 +79,6 @@ export default async function StaffConsoleLayout({
       "/quests": questCount ?? 0,
     };
 
-    let qeboEnabled = true;
-    const staffSession = await getStaffFromCookie();
-    if (staffSession?.member_id) {
-      const { data: staffRow } = await supabase
-        .from("members")
-        .select("can_do_qebo")
-        .eq("id", staffSession.member_id)
-        .single();
-      qeboEnabled = staffRow?.can_do_qebo ?? true;
-    }
-
     return (
       <div className="min-h-screen bg-gray-50">
         <StaffTopBar
@@ -93,6 +95,16 @@ export default async function StaffConsoleLayout({
         <div className="px-4 pt-6 pb-10 max-w-7xl mx-auto space-y-6">
           {children}
         </div>
+        <AppDrawerTrigger
+          portal="staff"
+          clubSlug={clubSlug}
+          flags={{
+            ops: club.operations_module_enabled ?? false,
+            qebo: qeboEnabled,
+            spin: club.spin_enabled ?? false,
+          }}
+          navPosition="top"
+        />
       </div>
     );
   }
@@ -138,16 +150,6 @@ export default async function StaffConsoleLayout({
               {t(locale, "staff.publicPage")}
             </a>
             <LanguageSwitcher variant="light" />
-            <AppDrawerTrigger
-              portal="staff"
-              clubSlug={clubSlug}
-              flags={{
-                ops: club.operations_module_enabled ?? false,
-                qebo: true,
-                spin: club.spin_enabled ?? false,
-              }}
-              variant="dark"
-            />
             <StaffLogoutButton clubSlug={clubSlug} />
           </div>
         </div>
@@ -157,6 +159,16 @@ export default async function StaffConsoleLayout({
           {children}
         </div>
       </div>
+      <AppDrawerTrigger
+        portal="staff"
+        clubSlug={clubSlug}
+        flags={{
+          ops: club.operations_module_enabled ?? false,
+          qebo: qeboEnabled,
+          spin: club.spin_enabled ?? false,
+        }}
+        navPosition="bottom"
+      />
     </div>
   );
 }

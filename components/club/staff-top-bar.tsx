@@ -7,7 +7,6 @@ import { useScrollDirection } from "@/lib/hooks/use-scroll-direction";
 import { LanguageSwitcher } from "@/lib/i18n/switcher";
 import { PanicIconButton } from "./panic-icon-button";
 import { StaffLogoutButton } from "./staff-logout-button";
-import { AppDrawerTrigger } from "./app-drawer-trigger";
 import {
   staffNavItems,
   filterStaffNavItems,
@@ -134,12 +133,6 @@ export function StaffTopBar({
             {t("staff.publicPage")}
           </a>
           <LanguageSwitcher variant="light" />
-          <AppDrawerTrigger
-            portal="staff"
-            clubSlug={clubSlug}
-            flags={{ ops: operationsEnabled, qebo: qeboEnabled, spin: spinEnabled }}
-            variant="dark"
-          />
           <StaffLogoutButton clubSlug={clubSlug} />
         </div>
       </div>

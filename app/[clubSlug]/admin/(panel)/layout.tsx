@@ -77,6 +77,12 @@ export default async function AdminPanelLayout({
         <div className="px-4 pt-6 pb-10 max-w-5xl mx-auto space-y-6">
           {children}
         </div>
+        <AppDrawerTrigger
+          portal="admin"
+          clubSlug={clubSlug}
+          flags={{ ops: opsEnabled }}
+          navPosition="top"
+        />
       </div>
     );
   }
@@ -105,12 +111,6 @@ export default async function AdminPanelLayout({
           </div>
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
-            <AppDrawerTrigger
-              portal="admin"
-              clubSlug={clubSlug}
-              flags={{ ops: opsEnabled }}
-              variant="dark"
-            />
             <LogoutButton clubSlug={clubSlug} />
           </div>
         </div>
@@ -141,6 +141,12 @@ export default async function AdminPanelLayout({
       </div>
 
       <AdminNav clubSlug={clubSlug} opsEnabled={opsEnabled} autoHideEnabled={autoHideEnabled} />
+      <AppDrawerTrigger
+        portal="admin"
+        clubSlug={clubSlug}
+        flags={{ ops: opsEnabled }}
+        navPosition="bottom"
+      />
     </div>
   );
 }

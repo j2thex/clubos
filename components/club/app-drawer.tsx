@@ -83,17 +83,17 @@ export function AppDrawer({ open, onClose, titleKey, tiles, basePath }: AppDrawe
       role="dialog"
       aria-modal="true"
       aria-label={t(titleKey)}
-      className="fixed inset-0 z-[60] flex items-start justify-end"
+      className="fixed inset-0 z-[60] flex items-center justify-center overflow-hidden p-0 sm:p-4"
     >
       <button
         type="button"
         aria-label={t("nav.appDrawer.close")}
         onClick={onClose}
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in duration-150"
       />
       <div
         ref={panelRef}
-        className="relative h-full w-full max-w-md bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-200 sm:my-2 sm:mr-2 sm:h-[calc(100vh-1rem)] sm:rounded-2xl sm:max-h-[760px]"
+        className="relative h-full w-full max-w-md bg-white shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-150 sm:h-auto sm:max-w-2xl sm:max-h-[80vh] sm:rounded-2xl"
       >
         {/* Header */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200">
@@ -137,7 +137,7 @@ export function AppDrawer({ open, onClose, titleKey, tiles, basePath }: AppDrawe
                 <h3 className="text-[11px] font-bold tracking-widest uppercase text-gray-500 mb-2 px-1">
                   {t(SECTION_LABEL_KEY[section])}
                 </h3>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
                   {sectionTiles.map((tile) => {
                     const Icon = tile.icon;
                     const href = `${basePath}${tile.path}`;

@@ -15,15 +15,15 @@ interface AppDrawerTriggerProps {
   portal: "admin" | "staff";
   clubSlug: string;
   flags: TileFlags;
-  /** Tone of the trigger — match it to the surrounding header. */
-  variant?: "light" | "dark";
+  /** Drives vertical offset so the FAB clears the bottom nav (or sits low in top-nav mode). */
+  navPosition: "bottom" | "top";
 }
 
 export function AppDrawerTrigger({
   portal,
   clubSlug,
   flags,
-  variant = "dark",
+  navPosition,
 }: AppDrawerTriggerProps) {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
@@ -33,10 +33,12 @@ export function AppDrawerTrigger({
   const titleKey =
     portal === "admin" ? "nav.appDrawer.titleAdmin" : "nav.appDrawer.titleStaff";
 
-  const buttonClass =
-    variant === "light"
-      ? "p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-200 transition-colors"
-      : "p-2 rounded-lg text-white hover:bg-white/15 border border-white/30 transition-colors";
+  // Vertical offset: clear the bottom nav (~80-90px + safe area) in bottom-nav
+  // mode; sit just above the safe-area in top-nav mode.
+  const bottomOffset =
+    navPosition === "bottom"
+      ? "calc(5.25rem + env(safe-area-inset-bottom))"
+      : "calc(1.25rem + env(safe-area-inset-bottom))";
 
   return (
     <>
@@ -46,9 +48,10 @@ export function AppDrawerTrigger({
         aria-label={t("nav.appDrawer.openLabel")}
         aria-haspopup="dialog"
         aria-expanded={open}
-        className={buttonClass}
+        className="fixed left-1/2 -translate-x-1/2 z-40 h-14 w-14 rounded-full bg-gradient-to-br from-emerald-500 via-violet-500 to-amber-500 text-white shadow-lg ring-1 ring-black/5 hover:shadow-xl hover:scale-105 active:scale-95 transition flex items-center justify-center"
+        style={{ bottom: bottomOffset }}
       >
-        <LayoutGrid className="h-4 w-4" />
+        <LayoutGrid className="h-6 w-6" strokeWidth={2.25} />
       </button>
       <AppDrawer
         open={open}
