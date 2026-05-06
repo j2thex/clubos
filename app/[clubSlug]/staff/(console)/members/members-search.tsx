@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { ChevronDown } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/provider";
 import { StaffMemberRow } from "../../members/member-row";
 import { TopupDialog } from "../operations/sell/topup-dialog";
@@ -379,26 +380,22 @@ export function MembersSearch({
             <button
               type="button"
               onClick={() => setExpandedId(isExpanded ? null : m.id)}
-              className="px-4 text-gray-400 hover:text-gray-900 transition-colors"
+              aria-label={
+                isExpanded
+                  ? tRoot("admin.memberDetail.collapse")
+                  : tRoot("admin.memberDetail.expand")
+              }
               title={
                 isExpanded
                   ? tRoot("admin.memberDetail.collapse")
                   : tRoot("admin.memberDetail.expand")
               }
+              className="self-center mr-3 ml-2 w-10 h-10 rounded-full bg-gray-50 text-gray-500 hover:bg-gray-200 hover:text-gray-900 flex items-center justify-center transition-colors shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
             >
-              <svg
-                className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
+              <ChevronDown
+                className={`w-5 h-5 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                strokeWidth={2.5}
+              />
             </button>
           )}
         </div>
