@@ -47,7 +47,7 @@ export const ADMIN_TILES: TileDef[] = [
   { key: "admin.offers", path: "/offers", icon: Gift, section: "content", labelKey: "nav.tiles.offers" },
   { key: "admin.operations", path: "/operations", icon: Wrench, section: "ops", requires: "ops", labelKey: "nav.tiles.operations" },
   { key: "admin.products", path: "/products", icon: Package, section: "ops", requires: "ops", labelKey: "nav.tiles.products" },
-  { key: "admin.finance", path: "/finance", icon: LineChart, section: "finance", requires: "ops", labelKey: "nav.tiles.finance" },
+  { key: "admin.finance", path: "/finance", icon: LineChart, section: "ops", requires: "ops", labelKey: "nav.tiles.finance" },
   { key: "admin.push", path: "/push", icon: BellRing, section: "comms", labelKey: "nav.tiles.push" },
   { key: "admin.email", path: "/settings#email", icon: Mail, section: "comms", labelKey: "nav.tiles.email" },
   { key: "admin.logs", path: "/logs", icon: ScrollText, section: "system", labelKey: "nav.tiles.logs" },
