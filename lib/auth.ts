@@ -157,7 +157,24 @@ export async function requireStaffForClub(
   return session;
 }
 
-export type StaffPermission = "entry" | "sell" | "topup" | "transactions" | "qebo";
+export type StaffPermission =
+  | "entry"
+  | "sell"
+  | "topup"
+  | "transactions"
+  | "qebo"
+  | "manage_products"
+  | "manage_identity";
+
+const STAFF_PERMISSION_COLUMN: Record<StaffPermission, string> = {
+  entry: "can_do_entry",
+  sell: "can_do_sell",
+  topup: "can_do_topup",
+  transactions: "can_do_transactions",
+  qebo: "can_do_qebo",
+  manage_products: "can_manage_products",
+  manage_identity: "can_manage_identity",
+};
 
 /**
  * Verify the current staff session is active, belongs to the given club,
@@ -174,13 +191,13 @@ export async function requireStaffPermission(
   const session = await requireStaffForClub(clubId);
   const { createAdminClient } = await import("@/lib/supabase/admin");
   const supabase = createAdminClient();
+  const column = STAFF_PERMISSION_COLUMN[permission];
   const { data: member } = await supabase
     .from("members")
-    .select("can_do_entry, can_do_sell, can_do_topup, can_do_transactions, can_do_qebo")
+    .select(Object.values(STAFF_PERMISSION_COLUMN).join(", "))
     .eq("id", session.member_id)
     .single();
-  const column = `can_do_${permission}` as const;
-  if (!member || !member[column]) {
+  if (!member || !(member as unknown as Record<string, boolean>)[column]) {
     throw new Error(`Not permitted: ${permission}`);
   }
   return session;

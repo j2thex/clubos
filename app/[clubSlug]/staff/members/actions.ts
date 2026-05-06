@@ -1,7 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { hashPin, getStaffFromCookie, requireStaffForClub } from "@/lib/auth";
+import { hashPin, getStaffFromCookie, requireStaffForClub, requireOpsAccess } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { logActivity } from "@/lib/activity-log";
 import {
@@ -609,7 +609,7 @@ export async function markIdVerified(
   if (!current.date_of_birth) return { error: "Set date of birth before verifying" };
 
   let staff: { member_id: string; club_id: string };
-  try { staff = await requireStaffForClub(current.club_id); } catch (err) {
+  try { staff = await requireOpsAccess(current.club_id, "manage_identity"); } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
 
@@ -651,7 +651,7 @@ export async function revokeIdVerification(
   if (!current) return { error: "Member not found" };
 
   let staff: { member_id: string; club_id: string };
-  try { staff = await requireStaffForClub(current.club_id); } catch (err) {
+  try { staff = await requireOpsAccess(current.club_id, "manage_identity"); } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
 
@@ -764,6 +764,10 @@ export async function staffUpdateMemberIdentity(
   const auth = await authorizeMemberStaff(memberId);
   if ("error" in auth) return auth;
 
+  try { await requireOpsAccess(auth.clubId, "manage_identity"); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+
   const firstName = input.firstName.trim();
   const lastName = input.lastName.trim();
   if (!firstName || !lastName) {
@@ -845,7 +849,7 @@ async function validateStaffReplaceFormData(
 
   let session: { member_id: string; club_id: string };
   try {
-    session = await requireStaffForClub(clubId);
+    session = await requireOpsAccess(clubId, "manage_identity");
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
