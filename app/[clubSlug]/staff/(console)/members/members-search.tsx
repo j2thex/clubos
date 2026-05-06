@@ -230,10 +230,7 @@ export function MembersSearch({
     });
   }, [initialOpenCode, members]);
 
-  const initialOpenGroups = useMemo<Set<GroupKey>>(
-    () => new Set<GroupKey>(opsEnabled ? [] : ["newThisWeek"]),
-    [opsEnabled],
-  );
+  const initialOpenGroups = useMemo<Set<GroupKey>>(() => new Set<GroupKey>(), []);
   const [openGroups, setOpenGroups] = useState<Set<GroupKey>>(initialOpenGroups);
   const { t: tRoot } = useLanguage();
   const memberDetailById = useMemo(
