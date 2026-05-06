@@ -276,7 +276,7 @@ export default async function SettingsPage({
         />
       </CollapsibleSection>
 
-      <CollapsibleSection title="Roles" caption="Custom labels staff assign to members (e.g. Founder, VIP)">
+      <CollapsibleSection id="roles" title="Roles" caption="Custom labels staff assign to members (e.g. Founder, VIP)">
         <div className={STRIP_LEGACY_H2}>
           <RoleManager
             roles={roles ?? []}
@@ -286,7 +286,7 @@ export default async function SettingsPage({
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection title="Membership Periods" caption="Duration plans (e.g. 3-month bronze, annual gold)">
+      <CollapsibleSection id="membership-periods" title="Membership Periods" caption="Duration plans (e.g. 3-month bronze, annual gold)">
         <div className={STRIP_LEGACY_H2}>
           <MembershipPeriodManager
             periods={(membershipPeriods ?? []).map((p) => ({
@@ -384,7 +384,7 @@ export default async function SettingsPage({
         </Link>
       </CollapsibleSection>
 
-      <CollapsibleSection title="Email Campaigns" caption="Bulk messages to filtered member segments — email, Telegram, push">
+      <CollapsibleSection id="email" title="Email Campaigns" caption="Bulk messages to filtered member segments — email, Telegram, push">
         <EmailCampaignManager
           clubId={club.id}
           clubSlug={clubSlug}

@@ -19,6 +19,8 @@ import {
   UserPlus,
   Mail,
   LayoutGrid,
+  Crown,
+  CalendarClock,
 } from "lucide-react";
 import type { SectionKey } from "./tile-colors";
 
@@ -41,12 +43,18 @@ export interface TileDef {
 
 export const ADMIN_TILES: TileDef[] = [
   { key: "admin.people", path: "", icon: Users, section: "people", labelKey: "nav.tiles.people" },
+  { key: "admin.roles", path: "/settings#roles", icon: Crown, section: "people", labelKey: "nav.tiles.roles" },
+  { key: "admin.periods", path: "/settings#membership-periods", icon: CalendarClock, section: "people", labelKey: "nav.tiles.periods" },
   { key: "admin.content", path: "/content", icon: LayoutGrid, section: "content", labelKey: "nav.tiles.content" },
   { key: "admin.quests", path: "/quests", icon: Target, section: "content", labelKey: "nav.tiles.quests" },
   { key: "admin.events", path: "/events", icon: CalendarDays, section: "content", labelKey: "nav.tiles.events" },
   { key: "admin.offers", path: "/offers", icon: Gift, section: "content", labelKey: "nav.tiles.offers" },
   { key: "admin.operations", path: "/operations", icon: Wrench, section: "ops", requires: "ops", labelKey: "nav.tiles.operations" },
+  { key: "admin.entry", path: "/operations/entry", icon: DoorOpen, section: "ops", requires: "ops", labelKey: "nav.tiles.entry" },
+  { key: "admin.capacity", path: "/operations/capacity", icon: UsersRound, section: "ops", requires: "ops", labelKey: "nav.tiles.capacity" },
   { key: "admin.products", path: "/products", icon: Package, section: "ops", requires: "ops", labelKey: "nav.tiles.products" },
+  { key: "admin.sell", path: "/operations/sell", icon: ShoppingCart, section: "ops", requires: "ops", labelKey: "nav.tiles.sell" },
+  { key: "admin.transactions", path: "/operations/transactions", icon: Receipt, section: "ops", requires: "ops", labelKey: "nav.tiles.transactions" },
   { key: "admin.finance", path: "/finance", icon: LineChart, section: "ops", requires: "ops", labelKey: "nav.tiles.finance" },
   { key: "admin.push", path: "/push", icon: BellRing, section: "comms", labelKey: "nav.tiles.push" },
   { key: "admin.email", path: "/settings#email", icon: Mail, section: "comms", labelKey: "nav.tiles.email" },
