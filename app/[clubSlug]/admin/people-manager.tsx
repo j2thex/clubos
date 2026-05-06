@@ -276,7 +276,7 @@ export function PeopleManager({
                 disabled={isPending || !code.trim() || (tab === "staff" && !pin.trim())}
                 className="rounded-lg bg-gray-800 text-white px-5 py-2 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
               >
-                {isPending ? "..." : t("common.add")}
+                {isPending ? "..." : t("common.create")}
               </button>
             </div>
 
