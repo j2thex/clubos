@@ -11,7 +11,10 @@ import {
   deleteMemberPhoto,
   uploadMemberSignature as uploadMemberSignatureToBucket,
   deleteMemberSignature,
+  uploadMemberLegalPdf,
+  downloadMemberSignatureBytes,
 } from "@/lib/supabase/storage";
+import { generateLegalMembershipPdf } from "@/lib/legal-pdf";
 
 export async function updateMemberRole(memberId: string, roleId: string | null, clubSlug: string) {
   const auth = await authorizeMemberStaff(memberId);
@@ -125,7 +128,7 @@ export async function createMember(
   // setting; revisit if scripted.
   const { data: clubRow } = await supabase
     .from("clubs")
-    .select("operations_module_enabled, require_referral_code")
+    .select("name, operations_module_enabled, require_referral_code, legal_membership_text")
     .eq("id", clubId)
     .single();
   const opsOn = !!clubRow?.operations_module_enabled;
@@ -269,12 +272,13 @@ export async function createMember(
   const trimmedFullName = `${firstName} ${lastName}`.trim();
   const fullName = trimmedFullName || null;
   let code = "";
+  let newMemberId: string | null = null;
   let insertError: { code?: string; message?: string } | null = null;
 
   const maxAttempts = requestedCode !== null ? 1 : 5;
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     code = requestedCode ?? `${base}${String(nextSeq).padStart(2, "0")}`;
-    const { error } = await supabase.from("members").insert({
+    const { data: inserted, error } = await supabase.from("members").insert({
       club_id: clubId,
       member_code: code,
       full_name: fullName,
@@ -294,9 +298,10 @@ export async function createMember(
       photo_path: input.photoPath || null,
       signature_path: input.signaturePath || null,
       rfid_uid: rfidUidClean,
-    });
-    if (!error) {
+    }).select("id").single();
+    if (!error && inserted) {
       insertError = null;
+      newMemberId = inserted.id;
       break;
     }
     // If the collision is on rfid_uid (race with a concurrent insert), don't
@@ -452,6 +457,42 @@ export async function createMember(
     targetMemberCode: code,
     details: details || undefined,
   });
+
+  if (newMemberId && input.signaturePath && clubRow?.legal_membership_text?.trim()) {
+    try {
+      const sigBytes = await downloadMemberSignatureBytes(input.signaturePath);
+      const pdfBytes = await generateLegalMembershipPdf({
+        clubName: clubRow.name ?? "",
+        memberCode: code,
+        memberName: fullName ?? "",
+        dateOfBirth,
+        idNumber,
+        legalText: clubRow.legal_membership_text,
+        signaturePngBytes: sigBytes,
+      });
+      const upload = await uploadMemberLegalPdf(clubId, newMemberId, pdfBytes);
+      if ("error" in upload) {
+        await logActivity({
+          clubId, staffMemberId: staff?.member_id,
+          action: "legal_pdf_failed", targetMemberCode: code,
+          details: upload.error,
+        });
+      } else {
+        await supabase.from("members").update({ legal_pdf_path: upload.path }).eq("id", newMemberId);
+      }
+    } catch (err) {
+      await logActivity({
+        clubId, staffMemberId: staff?.member_id,
+        action: "legal_pdf_failed", targetMemberCode: code,
+        details: err instanceof Error ? err.message : String(err),
+      });
+    }
+  } else if (newMemberId && input.signaturePath) {
+    await logActivity({
+      clubId, staffMemberId: staff?.member_id,
+      action: "legal_pdf_skipped_no_text", targetMemberCode: code,
+    });
+  }
 
   revalidatePath(`/${clubSlug}/staff/members`);
   revalidatePath(`/${clubSlug}`, "layout");

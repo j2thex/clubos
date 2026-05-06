@@ -8,6 +8,7 @@ import {
   getMemberIdPhotoSignedUrl,
   getMemberPhotoSignedUrl,
   getMemberSignatureSignedUrl,
+  getMemberLegalPdfSignedUrl,
 } from "@/lib/supabase/storage";
 
 export default async function PeoplePage({
@@ -49,7 +50,7 @@ export default async function PeoplePage({
     supabase
       .from("members")
       .select(
-        "id, member_code, full_name, first_name, last_name, date_of_birth, residency_status, id_number, phone, email, marketing_channel, spin_balance, is_staff, status, rfid_uid, id_verified_at, id_photo_path, photo_path, signature_path, staff_note, member_roles(name)"
+        "id, member_code, full_name, first_name, last_name, date_of_birth, residency_status, id_number, phone, email, marketing_channel, spin_balance, is_staff, status, rfid_uid, id_verified_at, id_photo_path, photo_path, signature_path, staff_note, legal_pdf_path, member_roles(name)"
       )
       .eq("club_id", club.id)
       .eq("is_staff", false)
@@ -113,10 +114,11 @@ export default async function PeoplePage({
   // Build MemberDetail records (signed URLs generated server-side, 1 hour expiry).
   const memberDetails: MemberDetailRecord[] = await Promise.all(
     (members ?? []).map(async (m) => {
-      const [idPhotoUrl, photoUrl, signatureUrl] = await Promise.all([
+      const [idPhotoUrl, photoUrl, signatureUrl, legalPdfUrl] = await Promise.all([
         m.id_photo_path ? getMemberIdPhotoSignedUrl(m.id_photo_path) : Promise.resolve(null),
         m.photo_path ? getMemberPhotoSignedUrl(m.photo_path) : Promise.resolve(null),
         m.signature_path ? getMemberSignatureSignedUrl(m.signature_path) : Promise.resolve(null),
+        m.legal_pdf_path ? getMemberLegalPdfSignedUrl(m.legal_pdf_path) : Promise.resolve(null),
       ]);
       return {
         id: m.id,
@@ -139,6 +141,7 @@ export default async function PeoplePage({
         photo_url: photoUrl,
         signature_url: signatureUrl,
         staff_note: m.staff_note ?? null,
+        legal_pdf_url: legalPdfUrl,
       };
     }),
   );

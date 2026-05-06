@@ -6,6 +6,7 @@ import {
   getMemberIdPhotoSignedUrl,
   getMemberPhotoSignedUrl,
   getMemberSignatureSignedUrl,
+  getMemberLegalPdfSignedUrl,
 } from "@/lib/supabase/storage";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
@@ -63,7 +64,7 @@ export default async function StaffMembersPage({
     supabase
       .from("members")
       .select(
-        "id, member_code, full_name, first_name, last_name, spin_balance, status, role_id, membership_period_id, valid_till, date_of_birth, residency_status, id_number, phone, email, marketing_channel, id_verified_at, id_photo_path, photo_path, signature_path, rfid_uid, staff_note, created_at, member_roles(id, name)",
+        "id, member_code, full_name, first_name, last_name, spin_balance, status, role_id, membership_period_id, valid_till, date_of_birth, residency_status, id_number, phone, email, marketing_channel, id_verified_at, id_photo_path, photo_path, signature_path, rfid_uid, staff_note, legal_pdf_path, created_at, member_roles(id, name)",
       )
       .eq("club_id", club.id)
       .eq("is_system_member", false)
@@ -116,10 +117,11 @@ export default async function StaffMembersPage({
   const memberDetails: MemberDetailRecord[] = opsEnabled
     ? await Promise.all(
         (members ?? []).map(async (m) => {
-          const [idPhotoUrl, photoUrl, signatureUrl] = await Promise.all([
+          const [idPhotoUrl, photoUrl, signatureUrl, legalPdfUrl] = await Promise.all([
             m.id_photo_path ? getMemberIdPhotoSignedUrl(m.id_photo_path, 1800) : Promise.resolve(null),
             m.photo_path ? getMemberPhotoSignedUrl(m.photo_path, 1800) : Promise.resolve(null),
             m.signature_path ? getMemberSignatureSignedUrl(m.signature_path, 1800) : Promise.resolve(null),
+            m.legal_pdf_path ? getMemberLegalPdfSignedUrl(m.legal_pdf_path, 1800) : Promise.resolve(null),
           ]);
           return {
             id: m.id,
@@ -142,6 +144,7 @@ export default async function StaffMembersPage({
             photo_url: photoUrl,
             signature_url: signatureUrl,
             staff_note: m.staff_note ?? null,
+            legal_pdf_url: legalPdfUrl,
           };
         }),
       )

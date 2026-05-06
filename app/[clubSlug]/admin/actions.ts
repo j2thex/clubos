@@ -1963,6 +1963,24 @@ export async function updateWorkingHours(
   return { ok: true };
 }
 
+export async function setLegalMembershipText(
+  clubId: string,
+  text: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  try { await requireOwnerForClub(clubId); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("clubs")
+    .update({ legal_membership_text: text.trim() || null })
+    .eq("id", clubId);
+  if (error) return { error: "Failed to save legal text" };
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
 export async function setRequireReferralCode(
   clubId: string,
   value: boolean,

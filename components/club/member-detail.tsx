@@ -25,6 +25,7 @@ export type MemberDetailRecord = {
   photo_url: string | null;
   signature_url: string | null;
   staff_note: string | null;
+  legal_pdf_url: string | null;
 };
 
 export type UpdateMemberIdentityInput = {
@@ -420,6 +421,18 @@ export function MemberDetail({
             aspectClass="aspect-[4/3]"
           />
         </div>
+
+        {member.legal_pdf_url && (
+          <a
+            href={member.legal_pdf_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:border-gray-400 rounded-lg px-3 py-2 transition-colors"
+          >
+            <span aria-hidden>📄</span>
+            View signed legal document (PDF)
+          </a>
+        )}
 
         {replaceTarget === "portrait" && (
           <div className="rounded-lg border border-gray-200 bg-white p-3 space-y-2">
