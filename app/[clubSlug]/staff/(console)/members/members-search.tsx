@@ -231,10 +231,7 @@ export function MembersSearch({
   }, [initialOpenCode, members]);
 
   const initialOpenGroups = useMemo<Set<GroupKey>>(
-    () =>
-      new Set<GroupKey>(
-        opsEnabled ? ["pendingActivation"] : ["newThisWeek"],
-      ),
+    () => new Set<GroupKey>(opsEnabled ? [] : ["newThisWeek"]),
     [opsEnabled],
   );
   const [openGroups, setOpenGroups] = useState<Set<GroupKey>>(initialOpenGroups);
