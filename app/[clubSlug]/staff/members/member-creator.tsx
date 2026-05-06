@@ -307,14 +307,14 @@ export function StaffMemberCreator({
             });
           }}
           className="group relative inline-flex items-center justify-center gap-2.5 rounded-2xl px-7 py-3.5 text-base font-bold text-white tracking-wide
-            bg-gradient-to-b from-emerald-400 via-emerald-500 to-emerald-600
-            shadow-[0_10px_30px_-8px_rgba(16,185,129,0.7),0_4px_12px_-2px_rgba(16,185,129,0.4),inset_0_1px_0_0_rgba(255,255,255,0.45),inset_0_-2px_0_0_rgba(0,0,0,0.1)]
-            hover:from-emerald-300 hover:via-emerald-400 hover:to-emerald-500
-            hover:shadow-[0_14px_36px_-6px_rgba(16,185,129,0.85),0_6px_16px_-2px_rgba(16,185,129,0.5),inset_0_1px_0_0_rgba(255,255,255,0.55),inset_0_-2px_0_0_rgba(0,0,0,0.1)]
+            bg-gradient-to-b from-lime-300 via-green-500 to-green-600
+            shadow-[0_10px_30px_-8px_rgba(34,197,94,0.75),0_4px_12px_-2px_rgba(34,197,94,0.45),inset_0_1px_0_0_rgba(255,255,255,0.5),inset_0_-2px_0_0_rgba(0,0,0,0.1)]
+            hover:from-lime-200 hover:via-green-400 hover:to-green-500
+            hover:shadow-[0_14px_36px_-6px_rgba(34,197,94,0.9),0_6px_16px_-2px_rgba(34,197,94,0.55),inset_0_1px_0_0_rgba(255,255,255,0.6),inset_0_-2px_0_0_rgba(0,0,0,0.1)]
             hover:-translate-y-0.5
-            active:translate-y-0 active:shadow-[0_6px_18px_-6px_rgba(16,185,129,0.6),inset_0_1px_0_0_rgba(255,255,255,0.4),inset_0_-2px_0_0_rgba(0,0,0,0.12)]
+            active:translate-y-0 active:shadow-[0_6px_18px_-6px_rgba(34,197,94,0.65),inset_0_1px_0_0_rgba(255,255,255,0.4),inset_0_-2px_0_0_rgba(0,0,0,0.12)]
             transition-all duration-200
-            focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300/60
+            focus:outline-none focus-visible:ring-4 focus-visible:ring-green-300/60
             overflow-hidden"
         >
           <span
