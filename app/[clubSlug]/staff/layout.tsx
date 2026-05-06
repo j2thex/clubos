@@ -37,7 +37,7 @@ export default async function StaffLayout({
   const supabase = createAdminClient();
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name, approved, spin_enabled, operations_module_enabled, nav_position")
+    .select("id, name, approved, spin_enabled, operations_module_enabled, nav_position, nav_autohide_enabled")
     .eq("slug", clubSlug)
     .single();
 
@@ -106,6 +106,7 @@ export default async function StaffLayout({
         operationsEnabled={club?.operations_module_enabled ?? false}
         qeboEnabled={qeboEnabled}
         badges={pendingBadges}
+        autoHideEnabled={club?.nav_autohide_enabled ?? true}
       />
     </div>
   );

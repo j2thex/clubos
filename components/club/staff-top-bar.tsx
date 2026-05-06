@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/provider";
+import { useScrollDirection } from "@/lib/hooks/use-scroll-direction";
 import { LanguageSwitcher } from "@/lib/i18n/switcher";
 import { PanicIconButton } from "./panic-icon-button";
 import { StaffLogoutButton } from "./staff-logout-button";
+import { AppDrawerTrigger } from "./app-drawer-trigger";
 import {
   staffNavItems,
   filterStaffNavItems,
@@ -22,6 +24,7 @@ interface StaffTopBarProps {
   operationsEnabled: boolean;
   qeboEnabled: boolean;
   badges?: Record<string, number>;
+  autoHideEnabled?: boolean;
 }
 
 export function StaffTopBar({
@@ -33,10 +36,12 @@ export function StaffTopBar({
   operationsEnabled,
   qeboEnabled,
   badges,
+  autoHideEnabled = true,
 }: StaffTopBarProps) {
   const pathname = usePathname();
   const { t } = useLanguage();
   const basePath = `/${clubSlug}/staff`;
+  const hidden = useScrollDirection({ disabled: !autoHideEnabled });
 
   if (pathname.endsWith("/staff/login")) return null;
 
@@ -48,7 +53,9 @@ export function StaffTopBar({
 
   return (
     <div
-      className={`sticky top-0 z-50 bg-cover bg-center ${coverUrl ? "" : "bg-gradient-to-br from-gray-800 to-gray-900"}`}
+      className={`sticky top-0 z-50 bg-cover bg-center transition-transform duration-200 will-change-transform ${
+        coverUrl ? "" : "bg-gradient-to-br from-gray-800 to-gray-900"
+      } ${hidden ? "-translate-y-full" : "translate-y-0"}`}
       style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : undefined}
     >
       {coverUrl && <div className="absolute inset-0 bg-black/70" />}
@@ -127,6 +134,12 @@ export function StaffTopBar({
             {t("staff.publicPage")}
           </a>
           <LanguageSwitcher variant="light" />
+          <AppDrawerTrigger
+            portal="staff"
+            clubSlug={clubSlug}
+            flags={{ ops: operationsEnabled, qebo: qeboEnabled, spin: spinEnabled }}
+            variant="dark"
+          />
           <StaffLogoutButton clubSlug={clubSlug} />
         </div>
       </div>

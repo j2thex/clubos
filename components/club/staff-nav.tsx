@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/provider";
+import { useScrollDirection } from "@/lib/hooks/use-scroll-direction";
 import {
   staffNavItems,
   filterStaffNavItems,
@@ -16,6 +17,7 @@ interface StaffNavProps {
   operationsEnabled: boolean;
   qeboEnabled: boolean;
   badges?: Record<string, number>;
+  autoHideEnabled?: boolean;
 }
 
 export function StaffNav({
@@ -24,10 +26,12 @@ export function StaffNav({
   operationsEnabled,
   qeboEnabled,
   badges,
+  autoHideEnabled = true,
 }: StaffNavProps) {
   const pathname = usePathname();
   const { t } = useLanguage();
   const basePath = `/${clubSlug}/staff`;
+  const hidden = useScrollDirection({ disabled: !autoHideEnabled });
 
   if (pathname.endsWith("/staff/login")) {
     return null;
@@ -40,7 +44,11 @@ export function StaffNav({
   });
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.08)]">
+    <nav
+      className={`fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.08)] transition-transform duration-200 will-change-transform ${
+        hidden ? "translate-y-full" : "translate-y-0"
+      }`}
+    >
       <div className="overflow-x-auto overscroll-x-contain">
         <div className="mx-auto flex min-w-max max-w-md items-center justify-around pb-2 pt-2">
           {visibleItems.map((item) => {

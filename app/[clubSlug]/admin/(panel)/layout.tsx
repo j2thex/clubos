@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { LogoutButton } from "../logout-button";
 import { AdminNav } from "@/components/club/admin-nav";
 import { AdminTopBar } from "@/components/club/admin-top-bar";
+import { AppDrawerTrigger } from "@/components/club/app-drawer-trigger";
 import { PanicIconButton } from "@/components/club/panic-icon-button";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
@@ -43,7 +44,7 @@ export default async function AdminPanelLayout({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name, operations_module_enabled, nav_position")
+    .select("id, name, operations_module_enabled, nav_position, nav_autohide_enabled")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -51,6 +52,7 @@ export default async function AdminPanelLayout({
   if (!club) notFound();
   const opsEnabled = club.operations_module_enabled ?? false;
   const navPosition: "bottom" | "top" = club.nav_position === "top" ? "top" : "bottom";
+  const autoHideEnabled = club.nav_autohide_enabled ?? true;
 
   const { data: branding } = await supabase
     .from("club_branding")
@@ -70,6 +72,7 @@ export default async function AdminPanelLayout({
           clubSlug={clubSlug}
           coverUrl={coverUrl}
           opsEnabled={opsEnabled}
+          autoHideEnabled={autoHideEnabled}
         />
         <div className="px-4 pt-6 pb-10 max-w-5xl mx-auto space-y-6">
           {children}
@@ -102,6 +105,12 @@ export default async function AdminPanelLayout({
           </div>
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
+            <AppDrawerTrigger
+              portal="admin"
+              clubSlug={clubSlug}
+              flags={{ ops: opsEnabled }}
+              variant="dark"
+            />
             <LogoutButton clubSlug={clubSlug} />
           </div>
         </div>
@@ -131,7 +140,7 @@ export default async function AdminPanelLayout({
         </div>
       </div>
 
-      <AdminNav clubSlug={clubSlug} opsEnabled={opsEnabled} />
+      <AdminNav clubSlug={clubSlug} opsEnabled={opsEnabled} autoHideEnabled={autoHideEnabled} />
     </div>
   );
 }

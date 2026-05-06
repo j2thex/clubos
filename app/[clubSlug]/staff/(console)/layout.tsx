@@ -6,6 +6,7 @@ import { LanguageSwitcher } from "@/lib/i18n/switcher";
 import { StaffLogoutButton } from "@/components/club/staff-logout-button";
 import { PanicIconButton } from "@/components/club/panic-icon-button";
 import { StaffTopBar } from "@/components/club/staff-top-bar";
+import { AppDrawerTrigger } from "@/components/club/app-drawer-trigger";
 import { getStaffFromCookie } from "@/lib/auth";
 
 export default async function StaffConsoleLayout({
@@ -20,7 +21,7 @@ export default async function StaffConsoleLayout({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name, spin_enabled, operations_module_enabled, nav_position")
+    .select("id, name, spin_enabled, operations_module_enabled, nav_position, nav_autohide_enabled")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -87,6 +88,7 @@ export default async function StaffConsoleLayout({
           operationsEnabled={club.operations_module_enabled ?? false}
           qeboEnabled={qeboEnabled}
           badges={pendingBadges}
+          autoHideEnabled={club.nav_autohide_enabled ?? true}
         />
         <div className="px-4 pt-6 pb-10 max-w-7xl mx-auto space-y-6">
           {children}
@@ -136,6 +138,16 @@ export default async function StaffConsoleLayout({
               {t(locale, "staff.publicPage")}
             </a>
             <LanguageSwitcher variant="light" />
+            <AppDrawerTrigger
+              portal="staff"
+              clubSlug={clubSlug}
+              flags={{
+                ops: club.operations_module_enabled ?? false,
+                qebo: true,
+                spin: club.spin_enabled ?? false,
+              }}
+              variant="dark"
+            />
             <StaffLogoutButton clubSlug={clubSlug} />
           </div>
         </div>

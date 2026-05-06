@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/provider";
+import { useScrollDirection } from "@/lib/hooks/use-scroll-direction";
 import { LanguageSwitcher } from "@/lib/i18n/switcher";
 import { LogoutButton } from "@/app/[clubSlug]/admin/logout-button";
 import { PanicIconButton } from "./panic-icon-button";
+import { AppDrawerTrigger } from "./app-drawer-trigger";
 import {
   adminNavItems,
   filterAdminNavItems,
@@ -19,6 +21,7 @@ interface AdminTopBarProps {
   clubSlug: string;
   coverUrl: string | null;
   opsEnabled: boolean;
+  autoHideEnabled?: boolean;
 }
 
 export function AdminTopBar({
@@ -27,10 +30,12 @@ export function AdminTopBar({
   clubSlug,
   coverUrl,
   opsEnabled,
+  autoHideEnabled = true,
 }: AdminTopBarProps) {
   const pathname = usePathname();
   const { t } = useLanguage();
   const basePath = `/${clubSlug}/admin`;
+  const hidden = useScrollDirection({ disabled: !autoHideEnabled });
 
   if (pathname.endsWith("/admin/login")) return null;
 
@@ -38,7 +43,9 @@ export function AdminTopBar({
 
   return (
     <div
-      className={`sticky top-0 z-50 bg-cover bg-center ${coverUrl ? "" : "bg-gradient-to-br from-gray-800 to-gray-900"}`}
+      className={`sticky top-0 z-50 bg-cover bg-center transition-transform duration-200 will-change-transform ${
+        coverUrl ? "" : "bg-gradient-to-br from-gray-800 to-gray-900"
+      } ${hidden ? "-translate-y-full" : "translate-y-0"}`}
       style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : undefined}
     >
       {coverUrl && <div className="absolute inset-0 bg-black/70" />}
@@ -109,6 +116,12 @@ export function AdminTopBar({
             {t("admin.publicPage")}
           </a>
           <LanguageSwitcher />
+          <AppDrawerTrigger
+            portal="admin"
+            clubSlug={clubSlug}
+            flags={{ ops: opsEnabled }}
+            variant="dark"
+          />
           <LogoutButton clubSlug={clubSlug} />
         </div>
       </div>

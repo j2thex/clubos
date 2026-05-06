@@ -1996,6 +1996,22 @@ export async function setStaffStartingPage(
   return { ok: true };
 }
 
+export async function setNavAutohide(
+  clubId: string,
+  enabled: boolean,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("clubs")
+    .update({ nav_autohide_enabled: enabled })
+    .eq("id", clubId);
+  if (error) return { error: "Failed to update nav auto-hide setting" };
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/staff`, "layout");
+  return { ok: true };
+}
+
 export async function createReferralSource(
   clubId: string,
   name: string,

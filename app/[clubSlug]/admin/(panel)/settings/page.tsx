@@ -23,6 +23,7 @@ import { getOwnerFromCookie } from "@/lib/auth";
 import { QrCodesManager } from "../../qr-codes-manager";
 import { OperationsModuleManager } from "../../operations-module-manager";
 import { NavPositionManager } from "../../nav-position-manager";
+import { NavAutohideManager } from "../../nav-autohide-manager";
 import type { NavPosition } from "../../actions";
 import { StaffStartPageManager } from "../../staff-start-page-manager";
 import { RequireReferralManager } from "../../require-referral-manager";
@@ -52,7 +53,7 @@ export default async function SettingsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, login_mode, invite_only, invite_mode, hide_member_login, preregistration_enabled, auto_registration, tags, visibility, requested_visibility, telegram_bot_token, telegram_chat_id, telegram_bot_username, telegram_member_subs_enabled, notification_secret, latitude, longitude, address, city, country, spin_enabled, working_hours, spin_display_decimals, spin_cost, telegram_bot_enabled, telegram_bot_referral_name, telegram_bot_registration_price, telegram_bot_welcome_message, telegram_bot_keywords, telegram_bot_age_restricted, operations_module_enabled, currency_mode, monthly_consumption_limit_grams, nav_position, staff_starting_page, require_referral_code")
+    .select("id, login_mode, invite_only, invite_mode, hide_member_login, preregistration_enabled, auto_registration, tags, visibility, requested_visibility, telegram_bot_token, telegram_chat_id, telegram_bot_username, telegram_member_subs_enabled, notification_secret, latitude, longitude, address, city, country, spin_enabled, working_hours, spin_display_decimals, spin_cost, telegram_bot_enabled, telegram_bot_referral_name, telegram_bot_registration_price, telegram_bot_welcome_message, telegram_bot_keywords, telegram_bot_age_restricted, operations_module_enabled, currency_mode, monthly_consumption_limit_grams, nav_position, nav_autohide_enabled, staff_starting_page, require_referral_code")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -208,11 +209,18 @@ export default async function SettingsPage({
       </CollapsibleSection>
 
       <CollapsibleSection title="Layout" caption="Top or bottom navigation for staff & admin">
-        <NavPositionManager
-          clubId={club.id}
-          clubSlug={clubSlug}
-          initialPosition={(club.nav_position as NavPosition | null) ?? "bottom"}
-        />
+        <div className="space-y-3">
+          <NavPositionManager
+            clubId={club.id}
+            clubSlug={clubSlug}
+            initialPosition={(club.nav_position as NavPosition | null) ?? "bottom"}
+          />
+          <NavAutohideManager
+            clubId={club.id}
+            clubSlug={clubSlug}
+            initialEnabled={club.nav_autohide_enabled ?? true}
+          />
+        </div>
       </CollapsibleSection>
 
       <CollapsibleSection title="Staff starting page" caption="Where staff land after logging in">

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/provider";
+import { useScrollDirection } from "@/lib/hooks/use-scroll-direction";
 import {
   adminNavItems,
   filterAdminNavItems,
@@ -13,12 +14,14 @@ import { OperationsNavLink } from "./operations-nav-link";
 interface AdminNavProps {
   clubSlug: string;
   opsEnabled?: boolean;
+  autoHideEnabled?: boolean;
 }
 
-export function AdminNav({ clubSlug, opsEnabled = false }: AdminNavProps) {
+export function AdminNav({ clubSlug, opsEnabled = false, autoHideEnabled = true }: AdminNavProps) {
   const pathname = usePathname();
   const { t } = useLanguage();
   const basePath = `/${clubSlug}/admin`;
+  const hidden = useScrollDirection({ disabled: !autoHideEnabled });
 
   if (pathname.endsWith("/admin/login")) {
     return null;
@@ -27,7 +30,11 @@ export function AdminNav({ clubSlug, opsEnabled = false }: AdminNavProps) {
   const visibleItems = filterAdminNavItems(adminNavItems, { opsEnabled });
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.08)]">
+    <nav
+      className={`fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.08)] transition-transform duration-200 will-change-transform ${
+        hidden ? "translate-y-full" : "translate-y-0"
+      }`}
+    >
       <div className="mx-auto flex max-w-md items-center justify-around pb-2 pt-2">
         {visibleItems.map((item) => {
           const href = `${basePath}${item.path}`;
