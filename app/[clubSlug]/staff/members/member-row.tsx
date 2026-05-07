@@ -63,7 +63,7 @@ export function StaffMemberRow({
     const isExpiringSoon = daysLeft >= 0 && daysLeft <= 30;
     const formatted = validDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
     validTillChip = {
-      label: isExpired ? `Expired ${formatted}` : `Valid till ${formatted}`,
+      label: isExpired ? `Membership expired ${formatted}` : `Paid until ${formatted}`,
       classes: isExpired
         ? "bg-red-50 text-red-600 hover:bg-red-100"
         : isExpiringSoon
