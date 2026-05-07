@@ -50,7 +50,10 @@ Rules:
     },
   ];
 
-  if (screenshot && screenshot.size > 0 && screenshot.type.startsWith("image/")) {
+  // Anthropic only accepts these four image types. iOS HEIC, BMP, TIFF, etc.
+  // would 400 the API; skip the image in that case (AI improves text only).
+  const ANTHROPIC_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+  if (screenshot && screenshot.size > 0 && ANTHROPIC_IMAGE_TYPES.includes(screenshot.type)) {
     const bytes = new Uint8Array(await screenshot.arrayBuffer());
     userContent.push({ type: "image", image: bytes, mediaType: screenshot.type });
   }
