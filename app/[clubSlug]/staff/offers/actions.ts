@@ -157,6 +157,7 @@ export async function addWalkinOfferOrder(
     .select("id")
     .eq("club_id", clubId)
     .eq("member_code", code)
+    .eq("is_system_member", false)
     .eq("status", "active")
     .single();
   if (!member) return { error: "Member not found" };

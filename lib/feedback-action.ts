@@ -14,6 +14,7 @@ export async function improveFeedback(
   const category = (formData.get("category") as string) || "idea";
   const pageUrl = (formData.get("pageUrl") as string) || "";
   const locale = (formData.get("locale") as string) || "en";
+  const instruction = ((formData.get("instruction") as string) || "").trim();
   const screenshot = formData.get("screenshot") as File | null;
 
   if (!text || text.length < 3) {
@@ -35,17 +36,24 @@ Rules:
 - For ideas, prefer: what they want / why it matters (only if inferable).
 - No preamble, no sign-off, no markdown headers. Just the rewritten text.`;
 
+  const promptText = instruction
+    ? `Page: ${pageUrl}\n\nFeedback to rewrite:\n${text}\n\nUser's instruction for this rewrite: ${instruction}`
+    : `Page: ${pageUrl}\n\nOriginal feedback:\n${text}`;
+
   const userContent: Array<
     | { type: "text"; text: string }
     | { type: "image"; image: Uint8Array; mediaType: string }
   > = [
     {
       type: "text",
-      text: `Page: ${pageUrl}\n\nOriginal feedback:\n${text}`,
+      text: promptText,
     },
   ];
 
-  if (screenshot && screenshot.size > 0 && screenshot.type.startsWith("image/")) {
+  // Anthropic only accepts these four image types. iOS HEIC, BMP, TIFF, etc.
+  // would 400 the API; skip the image in that case (AI improves text only).
+  const ANTHROPIC_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+  if (screenshot && screenshot.size > 0 && ANTHROPIC_IMAGE_TYPES.includes(screenshot.type)) {
     const bytes = new Uint8Array(await screenshot.arrayBuffer());
     userContent.push({ type: "image", image: bytes, mediaType: screenshot.type });
   }

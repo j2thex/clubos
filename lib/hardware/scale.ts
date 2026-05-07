@@ -25,3 +25,12 @@ export interface ScaleAdapter {
 export function isWebSerialSupported(): boolean {
   return typeof navigator !== "undefined" && "serial" in navigator;
 }
+
+// Acceptable absolute deviation between a requested target weight and the
+// actual scale reading, in grams. Same value enforced server-side in the
+// record_sale RPC.
+export const WEIGHT_TOLERANCE_G = 0.05;
+
+export function isWithinTolerance(actual: number, requested: number): boolean {
+  return Math.abs(actual - requested) <= WEIGHT_TOLERANCE_G;
+}

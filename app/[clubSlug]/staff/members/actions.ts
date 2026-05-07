@@ -1,7 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { hashPin, getStaffFromCookie, requireStaffForClub } from "@/lib/auth";
+import { hashPin, getStaffFromCookie, requireStaffForClub, requireOpsAccess } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { logActivity } from "@/lib/activity-log";
 import {
@@ -11,7 +11,10 @@ import {
   deleteMemberPhoto,
   uploadMemberSignature as uploadMemberSignatureToBucket,
   deleteMemberSignature,
+  uploadMemberLegalPdf,
+  downloadMemberSignatureBytes,
 } from "@/lib/supabase/storage";
+import { generateLegalMembershipPdf } from "@/lib/legal-pdf";
 
 export async function updateMemberRole(memberId: string, roleId: string | null, clubSlug: string) {
   const auth = await authorizeMemberStaff(memberId);
@@ -125,10 +128,11 @@ export async function createMember(
   // setting; revisit if scripted.
   const { data: clubRow } = await supabase
     .from("clubs")
-    .select("operations_module_enabled")
+    .select("name, operations_module_enabled, require_referral_code, legal_membership_text")
     .eq("id", clubId)
     .single();
   const opsOn = !!clubRow?.operations_module_enabled;
+  const referralRequired = !!clubRow?.require_referral_code;
 
   if (opsOn) {
     const missing: string[] = [];
@@ -159,6 +163,11 @@ export async function createMember(
           "This club requires members to be 18 or older. The account was not created.",
       };
     }
+  }
+
+  if (referralRequired && !input.referredBy?.trim()) {
+    await cleanupOrphanedUploads(input);
+    return { error: "Referral code is required" };
   }
 
   // Validate referral code if provided
@@ -263,12 +272,13 @@ export async function createMember(
   const trimmedFullName = `${firstName} ${lastName}`.trim();
   const fullName = trimmedFullName || null;
   let code = "";
+  let newMemberId: string | null = null;
   let insertError: { code?: string; message?: string } | null = null;
 
   const maxAttempts = requestedCode !== null ? 1 : 5;
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     code = requestedCode ?? `${base}${String(nextSeq).padStart(2, "0")}`;
-    const { error } = await supabase.from("members").insert({
+    const { data: inserted, error } = await supabase.from("members").insert({
       club_id: clubId,
       member_code: code,
       full_name: fullName,
@@ -288,9 +298,10 @@ export async function createMember(
       photo_path: input.photoPath || null,
       signature_path: input.signaturePath || null,
       rfid_uid: rfidUidClean,
-    });
-    if (!error) {
+    }).select("id").single();
+    if (!error && inserted) {
       insertError = null;
+      newMemberId = inserted.id;
       break;
     }
     // If the collision is on rfid_uid (race with a concurrent insert), don't
@@ -446,6 +457,42 @@ export async function createMember(
     targetMemberCode: code,
     details: details || undefined,
   });
+
+  if (newMemberId && input.signaturePath && clubRow?.legal_membership_text?.trim()) {
+    try {
+      const sigBytes = await downloadMemberSignatureBytes(input.signaturePath);
+      const pdfBytes = await generateLegalMembershipPdf({
+        clubName: clubRow.name ?? "",
+        memberCode: code,
+        memberName: fullName ?? "",
+        dateOfBirth,
+        idNumber,
+        legalText: clubRow.legal_membership_text,
+        signaturePngBytes: sigBytes,
+      });
+      const upload = await uploadMemberLegalPdf(clubId, newMemberId, pdfBytes);
+      if ("error" in upload) {
+        await logActivity({
+          clubId, staffMemberId: staff?.member_id,
+          action: "legal_pdf_failed", targetMemberCode: code,
+          details: upload.error,
+        });
+      } else {
+        await supabase.from("members").update({ legal_pdf_path: upload.path }).eq("id", newMemberId);
+      }
+    } catch (err) {
+      await logActivity({
+        clubId, staffMemberId: staff?.member_id,
+        action: "legal_pdf_failed", targetMemberCode: code,
+        details: err instanceof Error ? err.message : String(err),
+      });
+    }
+  } else if (newMemberId && input.signaturePath) {
+    await logActivity({
+      clubId, staffMemberId: staff?.member_id,
+      action: "legal_pdf_skipped_no_text", targetMemberCode: code,
+    });
+  }
 
   revalidatePath(`/${clubSlug}/staff/members`);
   revalidatePath(`/${clubSlug}`, "layout");
@@ -603,7 +650,7 @@ export async function markIdVerified(
   if (!current.date_of_birth) return { error: "Set date of birth before verifying" };
 
   let staff: { member_id: string; club_id: string };
-  try { staff = await requireStaffForClub(current.club_id); } catch (err) {
+  try { staff = await requireOpsAccess(current.club_id, "manage_identity"); } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
 
@@ -645,7 +692,7 @@ export async function revokeIdVerification(
   if (!current) return { error: "Member not found" };
 
   let staff: { member_id: string; club_id: string };
-  try { staff = await requireStaffForClub(current.club_id); } catch (err) {
+  try { staff = await requireOpsAccess(current.club_id, "manage_identity"); } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }
 
@@ -758,6 +805,10 @@ export async function staffUpdateMemberIdentity(
   const auth = await authorizeMemberStaff(memberId);
   if ("error" in auth) return auth;
 
+  try { await requireOpsAccess(auth.clubId, "manage_identity"); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+
   const firstName = input.firstName.trim();
   const lastName = input.lastName.trim();
   if (!firstName || !lastName) {
@@ -792,18 +843,22 @@ export async function staffUpdateMemberIdentity(
   }
 
   const supabase = createAdminClient();
+  const updatePayload: Record<string, unknown> = {
+    first_name: firstName,
+    last_name: lastName,
+    full_name: `${firstName} ${lastName}`,
+    date_of_birth: input.dateOfBirth || null,
+    residency_status: input.residencyStatus,
+    id_number: input.idNumber?.trim() || null,
+    phone: input.phone?.trim() || null,
+    email: input.email?.trim() || null,
+  };
+  if (input.staffNote !== undefined) {
+    updatePayload.staff_note = input.staffNote?.trim() || null;
+  }
   const { error } = await supabase
     .from("members")
-    .update({
-      first_name: firstName,
-      last_name: lastName,
-      full_name: `${firstName} ${lastName}`,
-      date_of_birth: input.dateOfBirth || null,
-      residency_status: input.residencyStatus,
-      id_number: input.idNumber?.trim() || null,
-      phone: input.phone?.trim() || null,
-      email: input.email?.trim() || null,
-    })
+    .update(updatePayload)
     .eq("id", memberId);
 
   if (error) return { error: "Failed to update member" };
@@ -835,7 +890,7 @@ async function validateStaffReplaceFormData(
 
   let session: { member_id: string; club_id: string };
   try {
-    session = await requireStaffForClub(clubId);
+    session = await requireOpsAccess(clubId, "manage_identity");
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Unauthorized" };
   }

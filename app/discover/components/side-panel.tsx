@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { t } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import type { ActiveTab } from "../lib/types";
@@ -83,7 +84,7 @@ function PanelCard({
         style={{ backgroundColor: item.logo_url ? undefined : item.primary_color }}
       >
         {item.logo_url ? (
-          <img src={item.logo_url} alt="" className="w-full h-full object-cover" />
+          <Image src={item.logo_url} alt="" width={40} height={40} sizes="40px" className="w-full h-full object-cover" />
         ) : (
           item.title.charAt(0).toUpperCase()
         )}

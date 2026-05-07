@@ -1019,7 +1019,7 @@ function ProductImageField({
           <input
             ref={fileRef}
             type="file"
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
             onChange={(e) => handleFiles(e.target.files)}
             className="sr-only"
           />
@@ -1062,11 +1062,16 @@ function ProductNewForm({
   const [costPrice, setCostPrice] = useState("");
   const [stockOnHand, setStockOnHand] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
+    if (uploading) {
+      toast.error("Image is still uploading — try again in a moment");
+      return;
+    }
     startTransition(async () => {
       const r = await addProduct(clubId, clubSlug, {
         categoryId: categoryId || null,
@@ -1180,15 +1185,20 @@ function ProductNewForm({
       </div>
       <div>
         <span className="text-[11px] text-gray-500 block mb-1">Image</span>
-        <ProductImageField clubId={clubId} imageUrl={imageUrl} onChange={setImageUrl} />
+        <ProductImageField
+          clubId={clubId}
+          imageUrl={imageUrl}
+          onChange={setImageUrl}
+          onUploadingChange={setUploading}
+        />
       </div>
       <div className="flex gap-2">
         <button
           type="submit"
-          disabled={isPending || !name.trim()}
+          disabled={isPending || uploading || !name.trim()}
           className="flex-1 rounded-lg bg-gray-800 text-white text-xs font-semibold py-2 hover:bg-gray-700 disabled:opacity-50"
         >
-          Add
+          {uploading ? "Uploading image…" : "Add"}
         </button>
         <button
           type="button"

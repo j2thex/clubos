@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import type { Metadata } from "next";
 import { SocialLinks } from "@/components/club/social-links";
 import { MediaGallery } from "@/components/club/media-gallery";
@@ -71,6 +72,7 @@ export async function generateMetadata({
       },
     },
     icons: {
+      icon: [{ url: `/${clubSlug}/icon.png`, type: "image/png" }],
       apple: [{ url: `/${clubSlug}/icon.png`, sizes: "180x180" }],
     },
   };
@@ -276,15 +278,17 @@ export default async function PublicProfilePage({
         />
       )}
       {/* Editorial hero — photo-forward with gradient fallback for clubs without a cover */}
-      <section
-        className="relative h-[300px] w-full overflow-hidden bg-cover bg-center"
-        style={
-          branding?.cover_url
-            ? { backgroundImage: `url(${branding.cover_url})` }
-            : undefined
-        }
-      >
-        {!branding?.cover_url && (
+      <section className="relative h-[300px] w-full overflow-hidden">
+        {branding?.cover_url ? (
+          <Image
+            src={branding.cover_url}
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
+          />
+        ) : (
           <div className="absolute inset-0 club-hero" aria-hidden />
         )}
         {/* Dark gradient for editorial legibility */}
@@ -334,9 +338,12 @@ export default async function PublicProfilePage({
         <div className="absolute inset-x-0 bottom-0 z-10 px-5 pb-6">
           <div className="flex items-end gap-4">
             {branding?.logo_url && (
-              <img
+              <Image
                 src={branding.logo_url}
                 alt={club.name}
+                width={56}
+                height={56}
+                sizes="56px"
                 className="h-14 w-14 shrink-0 rounded-[var(--m-radius-sm)] border border-white/30 object-cover"
               />
             )}
@@ -589,10 +596,12 @@ export default async function PublicProfilePage({
                             style={{ background: "var(--m-surface-sunken)" }}
                           >
                             {item.image_url ? (
-                              <img
+                              <Image
                                 src={item.image_url}
                                 alt=""
-                                className="h-full w-full object-cover"
+                                fill
+                                sizes="(max-width: 640px) 50vw, 33vw"
+                                className="object-cover"
                               />
                             ) : (
                               <div className="flex h-full w-full items-center justify-center text-[color:var(--m-ink-muted)]">

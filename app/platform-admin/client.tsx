@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { createUnclaimedClub, createClubFromGoogleMaps, approveCustomOffer, approveClub, rejectClub, setClubVisibility, loginAsClubAdmin, setupStandardContent, bulkImportQuests, unlockClubFromPlatform } from "./actions";
+import { logoutPlatformAdmin } from "./login/actions";
 import { PartnersManager } from "./partners-manager";
 
 type ClubVisibility = "public" | "unlisted" | "private";
@@ -210,7 +211,6 @@ function parseQuestCsv(raw: string): { quests: ParsedQuest[]; error: string | nu
 }
 
 export function PlatformAdminClient({
-  secret,
   stats,
   growth,
   clubs,
@@ -219,7 +219,6 @@ export function PlatformAdminClient({
   unapprovedOffers,
   partners,
 }: {
-  secret: string;
   stats: Stats;
   growth: Growth;
   clubs: ClubInfo[];
@@ -252,7 +251,7 @@ export function PlatformAdminClient({
     startTransition(async () => {
       const fd = new FormData(e.currentTarget);
       fd.set("slug", slug);
-      const result = await createUnclaimedClub(fd, secret);
+      const result = await createUnclaimedClub(fd);
       if ("error" in result) {
         setError(result.error);
       } else {
@@ -268,7 +267,7 @@ export function PlatformAdminClient({
     e.preventDefault();
     setError(null);
     startTransition(async () => {
-      const result = await createClubFromGoogleMaps(googleMapsUrl, secret);
+      const result = await createClubFromGoogleMaps(googleMapsUrl);
       if ("error" in result) {
         setError(result.error);
       } else {
@@ -281,7 +280,7 @@ export function PlatformAdminClient({
 
   function handleApproveOffer(offerId: string) {
     startTransition(async () => {
-      await approveCustomOffer(offerId, secret);
+      await approveCustomOffer(offerId);
     });
   }
 
@@ -296,7 +295,7 @@ export function PlatformAdminClient({
   function handleBulkImport() {
     if (!bulkClubId || !parsedQuests?.length) return;
     startTransition(async () => {
-      const res = await bulkImportQuests(bulkClubId, parsedQuests, secret);
+      const res = await bulkImportQuests(bulkClubId, parsedQuests);
       if ("error" in res) setError(res.error);
       else {
         setSuccess(`Imported ${res.questCount} quests, ${res.badgeCount} badges`);
@@ -320,7 +319,7 @@ export function PlatformAdminClient({
           </div>
           <div className="flex items-center gap-4">
             <a
-              href={`/platform-admin/ai-prompts?secret=${encodeURIComponent(secret)}`}
+              href="/platform-admin/ai-prompts"
               className="text-xs text-landing-text-tertiary hover:text-landing-text-secondary transition-colors"
             >
               ✨ AI Prompts
@@ -328,6 +327,14 @@ export function PlatformAdminClient({
             <a href="/" className="text-xs text-landing-text-tertiary hover:text-landing-text-secondary transition-colors">
               Back to site
             </a>
+            <form action={logoutPlatformAdmin}>
+              <button
+                type="submit"
+                className="text-xs text-landing-text-tertiary hover:text-red-400 transition-colors"
+              >
+                Log out
+              </button>
+            </form>
           </div>
         </div>
 
@@ -494,7 +501,7 @@ export function PlatformAdminClient({
                         )}
                         <button
                           onClick={() => startTransition(async () => {
-                            const res = await loginAsClubAdmin(c.id, c.slug, secret);
+                            const res = await loginAsClubAdmin(c.id, c.slug);
                             if ("ok" in res) window.open(res.redirectUrl, "_blank");
                             else setError(res.error);
                           })}
@@ -508,7 +515,7 @@ export function PlatformAdminClient({
                             onClick={() => {
                               if (!window.confirm(`Unlock ${c.name}?`)) return;
                               startTransition(async () => {
-                                const res = await unlockClubFromPlatform(c.id, c.slug, secret);
+                                const res = await unlockClubFromPlatform(c.id, c.slug);
                                 if ("error" in res) setError(res.error);
                                 else setSuccess(`Unlocked ${c.name}`);
                               });
@@ -535,7 +542,7 @@ export function PlatformAdminClient({
                             </select>
                             <button
                               onClick={() => startTransition(async () => {
-                                const res = await setupStandardContent(c.id, setupType, secret);
+                                const res = await setupStandardContent(c.id, setupType);
                                 if ("ok" in res) {
                                   setSuccess(`Added ${res.questCount} quests + ${res.eventCount} events`);
                                   setSetupClubId(null);
@@ -611,7 +618,7 @@ export function PlatformAdminClient({
         )}
 
         {/* Platform Partners */}
-        <PartnersManager partners={partners} secret={secret} />
+        <PartnersManager partners={partners} />
 
         {/* Activity Feed */}
         {activityFeed.length > 0 && (

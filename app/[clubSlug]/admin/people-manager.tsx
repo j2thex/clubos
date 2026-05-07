@@ -50,6 +50,8 @@ interface Member {
   canDoTopup?: boolean;
   canDoTransactions?: boolean;
   canDoQebo?: boolean;
+  canManageProducts?: boolean;
+  canManageIdentity?: boolean;
 }
 
 const PRESET_SOURCES = [
@@ -274,7 +276,7 @@ export function PeopleManager({
                 disabled={isPending || !code.trim() || (tab === "staff" && !pin.trim())}
                 className="rounded-lg bg-gray-800 text-white px-5 py-2 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
               >
-                {isPending ? "..." : t("common.add")}
+                {isPending ? "..." : t("common.create")}
               </button>
             </div>
 
@@ -445,11 +447,14 @@ export function PeopleManager({
                         <StaffPermissionRow
                           memberId={person.id}
                           clubSlug={clubSlug}
+                          currencyMode={currencyMode}
                           initialEntry={person.canDoEntry ?? true}
                           initialSell={person.canDoSell ?? true}
                           initialTopup={person.canDoTopup ?? true}
                           initialTransactions={person.canDoTransactions ?? true}
                           initialQebo={person.canDoQebo ?? true}
+                          initialManageProducts={person.canManageProducts ?? true}
+                          initialManageIdentity={person.canManageIdentity ?? true}
                         />
                       )}
                       {detail && isExpanded && (
@@ -525,19 +530,25 @@ export function PeopleManager({
 function StaffPermissionRow({
   memberId,
   clubSlug,
+  currencyMode,
   initialEntry,
   initialSell,
   initialTopup,
   initialTransactions,
   initialQebo,
+  initialManageProducts,
+  initialManageIdentity,
 }: {
   memberId: string;
   clubSlug: string;
+  currencyMode: "saldo" | "cash";
   initialEntry: boolean;
   initialSell: boolean;
   initialTopup: boolean;
   initialTransactions: boolean;
   initialQebo: boolean;
+  initialManageProducts: boolean;
+  initialManageIdentity: boolean;
 }) {
   const { t } = useLanguage();
   const [canDoEntry, setCanDoEntry] = useState(initialEntry);
@@ -545,22 +556,26 @@ function StaffPermissionRow({
   const [canDoTopup, setCanDoTopup] = useState(initialTopup);
   const [canDoTransactions, setCanDoTransactions] = useState(initialTransactions);
   const [canDoQebo, setCanDoQebo] = useState(initialQebo);
+  const [canManageProducts, setCanManageProducts] = useState(initialManageProducts);
+  const [canManageIdentity, setCanManageIdentity] = useState(initialManageIdentity);
   const [isPending, startTransition] = useTransition();
 
-  function toggle(
-    field: "canDoEntry" | "canDoSell" | "canDoTopup" | "canDoTransactions" | "canDoQebo",
-    next: boolean,
-  ) {
-    const prevEntry = canDoEntry;
-    const prevSell = canDoSell;
-    const prevTopup = canDoTopup;
-    const prevTransactions = canDoTransactions;
-    const prevQebo = canDoQebo;
+  type PermKey =
+    | "canDoEntry" | "canDoSell" | "canDoTopup" | "canDoTransactions" | "canDoQebo"
+    | "canManageProducts" | "canManageIdentity";
+
+  function toggle(field: PermKey, next: boolean) {
+    const prev = {
+      canDoEntry, canDoSell, canDoTopup, canDoTransactions, canDoQebo,
+      canManageProducts, canManageIdentity,
+    };
     if (field === "canDoEntry") setCanDoEntry(next);
     if (field === "canDoSell") setCanDoSell(next);
     if (field === "canDoTopup") setCanDoTopup(next);
     if (field === "canDoTransactions") setCanDoTransactions(next);
     if (field === "canDoQebo") setCanDoQebo(next);
+    if (field === "canManageProducts") setCanManageProducts(next);
+    if (field === "canManageIdentity") setCanManageIdentity(next);
 
     startTransition(async () => {
       const r = await updateStaffPermissions(memberId, clubSlug, {
@@ -568,29 +583,35 @@ function StaffPermissionRow({
       });
       if ("error" in r) {
         toast.error(r.error);
-        if (field === "canDoEntry") setCanDoEntry(prevEntry);
-        if (field === "canDoSell") setCanDoSell(prevSell);
-        if (field === "canDoTopup") setCanDoTopup(prevTopup);
-        if (field === "canDoTransactions") setCanDoTransactions(prevTransactions);
-        if (field === "canDoQebo") setCanDoQebo(prevQebo);
+        setCanDoEntry(prev.canDoEntry);
+        setCanDoSell(prev.canDoSell);
+        setCanDoTopup(prev.canDoTopup);
+        setCanDoTransactions(prev.canDoTransactions);
+        setCanDoQebo(prev.canDoQebo);
+        setCanManageProducts(prev.canManageProducts);
+        setCanManageIdentity(prev.canManageIdentity);
       }
     });
   }
 
   const rows: {
-    key: "canDoEntry" | "canDoSell" | "canDoTopup" | "canDoTransactions" | "canDoQebo";
+    key: PermKey;
     label: string;
     value: boolean;
   }[] = [
     { key: "canDoEntry", label: t("admin.staff.permissions.door"), value: canDoEntry },
     { key: "canDoSell", label: t("admin.staff.permissions.sell"), value: canDoSell },
-    { key: "canDoTopup", label: t("admin.staff.permissions.topup"), value: canDoTopup },
+    ...(currencyMode === "saldo"
+      ? [{ key: "canDoTopup" as const, label: t("admin.staff.permissions.topup"), value: canDoTopup }]
+      : []),
     {
       key: "canDoTransactions",
       label: t("admin.staff.permissions.transactions"),
       value: canDoTransactions,
     },
     { key: "canDoQebo", label: t("admin.staff.permissions.qebo"), value: canDoQebo },
+    { key: "canManageProducts", label: t("admin.staff.permissions.manageProducts"), value: canManageProducts },
+    { key: "canManageIdentity", label: t("admin.staff.permissions.manageIdentity"), value: canManageIdentity },
   ];
 
   return (

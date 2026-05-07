@@ -3,7 +3,11 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyPin, createStaffToken, setStaffCookie } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { t, type Locale } from "@/lib/i18n";
+import { getClientIp } from "@/lib/get-client-ip";
+import { logActivity } from "@/lib/activity-log";
+import { isAllowedStartPage } from "@/lib/staff-start-pages";
 
 export async function loginStaff(clubSlug: string, locale: Locale, formData: FormData) {
   const staffCode = (formData.get("staffCode") as string).toUpperCase().trim();
@@ -17,7 +21,7 @@ export async function loginStaff(clubSlug: string, locale: Locale, formData: For
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id")
+    .select("id, staff_starting_page, operations_module_enabled")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -49,5 +53,20 @@ export async function loginStaff(clubSlug: string, locale: Locale, formData: For
   const token = await createStaffToken(member.id, club.id, clubSlug);
   await setStaffCookie(token);
 
-  redirect(`/${clubSlug}/staff`);
+  const ip = await getClientIp();
+  const userAgent = (await headers()).get("user-agent");
+  await logActivity({
+    clubId: club.id,
+    staffMemberId: member.id,
+    action: "staff_login",
+    targetMemberCode: staffCode,
+    ipAddress: ip,
+    details: userAgent ? `UA: ${userAgent}` : null,
+  });
+
+  const startPage = club.staff_starting_page as string | null;
+  const opsEnabled = (club.operations_module_enabled as boolean | null) ?? false;
+  const target =
+    isAllowedStartPage(startPage, opsEnabled) ? `/${clubSlug}${startPage}` : `/${clubSlug}/staff`;
+  redirect(target);
 }

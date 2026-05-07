@@ -3,6 +3,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hashPin, clearOwnerCookie, requireOwnerForClub } from "@/lib/auth";
 import { logActivity } from "@/lib/activity-log";
+import { STAFF_START_PAGES } from "@/lib/staff-start-pages";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
@@ -184,6 +185,40 @@ export async function setCurrencyMode(
     clubId,
     action: "currency_mode_set",
     details: mode,
+  });
+
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/staff`, "layout");
+  return { ok: true };
+}
+
+export type NavPosition = "bottom" | "top";
+
+export async function setNavPosition(
+  clubId: string,
+  position: NavPosition,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  if (position !== "bottom" && position !== "top") {
+    return { error: "Invalid nav position" };
+  }
+
+  try { await requireOwnerForClub(clubId); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ nav_position: position })
+    .eq("id", clubId);
+
+  if (error) return { error: "Failed to update nav position" };
+
+  await logActivity({
+    clubId,
+    action: "nav_position_set",
+    details: position,
   });
 
   revalidatePath(`/${clubSlug}/admin`, "layout");
@@ -1928,6 +1963,73 @@ export async function updateWorkingHours(
   return { ok: true };
 }
 
+export async function setLegalMembershipText(
+  clubId: string,
+  text: string,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  try { await requireOwnerForClub(clubId); } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unauthorized" };
+  }
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("clubs")
+    .update({ legal_membership_text: text.trim() || null })
+    .eq("id", clubId);
+  if (error) return { error: "Failed to save legal text" };
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
+export async function setRequireReferralCode(
+  clubId: string,
+  value: boolean,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("clubs")
+    .update({ require_referral_code: value })
+    .eq("id", clubId);
+  if (error) return { error: "Failed to update setting" };
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
+export async function setStaffStartingPage(
+  clubId: string,
+  value: string | null,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  if (value !== null && !STAFF_START_PAGES.some((p) => p.value === value)) {
+    return { error: "Invalid starting page" };
+  }
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("clubs")
+    .update({ staff_starting_page: value })
+    .eq("id", clubId);
+  if (error) return { error: "Failed to update staff starting page" };
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  return { ok: true };
+}
+
+export async function setNavAutohide(
+  clubId: string,
+  enabled: boolean,
+  clubSlug: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("clubs")
+    .update({ nav_autohide_enabled: enabled })
+    .eq("id", clubId);
+  if (error) return { error: "Failed to update nav auto-hide setting" };
+  revalidatePath(`/${clubSlug}/admin`, "layout");
+  revalidatePath(`/${clubSlug}/staff`, "layout");
+  return { ok: true };
+}
+
 export async function createReferralSource(
   clubId: string,
   name: string,
@@ -2008,6 +2110,7 @@ export type UpdateMemberIdentityInput = {
   phone: string | null;
   email: string | null;
   marketingChannel?: string | null;
+  staffNote?: string | null;
 };
 
 async function authorizeMemberOwner(
@@ -2098,6 +2201,9 @@ export async function updateMemberIdentity(
   if (input.marketingChannel !== undefined) {
     const channel = input.marketingChannel?.trim().toLowerCase() || null;
     updatePayload.marketing_channel = channel;
+  }
+  if (input.staffNote !== undefined) {
+    updatePayload.staff_note = input.staffNote?.trim() || null;
   }
 
   const { error } = await supabase
@@ -2460,6 +2566,8 @@ export async function updateStaffPermissions(
     canDoTopup?: boolean;
     canDoTransactions?: boolean;
     canDoQebo?: boolean;
+    canManageProducts?: boolean;
+    canManageIdentity?: boolean;
   },
 ): Promise<{ error: string } | { ok: true }> {
   const auth = await authorizeMemberOwner(memberId);
@@ -2471,12 +2579,16 @@ export async function updateStaffPermissions(
     can_do_topup?: boolean;
     can_do_transactions?: boolean;
     can_do_qebo?: boolean;
+    can_manage_products?: boolean;
+    can_manage_identity?: boolean;
   } = {};
   if (typeof input.canDoEntry === "boolean") patch.can_do_entry = input.canDoEntry;
   if (typeof input.canDoSell === "boolean") patch.can_do_sell = input.canDoSell;
   if (typeof input.canDoTopup === "boolean") patch.can_do_topup = input.canDoTopup;
   if (typeof input.canDoTransactions === "boolean") patch.can_do_transactions = input.canDoTransactions;
   if (typeof input.canDoQebo === "boolean") patch.can_do_qebo = input.canDoQebo;
+  if (typeof input.canManageProducts === "boolean") patch.can_manage_products = input.canManageProducts;
+  if (typeof input.canManageIdentity === "boolean") patch.can_manage_identity = input.canManageIdentity;
 
   if (Object.keys(patch).length === 0) return { ok: true };
 

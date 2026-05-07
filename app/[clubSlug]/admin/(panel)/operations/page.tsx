@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
+import { clubDayStartIso } from "@/lib/club-time";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ export default async function AdminOperationsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id")
+    .select("id, timezone")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -25,13 +26,14 @@ export default async function AdminOperationsPage({
 
   const locale = await getServerLocale();
 
-  const todayStart = new Date(new Date().toDateString()).toISOString();
+  const todayStart = clubDayStartIso(new Date(), club.timezone ?? "Europe/Madrid");
   const [
     { count: insideCount },
     { count: totalActiveCount },
     { count: drinksAccessoriesCount },
     { count: todayTxCount },
     { count: offersCount },
+    { data: todaySalesRows },
   ] = await Promise.all([
     supabase
       .from("club_entries")
@@ -62,11 +64,22 @@ export default async function AdminOperationsPage({
       .select("*", { count: "exact", head: true })
       .eq("club_id", club.id)
       .eq("archived", false),
+    supabase
+      .from("sales")
+      .select("total")
+      .eq("club_id", club.id)
+      .is("voided_at", null)
+      .gte("created_at", todayStart),
   ]);
 
   const geneticsCount = Math.max(
     0,
     (totalActiveCount ?? 0) - (drinksAccessoriesCount ?? 0),
+  );
+
+  const todayRevenue = (todaySalesRows ?? []).reduce(
+    (sum, row) => sum + Number(row.total ?? 0),
+    0,
   );
 
   const cards = [
@@ -88,7 +101,7 @@ export default async function AdminOperationsPage({
     {
       href: `/${clubSlug}/admin/operations/transactions`,
       title: t(locale, "ops.transactionsCardTitle"),
-      body: t(locale, "ops.transactionsCardBody", { count: todayTxCount ?? 0 }),
+      body: `${t(locale, "ops.transactionsCardBody", { count: todayTxCount ?? 0 })} · ${todayRevenue.toFixed(2)} €`,
     },
     {
       href: `/${clubSlug}/admin/products`,
@@ -111,6 +124,11 @@ export default async function AdminOperationsPage({
       href: `/${clubSlug}/admin/finance`,
       title: t(locale, "finance.title"),
       body: t(locale, "finance.subtitle"),
+    },
+    {
+      href: `/${clubSlug}/admin/logs`,
+      title: t(locale, "ops.logsCardTitle"),
+      body: t(locale, "ops.logsCardBody"),
     },
   ];
 

@@ -5,8 +5,10 @@ import { t, getDateLocale } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 import { requireOpsAccess } from "@/lib/auth";
 import { NoAccessCard } from "@/components/club/no-access-card";
+import { clubDayStartIso } from "@/lib/club-time";
 import { VoidSaleButton } from "./void-sale-button";
 import { ExportCsvButton } from "./export-button";
+import { MemberCodeLink } from "@/components/club/member-profile-sheet";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +29,7 @@ export default async function StaffOperationsTransactionsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id")
+    .select("id, timezone")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -42,7 +44,7 @@ export default async function StaffOperationsTransactionsPage({
 
   const from = page * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
-  const dayStart = new Date(new Date().toDateString()).toISOString();
+  const dayStart = clubDayStartIso(new Date(), club.timezone ?? "Europe/Madrid");
 
   // Sales are the source of truth post-PR-#79 backfill: every legacy
   // product_transactions row got wrapped in a synthetic 'cash' sale, so a
@@ -217,8 +219,16 @@ export default async function StaffOperationsTransactionsPage({
                   <div className="flex items-start gap-3">
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm font-semibold text-gray-900 ${voided ? "line-through" : ""}`}>
-                        {member?.member_code ?? "?"}
-                        {member?.full_name ? ` · ${member.full_name}` : ""}
+                        {member?.member_code ? (
+                          <MemberCodeLink
+                            code={member.member_code}
+                            clubSlug={clubSlug}
+                            fullName={member.full_name}
+                            className="hover:underline"
+                          />
+                        ) : (
+                          "?"
+                        )}
                       </p>
                       <p className="text-[11px] text-gray-400">
                         {when}

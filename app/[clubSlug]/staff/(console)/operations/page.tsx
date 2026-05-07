@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
+import { clubDayStartIso } from "@/lib/club-time";
 export const dynamic = "force-dynamic";
 
 export default async function StaffOperationsPage({
@@ -15,12 +16,14 @@ export default async function StaffOperationsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id")
+    .select("id, timezone")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
 
   if (!club) notFound();
+
+  const dayStart = clubDayStartIso(new Date(), club.timezone ?? "Europe/Madrid");
 
   const { count: insideCount } = await supabase
     .from("club_entries")
@@ -42,7 +45,7 @@ export default async function StaffOperationsPage({
       .select("*", { count: "exact", head: true })
       .eq("club_id", club.id)
       .is("voided_at", null)
-      .gte("created_at", new Date(new Date().toDateString()).toISOString()),
+      .gte("created_at", dayStart),
   ]);
 
   const cards = [

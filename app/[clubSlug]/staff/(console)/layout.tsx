@@ -5,6 +5,9 @@ import { getServerLocale } from "@/lib/i18n/server";
 import { LanguageSwitcher } from "@/lib/i18n/switcher";
 import { StaffLogoutButton } from "@/components/club/staff-logout-button";
 import { PanicIconButton } from "@/components/club/panic-icon-button";
+import { StaffTopBar } from "@/components/club/staff-top-bar";
+import { AppDrawerTrigger } from "@/components/club/app-drawer-trigger";
+import { getStaffFromCookie } from "@/lib/auth";
 
 export default async function StaffConsoleLayout({
   children,
@@ -18,7 +21,7 @@ export default async function StaffConsoleLayout({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name")
+    .select("id, name, spin_enabled, operations_module_enabled, nav_position, nav_autohide_enabled")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -33,6 +36,78 @@ export default async function StaffConsoleLayout({
     .single();
 
   const coverUrl = branding?.cover_url ?? null;
+  const navPosition: "bottom" | "top" = club.nav_position === "top" ? "top" : "bottom";
+
+  // QEBO perm is needed by both branches: top-nav uses it for the StaffTopBar
+  // primary nav, both branches use it to gate the App Drawer FAB tiles.
+  let qeboEnabled = true;
+  const staffSession = await getStaffFromCookie();
+  if (staffSession?.member_id) {
+    const { data: staffRow } = await supabase
+      .from("members")
+      .select("can_do_qebo")
+      .eq("id", staffSession.member_id)
+      .single();
+    qeboEnabled = staffRow?.can_do_qebo ?? true;
+  }
+
+  if (navPosition === "top") {
+    // Pending counts for the top-bar primary nav badges.
+    // Same fail-soft semantics as the parent /staff/layout.tsx.
+    let pendingBadges: Record<string, number> = {};
+    const [{ count: preregCount }, { count: offerCount }, { count: questCount }] =
+      await Promise.all([
+        supabase
+          .from("preregistrations")
+          .select("id", { count: "exact", head: true })
+          .eq("club_id", club.id)
+          .eq("status", "pending"),
+        supabase
+          .from("offer_orders")
+          .select("id, club_offers!inner(club_id)", { count: "exact", head: true })
+          .eq("club_offers.club_id", club.id)
+          .eq("status", "pending"),
+        supabase
+          .from("member_quests")
+          .select("id, quests!inner(club_id)", { count: "exact", head: true })
+          .eq("quests.club_id", club.id)
+          .eq("status", "pending"),
+      ]);
+    pendingBadges = {
+      "/preregistrations": preregCount ?? 0,
+      "/offers": offerCount ?? 0,
+      "/quests": questCount ?? 0,
+    };
+
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <StaffTopBar
+          clubId={club.id}
+          clubName={club.name}
+          clubSlug={clubSlug}
+          coverUrl={coverUrl}
+          spinEnabled={club.spin_enabled ?? false}
+          operationsEnabled={club.operations_module_enabled ?? false}
+          qeboEnabled={qeboEnabled}
+          badges={pendingBadges}
+          autoHideEnabled={club.nav_autohide_enabled ?? true}
+        />
+        <div className="px-4 pt-6 pb-10 max-w-7xl mx-auto space-y-6">
+          {children}
+        </div>
+        <AppDrawerTrigger
+          portal="staff"
+          clubSlug={clubSlug}
+          flags={{
+            ops: club.operations_module_enabled ?? false,
+            qebo: qeboEnabled,
+            spin: club.spin_enabled ?? false,
+          }}
+          navPosition="top"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -84,6 +159,16 @@ export default async function StaffConsoleLayout({
           {children}
         </div>
       </div>
+      <AppDrawerTrigger
+        portal="staff"
+        clubSlug={clubSlug}
+        flags={{
+          ops: club.operations_module_enabled ?? false,
+          qebo: qeboEnabled,
+          spin: club.spin_enabled ?? false,
+        }}
+        navPosition="bottom"
+      />
     </div>
   );
 }

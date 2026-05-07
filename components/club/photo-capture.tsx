@@ -144,7 +144,7 @@ export function PhotoCapture({
         <img
           src={previewUrl!}
           alt=""
-          className="w-full rounded-lg border border-gray-200 object-cover aspect-[4/3] bg-gray-100"
+          className="mx-auto h-[20vh] aspect-[4/3] rounded-lg border border-gray-200 object-cover bg-gray-100"
         />
       ) : status === "streaming" ? (
         <div className="space-y-2">
@@ -153,7 +153,7 @@ export function PhotoCapture({
             autoPlay
             muted
             playsInline
-            className="w-full rounded-lg bg-black aspect-[4/3] object-cover"
+            className="mx-auto h-[20vh] aspect-[4/3] rounded-lg bg-black object-cover"
           />
           <div className="flex gap-2">
             <button

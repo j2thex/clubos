@@ -8,19 +8,20 @@ import { BentoStatTile } from "@/components/club/bento-stat-tile";
 import { AddToHomescreen } from "@/components/club/add-to-homescreen";
 import { t, type Locale } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
+import { clubHourOf, clubTodayYmd } from "@/lib/club-time";
 
-function pickGreeting(locale: Locale, hasName: boolean): string {
-  const hour = new Date().getHours();
+function pickGreeting(locale: Locale, hasName: boolean, timezone: string): string {
+  const hour = clubHourOf(new Date(), timezone);
   const slot =
     hour < 5 ? "Night" : hour < 12 ? "Morning" : hour < 18 ? "Afternoon" : hour < 22 ? "Evening" : "Night";
   const key = `dashboard.greeting${slot}${hasName ? "" : "Anon"}`;
   return t(locale, key);
 }
 
-function daysUntil(dateStr: string): number {
+function daysUntil(dateStr: string, timezone: string): number {
   const target = new Date(`${dateStr}T00:00:00`);
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
+  const todayYmd = clubTodayYmd(new Date(), timezone);
+  const now = new Date(`${todayYmd}T00:00:00`);
   return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 }
 
@@ -33,6 +34,7 @@ function formatNextEventCaption(days: number, locale: Locale): string {
 function formatValidity(
   validTill: string | null,
   locale: Locale,
+  timezone: string,
 ): { label: string; className: string } {
   if (!validTill) {
     return {
@@ -40,7 +42,7 @@ function formatValidity(
       className: "text-[color:var(--m-ink)]",
     };
   }
-  const days = daysUntil(validTill);
+  const days = daysUntil(validTill, timezone);
   if (days < 0) {
     return {
       label: t(locale, "dashboard.expired"),
@@ -72,11 +74,21 @@ export default async function QuestsLanding({
   }
 
   const supabase = createAdminClient();
-  const todayIso = new Date().toISOString().slice(0, 10);
+
+  // Fetch club first so subsequent queries can use its timezone.
+  const { data: club } = await supabase
+    .from("clubs")
+    .select(
+      "id, name, timezone, club_branding(logo_url, cover_url, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website)",
+    )
+    .eq("id", session.club_id)
+    .single();
+
+  const clubTimezone = club?.timezone ?? "Europe/Madrid";
+  const todayIso = clubTodayYmd(new Date(), clubTimezone);
 
   const [
     { data: member },
-    { data: club },
     { data: quests },
     { data: completedQuests },
     { data: galleryImages },
@@ -86,13 +98,6 @@ export default async function QuestsLanding({
       .from("members")
       .select("full_name, member_code, valid_till, created_at")
       .eq("id", session.member_id)
-      .single(),
-    supabase
-      .from("clubs")
-      .select(
-        "id, name, club_branding(logo_url, cover_url, social_instagram, social_whatsapp, social_telegram, social_google_maps, social_website)",
-      )
-      .eq("id", session.club_id)
       .single(),
     supabase
       .from("quests")
@@ -155,16 +160,16 @@ export default async function QuestsLanding({
   const nextEventTitle = nextEvent
     ? (locale === "es" && nextEvent.title_es ? nextEvent.title_es : nextEvent.title)
     : null;
-  const nextEventDays = nextEvent ? daysUntil(nextEvent.date) : null;
+  const nextEventDays = nextEvent ? daysUntil(nextEvent.date, clubTimezone) : null;
 
   // Validity
-  const validity = formatValidity(member?.valid_till ?? null, locale);
+  const validity = formatValidity(member?.valid_till ?? null, locale, clubTimezone);
 
   return (
     <div className="min-h-screen" style={{ background: "var(--m-surface-sunken)" }}>
       <MemberHero
         displayName={firstName}
-        greeting={pickGreeting(locale, !!firstName)}
+        greeting={pickGreeting(locale, !!firstName, clubTimezone)}
         caption={heroCaption}
         coverUrl={coverUrl}
         logoUrl={logoUrl}

@@ -160,6 +160,50 @@ export async function getMemberSignatureSignedUrl(
   return data?.signedUrl ?? null;
 }
 
+// --- Member legal documents (bucket: member-documents, PRIVATE) ---
+// Generated PDFs combining member identity + signature + per-club legal text.
+// One overwriteable file per member: {clubId}/{memberId}.pdf
+
+export async function uploadMemberLegalPdf(
+  clubId: string,
+  memberId: string,
+  bytes: Uint8Array,
+): Promise<{ path: string } | { error: string }> {
+  const supabase = createAdminClient();
+  const filename = `${clubId}/${memberId}.pdf`;
+  const { error } = await supabase.storage
+    .from("member-documents")
+    .upload(filename, bytes, {
+      contentType: "application/pdf",
+      upsert: true,
+    });
+  if (error) return { error: "Failed to upload legal PDF" };
+  return { path: filename };
+}
+
+export async function getMemberLegalPdfSignedUrl(
+  path: string,
+  expiresInSeconds = 3600,
+): Promise<string | null> {
+  const supabase = createAdminClient();
+  const { data } = await supabase.storage
+    .from("member-documents")
+    .createSignedUrl(path, expiresInSeconds);
+  return data?.signedUrl ?? null;
+}
+
+export async function downloadMemberSignatureBytes(path: string): Promise<Uint8Array> {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase.storage
+    .from("member-signatures")
+    .download(path);
+  if (error || !data) {
+    throw new Error(`Failed to download signature: ${error?.message ?? "no data"}`);
+  }
+  const buf = await data.arrayBuffer();
+  return new Uint8Array(buf);
+}
+
 // --- Feedback screenshots (bucket: feedback) ---
 
 export async function uploadFeedbackImage(
@@ -227,7 +271,16 @@ async function uploadToBucket(
       upsert: false,
     });
 
-  if (error) return { error: "Failed to upload image" };
+  if (error) {
+    console.warn(`[storage] ${bucket} upload failed`, {
+      bucket,
+      clubId,
+      contentType: file.type,
+      size: file.size,
+      message: error.message,
+    });
+    return { error: error.message || "Failed to upload image" };
+  }
 
   const { data } = supabase.storage
     .from(bucket)

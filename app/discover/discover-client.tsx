@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 import type { DiscoverClub, DiscoverEvent, DiscoverOffer, DiscoverQuest, ActiveTab, MapViewport } from "./lib/types";
 import { DEFAULT_VIEWPORT } from "./lib/types";
 import { FilterTabs } from "./components/filter-tabs";
@@ -37,6 +38,7 @@ export function DiscoverClient({
   quests: DiscoverQuest[];
 }) {
   const { locale } = useLanguage();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<ActiveTab>("clubs");
   const [viewport, setViewport] = useState<MapViewport>(DEFAULT_VIEWPORT);
   const [flyToTrigger, setFlyToTrigger] = useState(0);
@@ -52,8 +54,22 @@ export function DiscoverClient({
   const listSectionRef = useRef<HTMLDivElement>(null);
   const skipNextHashWriteRef = useRef(false);
 
-  // Sync tab with URL hash for deep linking (e.g., /discover#events, /discover#offers:Wi-Fi, /discover#map, /discover#list)
+  // ?offer=<name> takes precedence over hash; unknown offer falls through.
   useEffect(() => {
+    const offerParam = searchParams.get("offer");
+    if (offerParam) {
+      const needle = offerParam.toLowerCase();
+      const canonical = offers.find((o) => o.offer_name.toLowerCase() === needle)?.offer_name;
+      if (canonical) {
+        skipNextHashWriteRef.current = true;
+        setActiveTab("offers");
+        setSelectedOfferNames([canonical]);
+        requestAnimationFrame(() => {
+          listSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+        return;
+      }
+    }
     const hash = window.location.hash.replace("#", "");
     if (hash === "map" || hash === "list") {
       skipNextHashWriteRef.current = true;
@@ -65,8 +81,14 @@ export function DiscoverClient({
     } else if (hash.startsWith("offers:")) {
       setActiveTab("offers");
       setSelectedOfferNames([decodeURIComponent(hash.slice(7))]);
+      requestAnimationFrame(() => {
+        listSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
     } else if (hash === "clubs" || hash === "events" || hash === "offers" || hash === "quests") {
       setActiveTab(hash);
+      requestAnimationFrame(() => {
+        listSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
     }
   }, []);
 

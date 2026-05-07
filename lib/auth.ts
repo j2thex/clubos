@@ -157,7 +157,24 @@ export async function requireStaffForClub(
   return session;
 }
 
-export type StaffPermission = "entry" | "sell" | "topup" | "transactions" | "qebo";
+export type StaffPermission =
+  | "entry"
+  | "sell"
+  | "topup"
+  | "transactions"
+  | "qebo"
+  | "manage_products"
+  | "manage_identity";
+
+const STAFF_PERMISSION_COLUMN: Record<StaffPermission, string> = {
+  entry: "can_do_entry",
+  sell: "can_do_sell",
+  topup: "can_do_topup",
+  transactions: "can_do_transactions",
+  qebo: "can_do_qebo",
+  manage_products: "can_manage_products",
+  manage_identity: "can_manage_identity",
+};
 
 /**
  * Verify the current staff session is active, belongs to the given club,
@@ -174,13 +191,13 @@ export async function requireStaffPermission(
   const session = await requireStaffForClub(clubId);
   const { createAdminClient } = await import("@/lib/supabase/admin");
   const supabase = createAdminClient();
+  const column = STAFF_PERMISSION_COLUMN[permission];
   const { data: member } = await supabase
     .from("members")
-    .select("can_do_entry, can_do_sell, can_do_topup, can_do_transactions, can_do_qebo")
+    .select(Object.values(STAFF_PERMISSION_COLUMN).join(", "))
     .eq("id", session.member_id)
     .single();
-  const column = `can_do_${permission}` as const;
-  if (!member || !member[column]) {
+  if (!member || !(member as unknown as Record<string, boolean>)[column]) {
     throw new Error(`Not permitted: ${permission}`);
   }
   return session;
@@ -297,6 +314,68 @@ export async function requireOwnerForOpsClub(
   const session = await requireOwnerForClub(clubId);
   await requireOpsForClub(clubId);
   return session;
+}
+
+// --- Platform-admin auth (single password → JWT cookie) ---
+//
+// The platform-admin surface (cross-tenant: create owners, lock/unlock any
+// club, manage AI prompts, etc.) used to take its secret as a URL query
+// param `?secret=...`. URL params leak into Vercel logs, browser history,
+// Referer headers, screenshots, and copy-pasted links — one leaked URL =
+// total platform compromise. We now issue an HTTPOnly + Secure +
+// SameSite=strict cookie via /platform-admin/login. SameSite is stricter
+// than the other three cookies (lax) because nothing on this surface needs
+// cross-site nav and we want maximum CSRF resistance.
+
+const PLATFORM_ADMIN_COOKIE = "clubos-platform-admin-token";
+
+export async function createPlatformAdminToken(): Promise<string> {
+  return new SignJWT({ kind: "platform_admin" })
+    .setProtectedHeader({ alg: "HS256" })
+    .setExpirationTime("12h")
+    .sign(secret);
+}
+
+export async function verifyPlatformAdminToken(token: string) {
+  try {
+    const { payload } = await jwtVerify(token, secret);
+    if (payload.kind !== "platform_admin") return null;
+    return payload as { kind: "platform_admin" };
+  } catch {
+    return null;
+  }
+}
+
+export async function setPlatformAdminCookie(token: string) {
+  const cookieStore = await cookies();
+  cookieStore.set(PLATFORM_ADMIN_COOKIE, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 60 * 60 * 12,
+    path: "/",
+  });
+}
+
+export async function getPlatformAdminFromCookie() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(PLATFORM_ADMIN_COOKIE)?.value;
+  if (!token) return null;
+  return verifyPlatformAdminToken(token);
+}
+
+export async function clearPlatformAdminCookie() {
+  const cookieStore = await cookies();
+  cookieStore.delete(PLATFORM_ADMIN_COOKIE);
+}
+
+/**
+ * Throws if the caller does not have a valid platform-admin cookie.
+ * Wrap every platform-admin server action's first line with this.
+ */
+export async function requirePlatformAdmin(): Promise<void> {
+  const session = await getPlatformAdminFromCookie();
+  if (!session) throw new Error("Unauthorized");
 }
 
 // --- Shared ops access (staff OR admin/owner) ---

@@ -22,6 +22,7 @@ export type LookedUpMember = {
   validExpired: boolean;
   openEntryId: string | null;
   openEntrySince: string | null;
+  staffNote: string | null;
 };
 
 export type CheckinResult =
@@ -57,6 +58,7 @@ type MemberRow = {
   id_verified_at: string | null;
   id_photo_path: string | null;
   valid_till: string | null;
+  staff_note: string | null;
 };
 
 async function buildLookedUpMember(
@@ -92,6 +94,7 @@ async function buildLookedUpMember(
     validExpired,
     openEntryId: openEntry?.id ?? null,
     openEntrySince: openEntry?.checked_in_at ?? null,
+    staffNote: member.staff_note ?? null,
   };
 }
 
@@ -110,10 +113,11 @@ export async function lookupMemberForEntry(
   const { data: member } = await supabase
     .from("members")
     .select(
-      "id, member_code, full_name, status, date_of_birth, id_verified_at, id_photo_path, valid_till",
+      "id, member_code, full_name, status, date_of_birth, id_verified_at, id_photo_path, valid_till, staff_note",
     )
     .eq("club_id", clubId)
     .eq("member_code", code)
+    .eq("is_system_member", false)
     .maybeSingle();
 
   if (!member) return { error: `Member ${code} not found` };
@@ -140,10 +144,11 @@ export async function lookupMemberByRfidUid(
   const { data: member } = await supabase
     .from("members")
     .select(
-      "id, member_code, full_name, status, date_of_birth, id_verified_at, id_photo_path, valid_till",
+      "id, member_code, full_name, status, date_of_birth, id_verified_at, id_photo_path, valid_till, staff_note",
     )
     .eq("club_id", clubId)
     .eq("rfid_uid", uid)
+    .eq("is_system_member", false)
     .maybeSingle();
 
   if (!member) return { error: "Chip not registered to any member" };
@@ -168,6 +173,7 @@ export async function admitMember(
     .select("id, member_code, status, date_of_birth, valid_till")
     .eq("id", memberId)
     .eq("club_id", clubId)
+    .eq("is_system_member", false)
     .single();
 
   if (!member) return { error: "Member not found" };
@@ -197,7 +203,7 @@ export async function admitMember(
     });
     return { error: "No date of birth on file" };
   }
-  if (age < 21) {
+  if (age < 18) {
     await logActivity({
       clubId,
       staffMemberId: actor.member_id,
@@ -206,7 +212,7 @@ export async function admitMember(
       targetMemberCode: member.member_code,
       details: `age ${age}`,
     });
-    return { error: `Under 21 (age ${age})` };
+    return { error: `Under 18 (age ${age})` };
   }
 
   const { data: entry, error } = await supabase

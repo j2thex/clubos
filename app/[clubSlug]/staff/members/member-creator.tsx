@@ -12,6 +12,7 @@ import { CollapsibleSection } from "@/components/collapsible-section";
 import { PhotoCapture } from "@/components/club/photo-capture";
 import { SignaturePanel } from "@/components/club/signature-panel";
 import { RfidCapture } from "@/components/club/rfid-capture";
+import { Plus } from "lucide-react";
 
 function ageFromDobIso(dob: string): number | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dob);
@@ -39,12 +40,14 @@ export function StaffMemberCreator({
   periods,
   roles = [],
   opsEnabled = false,
+  requireReferralCode = false,
 }: {
   clubId: string;
   clubSlug: string;
   periods: { id: string; name: string; duration_months: number; is_default: boolean }[];
   roles?: { id: string; name: string }[];
   opsEnabled?: boolean;
+  requireReferralCode?: boolean;
 }) {
   const { t } = useLanguage();
   const [memberCode, setMemberCode] = useState("");
@@ -152,6 +155,12 @@ export function StaffMemberCreator({
     if (opsEnabled && missingRequired.length > 0) {
       setFieldErrors(missingRequired);
       setError(t("ops.memberForm.missingSummary"));
+      return;
+    }
+
+    if (requireReferralCode && !referredBy.trim()) {
+      setFieldErrors(["referredBy"]);
+      setError("Referral code is required");
       return;
     }
 
@@ -286,6 +295,46 @@ export function StaffMemberCreator({
     });
   }
 
+  if (!sectionOpen) {
+    return (
+      <div className="flex justify-center py-2">
+        <button
+          type="button"
+          onClick={() => {
+            setSectionOpen(true);
+            requestAnimationFrame(() => {
+              formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+            });
+          }}
+          className="group relative inline-flex items-center justify-center gap-2.5 rounded-2xl px-7 py-3.5 text-base font-bold text-white tracking-wide
+            bg-gradient-to-b from-lime-300 via-green-500 to-green-600
+            shadow-[0_10px_30px_-8px_rgba(34,197,94,0.75),0_4px_12px_-2px_rgba(34,197,94,0.45),inset_0_1px_0_0_rgba(255,255,255,0.5),inset_0_-2px_0_0_rgba(0,0,0,0.1)]
+            hover:from-lime-200 hover:via-green-400 hover:to-green-500
+            hover:shadow-[0_14px_36px_-6px_rgba(34,197,94,0.9),0_6px_16px_-2px_rgba(34,197,94,0.55),inset_0_1px_0_0_rgba(255,255,255,0.6),inset_0_-2px_0_0_rgba(0,0,0,0.1)]
+            hover:-translate-y-0.5
+            active:translate-y-0 active:shadow-[0_6px_18px_-6px_rgba(34,197,94,0.65),inset_0_1px_0_0_rgba(255,255,255,0.4),inset_0_-2px_0_0_rgba(0,0,0,0.12)]
+            transition-all duration-200
+            focus:outline-none focus-visible:ring-4 focus-visible:ring-green-300/60
+            overflow-hidden"
+        >
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 h-1/2 rounded-t-2xl bg-gradient-to-b from-white/35 to-transparent"
+          />
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent group-hover:translate-x-full transition-transform duration-700 ease-out"
+          />
+          <Plus className="w-5 h-5 relative drop-shadow-sm" strokeWidth={3} />
+          <span className="relative drop-shadow-sm">{t("ops.memberForm.sectionTitle")}</span>
+          <span className="hidden md:inline relative text-[10px] font-medium text-white/70 ml-1">
+            (Shift+N)
+          </span>
+        </button>
+      </div>
+    );
+  }
+
   return (
     <CollapsibleSection
       title={t("ops.memberForm.sectionTitle")}
@@ -318,6 +367,7 @@ export function StaffMemberCreator({
             <label className="block">
               <span className="text-xs font-medium text-gray-500">
                 {t("ops.memberForm.referredByLabel")}
+                {requireReferralCode && <span className="text-red-600 ml-0.5">*</span>}
               </span>
               <input
                 type="text"
@@ -325,7 +375,10 @@ export function StaffMemberCreator({
                 onChange={(e) => setReferredBy(e.target.value.toUpperCase())}
                 placeholder={t("ops.memberForm.referredByPlaceholder")}
                 maxLength={8}
-                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono tracking-wide uppercase text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                required={requireReferralCode}
+                className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm font-mono tracking-wide uppercase text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition ${
+                  fieldErrors.includes("referredBy") ? "border-red-400" : "border-gray-300"
+                }`}
               />
             </label>
           </div>
@@ -435,7 +488,7 @@ export function StaffMemberCreator({
                       {opsEnabled && <span className="text-red-600 ml-0.5">*</span>}
                     </span>
                     <div className={`flex gap-2 ${fieldErrors.includes("residencyStatus") ? "rounded-lg ring-1 ring-red-400" : ""}`}>
-                      <label className="flex-1 flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 cursor-pointer text-sm has-[:checked]:bg-gray-800 has-[:checked]:text-white has-[:checked]:border-gray-800 transition">
+                      <label className="flex-1 flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 cursor-pointer text-sm has-[:checked]:bg-gray-800 has-[:checked]:text-white has-[:checked]:border-gray-800 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-gray-400 has-[:focus-visible]:ring-offset-1 transition">
                         <input
                           type="radio"
                           name="residency"
@@ -446,7 +499,7 @@ export function StaffMemberCreator({
                         />
                         {t("ops.memberForm.residencyLocal")}
                       </label>
-                      <label className="flex-1 flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 cursor-pointer text-sm has-[:checked]:bg-gray-800 has-[:checked]:text-white has-[:checked]:border-gray-800 transition">
+                      <label className="flex-1 flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 cursor-pointer text-sm has-[:checked]:bg-gray-800 has-[:checked]:text-white has-[:checked]:border-gray-800 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-gray-400 has-[:focus-visible]:ring-offset-1 transition">
                         <input
                           type="radio"
                           name="residency"

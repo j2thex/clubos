@@ -1,17 +1,11 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
+import { getPlatformAdminFromCookie } from "@/lib/auth";
 import { PlatformAdminClient } from "./client";
 
-export default async function PlatformAdminPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ secret?: string }>;
-}) {
-  const { secret } = await searchParams;
-
-  if (!secret || secret !== process.env.PLATFORM_ADMIN_SECRET) {
-    redirect("/");
-  }
+export default async function PlatformAdminPage() {
+  const session = await getPlatformAdminFromCookie();
+  if (!session) redirect("/platform-admin/login");
 
   const supabase = createAdminClient();
 
@@ -199,7 +193,6 @@ export default async function PlatformAdminPage({
 
   return (
     <PlatformAdminClient
-      secret={secret}
       stats={{
         totalClubs: totalClubs ?? 0,
         totalMembers: totalMembers ?? 0,

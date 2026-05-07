@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { ChevronDown, DoorOpen, ShoppingCart, Coins, ShieldCheck, ShieldAlert } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/provider";
 import { StaffMemberRow } from "../../members/member-row";
 import { TopupDialog } from "../operations/sell/topup-dialog";
@@ -66,18 +67,16 @@ function computeAge(dob: string | null): number | null {
   return age;
 }
 
-function VerifyRow({
+function VerifyChip({
   memberId,
   clubSlug,
   dateOfBirth,
   idVerifiedAt,
-  age,
 }: {
   memberId: string;
   clubSlug: string;
   dateOfBirth: string | null;
   idVerifiedAt: string | null;
-  age: number | null;
 }) {
   const { t } = useLanguage();
   const [isPending, startTransition] = useTransition();
@@ -99,54 +98,36 @@ function VerifyRow({
     });
   }
 
+  if (idVerifiedAt) {
+    return (
+      <button
+        type="button"
+        onClick={handleRevoke}
+        disabled={isPending}
+        title={t("ops.entry.cancel")}
+        className="inline-flex items-center gap-1 text-[11px] font-medium bg-green-50 text-green-700 hover:bg-green-100 disabled:opacity-50 px-2 py-0.5 rounded-full transition-colors"
+      >
+        <ShieldCheck className="w-3 h-3" strokeWidth={2.5} />
+        {t("ops.entry.verified")}
+      </button>
+    );
+  }
+
   return (
-    <div className="px-5 pb-3 -mt-2 flex items-center gap-2 flex-wrap">
-      {dateOfBirth && (
-        <span
-          className={`text-xs rounded-full px-2 py-0.5 ${
-            age !== null && age < 21
-              ? "bg-red-100 text-red-700 font-semibold"
-              : "bg-gray-100 text-gray-600"
-          }`}
-        >
-          {age !== null ? t("ops.entry.age", { age }) : t("ops.memberForm.dobLabel")}
-        </span>
-      )}
-      {idVerifiedAt ? (
-        <>
-          <span className="text-xs rounded-full px-2 py-0.5 bg-green-100 text-green-700 font-semibold">
-            {t("ops.entry.verified")}
-          </span>
-          <button
-            type="button"
-            onClick={handleRevoke}
-            disabled={isPending}
-            className="text-xs rounded-full px-2 py-0.5 bg-gray-100 text-gray-500 hover:bg-gray-200 disabled:opacity-50"
-          >
-            {t("ops.entry.cancel")}
-          </button>
-        </>
-      ) : (
-        <>
-          <span className="text-xs rounded-full px-2 py-0.5 bg-amber-100 text-amber-800">
-            {t("ops.entry.notVerified")}
-          </span>
-          <button
-            type="button"
-            onClick={handleVerify}
-            disabled={isPending || !dateOfBirth}
-            title={!dateOfBirth ? t("ops.memberForm.dobRequired") : ""}
-            className="text-xs rounded-full px-3 py-0.5 bg-green-600 text-white font-semibold hover:bg-green-700 disabled:opacity-50"
-          >
-            {isPending ? "..." : t("staff.members.activate")}
-          </button>
-        </>
-      )}
-    </div>
+    <button
+      type="button"
+      onClick={handleVerify}
+      disabled={isPending || !dateOfBirth}
+      title={!dateOfBirth ? t("ops.memberForm.dobRequired") : t("staff.members.activate")}
+      className="inline-flex items-center gap-1 text-[11px] font-semibold bg-amber-50 text-amber-800 hover:bg-amber-100 disabled:opacity-50 disabled:cursor-not-allowed px-2 py-0.5 rounded-full transition-colors"
+    >
+      <ShieldAlert className="w-3 h-3" strokeWidth={2.5} />
+      {isPending ? "..." : t("staff.members.activate")}
+    </button>
   );
 }
 
-function OpsActionsRow({
+function MemberActionIcons({
   clubId,
   clubSlug,
   memberId,
@@ -161,40 +142,40 @@ function OpsActionsRow({
 }) {
   const { t } = useLanguage();
   const [topupOpen, setTopupOpen] = useState(false);
+  const iconBase =
+    "w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400";
+
   return (
-    <div className="px-5 pb-3 -mt-1 flex items-center gap-2 flex-wrap">
+    <>
       {deepLinks.entry && (
         <Link
           href={`/${clubSlug}/staff/operations/entry?memberCode=${memberCode}`}
-          className="inline-flex items-center gap-1.5 rounded-full bg-gray-800 text-white text-xs font-semibold px-3 py-2 hover:bg-gray-700 transition-colors"
+          aria-label={t("ops.deepLink.openAtDoor")}
+          title={t("ops.deepLink.openAtDoor")}
+          className={`${iconBase} bg-gray-800 text-white hover:bg-gray-700`}
         >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12H3m0 0l4-4m-4 4l4 4m8-12v16" />
-          </svg>
-          {t("ops.deepLink.openAtDoor")}
+          <DoorOpen className="w-4 h-4" strokeWidth={2.25} />
         </Link>
       )}
       {deepLinks.sell && (
         <Link
           href={`/${clubSlug}/staff/operations/sell?memberCode=${memberCode}`}
-          className="inline-flex items-center gap-1.5 rounded-full bg-gray-800 text-white text-xs font-semibold px-3 py-2 hover:bg-gray-700 transition-colors"
+          aria-label={t("ops.deepLink.sellToMember")}
+          title={t("ops.deepLink.sellToMember")}
+          className={`${iconBase} bg-gray-800 text-white hover:bg-gray-700`}
         >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-          </svg>
-          {t("ops.deepLink.sellToMember")}
+          <ShoppingCart className="w-4 h-4" strokeWidth={2.25} />
         </Link>
       )}
       {deepLinks.topup && (
         <button
           type="button"
           onClick={() => setTopupOpen(true)}
-          className="inline-flex items-center gap-1.5 rounded-full bg-blue-600 text-white text-xs font-semibold px-3 py-2 hover:bg-blue-700 transition-colors"
+          aria-label={t("ops.topup.button")}
+          title={t("ops.topup.button")}
+          className={`${iconBase} bg-blue-600 text-white hover:bg-blue-700`}
         >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-          </svg>
-          {t("ops.topup.button")}
+          <Coins className="w-4 h-4" strokeWidth={2.25} />
         </button>
       )}
       <TopupDialog
@@ -206,7 +187,7 @@ function OpsActionsRow({
         onClose={() => setTopupOpen(false)}
         onSuccess={() => setTopupOpen(false)}
       />
-    </div>
+    </>
   );
 }
 
@@ -249,13 +230,7 @@ export function MembersSearch({
     });
   }, [initialOpenCode, members]);
 
-  const initialOpenGroups = useMemo<Set<GroupKey>>(
-    () =>
-      new Set<GroupKey>(
-        opsEnabled ? ["pendingActivation"] : ["newThisWeek"],
-      ),
-    [opsEnabled],
-  );
+  const initialOpenGroups = useMemo<Set<GroupKey>>(() => new Set<GroupKey>(), []);
   const [openGroups, setOpenGroups] = useState<Set<GroupKey>>(initialOpenGroups);
   const { t: tRoot } = useLanguage();
   const memberDetailById = useMemo(
@@ -347,6 +322,15 @@ export function MembersSearch({
     const age = computeAge(m.dateOfBirth);
     const detail = memberDetailById.get(m.id);
     const isExpanded = expandedId === m.id;
+    const verifyChip = opsEnabled && !isExpanded ? (
+      <VerifyChip
+        memberId={m.id}
+        clubSlug={clubSlug}
+        dateOfBirth={m.dateOfBirth}
+        idVerifiedAt={m.idVerifiedAt}
+      />
+    ) : null;
+    const hasActions = !!deepLinks && (deepLinks.entry || deepLinks.sell || deepLinks.topup);
     return (
       <div
         key={m.id}
@@ -354,6 +338,7 @@ export function MembersSearch({
           if (el) rowRefs.current.set(m.id, el);
           else rowRefs.current.delete(m.id);
         }}
+        className="hover:bg-gray-50/70 transition-colors"
       >
         <div className="flex items-stretch">
           <div className="flex-1 min-w-0">
@@ -373,53 +358,44 @@ export function MembersSearch({
               }}
               roles={roles}
               clubSlug={clubSlug}
+              verifyChip={verifyChip}
+              age={age}
             />
           </div>
-          {detail && (
-            <button
-              type="button"
-              onClick={() => setExpandedId(isExpanded ? null : m.id)}
-              className="px-4 text-gray-400 hover:text-gray-900 transition-colors"
-              title={
-                isExpanded
-                  ? tRoot("admin.memberDetail.collapse")
-                  : tRoot("admin.memberDetail.expand")
-              }
-            >
-              <svg
-                className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
+          <div className="flex items-center gap-1.5 self-center pr-3 pl-1 shrink-0">
+            {hasActions && (
+              <MemberActionIcons
+                clubId={clubId}
+                clubSlug={clubSlug}
+                memberId={m.id}
+                memberCode={m.memberCode}
+                deepLinks={deepLinks!}
+              />
+            )}
+            {detail && (
+              <button
+                type="button"
+                onClick={() => setExpandedId(isExpanded ? null : m.id)}
+                aria-label={
+                  isExpanded
+                    ? tRoot("admin.memberDetail.collapse")
+                    : tRoot("admin.memberDetail.expand")
+                }
+                title={
+                  isExpanded
+                    ? tRoot("admin.memberDetail.collapse")
+                    : tRoot("admin.memberDetail.expand")
+                }
+                className="ml-1 w-10 h-10 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-900 hover:text-white flex items-center justify-center transition-colors shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M19 9l-7 7-7-7"
+                <ChevronDown
+                  className={`w-5 h-5 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                  strokeWidth={2.5}
                 />
-              </svg>
-            </button>
-          )}
+              </button>
+            )}
+          </div>
         </div>
-        {opsEnabled && !isExpanded && (
-          <VerifyRow
-            memberId={m.id}
-            clubSlug={clubSlug}
-            dateOfBirth={m.dateOfBirth}
-            idVerifiedAt={m.idVerifiedAt}
-            age={age}
-          />
-        )}
-        {deepLinks && (deepLinks.entry || deepLinks.sell || deepLinks.topup) && (
-          <OpsActionsRow
-            clubId={clubId}
-            clubSlug={clubSlug}
-            memberId={m.id}
-            memberCode={m.memberCode}
-            deepLinks={deepLinks}
-          />
-        )}
         {detail && isExpanded && (
           <MemberDetail
             member={detail}

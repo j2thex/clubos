@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireOpsAccess } from "@/lib/auth";
+import { clubDayStartIso } from "@/lib/club-time";
 import { revalidatePath } from "next/cache";
 import { lookupMemberForEntry, type LookedUpMember } from "../entry/actions";
 
@@ -12,6 +13,12 @@ export type SaleLineInput = {
   quantity: number;
   weightSource: "manual" | "scale";
   scaleRawReading?: string | null;
+  /** Target grams committed before weighing (typed or computed from price).
+   * The server re-checks |quantity − weightRequested| ≤ 0.05 when
+   * weightSource = 'scale'. */
+  weightRequested?: number | null;
+  /** € amount entered when sold by price-mode; null otherwise. */
+  priceInput?: number | null;
 };
 
 export type RecordSaleInput = {
@@ -46,6 +53,8 @@ const RPC_ERRORS: Record<string, string> = {
   // shared
   invalid_quantity: "Quantity must be greater than zero",
   invalid_weight_source: "Invalid weight source",
+  weight_outside_tolerance:
+    "Scale reading is outside the ±0.05 g window — re-weigh and try again",
   invalid_amount: "Amount must be greater than zero",
   invalid_lines: "Invalid cart contents",
   invalid_paid_with: "Invalid payment method",
@@ -208,6 +217,8 @@ export async function recordSale(
     quantity: l.quantity,
     weight_source: l.weightSource,
     scale_raw: l.scaleRawReading ?? null,
+    weight_requested: l.weightRequested ?? null,
+    price_input: l.priceInput ?? null,
   }));
 
   const supabase = createAdminClient();
@@ -387,7 +398,16 @@ export async function exportTodayTransactionsCsv(
   }
 
   const supabase = createAdminClient();
-  const dayStart = new Date(new Date().toDateString()).toISOString();
+
+  const { data: clubRow } = await supabase
+    .from("clubs")
+    .select("timezone")
+    .eq("id", clubId)
+    .single();
+  const dayStart = clubDayStartIso(
+    new Date(),
+    clubRow?.timezone ?? "Europe/Madrid",
+  );
 
   const { data } = await supabase
     .from("product_transactions")

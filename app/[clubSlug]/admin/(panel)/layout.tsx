@@ -3,10 +3,13 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { LogoutButton } from "../logout-button";
 import { AdminNav } from "@/components/club/admin-nav";
+import { AdminTopBar } from "@/components/club/admin-top-bar";
+import { AppDrawerTrigger } from "@/components/club/app-drawer-trigger";
 import { PanicIconButton } from "@/components/club/panic-icon-button";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 import { LanguageSwitcher } from "@/lib/i18n/switcher";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export async function generateMetadata({
   params,
@@ -42,13 +45,15 @@ export default async function AdminPanelLayout({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name, operations_module_enabled")
+    .select("id, name, operations_module_enabled, nav_position, nav_autohide_enabled")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
 
   if (!club) notFound();
   const opsEnabled = club.operations_module_enabled ?? false;
+  const navPosition: "bottom" | "top" = club.nav_position === "top" ? "top" : "bottom";
+  const autoHideEnabled = club.nav_autohide_enabled ?? true;
 
   const { data: branding } = await supabase
     .from("club_branding")
@@ -59,8 +64,32 @@ export default async function AdminPanelLayout({
   const coverUrl = branding?.cover_url ?? null;
   const locale = await getServerLocale();
 
+  if (navPosition === "top") {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+        <AdminTopBar
+          clubId={club.id}
+          clubName={club.name}
+          clubSlug={clubSlug}
+          coverUrl={coverUrl}
+          opsEnabled={opsEnabled}
+          autoHideEnabled={autoHideEnabled}
+        />
+        <div className="px-4 pt-6 pb-10 max-w-5xl mx-auto space-y-6">
+          {children}
+        </div>
+        <AppDrawerTrigger
+          portal="admin"
+          clubSlug={clubSlug}
+          flags={{ ops: opsEnabled }}
+          navPosition="top"
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-20">
       {/* Header */}
       <div
         className={`relative px-6 pt-10 bg-cover bg-center ${coverUrl ? "pb-6" : "pb-20 bg-gradient-to-br from-gray-800 to-gray-900"}`}
@@ -83,6 +112,7 @@ export default async function AdminPanelLayout({
           </div>
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
+            <ThemeToggle />
             <LogoutButton clubSlug={clubSlug} />
           </div>
         </div>
@@ -106,13 +136,19 @@ export default async function AdminPanelLayout({
         </div>
       </div>
 
-      <div className={`relative z-10 ${coverUrl ? "mt-4" : "-mt-12 bg-gray-50 rounded-t-3xl pt-6"}`}>
+      <div className={`relative z-10 ${coverUrl ? "mt-4" : "-mt-12 bg-gray-50 dark:bg-gray-950 rounded-t-3xl pt-6"}`}>
         <div className="px-4 pb-10 max-w-5xl mx-auto space-y-6">
           {children}
         </div>
       </div>
 
-      <AdminNav clubSlug={clubSlug} opsEnabled={opsEnabled} />
+      <AdminNav clubSlug={clubSlug} opsEnabled={opsEnabled} autoHideEnabled={autoHideEnabled} />
+      <AppDrawerTrigger
+        portal="admin"
+        clubSlug={clubSlug}
+        flags={{ ops: opsEnabled }}
+        navPosition="bottom"
+      />
     </div>
   );
 }

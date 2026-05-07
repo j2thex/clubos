@@ -22,6 +22,12 @@ import { getCampaignHistory, getEmailStats } from "../../email-actions";
 import { getOwnerFromCookie } from "@/lib/auth";
 import { QrCodesManager } from "../../qr-codes-manager";
 import { OperationsModuleManager } from "../../operations-module-manager";
+import { NavPositionManager } from "../../nav-position-manager";
+import { NavAutohideManager } from "../../nav-autohide-manager";
+import type { NavPosition } from "../../actions";
+import { StaffStartPageManager } from "../../staff-start-page-manager";
+import { RequireReferralManager } from "../../require-referral-manager";
+import { LegalTextManager } from "../../legal-text-manager";
 
 // Hides the manager's own legacy h2 heading (each manager renders its own
 // uppercase title at the top, which would duplicate the CollapsibleSection
@@ -48,7 +54,7 @@ export default async function SettingsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, login_mode, invite_only, invite_mode, hide_member_login, preregistration_enabled, auto_registration, tags, visibility, requested_visibility, telegram_bot_token, telegram_chat_id, telegram_bot_username, telegram_member_subs_enabled, notification_secret, latitude, longitude, address, city, country, spin_enabled, working_hours, spin_display_decimals, spin_cost, telegram_bot_enabled, telegram_bot_referral_name, telegram_bot_registration_price, telegram_bot_welcome_message, telegram_bot_keywords, telegram_bot_age_restricted, operations_module_enabled, currency_mode, monthly_consumption_limit_grams")
+    .select("id, login_mode, invite_only, invite_mode, hide_member_login, preregistration_enabled, auto_registration, tags, visibility, requested_visibility, telegram_bot_token, telegram_chat_id, telegram_bot_username, telegram_member_subs_enabled, notification_secret, latitude, longitude, address, city, country, spin_enabled, working_hours, spin_display_decimals, spin_cost, telegram_bot_enabled, telegram_bot_referral_name, telegram_bot_registration_price, telegram_bot_welcome_message, telegram_bot_keywords, telegram_bot_age_restricted, operations_module_enabled, currency_mode, monthly_consumption_limit_grams, nav_position, nav_autohide_enabled, staff_starting_page, require_referral_code, legal_membership_text")
     .eq("slug", clubSlug)
     .eq("active", true)
     .single();
@@ -195,11 +201,35 @@ export default async function SettingsPage({
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection title="Working Hours" caption="Open / close times shown to members">
+      <CollapsibleSection title="Opening hours" caption="Open / close times shown to members">
         <WorkingHoursManager
           clubId={club.id}
           clubSlug={clubSlug}
           initialHours={club.working_hours as Record<string, { open: string; close: string } | null> | null}
+        />
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Layout" caption="Top or bottom navigation for staff & admin">
+        <div className="space-y-3">
+          <NavPositionManager
+            clubId={club.id}
+            clubSlug={clubSlug}
+            initialPosition={(club.nav_position as NavPosition | null) ?? "bottom"}
+          />
+          <NavAutohideManager
+            clubId={club.id}
+            clubSlug={clubSlug}
+            initialEnabled={club.nav_autohide_enabled ?? true}
+          />
+        </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Staff starting page" caption="Where staff land after logging in">
+        <StaffStartPageManager
+          clubId={club.id}
+          clubSlug={clubSlug}
+          initialValue={(club.staff_starting_page as string | null) ?? null}
+          opsEnabled={club.operations_module_enabled ?? false}
         />
       </CollapsibleSection>
 
@@ -239,7 +269,23 @@ export default async function SettingsPage({
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection title="Roles" caption="Custom labels staff assign to members (e.g. Founder, VIP)">
+      <CollapsibleSection title="Referral required" caption="Force staff to enter a referral when creating a member">
+        <RequireReferralManager
+          clubId={club.id}
+          clubSlug={clubSlug}
+          initialValue={club.require_referral_code ?? false}
+        />
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Legal text" caption="Shown on the signed PDF generated when staff onboard a member">
+        <LegalTextManager
+          clubId={club.id}
+          clubSlug={clubSlug}
+          initialText={(club.legal_membership_text as string | null) ?? null}
+        />
+      </CollapsibleSection>
+
+      <CollapsibleSection id="roles" title="Roles" caption="Custom labels staff assign to members (e.g. Founder, VIP)">
         <div className={STRIP_LEGACY_H2}>
           <RoleManager
             roles={roles ?? []}
@@ -249,7 +295,7 @@ export default async function SettingsPage({
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection title="Membership Periods" caption="Duration plans (e.g. 3-month bronze, annual gold)">
+      <CollapsibleSection id="membership-periods" title="Membership Periods" caption="Duration plans (e.g. 3-month bronze, annual gold)">
         <div className={STRIP_LEGACY_H2}>
           <MembershipPeriodManager
             periods={(membershipPeriods ?? []).map((p) => ({
@@ -347,7 +393,7 @@ export default async function SettingsPage({
         </Link>
       </CollapsibleSection>
 
-      <CollapsibleSection title="Email Campaigns" caption="Bulk messages to filtered member segments — email, Telegram, push">
+      <CollapsibleSection id="email" title="Email Campaigns" caption="Bulk messages to filtered member segments — email, Telegram, push">
         <EmailCampaignManager
           clubId={club.id}
           clubSlug={clubSlug}

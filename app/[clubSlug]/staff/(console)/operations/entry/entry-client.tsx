@@ -14,6 +14,7 @@ import {
   type LookedUpMember,
   type MemberSearchResult,
 } from "./actions";
+import { MemberStaffNote } from "@/components/staff/member-staff-note";
 
 // Camera scanner is client-only and heavy — lazy-load it.
 const Scanner = dynamic(
@@ -41,7 +42,7 @@ function computeBlockedReason(member: LookedUpMember): BlockedReason | null {
   if (member.age === null) {
     return { key: "ops.entry.reasonNoDob", fixable: true };
   }
-  if (member.age < 21) {
+  if (member.age < 18) {
     return { key: "ops.entry.reasonUnderage", params: { age: member.age }, fixable: false };
   }
   if (member.validExpired && member.validTill) {
@@ -435,7 +436,7 @@ function EntryDialog({
 }) {
   const { t } = useLanguage();
   const alreadyInside = !!member.openEntryId;
-  const under21 = member.age !== null && member.age < 21;
+  const underage = member.age !== null && member.age < 18;
   const blockedReason = computeBlockedReason(member);
   const blocked = !!blockedReason;
 
@@ -462,11 +463,12 @@ function EntryDialog({
             {member.fullName ?? "—"}
           </p>
         </div>
+        <MemberStaffNote note={member.staffNote} />
         <div className="flex flex-wrap gap-2">
           {member.age !== null && (
             <span
               className={`text-xs rounded-full px-2.5 py-1 font-semibold ${
-                under21
+                underage
                   ? "bg-red-100 text-red-700"
                   : "bg-gray-100 text-gray-700"
               }`}

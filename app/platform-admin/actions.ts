@@ -1,7 +1,12 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { hashPassword, createOwnerToken, setOwnerCookie } from "@/lib/auth";
+import {
+  hashPassword,
+  createOwnerToken,
+  setOwnerCookie,
+  requirePlatformAdmin,
+} from "@/lib/auth";
 import { generateSlug } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
 
@@ -42,11 +47,8 @@ function parseGoogleMapsUrl(url: string): { name: string | null; lat: number | n
 
 export async function createClubFromGoogleMaps(
   mapsUrl: string,
-  secret: string,
 ): Promise<{ error: string } | { ok: true; slug: string; name: string; email: string }> {
-  if (secret !== process.env.PLATFORM_ADMIN_SECRET) {
-    return { error: "Unauthorized" };
-  }
+  try { await requirePlatformAdmin(); } catch { return { error: "Unauthorized" }; }
 
   if (!mapsUrl || (!mapsUrl.includes("google") && !mapsUrl.includes("goo.gl"))) {
     return { error: "Please provide a valid Google Maps URL" };
@@ -145,11 +147,8 @@ export async function createClubFromGoogleMaps(
 
 export async function createUnclaimedClub(
   formData: FormData,
-  secret: string,
 ): Promise<{ error: string } | { ok: true; slug: string }> {
-  if (secret !== process.env.PLATFORM_ADMIN_SECRET) {
-    return { error: "Unauthorized" };
-  }
+  try { await requirePlatformAdmin(); } catch { return { error: "Unauthorized" }; }
 
   const name = (formData.get("name") as string)?.trim();
   const slug = (formData.get("slug") as string)?.trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
@@ -226,11 +225,8 @@ export async function createUnclaimedClub(
 
 export async function approveCustomOffer(
   offerId: string,
-  secret: string,
 ): Promise<{ error: string } | { ok: true }> {
-  if (secret !== process.env.PLATFORM_ADMIN_SECRET) {
-    return { error: "Unauthorized" };
-  }
+  try { await requirePlatformAdmin(); } catch { return { error: "Unauthorized" }; }
 
   const supabase = createAdminClient();
 
@@ -251,6 +247,7 @@ export async function approveClub(
   clubId: string,
   visibility: ClubVisibility = "public",
 ): Promise<{ error: string } | { ok: true }> {
+  try { await requirePlatformAdmin(); } catch { return { error: "Unauthorized" }; }
   if (visibility !== "public" && visibility !== "unlisted" && visibility !== "private") {
     return { error: "Invalid visibility" };
   }
@@ -279,6 +276,7 @@ export async function setClubVisibility(
   clubId: string,
   visibility: ClubVisibility,
 ): Promise<{ error: string } | { ok: true }> {
+  try { await requirePlatformAdmin(); } catch { return { error: "Unauthorized" }; }
   if (visibility !== "public" && visibility !== "unlisted" && visibility !== "private") {
     return { error: "Invalid visibility" };
   }
@@ -301,6 +299,7 @@ export async function setClubVisibility(
 export async function rejectClub(
   clubId: string,
 ): Promise<{ error: string } | { ok: true }> {
+  try { await requirePlatformAdmin(); } catch { return { error: "Unauthorized" }; }
   const supabase = createAdminClient();
 
   const { error } = await supabase
@@ -317,11 +316,8 @@ export async function rejectClub(
 export async function setupStandardContent(
   clubId: string,
   clubType: string,
-  secret: string,
 ): Promise<{ error: string } | { ok: true; questCount: number; eventCount: number }> {
-  if (secret !== process.env.PLATFORM_ADMIN_SECRET) {
-    return { error: "Unauthorized" };
-  }
+  try { await requirePlatformAdmin(); } catch { return { error: "Unauthorized" }; }
 
   const { CLUB_TYPE_TEMPLATES } = await import("@/lib/club-templates");
   const template = CLUB_TYPE_TEMPLATES[clubType];
@@ -407,11 +403,8 @@ export async function bulkImportQuests(
     deadline: string | null;
     create_badge: boolean;
   }>,
-  secret: string,
 ): Promise<{ error: string } | { ok: true; questCount: number; badgeCount: number }> {
-  if (secret !== process.env.PLATFORM_ADMIN_SECRET) {
-    return { error: "Unauthorized" };
-  }
+  try { await requirePlatformAdmin(); } catch { return { error: "Unauthorized" }; }
 
   if (!quests.length) return { error: "No quests to import" };
 
@@ -482,11 +475,8 @@ export async function bulkImportQuests(
 export async function loginAsClubAdmin(
   clubId: string,
   clubSlug: string,
-  secret: string,
 ): Promise<{ error: string } | { ok: true; redirectUrl: string }> {
-  if (secret !== process.env.PLATFORM_ADMIN_SECRET) {
-    return { error: "Unauthorized" };
-  }
+  try { await requirePlatformAdmin(); } catch { return { error: "Unauthorized" }; }
 
   const supabase = createAdminClient();
 
@@ -511,11 +501,8 @@ export async function loginAsClubAdmin(
 export async function unlockClubFromPlatform(
   clubId: string,
   clubSlug: string,
-  secret: string,
 ): Promise<{ error: string } | { ok: true }> {
-  if (secret !== process.env.PLATFORM_ADMIN_SECRET) {
-    return { error: "Unauthorized" };
-  }
+  try { await requirePlatformAdmin(); } catch { return { error: "Unauthorized" }; }
 
   const supabase = createAdminClient();
 
@@ -543,11 +530,8 @@ const HTTP_URL_RE = /^https?:\/\/[^\s]+$/i;
 
 export async function addPartner(
   formData: FormData,
-  secret: string,
 ): Promise<{ error: string } | { ok: true }> {
-  if (secret !== process.env.PLATFORM_ADMIN_SECRET) {
-    return { error: "Unauthorized" };
-  }
+  try { await requirePlatformAdmin(); } catch { return { error: "Unauthorized" }; }
 
   const name = (formData.get("name") as string)?.trim();
   const websiteUrl = (formData.get("website_url") as string)?.trim();
@@ -599,11 +583,8 @@ export async function addPartner(
 export async function updatePartner(
   id: string,
   formData: FormData,
-  secret: string,
 ): Promise<{ error: string } | { ok: true }> {
-  if (secret !== process.env.PLATFORM_ADMIN_SECRET) {
-    return { error: "Unauthorized" };
-  }
+  try { await requirePlatformAdmin(); } catch { return { error: "Unauthorized" }; }
 
   const name = (formData.get("name") as string)?.trim();
   const websiteUrl = (formData.get("website_url") as string)?.trim();
@@ -656,11 +637,8 @@ export async function updatePartner(
 
 export async function deletePartner(
   id: string,
-  secret: string,
 ): Promise<{ error: string } | { ok: true }> {
-  if (secret !== process.env.PLATFORM_ADMIN_SECRET) {
-    return { error: "Unauthorized" };
-  }
+  try { await requirePlatformAdmin(); } catch { return { error: "Unauthorized" }; }
 
   const supabase = createAdminClient();
 
@@ -686,11 +664,8 @@ export async function deletePartner(
 export async function togglePartnerActive(
   id: string,
   active: boolean,
-  secret: string,
 ): Promise<{ error: string } | { ok: true }> {
-  if (secret !== process.env.PLATFORM_ADMIN_SECRET) {
-    return { error: "Unauthorized" };
-  }
+  try { await requirePlatformAdmin(); } catch { return { error: "Unauthorized" }; }
 
   const supabase = createAdminClient();
   const { error } = await supabase.from("platform_partners").update({ active }).eq("id", id);
@@ -704,11 +679,8 @@ export async function togglePartnerActive(
 export async function reorderPartner(
   id: string,
   direction: "up" | "down",
-  secret: string,
 ): Promise<{ error: string } | { ok: true }> {
-  if (secret !== process.env.PLATFORM_ADMIN_SECRET) {
-    return { error: "Unauthorized" };
-  }
+  try { await requirePlatformAdmin(); } catch { return { error: "Unauthorized" }; }
 
   const supabase = createAdminClient();
 
