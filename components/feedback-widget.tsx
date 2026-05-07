@@ -299,7 +299,7 @@ export function FeedbackWidget() {
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   placeholder={locale === "es" ? "Cuéntanos qué piensas..." : "Tell us what you think..."}
-                  className="w-full h-24 px-3 py-2 text-sm rounded-lg border border-input bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground disabled:opacity-60"
+                  className="w-full h-24 px-3 py-2 text-base sm:text-sm rounded-lg border border-input bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground disabled:opacity-60"
                   disabled={improving}
                   autoFocus
                 />
@@ -357,7 +357,7 @@ export function FeedbackWidget() {
                     setText(e.target.value);
                     if (undoText !== null) setUndoText(null);
                   }}
-                  className="w-full h-28 px-3 py-2 text-sm rounded-lg border border-input bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground disabled:opacity-60"
+                  className="w-full h-28 px-3 py-2 text-base sm:text-sm rounded-lg border border-input bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground disabled:opacity-60"
                   disabled={improving}
                 />
 
@@ -404,7 +404,7 @@ export function FeedbackWidget() {
                       }
                     }}
                     placeholder={locale === "es" ? "Dile a la IA qué cambiar…" : "Tell AI what to change…"}
-                    className="flex-1 h-9 px-3 text-sm rounded-lg border border-input bg-background focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground disabled:opacity-60"
+                    className="flex-1 h-9 px-3 text-base sm:text-sm rounded-lg border border-input bg-background focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground disabled:opacity-60"
                     disabled={improving}
                   />
                   <button
