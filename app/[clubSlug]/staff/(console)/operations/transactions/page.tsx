@@ -8,6 +8,7 @@ import { NoAccessCard } from "@/components/club/no-access-card";
 import { clubDayStartIso } from "@/lib/club-time";
 import { VoidSaleButton } from "./void-sale-button";
 import { ExportCsvButton } from "./export-button";
+import { MemberCodeLink } from "@/components/club/member-profile-sheet";
 
 export const dynamic = "force-dynamic";
 
@@ -218,8 +219,16 @@ export default async function StaffOperationsTransactionsPage({
                   <div className="flex items-start gap-3">
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm font-semibold text-gray-900 ${voided ? "line-through" : ""}`}>
-                        {member?.member_code ?? "?"}
-                        {member?.full_name ? ` · ${member.full_name}` : ""}
+                        {member?.member_code ? (
+                          <MemberCodeLink
+                            code={member.member_code}
+                            clubSlug={clubSlug}
+                            fullName={member.full_name}
+                            className="hover:underline"
+                          />
+                        ) : (
+                          "?"
+                        )}
                       </p>
                       <p className="text-[11px] text-gray-400">
                         {when}

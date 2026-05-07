@@ -7,6 +7,7 @@ import { requireOpsAccess } from "@/lib/auth";
 import { clubDayStartIso } from "@/lib/club-time";
 import { VoidSaleButton } from "@/app/[clubSlug]/staff/(console)/operations/transactions/void-sale-button";
 import { ExportCsvButton } from "@/app/[clubSlug]/staff/(console)/operations/transactions/export-button";
+import { MemberCodeLink } from "@/components/club/member-profile-sheet";
 
 export const dynamic = "force-dynamic";
 
@@ -382,8 +383,11 @@ export default async function AdminOperationsTransactionsPage({
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm font-semibold text-gray-900 ${voided ? "line-through" : ""}`}>
                         {member?.member_code ? (
-                          <Link
-                            href={`/${clubSlug}/admin/operations/transactions?${new URLSearchParams(
+                          <MemberCodeLink
+                            code={member.member_code}
+                            clubSlug={clubSlug}
+                            fullName={member.full_name}
+                            filterTransactionsHref={`/${clubSlug}/admin/operations/transactions?${new URLSearchParams(
                               {
                                 memberCode: member.member_code,
                                 ...(scaleFilter === "all"
@@ -392,10 +396,7 @@ export default async function AdminOperationsTransactionsPage({
                               },
                             ).toString()}`}
                             className="hover:underline"
-                          >
-                            {member.member_code}
-                            {member.full_name ? ` · ${member.full_name}` : ""}
-                          </Link>
+                          />
                         ) : (
                           "?"
                         )}
