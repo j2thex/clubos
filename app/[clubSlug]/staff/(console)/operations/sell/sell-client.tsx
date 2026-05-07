@@ -21,6 +21,7 @@ export type SellProduct = {
   id: string;
   categoryId: string | null;
   name: string;
+  description: string | null;
   unit: "gram" | "piece";
   unitPrice: number;
   stockOnHand: number;
@@ -624,41 +625,174 @@ function ProductGrid({
   onAdd: (p: SellProduct) => void;
 }) {
   const { t } = useLanguage();
+  const [zoomed, setZoomed] = useState<SellProduct | null>(null);
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2 p-3">
-      {products.map((p) => {
-        const out = p.stockOnHand <= 0;
-        return (
-          <button
-            key={p.id}
-            type="button"
-            onClick={() => !out && onAdd(p)}
-            disabled={out}
-            className={`relative rounded-xl border bg-white text-left overflow-hidden transition shadow-sm hover:shadow-md min-h-[88px] ${
-              out ? "opacity-40 cursor-not-allowed border-gray-200" : "border-gray-200 hover:border-gray-300"
-            }`}
-          >
-            <div className="flex items-stretch gap-2 p-2">
-              <ProductThumb imageUrl={p.imageUrl} name={p.name} />
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-gray-900 leading-tight line-clamp-2">
-                  {p.name}
-                </p>
-                <p className="text-[11px] text-gray-500 mt-0.5 tabular-nums">
-                  {p.unitPrice.toFixed(2)}€/{p.unit === "gram" ? "g" : "ea"}
-                </p>
-                <p className="text-[10px] text-gray-400 tabular-nums">
-                  {out
-                    ? t("ops.sell.outOfStock")
-                    : t(p.unit === "gram" ? "ops.sell.leftG" : "ops.sell.leftEa", {
-                        qty: p.stockOnHand.toFixed(p.unit === "gram" ? 1 : 0),
-                      })}
-                </p>
-              </div>
+    <>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 p-3">
+        {products.map((p) => {
+          const out = p.stockOnHand <= 0;
+          return (
+            <div
+              key={p.id}
+              className={`relative rounded-xl border bg-white overflow-hidden transition shadow-sm hover:shadow-md ${
+                out ? "opacity-40 border-gray-200" : "border-gray-200 hover:border-gray-300"
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => !out && onAdd(p)}
+                disabled={out}
+                className="block w-full text-left disabled:cursor-not-allowed"
+              >
+                <ProductTileImage imageUrl={p.imageUrl} name={p.name} />
+                <div className="p-2">
+                  <p className="text-xs font-semibold text-gray-900 leading-tight line-clamp-2 min-h-[2em]">
+                    {p.name}
+                  </p>
+                  {p.description && (
+                    <p className="text-[10px] text-gray-500 leading-snug line-clamp-1 mt-0.5">
+                      {p.description}
+                    </p>
+                  )}
+                  <div className="flex items-baseline justify-between mt-1.5">
+                    <p className="text-[11px] font-semibold text-gray-900 tabular-nums">
+                      {p.unitPrice.toFixed(2)}€/{p.unit === "gram" ? "g" : "ea"}
+                    </p>
+                    <p className="text-[10px] text-gray-400 tabular-nums">
+                      {out
+                        ? t("ops.sell.outOfStock")
+                        : t(p.unit === "gram" ? "ops.sell.leftG" : "ops.sell.leftEa", {
+                            qty: p.stockOnHand.toFixed(p.unit === "gram" ? 1 : 0),
+                          })}
+                    </p>
+                  </div>
+                </div>
+              </button>
+              {p.imageUrl && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setZoomed(p);
+                  }}
+                  aria-label={t("ops.sell.zoom") || "Zoom"}
+                  className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/55 text-white flex items-center justify-center hover:bg-black/75 transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 8v6m-3-3h6m4-1A7 7 0 114 11a7 7 0 0114 0z" />
+                  </svg>
+                </button>
+              )}
             </div>
-          </button>
-        );
-      })}
+          );
+        })}
+      </div>
+      {zoomed && (
+        <ProductZoomDialog product={zoomed} onClose={() => setZoomed(null)} />
+      )}
+    </>
+  );
+}
+
+function ProductTileImage({
+  imageUrl,
+  name,
+}: {
+  imageUrl: string | null;
+  name: string;
+}) {
+  if (imageUrl) {
+    return (
+      <div className="relative w-full aspect-square bg-gray-100">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={imageUrl}
+          alt=""
+          loading="lazy"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      </div>
+    );
+  }
+  const initials = name.trim().slice(0, 2).toUpperCase() || "?";
+  const palette = [
+    "bg-rose-200 text-rose-900",
+    "bg-amber-200 text-amber-900",
+    "bg-emerald-200 text-emerald-900",
+    "bg-sky-200 text-sky-900",
+    "bg-violet-200 text-violet-900",
+    "bg-pink-200 text-pink-900",
+    "bg-lime-200 text-lime-900",
+    "bg-cyan-200 text-cyan-900",
+  ];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) | 0;
+  const cls = palette[Math.abs(hash) % palette.length];
+  return (
+    <div
+      className={`w-full aspect-square flex items-center justify-center font-bold text-2xl ${cls}`}
+    >
+      {initials}
+    </div>
+  );
+}
+
+function ProductZoomDialog({
+  product,
+  onClose,
+}: {
+  product: SellProduct;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      onClick={onClose}
+      className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative max-w-md w-full bg-white rounded-2xl overflow-hidden shadow-2xl max-h-[85vh] flex flex-col"
+      >
+        {product.imageUrl && (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={product.imageUrl}
+            alt=""
+            className="w-full max-h-[55vh] object-contain bg-gray-100"
+          />
+        )}
+        <div className="p-4 overflow-y-auto">
+          <p className="text-base font-semibold text-gray-900">{product.name}</p>
+          <p className="text-xs text-gray-500 tabular-nums mt-0.5">
+            {product.unitPrice.toFixed(2)}€/{product.unit === "gram" ? "g" : "ea"}
+          </p>
+          {product.description && (
+            <p className="text-sm text-gray-700 mt-3 whitespace-pre-wrap">
+              {product.description}
+            </p>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 text-gray-700 flex items-center justify-center hover:bg-white shadow"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
     </div>
   );
 }

@@ -50,7 +50,7 @@ export default async function StaffOperationsSellPage({
     supabase
       .from("products")
       .select(
-        "id, name, name_es, unit, unit_price, stock_on_hand, image_url, display_order, category_id",
+        "id, name, name_es, description, description_es, unit, unit_price, stock_on_hand, image_url, display_order, category_id",
       )
       .eq("club_id", club.id)
       .eq("archived", false)
@@ -72,6 +72,8 @@ export default async function StaffOperationsSellPage({
     id: p.id,
     categoryId: p.category_id,
     name: locale === "es" && p.name_es ? p.name_es : p.name,
+    description:
+      locale === "es" && p.description_es ? p.description_es : p.description ?? null,
     unit: p.unit as "gram" | "piece",
     unitPrice: Number(p.unit_price),
     stockOnHand: Number(p.stock_on_hand),
