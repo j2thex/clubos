@@ -9,6 +9,53 @@ import { Button } from "@/components/ui/button";
 import { updateBranding } from "../actions";
 import { useLanguage } from "@/lib/i18n/provider";
 
+const GREETING_TEMPLATES: ReadonlyArray<{
+  id: string;
+  label: { en: string; es: string };
+  body: { en: string; es: string };
+}> = [
+  {
+    id: "friendly",
+    label: { en: "Friendly", es: "Cercano" },
+    body: {
+      en: "Welcome! We're glad you're part of the community. Check the events, claim your spins, and say hi any time.",
+      es: "¡Bienvenido/a! Nos alegra tenerte en la comunidad. Mira los eventos, reclama tus tiradas y pásate a saludar cuando quieras.",
+    },
+  },
+  {
+    id: "boutique",
+    label: { en: "Boutique", es: "Boutique" },
+    body: {
+      en: "Welcome to our space. Take your time, enjoy the atmosphere, and reach out whenever we can help.",
+      es: "Bienvenido a nuestro espacio. Tómate tu tiempo, disfruta del ambiente y avísanos siempre que podamos ayudarte.",
+    },
+  },
+  {
+    id: "cannabis",
+    label: { en: "Cannabis club", es: "Club cannábico" },
+    body: {
+      en: "Welcome home. Settle in, browse the menu, and let staff know if you need a recommendation.",
+      es: "Bienvenido a casa. Acomódate, explora el menú y pídele a un miembro del equipo cualquier recomendación.",
+    },
+  },
+  {
+    id: "coworking",
+    label: { en: "Coworking", es: "Coworking" },
+    body: {
+      en: "Welcome aboard. Find a desk, grab a coffee, and book a room from the events tab whenever you need one.",
+      es: "Bienvenido al equipo. Busca un sitio, toma un café y reserva una sala desde la pestaña de eventos cuando lo necesites.",
+    },
+  },
+  {
+    id: "fitness",
+    label: { en: "Sports & fitness", es: "Deporte y fitness" },
+    body: {
+      en: "Welcome to the team. Check the schedule, lock in your sessions, and let's get to work.",
+      es: "Bienvenido al equipo. Mira el horario, reserva tus sesiones y vamos a darlo todo.",
+    },
+  },
+];
+
 function formAction(_prev: { error: string } | undefined, formData: FormData) {
   return updateBranding(formData);
 }
@@ -17,7 +64,8 @@ function BrandingForm() {
   const searchParams = useSearchParams();
   const clubId = searchParams.get("clubId") ?? "";
   const [state, dispatch, isPending] = useActionState(formAction, undefined);
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
+  const templateLocale: "en" | "es" = locale === "es" ? "es" : "en";
 
   const [primaryColor, setPrimaryColor] = useState("#16a34a");
   const [secondaryColor, setSecondaryColor] = useState("#052e16");
@@ -191,6 +239,32 @@ function BrandingForm() {
               <Label htmlFor="heroContent" className="text-gray-800">
                 {t("onboarding.welcomeMessage")}
               </Label>
+              <div className="flex flex-wrap gap-1.5">
+                {GREETING_TEMPLATES.map((tpl) => {
+                  const active = heroContent === tpl.body[templateLocale];
+                  return (
+                    <button
+                      key={tpl.id}
+                      type="button"
+                      onClick={() => setHeroContent(tpl.body[templateLocale])}
+                      className={`text-xs font-medium px-2.5 py-1 rounded-full border transition-colors ${
+                        active
+                          ? "bg-green-600 text-white border-green-600"
+                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                      }`}
+                    >
+                      {tpl.label[templateLocale]}
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  onClick={() => setHeroContent("")}
+                  className="text-xs font-medium px-2.5 py-1 rounded-full border border-dashed border-gray-300 text-gray-500 hover:bg-gray-50 transition-colors"
+                >
+                  {locale === "es" ? "Personalizado" : "Custom"}
+                </button>
+              </div>
               <textarea
                 id="heroContent"
                 name="heroContent"
