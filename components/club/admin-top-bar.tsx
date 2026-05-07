@@ -7,6 +7,7 @@ import { useScrollDirection } from "@/lib/hooks/use-scroll-direction";
 import { LanguageSwitcher } from "@/lib/i18n/switcher";
 import { LogoutButton } from "@/app/[clubSlug]/admin/logout-button";
 import { PanicIconButton } from "./panic-icon-button";
+import { ThemeToggle } from "@/components/theme-toggle";
 import {
   adminNavItems,
   filterAdminNavItems,
@@ -115,6 +116,7 @@ export function AdminTopBar({
             {t("admin.publicPage")}
           </a>
           <LanguageSwitcher />
+          <ThemeToggle />
           <LogoutButton clubSlug={clubSlug} />
         </div>
       </div>

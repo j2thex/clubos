@@ -9,6 +9,7 @@ import { PanicIconButton } from "@/components/club/panic-icon-button";
 import { t } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n/server";
 import { LanguageSwitcher } from "@/lib/i18n/switcher";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export async function generateMetadata({
   params,
@@ -65,7 +66,7 @@ export default async function AdminPanelLayout({
 
   if (navPosition === "top") {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
         <AdminTopBar
           clubId={club.id}
           clubName={club.name}
@@ -88,7 +89,7 @@ export default async function AdminPanelLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-20">
       {/* Header */}
       <div
         className={`relative px-6 pt-10 bg-cover bg-center ${coverUrl ? "pb-6" : "pb-20 bg-gradient-to-br from-gray-800 to-gray-900"}`}
@@ -111,6 +112,7 @@ export default async function AdminPanelLayout({
           </div>
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
+            <ThemeToggle />
             <LogoutButton clubSlug={clubSlug} />
           </div>
         </div>
@@ -134,7 +136,7 @@ export default async function AdminPanelLayout({
         </div>
       </div>
 
-      <div className={`relative z-10 ${coverUrl ? "mt-4" : "-mt-12 bg-gray-50 rounded-t-3xl pt-6"}`}>
+      <div className={`relative z-10 ${coverUrl ? "mt-4" : "-mt-12 bg-gray-50 dark:bg-gray-950 rounded-t-3xl pt-6"}`}>
         <div className="px-4 pb-10 max-w-5xl mx-auto space-y-6">
           {children}
         </div>
