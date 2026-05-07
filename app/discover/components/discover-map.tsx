@@ -10,6 +10,7 @@ import type { ActiveTab, MapViewport } from "../lib/types";
 import { t } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import Link from "next/link";
+import Image from "next/image";
 import { WorkingHoursBadge } from "@/components/club/working-hours-badge";
 import "maplibre-gl/dist/maplibre-gl.css";
 
@@ -42,7 +43,7 @@ function ClubMarker({ feature, selected, onClick }: { feature: GeoFeature; selec
         className={`w-10 h-10 rounded-full border-2 overflow-hidden shadow-lg flex items-center justify-center text-white text-xs font-bold ${selected ? "border-white ring-2 ring-white/30" : "border-white/60"}`}
         style={{ backgroundColor: logo_url ? undefined : primary_color }}
       >
-        {logo_url ? <img src={logo_url} alt="" className="w-full h-full object-cover" /> : name.charAt(0).toUpperCase()}
+        {logo_url ? <Image src={logo_url} alt="" width={40} height={40} sizes="40px" className="w-full h-full object-cover" /> : name.charAt(0).toUpperCase()}
       </div>
       <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
         <span className="text-[10px] font-medium text-white bg-black/80 px-2 py-0.5 rounded whitespace-nowrap">{name}</span>
@@ -71,7 +72,7 @@ function OfferMarker({ feature, selected, onClick }: { feature: GeoFeature; sele
     <button onClick={onClick} className={`relative group transition-transform ${selected ? "scale-125 z-10" : "hover:scale-110"}`}>
       <div className="relative">
         <div className={`w-10 h-10 rounded-full border-2 overflow-hidden shadow-lg flex items-center justify-center text-white text-xs font-bold ${selected ? "border-white ring-2 ring-white/30" : "border-white/60"}`} style={{ backgroundColor: logo_url ? undefined : primary_color }}>
-          {logo_url ? <img src={logo_url} alt="" className="w-full h-full object-cover" /> : name.charAt(0).toUpperCase()}
+          {logo_url ? <Image src={logo_url} alt="" width={40} height={40} sizes="40px" className="w-full h-full object-cover" /> : name.charAt(0).toUpperCase()}
         </div>
         {offer_count != null && offer_count > 1 && (
           <span className="absolute -top-1 -right-1 bg-white text-gray-900 text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow">{offer_count}</span>
@@ -87,7 +88,7 @@ function QuestMarker({ feature, selected, onClick }: { feature: GeoFeature; sele
     <button onClick={onClick} className={`relative group transition-transform ${selected ? "scale-125 z-10" : "hover:scale-110"}`}>
       <div className="relative">
         <div className={`w-10 h-10 rounded-full border-2 overflow-hidden shadow-lg flex items-center justify-center text-white text-xs font-bold ${selected ? "border-white ring-2 ring-white/30" : "border-white/60"}`} style={{ backgroundColor: logo_url ? undefined : primary_color }}>
-          {logo_url ? <img src={logo_url} alt="" className="w-full h-full object-cover" /> : name.charAt(0).toUpperCase()}
+          {logo_url ? <Image src={logo_url} alt="" width={40} height={40} sizes="40px" className="w-full h-full object-cover" /> : name.charAt(0).toUpperCase()}
         </div>
         {reward_spins != null && (
           <span className="absolute -top-1 -right-1 bg-emerald-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow">{reward_spins}</span>
@@ -128,7 +129,7 @@ function MarkerPopup({ feature, onClose, locale = "en" }: { feature: GeoFeature;
       <div className="min-w-[180px] max-w-[240px]">
         <div className="flex items-center gap-2 mb-2">
           <div className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center text-white text-xs font-bold overflow-hidden" style={{ backgroundColor: p.logo_url ? undefined : p.primary_color }}>
-            {p.logo_url ? <img src={p.logo_url} alt="" className="w-full h-full object-cover" /> : p.name.charAt(0).toUpperCase()}
+            {p.logo_url ? <Image src={p.logo_url} alt="" width={32} height={32} sizes="32px" className="w-full h-full object-cover" /> : p.name.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-gray-900 truncate">{p.name}</p>

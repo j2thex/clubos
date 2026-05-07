@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
 
 type MediaType = "image" | "video" | "audio";
 
@@ -55,9 +56,12 @@ export function MediaGallery({ items }: { items: MediaItem[] }) {
 function ThumbnailFor({ item }: { item: MediaItem }) {
   if (item.media_type === "image") {
     return (
-      <img
+      <Image
         src={item.media_url}
         alt={item.caption ?? ""}
+        width={128}
+        height={128}
+        sizes="128px"
         className="w-full h-full object-cover"
       />
     );
@@ -156,14 +160,17 @@ function LightboxOverlay({
 
       <div className="relative max-w-lg w-full" onClick={(e) => e.stopPropagation()}>
         {item.media_type === "image" && (
-          <img
+          <Image
             src={item.media_url}
             alt={item.caption ?? ""}
+            width={1600}
+            height={1200}
+            sizes="(max-width: 640px) 100vw, 768px"
             onClick={(e) => {
               e.stopPropagation();
               if (advanceOnClick) onNext();
             }}
-            className="w-full rounded-[var(--m-radius-sm)] object-contain max-h-[80vh] cursor-pointer select-none"
+            className="w-full h-auto rounded-[var(--m-radius-sm)] object-contain max-h-[80vh] cursor-pointer select-none"
           />
         )}
 
