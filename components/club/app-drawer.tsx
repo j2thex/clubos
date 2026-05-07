@@ -140,7 +140,8 @@ export function AppDrawer({ open, onClose, titleKey, tiles, basePath }: AppDrawe
                 <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
                   {sectionTiles.map((tile) => {
                     const Icon = tile.icon;
-                    const href = `${basePath}${tile.path}`;
+                    const clubBase = basePath.replace(/\/(admin|staff)$/, "");
+                    const href = tile.absolute ? `${clubBase}${tile.path}` : `${basePath}${tile.path}`;
                     return (
                       <button
                         key={tile.key}

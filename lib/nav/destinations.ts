@@ -21,6 +21,7 @@ import {
   LayoutGrid,
   Crown,
   CalendarClock,
+  ShieldCheck,
 } from "lucide-react";
 import type { SectionKey } from "./tile-colors";
 
@@ -31,6 +32,8 @@ export interface TileDef {
   key: string;
   /** Path relative to the portal base (`/${slug}/admin` or `/${slug}/staff`). */
   path: string;
+  /** When true, `path` is treated as full club-relative path (e.g. `/staff` from admin). */
+  absolute?: boolean;
   /** Lucide icon component (rendered ~28px white). */
   icon: LucideIcon;
   /** Section drives color + grouping. */
@@ -45,6 +48,7 @@ export const ADMIN_TILES: TileDef[] = [
   { key: "admin.people", path: "", icon: Users, section: "people", labelKey: "nav.tiles.people" },
   { key: "admin.roles", path: "/settings#roles", icon: Crown, section: "people", labelKey: "nav.tiles.roles" },
   { key: "admin.periods", path: "/settings#membership-periods", icon: CalendarClock, section: "people", labelKey: "nav.tiles.periods" },
+  { key: "admin.staff", path: "/staff", absolute: true, icon: ShieldCheck, section: "people", labelKey: "nav.tiles.staff" },
   { key: "admin.content", path: "/content", icon: LayoutGrid, section: "content", labelKey: "nav.tiles.content" },
   { key: "admin.quests", path: "/quests", icon: Target, section: "content", labelKey: "nav.tiles.quests" },
   { key: "admin.events", path: "/events", icon: CalendarDays, section: "content", labelKey: "nav.tiles.events" },
